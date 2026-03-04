@@ -1,0 +1,12 @@
+# Normalize line endings to LF for all text files
+* text=auto eol=lf
+
+# Ensure JSON files use LF
+*.json text eol=lf
+
+# Treat package-lock.json as binary to prevent ANY Git modifications
+package-lock.json binary
+package-lock.json -diff
+package-lock.json -merge
+package-lock.json linguist-generated=true
+package-lock.json export-ignore

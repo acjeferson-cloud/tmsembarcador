@@ -1,0 +1,2 @@
+-- Script para importar múltiplos estados em lotes
+-- Este script será executado em partes via migrations

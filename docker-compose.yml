@@ -1,0 +1,31 @@
+# Docker Compose para desenvolvimento/teste local
+# NÃO usar em produção (use Cloud Run)
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Substitua com suas credenciais de desenvolvimento
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
+      - VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Para usar:
+# 1. Copie .env.example para .env
+# 2. Preencha com suas credenciais de DEV
+# 3. Execute: docker-compose up
+# 4. Acesse: http://localhost:8080

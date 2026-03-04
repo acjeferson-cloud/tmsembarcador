@@ -1,0 +1,281 @@
+import { supabase } from '../lib/supabase';
+
+export interface OpenAITransaction {
+  id: string;
+  transaction_date: string;
+  model: string;
+  request_type: 'chat_completion' | 'completion' | 'embedding' | 'image_generation' | 'audio_transcription' | 'text_to_speech';
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  user_id?: string;
+  establishment_id?: string;
+  business_partner_id?: string;
+  order_id?: string;
+  quote_id?: string;
+  unit_cost: number;
+  status: 'sucesso' | 'erro' | 'timeout' | 'limite_excedido' | 'invalido';
+  status_code?: number;
+  error_message?: string;
+  request_id?: string;
+  response_time_ms?: number;
+  request_data?: any;
+  response_data?: any;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransactionFilters {
+  startDate?: string;
+  endDate?: string;
+  model?: string;
+  requestType?: string;
+  status?: string;
+  establishmentId?: string;
+  businessPartnerId?: string;
+  userId?: string;
+}
+
+export interface TransactionSummary {
+  totalTransactions: number;
+  totalCost: number;
+  totalTokens: number;
+  byModel: {
+    [key: string]: number;
+  };
+  byRequestType: {
+    [key: string]: number;
+  };
+  byStatus: {
+    [key: string]: number;
+  };
+  avgResponseTime: number;
+  avgTokensPerRequest: number;
+  successRate: number;
+}
+
+export const openaiTransactionsService = {
+  async createTransaction(data: Partial<OpenAITransaction>): Promise<OpenAITransaction | null> {
+    const { data: transaction, error } = await supabase
+      .from('openai_transactions')
+      .insert({
+        ...data,
+        transaction_date: data.transaction_date || new Date().toISOString(),
+        total_tokens: data.total_tokens || (data.prompt_tokens || 0) + (data.completion_tokens || 0),
+        unit_cost: data.unit_cost || 0
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao criar transação OpenAI:', error);
+      throw error;
+    }
+
+    return transaction;
+  },
+
+  async getTransactions(filters: TransactionFilters = {}, limit = 100): Promise<OpenAITransaction[]> {
+    let query = supabase
+      .from('openai_transactions')
+      .select(`
+        *,
+        users (
+          id,
+          nome,
+          email
+        ),
+        establishments (
+          id,
+          nome_fantasia
+        ),
+        business_partners (
+          id,
+          name
+        )
+      `)
+      .order('transaction_date', { ascending: false })
+      .limit(limit);
+
+    if (filters.startDate) {
+      query = query.gte('transaction_date', filters.startDate);
+    }
+
+    if (filters.endDate) {
+      const endOfDay = new Date(filters.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      query = query.lte('transaction_date', endOfDay.toISOString());
+    }
+
+    if (filters.model) {
+      query = query.eq('model', filters.model);
+    }
+
+    if (filters.requestType) {
+      query = query.eq('request_type', filters.requestType);
+    }
+
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    if (filters.establishmentId) {
+      query = query.eq('establishment_id', filters.establishmentId);
+    }
+
+    if (filters.businessPartnerId) {
+      query = query.eq('business_partner_id', filters.businessPartnerId);
+    }
+
+    if (filters.userId) {
+      query = query.eq('user_id', filters.userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Erro ao buscar transações:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  async getTransactionSummary(filters: TransactionFilters = {}): Promise<TransactionSummary> {
+    const transactions = await this.getTransactions(filters, 10000);
+
+    const summary: TransactionSummary = {
+      totalTransactions: transactions.length,
+      totalCost: 0,
+      totalTokens: 0,
+      byModel: {},
+      byRequestType: {},
+      byStatus: {},
+      avgResponseTime: 0,
+      avgTokensPerRequest: 0,
+      successRate: 0
+    };
+
+    let totalResponseTime = 0;
+    let responsesWithTime = 0;
+    let successCount = 0;
+
+    transactions.forEach(t => {
+      summary.totalCost += Number(t.unit_cost);
+      summary.totalTokens += t.total_tokens;
+
+      if (!summary.byModel[t.model]) {
+        summary.byModel[t.model] = 0;
+      }
+      summary.byModel[t.model]++;
+
+      if (!summary.byRequestType[t.request_type]) {
+        summary.byRequestType[t.request_type] = 0;
+      }
+      summary.byRequestType[t.request_type]++;
+
+      if (!summary.byStatus[t.status]) {
+        summary.byStatus[t.status] = 0;
+      }
+      summary.byStatus[t.status]++;
+
+      if (t.response_time_ms) {
+        totalResponseTime += t.response_time_ms;
+        responsesWithTime++;
+      }
+
+      if (t.status === 'sucesso') {
+        successCount++;
+      }
+    });
+
+    summary.avgResponseTime = responsesWithTime > 0 ? Math.round(totalResponseTime / responsesWithTime) : 0;
+    summary.avgTokensPerRequest = transactions.length > 0 ? Math.round(summary.totalTokens / transactions.length) : 0;
+    summary.successRate = transactions.length > 0 ? (successCount / transactions.length) * 100 : 0;
+
+    return summary;
+  },
+
+  getModelLabel(model: string): string {
+    const labels: { [key: string]: string } = {
+      'gpt-4': 'GPT-4',
+      'gpt-4-turbo': 'GPT-4 Turbo',
+      'gpt-4-turbo-preview': 'GPT-4 Turbo Preview',
+      'gpt-3.5-turbo': 'GPT-3.5 Turbo',
+      'gpt-3.5-turbo-16k': 'GPT-3.5 Turbo 16K',
+      'text-embedding-ada-002': 'Ada Embeddings',
+      'text-embedding-3-small': 'Embeddings 3 Small',
+      'text-embedding-3-large': 'Embeddings 3 Large',
+      'dall-e-2': 'DALL-E 2',
+      'dall-e-3': 'DALL-E 3',
+      'whisper-1': 'Whisper',
+      'tts-1': 'TTS Standard',
+      'tts-1-hd': 'TTS HD'
+    };
+    return labels[model] || model;
+  },
+
+  getRequestTypeLabel(requestType: string): string {
+    const labels: { [key: string]: string } = {
+      chat_completion: 'Chat/Conversa',
+      completion: 'Completar Texto',
+      embedding: 'Embeddings',
+      image_generation: 'Geração de Imagem',
+      audio_transcription: 'Transcrição de Áudio',
+      text_to_speech: 'Texto para Fala'
+    };
+    return labels[requestType] || requestType;
+  },
+
+  exportToCSV(transactions: OpenAITransaction[]): string {
+    const headers = [
+      'Data/Hora',
+      'Modelo',
+      'Tipo',
+      'Tokens Prompt',
+      'Tokens Resposta',
+      'Total Tokens',
+      'Usuário',
+      'Valor',
+      'Status',
+      'Tempo (ms)',
+      'Request ID'
+    ];
+
+    const rows = transactions.map(t => [
+      new Date(t.transaction_date).toLocaleString('pt-BR'),
+      this.getModelLabel(t.model),
+      this.getRequestTypeLabel(t.request_type),
+      t.prompt_tokens.toString(),
+      t.completion_tokens.toString(),
+      t.total_tokens.toString(),
+      (t as any).users?.nome || '-',
+      Number(t.unit_cost).toFixed(4),
+      t.status,
+      t.response_time_ms?.toString() || '-',
+      t.request_id || '-'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    return csvContent;
+  },
+
+  downloadCSV(transactions: OpenAITransaction[], filename = 'extrato-openai.csv'): void {
+    const csvContent = this.exportToCSV(transactions);
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};

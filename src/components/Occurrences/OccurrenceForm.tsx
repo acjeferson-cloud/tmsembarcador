@@ -1,0 +1,250 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, AlertCircle, Hash, Info } from 'lucide-react';
+import { Occurrence, getNextOccurrenceCode, isValidOccurrenceCode, isOccurrenceCodeUnique } from '../../data/occurrencesData';
+import { InlineMessage } from '../common/InlineMessage';
+
+interface OccurrenceFormProps {
+  onBack: () => void;
+  onSave: (occurrence: any) => void;
+  occurrence?: Occurrence;
+}
+
+export const OccurrenceForm: React.FC<OccurrenceFormProps> = ({ onBack, onSave, occurrence }) => {
+  const [formData, setFormData] = useState({
+    codigo: occurrence?.codigo || '',
+    descricao: occurrence?.descricao || ''
+  });
+
+  const [codeError, setCodeError] = useState('');
+
+  // Auto-generate code for new occurrences
+  useEffect(() => {
+    if (!occurrence && !formData.codigo) {
+      const nextCode = getNextOccurrenceCode();
+      setFormData(prev => ({
+        ...prev,
+        codigo: nextCode
+      }));
+    }
+  }, [occurrence]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear code error when code changes
+    if (name === 'codigo') {
+      validateCode(value);
+    }
+  };
+
+  const validateCode = (codigo: string) => {
+    setCodeError('');
+    
+    if (!codigo) {
+      setCodeError('Código é obrigatório');
+      return false;
+    }
+
+    if (!isValidOccurrenceCode(codigo)) {
+      setCodeError('Código deve ter exatamente 3 dígitos numéricos (ex: 001)');
+      return false;
+    }
+
+    if (!isOccurrenceCodeUnique(codigo, occurrence?.id)) {
+      setCodeError('Este código já está sendo usado por outra ocorrência');
+      return false;
+    }
+
+    return true;
+  };
+
+  const formatCode = (value: string) => {
+    // Remove non-numeric characters and limit to 3 digits
+    const numeric = value.replace(/\D/g, '').slice(0, 3);
+    
+    // Pad with leading zeros if less than 3 digits
+    return numeric.padStart(3, '0');
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCode(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      codigo: formatted
+    }));
+    validateCode(formatted);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate code
+    if (!validateCode(formData.codigo)) {
+      return;
+    }
+    
+    // Validate description
+    if (!formData.descricao) {
+      alert('Por favor, informe a descrição da ocorrência.');
+      return;
+    }
+
+    if (formData.descricao.length > 100) {
+      alert('A descrição deve ter no máximo 100 caracteres.');
+      return;
+    }
+
+    onSave(formData);
+  };
+
+  const generateNewCode = () => {
+    const nextCode = getNextOccurrenceCode();
+    setFormData(prev => ({
+      ...prev,
+      codigo: nextCode
+    }));
+    setCodeError('');
+  };
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={onBack}
+          className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
+        >
+          <ArrowLeft size={20} />
+          <span>Voltar para Históricos de Ocorrências</span>
+        </button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {occurrence ? 'Editar Ocorrência' : 'Nova Ocorrência'}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">Preencha os dados da ocorrência</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações da Ocorrência</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Código da Ocorrência *
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="codigo"
+                  value={formData.codigo}
+                  onChange={handleCodeChange}
+                  required
+                  maxLength={3}
+                  disabled={!!occurrence}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    codeError ? 'border-red-300' : 'border-gray-300'
+                  } ${occurrence ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  placeholder="001"
+                />
+                {!occurrence && (
+                  <button
+                    type="button"
+                    onClick={generateNewCode}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 transition-colors"
+                    title="Gerar próximo código"
+                  >
+                    <Hash size={18} />
+                  </button>
+                )}
+              </div>
+              
+              {codeError && (
+                <div className="mt-2">
+                  <InlineMessage type="error" message={codeError} />
+                </div>
+              )}
+              
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Info size={16} className="text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-blue-800 font-medium">Código Sequencial</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Os códigos são gerados automaticamente em sequência numérica começando em 001. 
+                      {!occurrence && " Clique no ícone # para gerar o próximo código disponível."}
+                      {occurrence && " O código não pode ser alterado após o cadastro."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descrição da Ocorrência *
+              </label>
+              <textarea
+                name="descricao"
+                value={formData.descricao}
+                onChange={handleInputChange}
+                required
+                maxLength={100}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Digite a descrição da ocorrência"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Máximo de 100 caracteres. Restantes: {100 - formData.descricao.length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Information Box */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <div className="flex items-start space-x-2">
+            <Info size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre Códigos de Ocorrência</h3>
+              <p className="text-blue-800 mb-4">
+                Os códigos de ocorrência são utilizados para padronizar a comunicação com transportadores via EDI (OCOREN 5.0).
+                Cada código representa um tipo de evento que pode ocorrer durante o processo de entrega.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                  <p className="font-semibold text-blue-900">Códigos 001-049</p>
+                  <p className="text-blue-700">Ocorrências relacionadas a entregas</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                  <p className="font-semibold text-blue-900">Códigos 050-099</p>
+                  <p className="text-blue-700">Ocorrências relacionadas a problemas</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end space-x-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={!!codeError}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {occurrence ? 'Atualizar' : 'Salvar'} Ocorrência
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};

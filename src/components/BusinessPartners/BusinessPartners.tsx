@@ -1,0 +1,552 @@
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Plus, Eye, CreditCard as Edit, Trash2, ChevronLeft, ChevronRight, List, Map } from 'lucide-react';
+import { BusinessPartner } from '../../types';
+import { businessPartnersService } from '../../services/businessPartnersService';
+import BusinessPartnerCard from './BusinessPartnerCard';
+import BusinessPartnerForm from './BusinessPartnerForm';
+import BusinessPartnerView from './BusinessPartnerView';
+import BusinessPartnersMap from './BusinessPartnersMap';
+import Breadcrumbs from '../Layout/Breadcrumbs';
+import { Toast, ToastType } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { logCreate, logUpdate, logDelete } from '../../services/logsService';
+
+const BusinessPartners: React.FC = () => {
+  const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
+  const [showForm, setShowForm] = useState(false);
+  const [showView, setShowView] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<BusinessPartner | null>(null);
+  const [editingPartner, setEditingPartner] = useState<BusinessPartner | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; partnerId?: string; partnerName?: string }>({ isOpen: false });
+
+  const ITEMS_PER_PAGE = 12;
+
+  useEffect(() => {
+    loadPartners();
+  }, []);
+
+  const loadPartners = async () => {
+    setLoading(true);
+    const data = await businessPartnersService.getAll();
+    setBusinessPartners(data);
+    setLoading(false);
+  };
+
+  const breadcrumbItems = [
+    { label: 'Dashboard', href: '/' },
+    { label: 'Parceiros de Negócios', href: '/business-partners' }
+  ];
+
+  const handleCloseModal = () => {
+    setEditingPartner(null);
+  };
+
+  const filteredPartners = businessPartners.filter(partner => {
+    const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         partner.document.includes(searchTerm) ||
+                         partner.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesType = typeFilter === 'all' || partner.type === typeFilter ||
+                       (typeFilter === 'both' && partner.type === 'both');
+
+    const matchesStatus = statusFilter === 'all' || partner.status === statusFilter;
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  // Paginação
+  const totalPages = Math.ceil(filteredPartners.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentPartners = filteredPartners.slice(startIndex, endIndex);
+
+  // Reset para primeira página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, statusFilter]);
+
+  const stats = {
+    total: businessPartners.length,
+    clients: businessPartners.filter(p => p.type === 'customer' || p.type === 'both').length,
+    suppliers: businessPartners.filter(p => p.type === 'supplier' || p.type === 'both').length,
+    active: businessPartners.filter(p => p.status === 'active').length
+  };
+
+  const handleAdd = () => {
+    setEditingPartner(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = (partner: BusinessPartner) => {
+    setEditingPartner(partner);
+    setShowForm(true);
+  };
+
+  const handleView = (partner: BusinessPartner) => {
+    setSelectedPartner(partner);
+    setShowView(true);
+  };
+
+  const handleDelete = (id: string) => {
+    console.log('🗑️ [BusinessPartners] handleDelete chamado com ID:', id);
+    console.log('🗑️ [BusinessPartners] Tipo do ID:', typeof id);
+
+    // Buscar o nome do parceiro para exibir na confirmação
+    const partner = businessPartners.find(p => p.id === id);
+    const partnerName = partner ? partner.name : 'este parceiro';
+
+    setConfirmDialog({ isOpen: true, partnerId: id, partnerName });
+  };
+
+  const confirmDelete = async () => {
+    console.log('🗑️ [BusinessPartners] confirmDelete chamado');
+    console.log('🗑️ [BusinessPartners] Dialog state:', confirmDialog);
+
+    if (confirmDialog.partnerId) {
+      console.log('🗑️ [BusinessPartners] Chamando businessPartnersService.delete com ID:', confirmDialog.partnerId);
+
+      try {
+        const partner = businessPartners.find(p => p.id === confirmDialog.partnerId);
+        const result = await businessPartnersService.delete(confirmDialog.partnerId);
+        console.log('🗑️ [BusinessPartners] Resultado da exclusão:', result);
+
+        if (result.success) {
+          console.log('✅ [BusinessPartners] Exclusão bem-sucedida, recarregando lista...');
+          if (partner) {
+            await logDelete('businessPartner', confirmDialog.partnerId, partner, 1, 'Administrador');
+          }
+          await loadPartners();
+          setToast({ message: 'Parceiro de negócios excluído com sucesso!', type: 'success' });
+        } else {
+          console.error('❌ [BusinessPartners] Erro na exclusão:', result.error);
+          setToast({ message: result.error || 'Erro ao excluir parceiro', type: 'error' });
+        }
+      } catch (error) {
+        console.error('❌ [BusinessPartners] Exceção ao excluir:', error);
+        setToast({ message: 'Erro inesperado ao excluir parceiro', type: 'error' });
+      }
+    } else {
+      console.error('❌ [BusinessPartners] partnerId não encontrado no confirmDialog');
+    }
+    setConfirmDialog({ isOpen: false });
+  };
+
+  const handleSave = async (partnerData: any) => {
+    try {
+      console.log('💾 [BusinessPartners] handleSave chamado com dados:', partnerData);
+      console.log('💾 [BusinessPartners] Contatos recebidos:', partnerData.contacts);
+      console.log('💾 [BusinessPartners] Endereços recebidos:', partnerData.addresses);
+
+      const dataToSave = {
+        name: partnerData.name,
+        document: partnerData.document,
+        document_type: partnerData.documentType,
+        email: partnerData.email,
+        phone: partnerData.phone,
+        type: partnerData.type,
+        status: partnerData.status,
+        observations: partnerData.observations,
+        website: partnerData.website,
+        tax_regime: partnerData.taxRegime,
+        credit_limit: partnerData.creditLimit,
+        payment_terms: partnerData.paymentTerms,
+        notes: partnerData.notes,
+        contacts: partnerData.contacts?.map((c: any) => ({
+          name: c.name || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          position: c.position || '',
+          department: c.department || '',
+          is_primary: c.is_primary || false,
+          receive_email_notifications: c.receive_email_notifications ?? true,
+          receive_whatsapp_notifications: c.receive_whatsapp_notifications ?? true,
+          // Email notification preferences
+          email_notify_order_created: c.email_notify_order_created ?? false,
+          email_notify_order_invoiced: c.email_notify_order_invoiced ?? false,
+          email_notify_awaiting_pickup: c.email_notify_awaiting_pickup ?? false,
+          email_notify_picked_up: c.email_notify_picked_up ?? false,
+          email_notify_in_transit: c.email_notify_in_transit ?? false,
+          email_notify_out_for_delivery: c.email_notify_out_for_delivery ?? false,
+          email_notify_delivered: c.email_notify_delivered ?? false,
+          // WhatsApp notification preferences
+          whatsapp_notify_order_created: c.whatsapp_notify_order_created ?? false,
+          whatsapp_notify_order_invoiced: c.whatsapp_notify_order_invoiced ?? false,
+          whatsapp_notify_awaiting_pickup: c.whatsapp_notify_awaiting_pickup ?? false,
+          whatsapp_notify_picked_up: c.whatsapp_notify_picked_up ?? false,
+          whatsapp_notify_in_transit: c.whatsapp_notify_in_transit ?? false,
+          whatsapp_notify_out_for_delivery: c.whatsapp_notify_out_for_delivery ?? false,
+          whatsapp_notify_delivered: c.whatsapp_notify_delivered ?? false
+        })) || [],
+        addresses: partnerData.addresses?.filter((a: any) => {
+          // Filtrar apenas endereços que têm os campos mínimos preenchidos
+          return a.street && a.city && a.state && a.zip_code;
+        }).map((a: any) => ({
+          type: a.type || 'commercial',
+          street: a.street,
+          number: a.number || '',
+          complement: a.complement || '',
+          neighborhood: a.neighborhood || '',
+          city: a.city,
+          state: a.state,
+          zip_code: a.zip_code,
+          country: a.country || 'Brasil',
+          is_primary: a.is_primary || false
+        })) || []
+      };
+
+      console.log('💾 [BusinessPartners] Dados preparados para salvar:', dataToSave);
+      console.log('💾 [BusinessPartners] Contatos preparados:', dataToSave.contacts);
+      console.log('💾 [BusinessPartners] Endereços preparados:', dataToSave.addresses);
+
+      if (editingPartner?.id) {
+        const result = await businessPartnersService.update(editingPartner.id, dataToSave, 1);
+        if (result.success) {
+          const updated = await businessPartnersService.getById(editingPartner.id);
+          if (updated) {
+            await logUpdate('businessPartner', editingPartner.id, editingPartner, updated, 1, 'Administrador');
+          }
+          await loadPartners();
+          setToast({ message: 'Parceiro de negócios atualizado com sucesso!', type: 'success' });
+        } else {
+          setToast({ message: result.error || 'Erro ao atualizar parceiro', type: 'error' });
+          return;
+        }
+      } else {
+        const result = await businessPartnersService.create(dataToSave as any, 1);
+        if (result.success && result.id) {
+          const newPartner = await businessPartnersService.getById(result.id);
+          if (newPartner) {
+            await logCreate('businessPartner', result.id, newPartner, 1, 'Administrador');
+          }
+          await loadPartners();
+          setToast({ message: 'Parceiro de negócios criado com sucesso!', type: 'success' });
+        } else {
+          const errorMsg = result.error || 'Erro ao criar parceiro';
+          console.error('❌ [BusinessPartners] Erro ao criar parceiro:', errorMsg);
+          setToast({ message: errorMsg, type: 'error' });
+          return;
+        }
+      }
+      setShowForm(false);
+      setEditingPartner(null);
+    } catch (error: any) {
+      console.error('❌ [BusinessPartners] Exceção ao salvar parceiro:', error);
+      const errorMessage = error?.message || 'Erro inesperado ao salvar parceiro de negócios';
+      setToast({ message: errorMessage, type: 'error' });
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <Breadcrumbs items={breadcrumbItems} />
+      
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Parceiros de Negócios</h1>
+          <button
+            onClick={handleAdd}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Novo Parceiro
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+              </div>
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Clientes</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.clients}</p>
+              </div>
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Fornecedores</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.suppliers}</p>
+              </div>
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-purple-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ativos</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
+              </div>
+              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-emerald-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nome, documento ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos os tipos</option>
+                <option value="customer">Cliente</option>
+                <option value="supplier">Fornecedor</option>
+                <option value="both">Ambos</option>
+              </select>
+              
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos os status</option>
+                <option value="active">Ativo</option>
+                <option value="inactive">Inativo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                activeTab === 'list'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <List className="w-4 h-4" />
+              Lista
+            </button>
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                activeTab === 'map'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Map className="w-4 h-4" />
+              Mapa
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content - Lista */}
+        {activeTab === 'list' && (
+          <>
+            {loading ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Carregando parceiros...</p>
+          </div>
+        ) : filteredPartners.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentPartners.map((partner) => (
+                <BusinessPartnerCard
+                  key={partner.id}
+                  partner={partner}
+                  onView={() => handleView(partner)}
+                  onEdit={() => handleEdit(partner)}
+                  onDelete={() => handleDelete(partner.id)}
+                />
+              ))}
+            </div>
+
+            {/* Paginação */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Mostrando <span className="font-medium">{startIndex + 1}</span> até{' '}
+                  <span className="font-medium">{Math.min(endIndex, filteredPartners.length)}</span> de{' '}
+                  <span className="font-medium">{filteredPartners.length}</span> parceiros
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Mostrar apenas algumas páginas ao redor da atual
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`min-w-[40px] h-10 px-3 rounded-lg transition-colors ${
+                              currentPage === page
+                                ? 'bg-blue-600 text-white font-medium'
+                                : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      } else if (page === currentPage - 2 || page === currentPage + 2) {
+                        return (
+                          <span key={page} className="px-2 text-gray-400">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum parceiro encontrado</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              {searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
+                ? 'Tente ajustar os filtros de busca.'
+                : 'Comece adicionando seu primeiro parceiro de negócios.'}
+            </p>
+            {(!searchTerm && typeFilter === 'all' && statusFilter === 'all') && (
+              <button
+                onClick={handleAdd}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar Parceiro
+              </button>
+            )}
+          </div>
+        )}
+          </>
+        )}
+
+        {/* Tab Content - Mapa */}
+        {activeTab === 'map' && (
+          <BusinessPartnersMap
+            partners={filteredPartners}
+            onSelectPartner={handleView}
+          />
+        )}
+      </div>
+
+      {/* Modals */}
+      {showForm && (
+        <BusinessPartnerForm
+          partner={editingPartner}
+          onSave={handleSave}
+          onClose={() => {
+            setShowForm(false);
+            setEditingPartner(null);
+          }}
+        />
+      )}
+
+      {showView && selectedPartner && (
+        <BusinessPartnerView
+          partner={selectedPartner}
+          onEdit={() => {
+            setShowView(false);
+            handleEdit(selectedPartner);
+          }}
+          onClose={() => {
+            setShowView(false);
+            setSelectedPartner(null);
+          }}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog.isOpen && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title="Confirmar Exclusão"
+          message={`Tem certeza que deseja excluir ${confirmDialog.partnerName || 'este parceiro'}?\n\nEsta ação NÃO pode ser desfeita!`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          type="danger"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmDialog({ isOpen: false })}
+        />
+      )}
+    </div>
+  );
+};
+
+
+export { BusinessPartners };

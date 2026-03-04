@@ -1,0 +1,1297 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Search, MapPin, AlertCircle, Hash, Info, Eye, EyeOff, Mail, User, Shield, CheckCircle, Building, Camera, X, Globe } from 'lucide-react';
+import { User as UserType, usersService } from '../../services/usersService';
+import { fetchCityByZipCode } from '../../data/citiesData';
+import { establishmentsService, Establishment } from '../../services/establishmentsService';
+import { PermissionsTree } from './PermissionsTree';
+import { EstablishmentSelector } from './EstablishmentSelector';
+import { Toast, ToastType } from '../common/Toast';
+import { InlineMessage } from '../common/InlineMessage';
+
+interface UserFormProps {
+  onBack: () => void;
+  onSave: (user: any) => void;
+  user?: UserType;
+}
+
+export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
+  const [formData, setFormData] = useState({
+    codigo: user?.codigo || '',
+    nome: user?.nome || '',
+    email: user?.email || '',
+    senha: '',
+    confirmarSenha: '',
+    cpf: user?.cpf || '',
+    telefone: user?.telefone || '',
+    celular: user?.celular || '',
+    cargo: user?.cargo || '',
+    departamento: user?.departamento || '',
+    data_admissao: user?.data_admissao || new Date().toISOString().split('T')[0],
+    data_nascimento: user?.data_nascimento || '',
+    endereco: user?.endereco || '',
+    bairro: user?.bairro || '',
+    cep: user?.cep || '',
+    cidade: user?.cidade || '',
+    estado: user?.estado || '',
+    perfil: user?.perfil || 'operador',
+    permissoes: user?.permissoes || [],
+    estabelecimento_id: user?.estabelecimento_id?.toString() || '',
+    estabelecimentosPermitidos: user?.estabelecimentosPermitidos || [],
+    observacoes: user?.observacoes || '',
+    status: user?.status || 'ativo',
+    preferred_language: user?.preferred_language || 'pt'
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepError, setCepError] = useState('');
+  const [cepSuccess, setCepSuccess] = useState('');
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [activeTab, setActiveTab] = useState<'basic' | 'contact' | 'professional' | 'access' | 'address' | 'permissions' | 'establishments'>('basic');
+  const [showPermissionsConfig, setShowPermissionsConfig] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [establishments, setEstablishments] = useState<Establishment[]>([]);
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(user?.foto_perfil_url || null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  // Load establishments
+  useEffect(() => {
+    const loadEstablishments = async () => {
+      try {
+        const data = await establishmentsService.getAll();
+        setEstablishments(data);
+      } catch (error) {
+        console.error('Erro ao carregar estabelecimentos:', error);
+      }
+    };
+    loadEstablishments();
+  }, []);
+
+  // Auto-generate code for new users
+  useEffect(() => {
+    const loadNextCode = async () => {
+      if (!user && !formData.codigo) {
+        const nextCode = await usersService.getNextCode();
+        setFormData(prev => ({
+          ...prev,
+          codigo: nextCode
+        }));
+      }
+    };
+    loadNextCode();
+  }, [user]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setToast({ message: 'A foto deve ter no máximo 5MB.', type: 'error' });
+        return;
+      }
+
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setToast({ message: 'Formato inválido. Use JPG, PNG, GIF ou WebP.', type: 'error' });
+        return;
+      }
+
+      setProfilePhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (user?.id && user?.foto_perfil_url) {
+      setIsUploadingPhoto(true);
+      const success = await usersService.deleteProfilePhoto(user.id, user.foto_perfil_url);
+      setIsUploadingPhoto(false);
+
+      if (success) {
+        setProfilePhoto(null);
+        setProfilePhotoPreview(null);
+        setToast({ message: 'Foto removida com sucesso!', type: 'success' });
+      } else {
+        setToast({ message: 'Erro ao remover foto.', type: 'error' });
+      }
+    } else {
+      setProfilePhoto(null);
+      setProfilePhotoPreview(null);
+    }
+  };
+
+  // Show permissions config when perfil is personalizado
+  useEffect(() => {
+    if (formData.perfil === 'personalizado') {
+      setShowPermissionsConfig(true);
+    } else {
+      setShowPermissionsConfig(false);
+    }
+  }, [formData.perfil]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear specific field errors when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateField = (name: string, value: string) => {
+    let error = '';
+
+    switch (name) {
+      case 'codigo':
+        if (!value) {
+          error = 'Código é obrigatório';
+        } else if (!/^\d{4}$/.test(value)) {
+          error = 'Código deve ter exatamente 4 dígitos numéricos (ex: 0001)';
+        } else if (value === '0000') {
+          error = 'Código 0000 não é permitido. O código deve iniciar em 0001';
+        }
+        break;
+      case 'nome':
+        if (!value || value.trim() === '') {
+          error = 'Nome é obrigatório';
+        }
+        break;
+      case 'email':
+        if (!value) {
+          error = 'Email é obrigatório';
+        } else if (!usersService.isValidEmail(value)) {
+          error = 'Email deve ter um formato válido';
+        }
+        break;
+      case 'cpf':
+        if (!value) {
+          error = 'CPF é obrigatório';
+        } else if (!usersService.isValidCPF(value)) {
+          error = 'CPF deve ter um formato válido';
+        }
+        break;
+      case 'cargo':
+        if (!value || value.trim() === '') {
+          error = 'Cargo é obrigatório';
+        }
+        break;
+      case 'departamento':
+        if (!value || value.trim() === '') {
+          error = 'Departamento é obrigatório';
+        }
+        break;
+      case 'perfil':
+        if (!value) {
+          error = 'Perfil é obrigatório';
+        }
+        break;
+      case 'senha':
+        if (!user && !value) {
+          error = 'Senha é obrigatória para novos usuários';
+        } else if (value && value.length < 6) {
+          error = 'Senha deve ter pelo menos 6 caracteres';
+        }
+        break;
+      case 'confirmarSenha':
+        if (formData.senha && value !== formData.senha) {
+          error = 'Confirmação de senha não confere';
+        }
+        break;
+    }
+
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+
+    return !error;
+  };
+
+  const formatCPF = (value: string) => {
+    const numeric = value.replace(/\D/g, '');
+    if (numeric.length <= 3) {
+      return numeric;
+    } else if (numeric.length <= 6) {
+      return `${numeric.slice(0, 3)}.${numeric.slice(3)}`;
+    } else if (numeric.length <= 9) {
+      return `${numeric.slice(0, 3)}.${numeric.slice(3, 6)}.${numeric.slice(6)}`;
+    } else {
+      return `${numeric.slice(0, 3)}.${numeric.slice(3, 6)}.${numeric.slice(6, 9)}-${numeric.slice(9, 11)}`;
+    }
+  };
+
+  const formatPhone = (value: string) => {
+    const numeric = value.replace(/\D/g, '');
+    if (numeric.length <= 2) {
+      return numeric;
+    } else if (numeric.length <= 6) {
+      return `(${numeric.slice(0, 2)}) ${numeric.slice(2)}`;
+    } else if (numeric.length <= 10) {
+      return `(${numeric.slice(0, 2)}) ${numeric.slice(2, 6)}-${numeric.slice(6)}`;
+    } else {
+      return `(${numeric.slice(0, 2)}) ${numeric.slice(2, 7)}-${numeric.slice(7, 11)}`;
+    }
+  };
+
+  const formatCEP = (value: string) => {
+    const numeric = value.replace(/\D/g, '');
+    if (numeric.length <= 5) {
+      return numeric;
+    } else {
+      return `${numeric.slice(0, 5)}-${numeric.slice(5, 8)}`;
+    }
+  };
+
+  const formatCode = (value: string) => {
+    const numeric = value.replace(/\D/g, '').slice(0, 4);
+    return numeric.padStart(4, '0');
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCode(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      codigo: formatted
+    }));
+    validateField('codigo', formatted);
+  };
+
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCPF(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      cpf: formatted
+    }));
+    validateField('cpf', formatted);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const formatted = formatPhone(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      [field]: formatted
+    }));
+  };
+
+  const handleCEPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCEP(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      cep: formatted
+    }));
+    setCepError('');
+    setCepSuccess('');
+  };
+
+  const searchCEP = async () => {
+    if (!formData.cep || formData.cep.length < 9) {
+      setCepError('CEP deve ter 8 dígitos');
+      return;
+    }
+
+    setIsSearchingCep(true);
+    setCepError('');
+    setCepSuccess('');
+
+    try {
+      const city = await fetchCityByZipCode(formData.cep.replace(/\D/g, ''));
+      
+      if (city) {
+        setFormData(prev => ({
+          ...prev,
+          cidade: city.name,
+          estado: city.stateAbbreviation,
+          bairro: city.neighborhood || prev.bairro
+        }));
+        setCepSuccess(`Endereço encontrado: ${city.name} - ${city.stateAbbreviation}${city.neighborhood ? ` - ${city.neighborhood}` : ''}`);
+      } else {
+        setCepError('CEP não encontrado. Verifique o número informado.');
+      }
+    } catch (error) {
+      setCepError('Erro ao buscar CEP. Tente novamente.');
+    } finally {
+      setIsSearchingCep(false);
+    }
+  };
+
+  // Auto-search CEP when it's complete
+  useEffect(() => {
+    if (formData.cep.length === 9) {
+      const timer = setTimeout(() => {
+        searchCEP();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.cep]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('📝 handleSubmit - Form submetido');
+
+    // Validate all required fields
+    const requiredFields = ['codigo', 'nome', 'email', 'cpf', 'cargo', 'departamento', 'perfil'];
+    if (!user) requiredFields.push('senha', 'confirmarSenha');
+
+    let hasErrors = false;
+    requiredFields.forEach(field => {
+      if (!validateField(field, formData[field as keyof typeof formData] as string)) {
+        console.error(`❌ Campo inválido: ${field}`);
+        hasErrors = true;
+      }
+    });
+
+    if (hasErrors) {
+      console.warn('⚠️ Validação falhou - campos obrigatórios com erro');
+      setToast({ message: 'Por favor, corrija os erros antes de continuar.', type: 'warning' });
+      return;
+    }
+
+    console.log('✅ Validação de campos passou');
+
+    // Validate permissions for personalizado profile
+    if (formData.perfil === 'personalizado' && (!formData.permissoes || formData.permissoes.length === 0)) {
+      console.warn('⚠️ Perfil personalizado sem permissões');
+      setToast({ message: 'Por favor, selecione pelo menos uma permissão para o perfil personalizado.', type: 'warning' });
+      return;
+    }
+
+    // Validate establishments if any are selected
+    if (formData.estabelecimentosPermitidos.length > 0 && !formData.estabelecimento_id) {
+      // If user has establishments permissions but no default establishment,
+      // set the first permitted establishment as default
+      setFormData(prev => ({
+        ...prev,
+        estabelecimento_id: prev.estabelecimentosPermitidos[0].toString()
+      }));
+    }
+
+    // Prepare data for saving
+    const userData = {
+      ...formData,
+      estabelecimento_id: formData.estabelecimento_id && formData.estabelecimento_id.trim() !== '' ? formData.estabelecimento_id : undefined,
+      estabelecimentosPermitidos: formData.estabelecimentosPermitidos,
+      criadoPor: 1,
+      alteradoPor: user ? 1 : undefined
+    };
+
+    console.log('💾 Salvando usuário com estabelecimentos permitidos:', userData.estabelecimentosPermitidos);
+
+    // Remove password confirmation from data
+    const { confirmarSenha, ...finalData } = userData;
+
+    // Convert empty strings to undefined for optional fields
+    if (!finalData.data_nascimento || finalData.data_nascimento === '') {
+      finalData.data_nascimento = undefined;
+    }
+    if (!finalData.telefone || finalData.telefone === '') {
+      finalData.telefone = undefined;
+    }
+    if (!finalData.celular || finalData.celular === '') {
+      finalData.celular = undefined;
+    }
+    if (!finalData.endereco || finalData.endereco === '') {
+      finalData.endereco = undefined;
+    }
+    if (!finalData.bairro || finalData.bairro === '') {
+      finalData.bairro = undefined;
+    }
+    if (!finalData.cep || finalData.cep === '') {
+      finalData.cep = undefined;
+    }
+    if (!finalData.cidade || finalData.cidade === '') {
+      finalData.cidade = undefined;
+    }
+    if (!finalData.estado || finalData.estado === '') {
+      finalData.estado = undefined;
+    }
+    if (!finalData.observacoes || finalData.observacoes === '') {
+      finalData.observacoes = undefined;
+    }
+
+    // Only include password if it was filled
+    if (user && !finalData.senha) {
+      delete finalData.senha;
+    } else if (user && finalData.senha) {
+      // Password was filled, keep it to update
+      // The service will handle the update
+    }
+
+    // Remove permissions if not personalizado
+    if (finalData.perfil !== 'personalizado') {
+      delete finalData.permissoes;
+    }
+
+    // Pass profile photo to be uploaded after save
+    const dataToSave = {
+      ...finalData,
+      _profilePhoto: profilePhoto // Temporary field to pass the photo file
+    };
+
+    console.log('💾 Chamando onSave com dados finais:', dataToSave);
+    onSave(dataToSave);
+  };
+
+  const generateNewCode = async () => {
+    const nextCode = await usersService.getNextCode();
+    setFormData(prev => ({
+      ...prev,
+      codigo: nextCode
+    }));
+    setErrors(prev => ({
+      ...prev,
+      codigo: ''
+    }));
+  };
+
+  const handlePermissionsChange = (permissions: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      permissoes: permissions
+    }));
+  };
+
+  const handleEstablishmentsChange = (establishmentCodes: string[]) => {
+    console.log('🏢 Estabelecimentos alterados:', establishmentCodes);
+    setFormData(prev => ({
+      ...prev,
+      estabelecimentosPermitidos: establishmentCodes
+    }));
+  };
+
+  const isProtectedUser = user?.id === 1;
+
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={onBack}
+          className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
+        >
+          <ArrowLeft size={20} />
+          <span>Voltar para Usuários</span>
+        </button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {user ? 'Editar Usuário' : 'Novo Usuário'}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">Preencha os dados do usuário</p>
+        
+        {isProtectedUser && (
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <AlertCircle size={16} className="text-yellow-600 mt-0.5" />
+              <div>
+                <p className="text-sm text-yellow-800 font-medium">Usuário Protegido</p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Este é o usuário administrador principal (admin@tmsgestor.com). Algumas alterações podem ser restritas para manter a segurança do sistema.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('basic')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'basic'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <User size={16} />
+                <span>Informações Básicas</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('contact')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'contact'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Mail size={16} />
+                <span>Contato</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('professional')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'professional'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Building size={16} />
+                <span>Profissional</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('access')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'access'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Shield size={16} />
+                <span>Acesso</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('establishments')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'establishments'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Building size={16} />
+                <span>Estabelecimentos</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('address')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'address'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <MapPin size={16} />
+                <span>Endereço</span>
+              </div>
+            </button>
+            {formData.perfil === 'personalizado' && (
+              <button
+                onClick={() => setActiveTab('permissions')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeTab === 'permissions'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <CheckCircle size={16} />
+                  <span>Permissões</span>
+                </div>
+              </button>
+            )}
+          </nav>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {activeTab === 'basic' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+
+            {/* Foto de Perfil */}
+            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Foto de Perfil
+              </label>
+              <div className="flex items-center space-x-6">
+                <div className="relative">
+                  {profilePhotoPreview ? (
+                    <img
+                      src={profilePhotoPreview}
+                      alt="Foto de perfil"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700">
+                      <span className="text-3xl font-semibold text-white">
+                        {formData.nome?.split(' ').map(n => n[0]).join('').substring(0, 2) || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                        disabled={isUploadingPhoto}
+                      />
+                      <div className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        <Camera size={18} />
+                        <span>Escolher Foto</span>
+                      </div>
+                    </label>
+                    {profilePhotoPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        disabled={isUploadingPhoto}
+                        className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <X size={18} />
+                        <span>Remover</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    JPG, PNG, GIF ou WebP. Máximo 5MB.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Código do Usuário *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="codigo"
+                    value={formData.codigo}
+                    readOnly
+                    disabled
+                    required
+                    maxLength={4}
+                    className="w-full px-3 py-2 pr-10 border rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed border-gray-300"
+                    placeholder="0001"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <Hash size={18} />
+                  </div>
+                </div>
+
+                {errors.codigo && (
+                  <div className="mt-2">
+                    <InlineMessage type="error" message={errors.codigo} />
+                  </div>
+                )}
+
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <Info size={16} className="text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">Código Gerado Automaticamente</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                        Os códigos são gerados automaticamente de forma sequencial, iniciando em 0001.
+                        Este campo não pode ser editado manualmente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nome Completo *
+                </label>
+                <input
+                  type="text"
+                  name="nome"
+                  value={formData.nome}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Digite o nome completo"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={(e) => validateField('email', e.target.value)}
+                  required
+                  disabled={isProtectedUser}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  } ${isProtectedUser ? 'bg-gray-100' : ''}`}
+                  placeholder="usuario@tmsgestor.com"
+                />
+                
+                {errors.email && (
+                  <div className="mt-2">
+                    <InlineMessage type="error" message={errors.email} />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  CPF *
+                </label>
+                <input
+                  type="text"
+                  name="cpf"
+                  value={formData.cpf}
+                  onChange={handleCPFChange}
+                  onBlur={(e) => validateField('cpf', e.target.value)}
+                  required
+                  maxLength={14}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.cpf ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="000.000.000-00"
+                />
+                
+                {errors.cpf && (
+                  <div className="mt-2">
+                    <InlineMessage type="error" message={errors.cpf} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'contact' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Contato</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Telefone
+                </label>
+                <input
+                  type="text"
+                  name="telefone"
+                  value={formData.telefone}
+                  onChange={(e) => handlePhoneChange(e, 'telefone')}
+                  maxLength={15}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="(11) 3333-4444"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Celular
+                </label>
+                <input
+                  type="text"
+                  name="celular"
+                  value={formData.celular}
+                  onChange={(e) => handlePhoneChange(e, 'celular')}
+                  maxLength={15}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Data de Nascimento
+                </label>
+                <input
+                  type="date"
+                  name="data_nascimento"
+                  value={formData.data_nascimento}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'professional' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Profissionais</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Cargo *
+                </label>
+                <input
+                  type="text"
+                  name="cargo"
+                  value={formData.cargo}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Analista de Sistemas"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Departamento *
+                </label>
+                <select
+                  name="departamento"
+                  value={formData.departamento}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Selecione o departamento</option>
+                  <option value="TI">TI</option>
+                  <option value="Operações">Operações</option>
+                  <option value="Logística">Logística</option>
+                  <option value="Transportes">Transportes</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="Financeiro">Financeiro</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Manutenção">Manutenção</option>
+                  <option value="RH">Recursos Humanos</option>
+                  <option value="Jurídico">Jurídico</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Data de Admissão *
+                </label>
+                <input
+                  type="date"
+                  name="data_admissao"
+                  value={formData.data_admissao}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Estabelecimento Principal
+                </label>
+                <select
+                  name="estabelecimento_id"
+                  value={formData.estabelecimento_id}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Selecione o estabelecimento</option>
+                  {establishments
+                    .filter(e => formData.estabelecimentosPermitidos.length === 0 || 
+                                formData.estabelecimentosPermitidos.includes(e.id))
+                    .map(establishment => (
+                      <option key={establishment.id} value={establishment.id}>
+                        {establishment.codigo} - {establishment.fantasia || establishment.razao_social}
+                      </option>
+                    ))
+                  }
+                </select>
+                {formData.estabelecimentosPermitidos.length > 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Apenas estabelecimentos permitidos são exibidos nesta lista.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Observations */}
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Observações Gerais
+              </label>
+              <textarea
+                name="observacoes"
+                value={formData.observacoes}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Informações adicionais sobre o usuário..."
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'access' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Controle de Acesso</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Perfil de Acesso *
+                </label>
+                <select
+                  name="perfil"
+                  value={formData.perfil}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isProtectedUser}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isProtectedUser ? 'bg-gray-100' : ''
+                  }`}
+                >
+                  <option value="administrador">Administrador</option>
+                  <option value="gerente">Gerente</option>
+                  <option value="operador">Operador</option>
+                  <option value="visualizador">Visualizador</option>
+                  <option value="personalizado">Personalizado</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isProtectedUser}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isProtectedUser ? 'bg-gray-100' : ''
+                  }`}
+                >
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                  <option value="bloqueado">Bloqueado</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2">
+                  <Globe size={16} />
+                  <span>Idioma Preferido</span>
+                </label>
+                <select
+                  name="preferred_language"
+                  value={formData.preferred_language}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="pt">🇧🇷 Português (Brasil)</option>
+                  <option value="en">🇺🇸 English (United States)</option>
+                  <option value="es">🇪🇸 Español (España)</option>
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {user ?
+                    'Ao salvar, o idioma selecionado será aplicado imediatamente em todo o sistema (menu, telas, botões, etc.)' :
+                    'Este idioma será usado para exibir o sistema para este usuário.'
+                  }
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {user ? 'Nova Senha' : 'Senha *'}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="senha"
+                    value={formData.senha}
+                    onChange={handleInputChange}
+                    onBlur={(e) => validateField('senha', e.target.value)}
+                    required={!user}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.senha ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder={user ? "Deixe em branco para manter a senha atual" : "Digite a senha"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                
+                {errors.senha && (
+                  <div className="mt-2">
+                    <InlineMessage type="error" message={errors.senha} />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {user ? 'Confirmar Nova Senha' : 'Confirmar Senha *'}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmarSenha"
+                    value={formData.confirmarSenha}
+                    onChange={handleInputChange}
+                    onBlur={(e) => validateField('confirmarSenha', e.target.value)}
+                    required={!user || !!formData.senha}
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.confirmarSenha ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Confirme a senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                
+                {errors.confirmarSenha && (
+                  <div className="mt-2">
+                    <InlineMessage type="error" message={errors.confirmarSenha} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Access Level Info */}
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Info size={16} className="text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-sm text-blue-800 font-medium">Níveis de Acesso</p>
+                  <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                    <li>• <strong>Administrador:</strong> Acesso total ao sistema</li>
+                    <li>• <strong>Gerente:</strong> Acesso a relatórios e gestão de operações</li>
+                    <li>• <strong>Operador:</strong> Acesso às funcionalidades operacionais</li>
+                    <li>• <strong>Visualizador:</strong> Acesso apenas para consulta</li>
+                    <li>• <strong>Personalizado:</strong> Acesso customizado por funcionalidade</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Permissions Configuration Notice */}
+            {formData.perfil === 'personalizado' && (
+              <div className="mt-4 p-4 bg-green-50 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <CheckCircle size={16} className="text-green-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-green-800 font-medium">Configuração de Permissões Personalizadas</p>
+                    <p className="text-xs text-green-700 mt-1">
+                      Você selecionou o perfil "Personalizado". Acesse a aba "Permissões" para configurar as permissões de acesso específicas para este usuário.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'establishments' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Estabelecimentos do Usuário</h2>
+            
+            <EstablishmentSelector 
+              selectedEstablishments={formData.estabelecimentosPermitidos}
+              onChange={handleEstablishmentsChange}
+            />
+          </div>
+        )}
+
+        {activeTab === 'address' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Endereço (opcional)</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* CEP - Primeiro campo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  CEP
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="cep"
+                    value={formData.cep}
+                    onChange={handleCEPChange}
+                    maxLength={9}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="00000-000"
+                  />
+                  <button
+                    type="button"
+                    onClick={searchCEP}
+                    disabled={isSearchingCep || formData.cep.length < 9}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 disabled:text-gray-400 transition-colors"
+                    title="Buscar CEP"
+                  >
+                    {isSearchingCep ? (
+                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Search size={18} />
+                    )}
+                  </button>
+                </div>
+
+                {/* CEP Messages */}
+                {cepError && (
+                  <div className="mt-2">
+                    <InlineMessage type="error" message={cepError} />
+                  </div>
+                )}
+
+                {cepSuccess && (
+                  <div className="mt-2">
+                    <InlineMessage type="success" message={cepSuccess} />
+                  </div>
+                )}
+              </div>
+
+              {/* Cidade - Somente leitura */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Cidade
+                </label>
+                <input
+                  type="text"
+                  name="cidade"
+                  value={formData.cidade}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                  placeholder="Preenchido automaticamente pelo CEP"
+                />
+              </div>
+
+              {/* Estado - Somente leitura */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Estado (UF)
+                </label>
+                <input
+                  type="text"
+                  name="estado"
+                  value={formData.estado}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                  placeholder="UF"
+                />
+              </div>
+
+              {/* Bairro */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bairro
+                </label>
+                <input
+                  type="text"
+                  name="bairro"
+                  value={formData.bairro}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Digite o bairro"
+                />
+              </div>
+
+              {/* Endereço/Logradouro - Ocupa toda a linha */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Logradouro (Rua, Avenida, etc.)
+                </label>
+                <input
+                  type="text"
+                  name="endereco"
+                  value={formData.endereco}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  placeholder="Ex: Rua das Flores, Avenida Paulista"
+                />
+              </div>
+            </div>
+
+            {/* Informativo */}
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Info size={16} className="text-blue-600 dark:text-blue-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">Busca Automática por CEP</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                    Informe o CEP para preencher automaticamente cidade, estado e bairro.
+                    Os campos cidade e estado não podem ser editados manualmente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'permissions' && formData.perfil === 'personalizado' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuração de Permissões</h2>
+            
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Info size={16} className="text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-sm text-blue-800 font-medium">Permissões Personalizadas</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Selecione as opções de menu que este usuário terá acesso. Marque ou desmarque as caixas de seleção para configurar as permissões.
+                    Quando um menu pai é selecionado, todos os seus submenus são automaticamente incluídos.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <PermissionsTree 
+              selectedPermissions={formData.permissoes || []}
+              onChange={handlePermissionsChange}
+            />
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center justify-end space-x-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {user ? 'Atualizar' : 'Salvar'} Usuário
+          </button>
+        </div>
+      </form>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </div>
+  );
+};
