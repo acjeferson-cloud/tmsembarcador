@@ -23,8 +23,6 @@ interface CreateHistoryParams {
 export const innovationsHistoryService = {
   async createHistoryEntry(params: CreateHistoryParams): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('💾 innovationsHistoryService.createHistoryEntry chamado com:', params);
-
       const { data, error } = await supabase
         .from('innovations_history')
         .insert({
@@ -36,18 +34,11 @@ export const innovationsHistoryService = {
           establishment_code: params.establishment_code,
         })
         .select();
-
-      console.log('💾 Resposta do Supabase:', { data, error });
-
       if (error) {
-        console.error('❌ Error creating history entry:', error);
         return { success: false, error: error.message };
       }
-
-      console.log('✅ Histórico salvo com sucesso!', data);
       return { success: true };
     } catch (error: any) {
-      console.error('❌ Exception creating history entry:', error);
       return { success: false, error: error.message };
     }
   },
@@ -88,13 +79,11 @@ export const innovationsHistoryService = {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching history:', error);
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error fetching history:', error);
       return [];
     }
   },
@@ -117,24 +106,17 @@ export const innovationsHistoryService = {
 
   async getRecentHistory(limit: number = 50): Promise<InnovationHistoryEntry[]> {
     try {
-      console.log('🔍 Buscando histórico recente, limit:', limit);
-
       const { data, error } = await supabase
         .from('innovations_history')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
-
-      console.log('🔍 Resposta do Supabase:', { data, error, count: data?.length });
-
       if (error) {
-        console.error('❌ Error fetching recent history:', error);
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('❌ Exception fetching recent history:', error);
       return [];
     }
   }

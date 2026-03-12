@@ -90,7 +90,6 @@ function getUserOrganization(): { organizationId: string; environmentId: string 
     }
 
     if (!orgId || !envId) {
-      console.error('❌ [whatsappService] Contexto org/env não encontrado');
       return null;
     }
 
@@ -99,7 +98,6 @@ function getUserOrganization(): { organizationId: string; environmentId: string 
       environmentId: envId
     };
   } catch (error) {
-    console.error('❌ [whatsappService] Erro ao obter contexto:', error);
     return null;
   }
 }
@@ -109,25 +107,18 @@ class WhatsAppService {
 
   async getActiveConfig(): Promise<WhatsAppConfig | null> {
     try {
-      console.log('💬 [WHATSAPP] Loading config...');
-
       const userOrg = getUserOrganization();
       if (!userOrg) {
-        console.error('❌ [WHATSAPP] No user org');
         return null;
       }
 
       const { organizationId, environmentId } = userOrg;
 
       // CRÍTICO: Configurar contexto ANTES de buscar dados
-      console.log('🔐 [WHATSAPP] Configurando contexto de sessão...');
       const contextResult = await setSessionContext(organizationId, environmentId);
       if (!contextResult.success) {
-        console.error('❌ [WHATSAPP] Erro ao configurar contexto:', contextResult.error);
         return null;
       }
-      console.log('✅ [WHATSAPP] Contexto de sessão configurado');
-
       const { data, error } = await supabase
         .from('whatsapp_config')
         .select('*')
@@ -138,14 +129,10 @@ class WhatsAppService {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [WHATSAPP] Error:', error);
         throw error;
       }
-
-      console.log('✅ [WHATSAPP] Config:', data ? 'Found' : 'Not found');
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configuração do WhatsApp:', error);
       return null;
     }
   }
@@ -161,14 +148,10 @@ class WhatsAppService {
 
       // CRÍTICO: Configurar o contexto de sessão ANTES de salvar
       // Isso garante que as políticas RLS funcionem corretamente
-      console.log('🔐 [whatsappService] Configurando contexto de sessão...');
       const contextResult = await setSessionContext(organizationId, environmentId);
       if (!contextResult.success) {
-        console.error('❌ [whatsappService] Erro ao configurar contexto:', contextResult.error);
         throw new Error('Erro ao configurar contexto de sessão: ' + contextResult.error);
       }
-      console.log('✅ [whatsappService] Contexto de sessão configurado');
-
       const existingConfigResult = await supabase
         .from('whatsapp_config')
         .select('id')
@@ -177,19 +160,6 @@ class WhatsAppService {
         .maybeSingle();
 
       const existingId = existingConfigResult?.data?.id;
-
-      console.log('💾 [whatsappService] Salvando configuração do WhatsApp...');
-      console.log('💾 [whatsappService] Dados a salvar:', {
-        access_token: config.access_token ? '***' : undefined,
-        phone_number_id: config.phone_number_id,
-        business_account_id: config.business_account_id,
-        webhook_verify_token: config.webhook_verify_token ? '***' : undefined,
-        is_active: true,
-        created_by: config.created_by,
-        organization_id: organizationId,
-        environment_id: environmentId
-      });
-
       const savePayload: any = {
         access_token: config.access_token,
         phone_number_id: config.phone_number_id,
@@ -218,7 +188,6 @@ class WhatsAppService {
           .insert(savePayload);
         
         if (error && error.code === '23505') {
-          console.log('⚠️ [whatsappService] Conflito de chave única detectado. Realizando UPDATE fallback...');
           const { error: updateError } = await supabase
             .from('whatsapp_config')
             .update(savePayload)
@@ -231,19 +200,10 @@ class WhatsAppService {
       }
 
       if (saveError) {
-        console.error('❌ [whatsappService] Erro ao salvar configuração');
-        console.error('❌ [whatsappService] Error code:', saveError.code);
-        console.error('❌ [whatsappService] Error message:', saveError.message);
-        console.error('❌ [whatsappService] Error details:', saveError.details);
-        console.error('❌ [whatsappService] Error hint:', saveError.hint);
-        console.error('❌ [whatsappService] Full error:', JSON.stringify(saveError, null, 2));
         throw saveError;
       }
-
-      console.log('✅ [whatsappService] Configuração salva com sucesso');
       return { success: true };
     } catch (error) {
-      console.error('❌ [whatsappService] Erro geral ao salvar configuração:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       return { success: false, error: `Erro ao salvar configuração do WhatsApp: ${errorMessage}` };
     }
@@ -262,7 +222,6 @@ class WhatsAppService {
         })
         .eq('id', configId);
     } catch (error) {
-      console.error('Erro ao atualizar status de teste:', error);
     }
   }
 
@@ -289,8 +248,6 @@ class WhatsAppService {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao testar conexão:', error);
-
       if (config.id) {
         await this.updateConfigTestStatus(config.id, 'failed');
       }
@@ -443,13 +400,10 @@ class WhatsAppService {
           template_name: params.templateName
         });
       } catch (transactionError) {
-        console.error('Erro ao registrar transação:', transactionError);
       }
 
       return { success: true, messageId };
     } catch (error: any) {
-      console.error('Erro ao enviar mensagem WhatsApp:', error);
-
       await this.logMessage({
         order_id: params.orderId,
         recipient_name: params.recipientName,
@@ -510,13 +464,11 @@ class WhatsAppService {
         .single();
 
       if (error) {
-        console.error('Erro ao registrar log de mensagem:', error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao registrar log de mensagem:', error);
       return null;
     }
   }
@@ -547,7 +499,6 @@ class WhatsAppService {
       // CRÍTICO: Configurar contexto ANTES de buscar dados
       const contextResult = await setSessionContext(organizationId, environmentId);
       if (!contextResult.success) {
-        console.error('❌ [WHATSAPP] Erro ao configurar contexto:', contextResult.error);
         return [];
       }
 
@@ -566,7 +517,6 @@ class WhatsAppService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs de mensagens:', error);
       return [];
     }
   }
@@ -583,7 +533,6 @@ class WhatsAppService {
       // CRÍTICO: Configurar contexto ANTES de buscar dados
       const contextResult = await setSessionContext(organizationId, environmentId);
       if (!contextResult.success) {
-        console.error('❌ [WHATSAPP] Erro ao configurar contexto:', contextResult.error);
         return [];
       }
 
@@ -611,7 +560,6 @@ class WhatsAppService {
 
       return templates;
     } catch (error) {
-      console.error('Erro ao buscar templates:', error);
       return [];
     }
   }
@@ -628,7 +576,6 @@ class WhatsAppService {
       // CRÍTICO: Configurar contexto ANTES de buscar dados
       const contextResult = await setSessionContext(organizationId, environmentId);
       if (!contextResult.success) {
-        console.error('❌ [WHATSAPP] Erro ao configurar contexto:', contextResult.error);
         return [];
       }
 
@@ -653,7 +600,6 @@ class WhatsAppService {
 
       return templates;
     } catch (error) {
-      console.error('Erro ao buscar todos os templates:', error);
       return [];
     }
   }
@@ -717,7 +663,6 @@ class WhatsAppService {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao salvar template:', error);
       return {
         success: false,
         error: error.message || 'Erro ao salvar template'
@@ -735,7 +680,6 @@ class WhatsAppService {
       if (error) throw error;
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao deletar template:', error);
       return {
         success: false,
         error: error.message || 'Erro ao deletar template'

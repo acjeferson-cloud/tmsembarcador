@@ -7,13 +7,10 @@ const cleanZipCode = (zip: string): string => {
 
 export async function importAcreCities() {
   if (!supabase) {
-    console.error('Supabase client not available');
     return { success: false, error: 'Supabase client not available' };
   }
 
   try {
-    console.log('Starting import of Acre cities and ZIP code ranges...');
-
     for (const city of acreCities) {
       const { id, zipCodeRanges, ...cityData } = city;
 
@@ -24,14 +21,12 @@ export async function importAcreCities() {
         .maybeSingle();
 
       if (checkError) {
-        console.error(`Error checking city ${cityData.name}:`, checkError);
         continue;
       }
 
       let cityId: string;
 
       if (existingCity) {
-        console.log(`City ${cityData.name} already exists, updating...`);
         const { data: updatedCity, error: updateError } = await supabase
           .from('cities')
           .update({
@@ -49,13 +44,11 @@ export async function importAcreCities() {
           .single();
 
         if (updateError) {
-          console.error(`Error updating city ${cityData.name}:`, updateError);
           continue;
         }
 
         cityId = updatedCity.id;
       } else {
-        console.log(`Inserting new city ${cityData.name}...`);
         const { data: newCity, error: insertError } = await supabase
           .from('cities')
           .insert({
@@ -72,7 +65,6 @@ export async function importAcreCities() {
           .single();
 
         if (insertError) {
-          console.error(`Error inserting city ${cityData.name}:`, insertError);
           continue;
         }
 
@@ -86,7 +78,6 @@ export async function importAcreCities() {
           .eq('city_id', cityId);
 
         if (deleteError) {
-          console.error(`Error deleting old zip ranges for ${cityData.name}:`, deleteError);
           continue;
         }
 
@@ -103,20 +94,13 @@ export async function importAcreCities() {
           .insert(zipRangesToInsert);
 
         if (rangeError) {
-          console.error(`Error inserting zip ranges for ${cityData.name}:`, rangeError);
           continue;
         }
-
-        console.log(`✓ Imported ${cityData.name} with ${zipCodeRanges.length} ZIP code ranges`);
       } else {
-        console.log(`✓ Imported ${cityData.name} (no ZIP ranges)`);
       }
     }
-
-    console.log('✓ Import completed successfully!');
     return { success: true, message: `Imported ${acreCities.length} cities from Acre` };
   } catch (error) {
-    console.error('Error during import:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

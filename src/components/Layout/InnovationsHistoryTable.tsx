@@ -8,8 +8,6 @@ interface InnovationsHistoryTableProps {
 }
 
 export const InnovationsHistoryTable: React.FC<InnovationsHistoryTableProps> = ({ history, loading }) => {
-  console.log('🔍 InnovationsHistoryTable renderizando:', { loading, historyCount: history.length, history });
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('pt-BR', {
@@ -39,7 +37,6 @@ export const InnovationsHistoryTable: React.FC<InnovationsHistoryTableProps> = (
   };
 
   if (loading) {
-    console.log('⏳ Loading state...');
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -48,7 +45,6 @@ export const InnovationsHistoryTable: React.FC<InnovationsHistoryTableProps> = (
   }
 
   if (history.length === 0) {
-    console.log('📭 Empty state...');
     return (
       <div className="text-center py-12">
         <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -56,9 +52,6 @@ export const InnovationsHistoryTable: React.FC<InnovationsHistoryTableProps> = (
       </div>
     );
   }
-
-  console.log('✅ Renderizando tabela com', history.length, 'registros');
-
   return (
     <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
       <table className="w-full">

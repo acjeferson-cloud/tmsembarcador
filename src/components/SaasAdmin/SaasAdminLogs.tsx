@@ -19,7 +19,6 @@ export function SaasAdminLogs() {
       const data = await saasAdminLogsService.getLogs({ limit: 100 });
       setLogs(data);
     } catch (error) {
-      console.error('Erro ao carregar logs:', error);
     } finally {
       setLoading(false);
     }

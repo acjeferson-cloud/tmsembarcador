@@ -56,13 +56,10 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
         if (contextData?.success && !error) {
           const numericId = parseInt(contextData.codigo) || 1;
           setUserNumericId(numericId);
-          console.log('👤 User numeric ID:', numericId, 'from codigo:', contextData.codigo);
         } else {
-          console.error('❌ Error fetching user context:', error || contextData?.error);
           setUserNumericId(1);
         }
       } catch (error) {
-        console.error('❌ Error loading user ID:', error);
         setUserNumericId(1);
       }
     };
@@ -83,14 +80,11 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   }, [isOpen, userNumericId]);
 
   const loadHistory = async () => {
-    console.log('🔄 Carregando histórico...');
     setLoadingHistory(true);
     try {
       const data = await innovationsHistoryService.getRecentHistory(100);
-      console.log('📊 Histórico carregado:', data.length, 'registros', data);
       setHistory(data);
     } catch (error) {
-      console.error('❌ Error loading history:', error);
     } finally {
       setLoadingHistory(false);
     }
@@ -107,11 +101,9 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   }, [autoPlayEnabled, innovations.length]);
 
   const loadInnovations = async () => {
-    console.log('🚀 InnovationsModal: Loading innovations...');
     setIsLoading(true);
     try {
       const data = await fetchInnovations();
-      console.log('📥 InnovationsModal: Received data:', data);
       setInnovations(data);
 
       const activatedSet = new Set<string>();
@@ -122,9 +114,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
         }
       }
       setActivatedInnovations(activatedSet);
-      console.log('✅ InnovationsModal: Loading complete. Total:', data.length);
     } catch (error) {
-      console.error('❌ InnovationsModal: Error loading innovations:', error);
     } finally {
       setIsLoading(false);
     }
@@ -164,15 +154,6 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
 
         const innovation = innovations.find(i => i.id === innovationId);
         if (innovation) {
-          console.log('📝 Salvando histórico de ativação:', {
-            innovation_id: innovationId,
-            innovation_name: innovation.name,
-            action: 'ativacao',
-            user_id: userNumericId,
-            user_name: user?.name || user?.email || 'Usuário',
-            establishment_code: currentEstablishment?.codigo || '0000',
-          });
-
           const historyResult = await innovationsHistoryService.createHistoryEntry({
             innovation_id: innovationId,
             innovation_name: innovation.name,
@@ -181,22 +162,16 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
             user_name: user?.name || user?.email || 'Usuário',
             establishment_code: currentEstablishment?.codigo || '0000',
           });
-
-          console.log('✅ Resultado do histórico:', historyResult);
-
           if (historyResult.success) {
             await loadHistory();
           } else {
-            console.error('❌ Erro ao salvar histórico:', historyResult.error);
           }
         } else {
-          console.error('❌ Inovação não encontrada:', innovationId);
         }
       } else {
         setToast({ message: result.message, type: 'error' });
       }
     } catch (error) {
-      console.error('Error activating innovation:', error);
       setToast({ message: t('innovations.errorActivating'), type: 'error' });
     } finally {
       setIsLoading(false);
@@ -227,15 +202,6 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
 
         const innovation = innovations.find(i => i.id === innovationId);
         if (innovation) {
-          console.log('📝 Salvando histórico de desativação:', {
-            innovation_id: innovationId,
-            innovation_name: innovation.name,
-            action: 'desativacao',
-            user_id: userNumericId,
-            user_name: user?.name || user?.email || 'Usuário',
-            establishment_code: currentEstablishment?.codigo || '0000',
-          });
-
           const historyResult = await innovationsHistoryService.createHistoryEntry({
             innovation_id: innovationId,
             innovation_name: innovation.name,
@@ -244,22 +210,16 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
             user_name: user?.name || user?.email || 'Usuário',
             establishment_code: currentEstablishment?.codigo || '0000',
           });
-
-          console.log('✅ Resultado do histórico:', historyResult);
-
           if (historyResult.success) {
             await loadHistory();
           } else {
-            console.error('❌ Erro ao salvar histórico:', historyResult.error);
           }
         } else {
-          console.error('❌ Inovação não encontrada:', innovationId);
         }
       } else {
         setToast({ message: result.message, type: 'error' });
       }
     } catch (error) {
-      console.error('Error deactivating innovation:', error);
       setToast({ message: 'Erro ao desativar recurso', type: 'error' });
     } finally {
       setIsLoading(false);

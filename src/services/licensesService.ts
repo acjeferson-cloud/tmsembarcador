@@ -36,15 +36,12 @@ export interface UserWithLicense {
 export const licensesService = {
   async getLicenseConfig(): Promise<License | null> {
     try {
-      console.log('🔑 [LICENSES] Starting query...');
-      
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) return null;
       const userData = JSON.parse(savedUser);
       const organizationId = userData.organization_id;
 
       if (!organizationId) {
-        console.warn('❌ [LICENSES] No organization_id found in tms-user');
         return null;
       }
 
@@ -56,14 +53,10 @@ export const licensesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [LICENSES] Error:', error);
         throw error;
       }
-
-      console.log('✅ [LICENSES] Config loaded:', data ? 'Found' : 'Not found');
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configuração de licenças:', error);
       return null;
     }
   },
@@ -85,13 +78,11 @@ export const licensesService = {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Erro ao buscar usuários:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
       return [];
     }
   },
@@ -142,7 +133,6 @@ export const licensesService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao atribuir licença:', error);
       return false;
     }
   },
@@ -193,7 +183,6 @@ export const licensesService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao remover licença:', error);
       return false;
     }
   },
@@ -251,7 +240,6 @@ export const licensesService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao transferir licença:', error);
       return false;
     }
   },
@@ -305,7 +293,6 @@ export const licensesService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao adquirir novas licenças:', error);
       return false;
     }
   },
@@ -319,13 +306,11 @@ export const licensesService = {
         .limit(limit);
 
       if (error) {
-        console.error('Erro ao buscar logs:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs:', error);
       return [];
     }
   },
@@ -339,13 +324,11 @@ export const licensesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao verificar licença:', error);
         return false;
       }
 
       return data?.has_license || false;
     } catch (error) {
-      console.error('Erro ao verificar licença:', error);
       return false;
     }
   },
@@ -404,7 +387,6 @@ export const licensesService = {
         });
 
       if (logError) {
-        console.error('Erro ao criar log:', logError);
       }
 
       await changeLogsService.logUpdate({
@@ -418,7 +400,6 @@ export const licensesService = {
 
       return { success: true, licenseKey };
     } catch (error) {
-      console.error('Erro ao atribuir licença com código:', error);
       return { success: false, error: 'Erro ao atribuir licença' };
     }
   },
@@ -465,7 +446,6 @@ export const licensesService = {
 
       return { success: assigned > 0, assigned, errors };
     } catch (error) {
-      console.error('Erro ao atribuir licenças em massa:', error);
       return { success: false, assigned: 0, errors: ['Erro ao processar atribuição em massa'] };
     }
   }

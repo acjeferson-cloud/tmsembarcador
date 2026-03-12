@@ -69,7 +69,6 @@ export const openaiTransactionsService = {
       .single();
 
     if (error) {
-      console.error('Erro ao criar transação OpenAI:', error);
       throw error;
     }
 
@@ -135,7 +134,6 @@ export const openaiTransactionsService = {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Erro ao buscar transações:', error);
       throw error;
     }
 

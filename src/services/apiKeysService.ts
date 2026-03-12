@@ -50,14 +50,11 @@ export interface ApiKeyUsageStats {
 
 class ApiKeysService {
   async getAllKeys(estabelecimentoId?: string): Promise<ApiKeyConfig[]> {
-    console.log('🔑 [API_KEYS] Starting query...', { estabelecimentoId });
-
     // Obter contexto org/env do localStorage
     const orgId = localStorage.getItem('tms-selected-org-id');
     const envId = localStorage.getItem('tms-selected-env-id');
 
     if (!orgId || !envId) {
-      console.error('❌ [API_KEYS] Contexto org/env não encontrado');
       throw new Error('Contexto de organização não encontrado');
     }
 
@@ -75,11 +72,8 @@ class ApiKeysService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('❌ [API_KEYS] Error:', error);
       throw error;
     }
-
-    console.log(`✅ [API_KEYS] Found: ${data?.length || 0}`);
     return data || [];
   }
 
@@ -99,7 +93,6 @@ class ApiKeysService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching API key by type:', error);
       throw error;
     }
 
@@ -114,7 +107,6 @@ class ApiKeysService {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching API key by ID:', error);
       throw error;
     }
 
@@ -122,14 +114,11 @@ class ApiKeysService {
   }
 
   async createKey(keyData: Partial<ApiKeyConfig>): Promise<ApiKeyConfig> {
-    console.log('🔑 [API_KEYS] Creating key...');
-
     // Obter contexto org/env do localStorage
     const orgId = localStorage.getItem('tms-selected-org-id');
     const envId = localStorage.getItem('tms-selected-env-id');
 
     if (!orgId || !envId) {
-      console.error('❌ [API_KEYS] Contexto org/env não encontrado');
       throw new Error('Contexto de organização não encontrado');
     }
 
@@ -157,11 +146,8 @@ class ApiKeysService {
       .single();
 
     if (error) {
-      console.error('❌ [API_KEYS] Error creating key:', error);
       throw error;
     }
-
-    console.log('✅ [API_KEYS] Key created successfully');
     return data;
   }
 
@@ -174,7 +160,6 @@ class ApiKeysService {
       .single();
 
     if (error) {
-      console.error('Error updating API key:', error);
       throw error;
     }
 
@@ -203,7 +188,6 @@ class ApiKeysService {
       .single();
 
     if (error) {
-      console.error('Error rotating API key:', error);
       throw error;
     }
 
@@ -217,7 +201,6 @@ class ApiKeysService {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deactivating API key:', error);
       throw error;
     }
   }
@@ -229,7 +212,6 @@ class ApiKeysService {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting API key:', error);
       throw error;
     }
   }
@@ -242,7 +224,6 @@ class ApiKeysService {
       .order('rotated_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching rotation history:', error);
       throw error;
     }
 
@@ -281,7 +262,6 @@ class ApiKeysService {
       .eq('id', id);
 
     if (error) {
-      console.error('Error resetting monthly usage:', error);
       throw error;
     }
   }

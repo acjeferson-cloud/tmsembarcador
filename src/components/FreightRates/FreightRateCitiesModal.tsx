@@ -52,7 +52,6 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       }
     } catch (error) {
       showToast('error', 'Erro ao carregar cidades');
-      console.error('Erro ao carregar cidades:', error);
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +68,6 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       setAvailableCities(available);
     } catch (error) {
       showToast('error', 'Erro ao buscar cidades disponíveis');
-      console.error('Erro ao buscar cidades:', error);
     } finally {
       setIsSearching(false);
     }
@@ -114,7 +112,6 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       }
 
       if (result.errors.length > 0) {
-        console.error('Erros ao vincular cidades:', result.errors);
         const firstError = result.errors[0];
         showToast('error', `${result.errors.length} cidade(s) não puderam ser vinculadas: ${firstError.error}`);
       }
@@ -128,10 +125,8 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
         await loadData();
         onUpdate();
       } catch (loadError) {
-        console.error('Erro ao recarregar dados:', loadError);
       }
     } catch (error) {
-      console.error('Erro ao vincular cidades:', error);
       showToast('error', 'Erro ao vincular cidades');
     } finally {
       setIsSaving(false);

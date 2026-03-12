@@ -20,8 +20,6 @@ export interface InnovationCrud {
 export const innovationsCrudService = {
   async getAll(): Promise<InnovationCrud[]> {
     try {
-      console.log('💡 [INNOVATIONS] Starting query...');
-
       const { data, error } = await supabase
         .from('innovations')
         .select('*')
@@ -29,14 +27,10 @@ export const innovationsCrudService = {
         .order('name', { ascending: true });
 
       if (error) {
-        console.error('❌ [INNOVATIONS] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [INNOVATIONS] Found: ${data?.length || 0}`);
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar inovações:', error);
       return [];
     }
   },
@@ -50,13 +44,11 @@ export const innovationsCrudService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar inovação:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar inovação:', error);
       return null;
     }
   },
@@ -81,7 +73,6 @@ export const innovationsCrudService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar inovação:', error);
         throw error;
       }
 
@@ -95,7 +86,6 @@ export const innovationsCrudService = {
 
       return data;
     } catch (error) {
-      console.error('Erro ao criar inovação:', error);
       throw error;
     }
   },
@@ -122,7 +112,6 @@ export const innovationsCrudService = {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar inovação:', error);
         throw error;
       }
 
@@ -139,7 +128,6 @@ export const innovationsCrudService = {
 
       return data;
     } catch (error) {
-      console.error('Erro ao atualizar inovação:', error);
       throw error;
     }
   },
@@ -154,7 +142,6 @@ export const innovationsCrudService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao excluir inovação:', error);
         throw error;
       }
 
@@ -169,7 +156,6 @@ export const innovationsCrudService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao excluir inovação:', error);
       return false;
     }
   },
@@ -184,13 +170,11 @@ export const innovationsCrudService = {
         .order('name', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar inovações:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar inovações:', error);
       return [];
     }
   },
@@ -215,7 +199,6 @@ export const innovationsCrudService = {
         categories
       };
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
       return {
         total: 0,
         active: 0,

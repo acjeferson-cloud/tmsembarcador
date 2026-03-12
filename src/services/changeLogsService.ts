@@ -19,8 +19,6 @@ interface ChangeLog {
 export const changeLogsService = {
   async getAll(limit = 100): Promise<ChangeLog[]> {
     try {
-      console.log('📝 [CHANGE_LOGS] Starting query...');
-
       const { data, error } = await (supabase as any)
         .from('audit_logs')
         .select('*')
@@ -28,14 +26,10 @@ export const changeLogsService = {
         .limit(limit);
 
       if (error) {
-        console.error('❌ [CHANGE_LOGS] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [CHANGE_LOGS] Found: ${data?.length || 0}`);
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs:', error);
       return [];
     }
   },
@@ -50,13 +44,11 @@ export const changeLogsService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar logs da entidade:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs da entidade:', error);
       return [];
     }
   },
@@ -70,13 +62,11 @@ export const changeLogsService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar logs do usuário:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs do usuário:', error);
       return [];
     }
   },
@@ -105,13 +95,11 @@ export const changeLogsService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar log:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao criar log:', error);
       throw error;
     }
   },
@@ -140,7 +128,6 @@ export const changeLogsService = {
         byEntityType
       };
     } catch (error) {
-      console.error('Erro ao calcular estatísticas:', error);
       return {
         total: 0,
         byActionType: { CREATE: 0, UPDATE: 0, DELETE: 0 },
@@ -167,7 +154,6 @@ export const changeLogsService = {
         new_value: `Criado: ${params.entityName}`
       });
     } catch (error) {
-      console.error('Erro ao registrar log de criação:', error);
     }
   },
 
@@ -201,7 +187,6 @@ export const changeLogsService = {
         });
       }
     } catch (error) {
-      console.error('Erro ao registrar log de atualização:', error);
     }
   },
 
@@ -223,7 +208,6 @@ export const changeLogsService = {
         old_value: `Excluído: ${params.entityName}`
       });
     } catch (error) {
-      console.error('Erro ao registrar log de exclusão:', error);
     }
   },
 
@@ -256,7 +240,6 @@ export const changeLogsService = {
         });
       }
     } catch (error) {
-      console.error('Erro ao registrar múltiplos logs:', error);
     }
   }
 };

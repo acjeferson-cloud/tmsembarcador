@@ -42,7 +42,6 @@ export const freightRateCitiesService = {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('❌ [getCitiesByRate] Erro:', error);
       throw error;
     }
 
@@ -117,7 +116,6 @@ export const freightRateCitiesService = {
     const { data: allCities, error: citiesError } = await query;
 
     if (citiesError) {
-      console.error('❌ [getAvailableCitiesForRate] Erro ao buscar cidades:', citiesError);
       throw citiesError;
     }
 
@@ -127,7 +125,6 @@ export const freightRateCitiesService = {
       .eq('freight_rate_table_id', tableId);
 
     if (usedError) {
-      console.error('❌ [getAvailableCitiesForRate] Erro ao buscar cidades usadas:', usedError);
       throw usedError;
     }
 
@@ -162,15 +159,9 @@ export const freightRateCitiesService = {
     tableId: string,
     cityId: string
   ): Promise<FreightRateCity> {
-    console.log('🔵 [addCityToRate] Adicionando cidade:', { rateId, tableId, cityId });
-
     const availability = await this.checkCityAvailability(tableId, cityId, rateId);
-
-    console.log('🔵 [addCityToRate] Disponibilidade:', availability);
-
     if (!availability.available) {
       const errorMsg = `Cidade já vinculada à tarifa ${availability.usedInRate}`;
-      console.log('❌ [addCityToRate]', errorMsg);
       throw new Error(errorMsg);
     }
 
@@ -189,26 +180,18 @@ export const freightRateCitiesService = {
       .maybeSingle();
 
     if (cityError) {
-      console.error('❌ [addCityToRate] Erro ao buscar cidade:', cityError);
       throw cityError;
     }
 
     if (!city) {
       const errorMsg = `Cidade com ID ${cityId} não encontrada`;
-      console.error('❌ [addCityToRate]', errorMsg);
       throw new Error(errorMsg);
     }
-
-    console.log('🔵 [addCityToRate] Cidade encontrada:', city);
-
     const insertData = {
       freight_rate_id: rateId,
       freight_rate_table_id: tableId,
       city_id: cityId
     };
-
-    console.log('🔵 [addCityToRate] Inserindo registro:', insertData);
-
     const { data, error } = await supabase
       .from('freight_rate_cities')
       .insert([insertData])
@@ -226,7 +209,6 @@ export const freightRateCitiesService = {
       .single();
 
     if (error) {
-      console.error('❌ [addCityToRate] Erro ao inserir:', error);
       if (error.code === '23505') {
         throw new Error('Esta cidade já está vinculada a esta tarifa.');
       }
@@ -235,9 +217,6 @@ export const freightRateCitiesService = {
       }
       throw new Error(error.message || 'Erro ao vincular cidade');
     }
-
-    console.log('✅ [addCityToRate] Cidade vinculada com sucesso:', data);
-
     return {
       id: data.id,
       freight_rate_id: data.freight_rate_id,

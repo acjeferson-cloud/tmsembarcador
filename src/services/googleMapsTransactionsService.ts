@@ -61,7 +61,6 @@ export const googleMapsTransactionsService = {
       .single();
 
     if (error) {
-      console.error('Erro ao criar transação Google Maps:', error);
       throw error;
     }
 
@@ -123,7 +122,6 @@ export const googleMapsTransactionsService = {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Erro ao buscar transações:', error);
       throw error;
     }
 
@@ -190,7 +188,6 @@ export const googleMapsTransactionsService = {
       .eq('id', id);
 
     if (error) {
-      console.error('Erro ao atualizar status da transação:', error);
       throw error;
     }
   },
@@ -202,7 +199,6 @@ export const googleMapsTransactionsService = {
       .eq('id', id);
 
     if (error) {
-      console.error('Erro ao deletar transação:', error);
       throw error;
     }
   },

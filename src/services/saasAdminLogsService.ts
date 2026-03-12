@@ -65,7 +65,6 @@ export const saasAdminLogsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs:', error);
       return [];
     }
   },
@@ -84,7 +83,6 @@ export const saasAdminLogsService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar log:', error);
       return { success: false, error: error.message };
     }
   },
@@ -109,7 +107,6 @@ export const saasAdminLogsService = {
         changes: options?.changes
       });
     } catch (error) {
-      console.error('Erro ao registrar ação:', error);
     }
   },
 

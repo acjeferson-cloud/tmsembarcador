@@ -335,14 +335,12 @@ class CorreiosAPIService {
   }
 
   static async syncAllCities() {
-    console.log('Iniciando sincronização com API dos Correios...');
     // Simular sincronização
     await new Promise(resolve => setTimeout(resolve, 1000));
     return true;
   }
 
   static async importAllRegionsCities() {
-    console.log('Iniciando importação completa de todas as regiões do Brasil...');
     // Simular importação
     await new Promise(resolve => setTimeout(resolve, 1000));
     return importAllBrazilianCities();
