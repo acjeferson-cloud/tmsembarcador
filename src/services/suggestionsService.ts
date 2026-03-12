@@ -61,7 +61,7 @@ function getSuggestions(): Suggestion[] {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : [];
   } catch (error) {
-    console.error('Error reading suggestions from localStorage:', error);
+
     return [];
   }
 }
@@ -69,28 +69,28 @@ function getSuggestions(): Suggestion[] {
 function saveSuggestions(suggestions: Suggestion[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(suggestions));
-    console.log('Suggestions saved to localStorage:', suggestions.length);
+
   } catch (error) {
-    console.error('Error saving suggestions to localStorage:', error);
+
   }
 }
 
 export async function createSuggestion(data: CreateSuggestionData): Promise<{ success: boolean; message: string; suggestionId?: string }> {
   try {
-    console.log('Creating suggestion in localStorage...');
+
 
     const id = `suggestion-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const attachments: AttachmentMetadata[] = [];
 
     if (data.attachments && data.attachments.length > 0) {
-      console.log('Processing', data.attachments.length, 'attachments...');
+
       for (const file of data.attachments) {
         try {
           const attachment = await processAttachment(file);
           attachments.push(attachment);
-          console.log('Processed attachment:', file.name);
+
         } catch (error) {
-          console.warn('Failed to process attachment:', file.name, error);
+
         }
       }
     }
@@ -113,8 +113,8 @@ export async function createSuggestion(data: CreateSuggestionData): Promise<{ su
     suggestions.unshift(suggestion);
     saveSuggestions(suggestions);
 
-    console.log('Suggestion created successfully:', id);
-    console.log('Total suggestions now:', suggestions.length);
+
+
 
     return {
       success: true,
@@ -122,7 +122,7 @@ export async function createSuggestion(data: CreateSuggestionData): Promise<{ su
       suggestionId: id
     };
   } catch (error) {
-    console.error('Error in createSuggestion:', error);
+
     return { success: false, message: 'Erro ao enviar sugestão. Tente novamente.' };
   }
 }
@@ -132,7 +132,7 @@ async function fetchUserSuggestions(userId: number): Promise<Suggestion[]> {
     const suggestions = getSuggestions();
     return suggestions.filter(s => s.user_id === userId);
   } catch (error) {
-    console.error('Error in fetchUserSuggestions:', error);
+
     return [];
   }
 }
@@ -141,7 +141,7 @@ async function fetchAllSuggestions(): Promise<Suggestion[]> {
   try {
     return getSuggestions();
   } catch (error) {
-    console.error('Error in fetchAllSuggestions:', error);
+
     return [];
   }
 }
@@ -151,7 +151,7 @@ async function fetchSuggestionById(id: string): Promise<Suggestion | null> {
     const suggestions = getSuggestions();
     return suggestions.find(s => s.id === id) || null;
   } catch (error) {
-    console.error('Error in fetchSuggestionById:', error);
+
     return null;
   }
 }
@@ -168,7 +168,7 @@ async function deleteSuggestion(id: string): Promise<{ success: boolean; message
     saveSuggestions(filtered);
     return { success: true, message: 'Sugestão excluída com sucesso!' };
   } catch (error) {
-    console.error('Error in deleteSuggestion:', error);
+
     return { success: false, message: 'Erro ao excluir sugestão.' };
   }
 }

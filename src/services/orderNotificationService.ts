@@ -4,7 +4,7 @@ import { orderNotificationTemplateService } from './orderNotificationTemplateSer
 export const orderNotificationService = {
   async sendOrderCreatedNotifications(orderId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[orderNotificationService] Iniciando envio de notificações para pedido:', orderId);
+
 
       // 1. Buscar dados do pedido
       const { data: order, error: orderError } = await supabase
@@ -17,11 +17,11 @@ export const orderNotificationService = {
         .single();
 
       if (orderError || !order) {
-        console.error('[orderNotificationService] Erro ao buscar pedido:', orderError);
+
         return { success: false, error: 'Pedido não encontrado' };
       }
 
-      console.log('[orderNotificationService] Pedido encontrado:', order.order_number);
+
 
       // 2. Buscar parceiro de negócios do cliente
       const { data: businessPartner, error: bpError } = await supabase
@@ -35,25 +35,25 @@ export const orderNotificationService = {
         .maybeSingle();
 
       if (bpError) {
-        console.error('[orderNotificationService] Erro ao buscar parceiro:', bpError);
+
       }
 
       if (!businessPartner || !businessPartner.contacts || businessPartner.contacts.length === 0) {
-        console.log('[orderNotificationService] Nenhum contato encontrado para o cliente');
+
         return { success: true }; // Não é erro, apenas não tem contatos
       }
 
-      console.log('[orderNotificationService] Contatos encontrados:', businessPartner.contacts.length);
+
 
       // 3. Buscar estabelecimento para pegar logo e dados
       const estabelecimentoStr = localStorage.getItem('tms-current-establishment');
       if (!estabelecimentoStr) {
-        console.error('[orderNotificationService] Estabelecimento não encontrado no localStorage');
+
         return { success: false, error: 'Estabelecimento não configurado' };
       }
 
       const estabelecimento = JSON.parse(estabelecimentoStr);
-      console.log('[orderNotificationService] Estabelecimento:', estabelecimento.razao_social);
+
 
       // Buscar logo do estabelecimento
       let logoBase64 = null;
@@ -71,7 +71,7 @@ export const orderNotificationService = {
             });
           }
         } catch (error) {
-          console.warn('[orderNotificationService] Erro ao buscar logo:', error);
+
         }
       }
 
@@ -108,14 +108,14 @@ export const orderNotificationService = {
           contact.whatsapp_notify_order_created
       );
 
-      console.log('[orderNotificationService] Contatos para e-mail:', contactsToNotifyEmail.length);
-      console.log('[orderNotificationService] Contatos para WhatsApp:', contactsToNotifyWhatsapp.length);
+
+
 
       // 6. Enviar e-mails
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const emailPromises = contactsToNotifyEmail.map(async (contact: any) => {
         try {
-          console.log('[orderNotificationService] Enviando e-mail para:', contact.email);
+
 
           const response = await fetch(`${supabaseUrl}/functions/v1/enviar-email-nps`, {
             method: 'POST',
@@ -134,21 +134,21 @@ export const orderNotificationService = {
           const result = await response.json();
 
           if (result.success) {
-            console.log('[orderNotificationService] E-mail enviado com sucesso para:', contact.email);
+
           } else {
-            console.error('[orderNotificationService] Erro ao enviar e-mail:', result.error);
+
           }
 
           return result;
         } catch (error) {
-          console.error('[orderNotificationService] Erro ao enviar e-mail para', contact.email, error);
+
           return { success: false, error: String(error) };
         }
       });
 
       // 7. Enviar WhatsApp (placeholder - implementar quando tiver o serviço)
       const whatsappPromises = contactsToNotifyWhatsapp.map(async (contact: any) => {
-        console.log('[orderNotificationService] WhatsApp para:', contact.phone);
+
         // TODO: Implementar envio de WhatsApp
         return { success: true, message: 'WhatsApp não implementado ainda' };
       });
@@ -156,11 +156,11 @@ export const orderNotificationService = {
       // 8. Aguardar todos os envios
       await Promise.all([...emailPromises, ...whatsappPromises]);
 
-      console.log('[orderNotificationService] Notificações enviadas com sucesso!');
+
       return { success: true };
 
     } catch (error: any) {
-      console.error('[orderNotificationService] Erro geral:', error);
+
       return { success: false, error: error.message };
     }
   }

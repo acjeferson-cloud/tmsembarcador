@@ -33,7 +33,7 @@ const getLocalProofs = (): Record<string, PickupProof> => {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (error) {
-    console.error('Erro ao ler localStorage:', error);
+
     return {};
   }
 };
@@ -42,7 +42,7 @@ const saveLocalProofs = (proofs: Record<string, PickupProof>) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(proofs));
   } catch (error) {
-    console.error('Erro ao salvar no localStorage:', error);
+
   }
 };
 
@@ -65,7 +65,7 @@ export const pickupProofService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar comprovante de coleta:', error);
+
       return null;
     }
   },
@@ -83,10 +83,10 @@ export const pickupProofService = {
         };
         proofs[proof.pickup_id] = newProof;
         saveLocalProofs(proofs);
-        console.log('✅ Comprovante mock salvo no localStorage:', newProof);
+
         return { success: true, id: newProof.id };
       } catch (error) {
-        console.error('Erro ao criar comprovante mock:', error);
+
         return { success: false, error: 'Erro ao criar comprovante mock' };
       }
     }
@@ -106,7 +106,7 @@ export const pickupProofService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar comprovante de coleta:', error);
+
       return { success: false, error: 'Erro ao criar comprovante de coleta' };
     }
   },
@@ -129,10 +129,10 @@ export const pickupProofService = {
           updated_at: new Date().toISOString()
         };
         saveLocalProofs(proofs);
-        console.log('✅ Comprovante mock atualizado no localStorage:', proofs[pickupId]);
+
         return { success: true };
       } catch (error) {
-        console.error('Erro ao atualizar comprovante mock:', error);
+
         return { success: false, error: 'Erro ao atualizar comprovante mock' };
       }
     }
@@ -150,7 +150,7 @@ export const pickupProofService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar comprovante de coleta:', error);
+
       return { success: false, error: 'Erro ao atualizar comprovante de coleta' };
     }
   },
@@ -163,7 +163,7 @@ export const pickupProofService = {
           const reader = new FileReader();
           reader.onloadend = () => {
             const base64String = reader.result as string;
-            console.log(`✅ Foto ${photoNumber} convertida para base64 (mock)`);
+
             resolve({ success: true, url: base64String });
           };
           reader.onerror = () => {
@@ -172,7 +172,7 @@ export const pickupProofService = {
           reader.readAsDataURL(photoFile);
         });
       } catch (error) {
-        console.error('Erro ao processar foto mock:', error);
+
         return { success: false, error: 'Erro ao processar foto' };
       }
     }
@@ -199,7 +199,7 @@ export const pickupProofService = {
 
       return { success: true, url: publicUrl };
     } catch (error) {
-      console.error('Erro ao fazer upload da foto:', error);
+
       return { success: false, error: 'Erro ao fazer upload da foto' };
     }
   },
@@ -207,7 +207,7 @@ export const pickupProofService = {
   async deletePhoto(url: string): Promise<{ success: boolean; error?: string }> {
     // Se for base64 (mock), apenas retornar sucesso
     if (url.startsWith('data:')) {
-      console.log('✅ Foto mock removida (base64)');
+
       return { success: true };
     }
 
@@ -223,7 +223,7 @@ export const pickupProofService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir foto:', error);
+
       return { success: false, error: 'Erro ao excluir foto' };
     }
   },
@@ -236,7 +236,7 @@ export const pickupProofService = {
           const reader = new FileReader();
           reader.onloadend = () => {
             const base64String = reader.result as string;
-            console.log('✅ Assinatura convertida para base64 (mock)');
+
             resolve({ success: true, url: base64String });
           };
           reader.onerror = () => {
@@ -245,7 +245,7 @@ export const pickupProofService = {
           reader.readAsDataURL(signatureBlob);
         });
       } catch (error) {
-        console.error('Erro ao processar assinatura mock:', error);
+
         return { success: false, error: 'Erro ao processar assinatura' };
       }
     }
@@ -272,7 +272,7 @@ export const pickupProofService = {
 
       return { success: true, url: publicUrl };
     } catch (error) {
-      console.error('Erro ao fazer upload da assinatura:', error);
+
       return { success: false, error: 'Erro ao fazer upload da assinatura' };
     }
   },

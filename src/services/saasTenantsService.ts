@@ -76,7 +76,7 @@ export const saasTenantsService = {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Erro ao buscar planos:', error);
+
         throw error;
       }
 
@@ -100,7 +100,7 @@ export const saasTenantsService = {
 
       return plans;
     } catch (error) {
-      console.error('Erro ao buscar planos:', error);
+
       return [];
     }
   },
@@ -120,7 +120,7 @@ export const saasTenantsService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar plano:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -138,7 +138,7 @@ export const saasTenantsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar plano:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -153,7 +153,7 @@ export const saasTenantsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir plano:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -207,7 +207,7 @@ export const saasTenantsService = {
 
       return tenants;
     } catch (error) {
-      console.error('Erro ao buscar tenants:', error);
+
       return [];
     }
   },
@@ -262,14 +262,14 @@ export const saasTenantsService = {
         } : undefined
       };
     } catch (error) {
-      console.error('Erro ao buscar tenant:', error);
+
       return null;
     }
   },
 
   async createTenant(tenant: Partial<SaasTenant>): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-      console.log('[SAAS_ADMIN] Criando nova organização:', tenant);
+
 
       // Mapear SaasTenant para formato saas_organizations
       const orgData = {
@@ -292,21 +292,21 @@ export const saasTenantsService = {
         .single();
 
       if (error) {
-        console.error('[SAAS_ADMIN_ERROR] Erro ao inserir organização:', error);
+
         return { success: false, error: error.message };
       }
 
-      console.log('[SAAS_ADMIN] Organização criada com sucesso:', data);
+
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('[SAAS_ADMIN_ERROR] Erro ao criar tenant:', error);
+
       return { success: false, error: error.message };
     }
   },
 
   async updateTenant(id: string, tenant: Partial<SaasTenant>): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[SAAS_ADMIN] Atualizando organização:', id, tenant);
+
 
       const orgData: any = {
         updated_at: new Date().toISOString()
@@ -328,21 +328,21 @@ export const saasTenantsService = {
         .eq('id', id);
 
       if (error) {
-        console.error('[SAAS_ADMIN_ERROR] Erro ao atualizar organização:', error);
+
         return { success: false, error: error.message };
       }
 
-      console.log('[SAAS_ADMIN] Organização atualizada com sucesso');
+
       return { success: true };
     } catch (error: any) {
-      console.error('[SAAS_ADMIN_ERROR] Erro ao atualizar tenant:', error);
+
       return { success: false, error: error.message };
     }
   },
 
   async deleteTenant(id: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[SAAS_ADMIN] Deletando organização:', id);
+
 
       // Primeiro deletar ambientes associados
       const { error: envError } = await supabase
@@ -351,7 +351,7 @@ export const saasTenantsService = {
         .eq('organization_id', id);
 
       if (envError) {
-        console.error('[SAAS_ADMIN_ERROR] Erro ao deletar ambientes:', envError);
+
       }
 
       // Depois deletar organização
@@ -361,14 +361,14 @@ export const saasTenantsService = {
         .eq('id', id);
 
       if (error) {
-        console.error('[SAAS_ADMIN_ERROR] Erro ao deletar organização:', error);
+
         return { success: false, error: error.message };
       }
 
-      console.log('[SAAS_ADMIN] Organização deletada com sucesso');
+
       return { success: true };
     } catch (error: any) {
-      console.error('[SAAS_ADMIN_ERROR] Erro ao excluir tenant:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -384,7 +384,7 @@ export const saasTenantsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar limites do tenant:', error);
+
       return [];
     }
   },
@@ -399,7 +399,7 @@ export const saasTenantsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar limite:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -416,7 +416,7 @@ export const saasTenantsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar contatos do tenant:', error);
+
       return [];
     }
   },
@@ -432,7 +432,7 @@ export const saasTenantsService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao adicionar contato:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -447,7 +447,7 @@ export const saasTenantsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir contato:', error);
+
       return { success: false, error: error.message };
     }
   }

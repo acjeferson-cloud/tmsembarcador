@@ -102,7 +102,7 @@ export const whiteLabelService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configuração white label:', error);
+
       return null;
     }
   },
@@ -122,7 +122,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar configuração:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -140,7 +140,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar configuração:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -157,7 +157,7 @@ export const whiteLabelService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar temas:', error);
+
       return [];
     }
   },
@@ -174,7 +174,7 @@ export const whiteLabelService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar tema ativo:', error);
+
       return null;
     }
   },
@@ -190,7 +190,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar tema:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -205,7 +205,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar tema:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -225,7 +225,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao ativar tema:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -240,7 +240,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir tema:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -262,7 +262,7 @@ export const whiteLabelService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar assets:', error);
+
       return [];
     }
   },
@@ -278,7 +278,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar asset:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -293,7 +293,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir asset:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -310,7 +310,7 @@ export const whiteLabelService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar domínios:', error);
+
       return [];
     }
   },
@@ -331,7 +331,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar domínio:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -346,7 +346,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar domínio:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -361,7 +361,7 @@ export const whiteLabelService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir domínio:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -378,7 +378,7 @@ export const whiteLabelService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar templates:', error);
+
       return [];
     }
   },
@@ -410,7 +410,7 @@ export const whiteLabelService = {
 
       return result;
     } catch (error: any) {
-      console.error('Erro ao aplicar template:', error);
+
       return { success: false, error: error.message };
     }
   }

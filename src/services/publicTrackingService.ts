@@ -73,7 +73,7 @@ export const publicTrackingService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar pedido por código de rastreamento:', error);
+
         return null;
       }
 
@@ -83,7 +83,7 @@ export const publicTrackingService = {
 
       return data as PublicTrackingInfo;
     } catch (error) {
-      console.error('Erro ao consultar rastreamento público:', error);
+
       return null;
     }
   },
@@ -128,7 +128,7 @@ export const publicTrackingService = {
 
       return result;
     } catch (error) {
-      console.error('Erro ao consultar rastreamento seguro:', error);
+
       return {
         success: false,
         blocked: false,

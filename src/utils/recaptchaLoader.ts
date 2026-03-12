@@ -41,28 +41,28 @@ export const loadRecaptcha = (): Promise<void> => {
       let siteKey: string | null = null;
 
       try {
-        console.log('Tentando carregar reCAPTCHA Site Key do banco de dados...');
+
         const { apiKeysService } = await import('../services/apiKeysService');
         const config = await apiKeysService.getKeyByType('recaptcha_site', undefined, 'production');
 
         if (config && config.is_active && config.api_key) {
           siteKey = config.api_key;
-          console.log('reCAPTCHA Site Key carregada do banco de dados');
+
           await apiKeysService.incrementUsage(config.id);
         }
       } catch (error) {
-        console.log('Erro ao buscar reCAPTCHA do banco:', error);
+
       }
 
       if (!siteKey) {
         siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
         if (siteKey) {
-          console.log('reCAPTCHA Site Key carregada do .env');
+
         }
       }
 
       if (!siteKey) {
-        console.warn('reCAPTCHA Site Key não configurada. Continuando sem reCAPTCHA.');
+
         isLoading = false;
         isLoaded = false;
         resolve();
@@ -77,7 +77,7 @@ export const loadRecaptcha = (): Promise<void> => {
       script.onload = () => {
         if (window.grecaptcha) {
           window.grecaptcha.ready(() => {
-            console.log('reCAPTCHA carregado com sucesso');
+
             isLoaded = true;
             isLoading = false;
             resolve();
@@ -86,7 +86,7 @@ export const loadRecaptcha = (): Promise<void> => {
       };
 
       script.onerror = () => {
-        console.error('Erro ao carregar reCAPTCHA');
+
         isLoading = false;
         reject(new Error('Falha ao carregar reCAPTCHA'));
       };
@@ -112,7 +112,7 @@ export const executeRecaptcha = async (action: string): Promise<string> => {
       siteKey = config.api_key;
     }
   } catch (error) {
-    console.log('Erro ao buscar reCAPTCHA do banco:', error);
+
   }
 
   if (!siteKey) {
@@ -120,12 +120,12 @@ export const executeRecaptcha = async (action: string): Promise<string> => {
   }
 
   if (!siteKey) {
-    console.warn('reCAPTCHA não configurado, retornando token vazio');
+
     return '';
   }
 
   if (!window.grecaptcha) {
-    console.warn('reCAPTCHA não está carregado');
+
     return '';
   }
 
@@ -133,7 +133,7 @@ export const executeRecaptcha = async (action: string): Promise<string> => {
     const token = await window.grecaptcha.execute(siteKey, { action });
     return token;
   } catch (error) {
-    console.error('Erro ao executar reCAPTCHA:', error);
+
     return '';
   }
 };

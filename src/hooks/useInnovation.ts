@@ -17,13 +17,13 @@ export function useInnovation(innovationId: string, userId?: number | string) {
 
   useEffect(() => {
     const checkInnovation = async () => {
-      console.log('🔍 useInnovation: Starting check', { innovationId, userId, typeofUserId: typeof userId });
+
 
       try {
         let numericUserId: number;
 
         if (!userId) {
-          console.log('⚠️ useInnovation: No userId provided, checking localStorage...');
+
 
           try {
             const savedUser = localStorage.getItem('tms-user');
@@ -32,24 +32,24 @@ export function useInnovation(innovationId: string, userId?: number | string) {
 
               if (typeof userData?.id === 'number') {
                 numericUserId = userData.id;
-                console.log('✅ useInnovation: Found numeric user ID in localStorage:', numericUserId);
+
               } else {
-                console.error('❌ useInnovation: No valid numeric user ID in localStorage data');
-                console.log('🔧 DEBUG MODE: Enabling innovation anyway');
+
+
                 setIsActive(true);
                 setIsLoading(false);
                 return;
               }
             } else {
-              console.error('❌ useInnovation: No user found in localStorage (user not authenticated)');
-              console.log('🔧 DEBUG MODE: Enabling innovation anyway');
+
+
               setIsActive(true);
               setIsLoading(false);
               return;
             }
           } catch (error) {
-            console.error('❌ useInnovation: Error reading localStorage:', error);
-            console.log('🔧 DEBUG MODE: Enabling innovation anyway');
+
+
             setIsActive(true);
             setIsLoading(false);
             return;
@@ -57,16 +57,16 @@ export function useInnovation(innovationId: string, userId?: number | string) {
         }
         else if (typeof userId === 'number') {
           numericUserId = userId;
-          console.log('✅ useInnovation: Using numeric ID:', numericUserId);
+
         }
         else {
           const parsed = parseInt(userId as string);
           if (!isNaN(parsed)) {
             numericUserId = parsed;
-            console.log('✅ useInnovation: Converted string to numeric ID:', numericUserId);
+
           } else {
-            console.error('❌ useInnovation: Cannot convert userId to number:', userId);
-            console.log('🔧 DEBUG MODE: Enabling innovation anyway');
+
+
             setIsActive(true);
             setIsLoading(false);
             return;
@@ -74,17 +74,17 @@ export function useInnovation(innovationId: string, userId?: number | string) {
         }
 
         const active = await isInnovationActivated(numericUserId, innovationId);
-        console.log('🔍 useInnovation: Innovation', innovationId, 'is active:', active, 'for user:', numericUserId);
+
 
         if (!active) {
-          console.log('🔧 DEBUG MODE: Forcing innovation to be active');
+
           setIsActive(true);
         } else {
           setIsActive(active);
         }
       } catch (error) {
-        console.error('❌ useInnovation: Error checking innovation status:', error);
-        console.log('🔧 DEBUG MODE: Enabling innovation anyway');
+
+
         setIsActive(true);
       } finally {
         setIsLoading(false);

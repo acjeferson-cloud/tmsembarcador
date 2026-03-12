@@ -41,7 +41,7 @@ export const invoicesService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar notas fiscais:', error);
+
       return [];
     }
   },
@@ -57,7 +57,7 @@ export const invoicesService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar nota fiscal:', error);
+
       return null;
     }
   },
@@ -77,7 +77,7 @@ export const invoicesService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar nota fiscal:', error);
+
       return { success: false, error: 'Erro ao criar nota fiscal' };
     }
   },
@@ -95,7 +95,7 @@ export const invoicesService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar nota fiscal:', error);
+
       return { success: false, error: 'Erro ao atualizar nota fiscal' };
     }
   },
@@ -110,7 +110,7 @@ export const invoicesService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir nota fiscal:', error);
+
       return { success: false, error: 'Erro ao excluir nota fiscal' };
     }
   },
@@ -126,7 +126,7 @@ export const invoicesService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar nota fiscal por chave:', error);
+
       return null;
     }
   },
@@ -143,7 +143,7 @@ export const invoicesService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar notas fiscais por chaves:', error);
+
       return [];
     }
   },
@@ -160,7 +160,7 @@ export const invoicesService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar notas fiscais por IDs:', error);
+
       return [];
     }
   }

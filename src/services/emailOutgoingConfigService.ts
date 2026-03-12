@@ -111,9 +111,9 @@ const emailOutgoingConfigService = {
   },
 
   async testEmailConfig(request: TestEmailRequest): Promise<TestEmailResponse> {
-    console.log('🔵 [EMAIL SERVICE] Iniciando teste de email...');
-    console.log('🔵 [EMAIL SERVICE] Config ID:', request.config_id);
-    console.log('🔵 [EMAIL SERVICE] Destinatário:', request.recipient_email);
+
+
+
 
     try {
       const { data: config } = await supabase
@@ -123,7 +123,7 @@ const emailOutgoingConfigService = {
         .single();
 
       if (!config) {
-        console.error('🔴 [EMAIL SERVICE] Configuração não encontrada');
+
         return {
           success: false,
           message: 'Configuração não encontrada',
@@ -131,13 +131,7 @@ const emailOutgoingConfigService = {
         };
       }
 
-      console.log('🔵 [EMAIL SERVICE] Configuração carregada:', {
-        host: config.smtp_host,
-        port: config.smtp_port,
-        secure: config.smtp_secure,
-        user: config.smtp_user,
-        sender: config.from_email
-      });
+
 
       const emailData = {
         from: {
@@ -171,8 +165,8 @@ const emailOutgoingConfigService = {
 
       const useSecure = config.smtp_secure;
 
-      console.log('🔵 [EMAIL SERVICE] Preparando payload para edge function...');
-      console.log('🔵 [EMAIL SERVICE] Use Secure:', useSecure);
+
+
 
       const payload = {
         email: emailData,
@@ -187,12 +181,12 @@ const emailOutgoingConfigService = {
         }
       };
 
-      console.log('🔵 [EMAIL SERVICE] Payload (senha oculta):', JSON.stringify(payload, null, 2));
+
 
       const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-test-email`;
-      console.log('🔵 [EMAIL SERVICE] URL da edge function:', edgeFunctionUrl);
 
-      console.log('🔵 [EMAIL SERVICE] Chamando edge function...');
+
+
 
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
@@ -214,53 +208,53 @@ const emailOutgoingConfigService = {
         })
       });
 
-      console.log('🔵 [EMAIL SERVICE] Resposta recebida da edge function');
-      console.log('🔵 [EMAIL SERVICE] Status:', response.status);
-      console.log('🔵 [EMAIL SERVICE] Status Text:', response.statusText);
-      console.log('🔵 [EMAIL SERVICE] Headers:', Object.fromEntries(response.headers.entries()));
+
+
+
+
 
       const responseText = await response.text();
-      console.log('🔵 [EMAIL SERVICE] Response Body (raw):', responseText);
+
 
       let responseData;
       try {
         responseData = JSON.parse(responseText);
-        console.log('🔵 [EMAIL SERVICE] Response Body (parsed):', responseData);
+
       } catch (e) {
-        console.error('🔴 [EMAIL SERVICE] Erro ao fazer parse do JSON:', e);
-        console.error('🔴 [EMAIL SERVICE] Response text:', responseText);
+
+
       }
 
       if (!response.ok) {
-        console.error('🔴 [EMAIL SERVICE] Edge function retornou erro');
-        console.error('🔴 [EMAIL SERVICE] Status:', response.status);
-        console.error('🔴 [EMAIL SERVICE] Error data:', responseData);
+
+
+
 
         // Exibir logs mesmo em caso de erro
         if (responseData?.logs && Array.isArray(responseData.logs)) {
-          console.error('📋 [LOGS DO SERVIDOR SMTP - ERRO]');
-          console.error('═'.repeat(60));
-          responseData.logs.forEach((log: string) => console.error(log));
-          console.error('═'.repeat(60));
+
+
+          responseData.logs.forEach((log: string) => /*log_removed*/
+
         }
 
         const errorMsg = responseData?.message || responseData?.error || 'Falha ao enviar e-mail de teste';
         throw new Error(errorMsg);
       }
 
-      console.log('✅ [EMAIL SERVICE] Edge function executada com sucesso!');
-      console.log('✅ [EMAIL SERVICE] Detalhes:', responseData?.details);
+
+
 
       // Exibir logs da edge function
       if (responseData?.logs && Array.isArray(responseData.logs)) {
-        console.log('📋 [LOGS DO SERVIDOR SMTP]');
-        console.log('═'.repeat(60));
-        responseData.logs.forEach((log: string) => console.log(log));
-        console.log('═'.repeat(60));
+
+
+        responseData.logs.forEach((log: string) => /*log_removed*/
+
       }
 
       await this.updateTestStatus(request.config_id, true);
-      console.log('✅ [EMAIL SERVICE] Status de teste atualizado no banco');
+
 
       return {
         success: true,
@@ -268,10 +262,10 @@ const emailOutgoingConfigService = {
       };
 
     } catch (error: any) {
-      console.error('🔴 [EMAIL SERVICE] Erro ao testar configuração de email:', error);
-      console.error('🔴 [EMAIL SERVICE] Error name:', error.name);
-      console.error('🔴 [EMAIL SERVICE] Error message:', error.message);
-      console.error('🔴 [EMAIL SERVICE] Error stack:', error.stack);
+
+
+
+
 
       await this.updateTestStatus(request.config_id, false);
 

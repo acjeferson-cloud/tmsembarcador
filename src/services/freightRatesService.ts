@@ -133,7 +133,7 @@ const formatRateData = (rateData: any): any => {
 
 export const freightRatesService = {
   async getTablesByCarrier(carrierId: string): Promise<FreightRateTable[]> {
-    console.log('🔍 getTablesByCarrier - carrierId:', carrierId);
+
     const { data, error } = await supabase
       .from('freight_rate_tables')
       .select(`
@@ -146,10 +146,10 @@ export const freightRatesService = {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Erro ao buscar tabelas por transportador:', error);
+
       throw error;
     }
-    console.log('📊 Tabelas encontradas no banco:', data?.length || 0);
+
 
     const tablesWithRates = await Promise.all(
       (data || []).map(async (table: any) => {
@@ -162,12 +162,12 @@ export const freightRatesService = {
       })
     );
 
-    console.log('✅ Tabelas com tarifas:', tablesWithRates.length);
+
     return tablesWithRates;
   },
 
   async getAllTables(): Promise<FreightRateTable[]> {
-    console.log('🔍 getAllTables iniciado');
+
     const { data, error } = await supabase
       .from('freight_rate_tables')
       .select(`
@@ -179,11 +179,11 @@ export const freightRatesService = {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Erro ao buscar todas as tabelas:', error);
+
       throw error;
     }
-    console.log('📊 Total de tabelas encontradas no banco:', data?.length || 0);
-    console.log('📋 Dados brutos:', data);
+
+
 
     const tablesWithRates = await Promise.all(
       (data || []).map(async (table: any) => {
@@ -196,7 +196,7 @@ export const freightRatesService = {
       })
     );
 
-    console.log('✅ Tabelas com tarifas processadas:', tablesWithRates.length);
+
     return tablesWithRates;
   },
 
@@ -224,40 +224,34 @@ export const freightRatesService = {
   },
 
   async createTable(table: Omit<FreightRateTable, 'id'>): Promise<FreightRateTable> {
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('🚀 [CREATE TABLE] INÍCIO DO PROCESSO DE CRIAÇÃO DE TABELA FRETE');
-    console.log('═══════════════════════════════════════════════════════════════');
+
+
+
 
     // PASSO 1: VERIFICAR AUTENTICAÇÃO DO USUÁRIO
-    console.log('🔐 [AUTH CHECK] Verificando usuário autenticado...');
+
 
     const savedUser = localStorage.getItem('tms-user');
     if (!savedUser) {
-      console.error('❌ [AUTH CHECK] Usuário não encontrado no localStorage');
+
       throw new Error('Usuário não autenticado. Faça login novamente.');
     }
 
     const userData = JSON.parse(savedUser);
-    console.log('✅ [AUTH CHECK] Usuário autenticado:', userData.email);
+
 
     // PASSO 2: VALIDAR DADOS DE ORGANIZAÇÃO
-    console.log('🔍 [ORG CHECK] Validando dados de organização...');
+
 
     if (!userData.organization_id || !userData.environment_id) {
-      console.error('❌ [ORG CHECK] Dados incompletos:', {
-        has_org_id: !!userData.organization_id,
-        has_env_id: !!userData.environment_id
-      });
+
       throw new Error('Dados de organização incompletos. Contate o suporte.');
     }
 
-    console.log('✅ [ORG CHECK] Organização válida:', {
-      organization_id: userData.organization_id,
-      environment_id: userData.environment_id
-    });
+
 
     // PASSO 3: PREPARAR DADOS PARA INSERT
-    console.log('📦 [DATA PREP] Preparando dados para inserção...');
+
 
     const { tarifas, ...tableData } = table;
 
@@ -276,16 +270,11 @@ export const freightRatesService = {
       environment_id: userData.environment_id
     };
 
-    console.log('💾 [DATA PREP] Dados preparados:', {
-      nome: finalTableData.nome,
-      transportador_id: finalTableData.transportador_id,
-      organization_id: finalTableData.organization_id,
-      environment_id: finalTableData.environment_id
-    });
+
 
     // PASSO 4: EXECUTAR INSERT
-    console.log('💽 [INSERT] Executando INSERT no banco...');
-    console.log('⏱️  [INSERT] Timestamp:', new Date().toISOString());
+
+
 
     const { data: newTable, error: tableError } = await supabase
       .from('freight_rate_tables')
@@ -293,38 +282,33 @@ export const freightRatesService = {
       .select()
       .single();
 
-    console.log('⏱️  [INSERT] Timestamp PÓS-INSERT:', new Date().toISOString());
+
 
     if (tableError) {
-      console.log('═══════════════════════════════════════════════════════════════');
-      console.error('❌ [INSERT ERROR] ERRO AO INSERIR TABELA DE FRETE');
-      console.log('═══════════════════════════════════════════════════════════════');
-      console.error('❌ [INSERT ERROR] Error code:', tableError.code);
-      console.error('❌ [INSERT ERROR] Error message:', tableError.message);
-      console.error('❌ [INSERT ERROR] Error details:', tableError.details);
-      console.error('❌ [INSERT ERROR] Dados inseridos:', {
-        nome: finalTableData.nome,
-        transportador_id: finalTableData.transportador_id,
-        organization_id: finalTableData.organization_id,
-        environment_id: finalTableData.environment_id
-      });
+
+
+
+
+
+
+
 
       // Erro específico de RLS
       if (tableError.code === '42501' || tableError.message.includes('row-level security')) {
-        console.error('🔐 [RLS ERROR] ERRO DE ROW-LEVEL SECURITY DETECTADO');
-        console.error('🔐 [RLS ERROR] As políticas RLS foram corrigidas recentemente.');
-        console.error('🔐 [RLS ERROR] Se o erro persistir, contate o suporte técnico.');
+
+
+
         throw new Error('Erro de permissão ao criar tabela de frete. Contate o suporte.');
       }
 
       throw new Error(tableError.message || 'Erro ao criar tabela de frete.');
     }
 
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('✅ [SUCCESS] TABELA CRIADA COM SUCESSO!');
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('✅ [SUCCESS] ID da tabela criada:', newTable.id);
-    console.log('✅ [SUCCESS] Dados da tabela:', JSON.stringify(newTable, null, 2));
+
+
+
+
+
 
     if (tarifas && tarifas.length > 0) {
       for (const rate of tarifas) {
@@ -373,9 +357,9 @@ export const freightRatesService = {
       }
     }
 
-    console.log('🔍 Buscando tabela criada por ID:', newTable.id);
+
     const finalTable = await this.getTableById(newTable.id);
-    console.log('✅ Tabela final retornada:', finalTable);
+
     return finalTable as FreightRateTable;
   },
 
@@ -410,7 +394,7 @@ export const freightRatesService = {
       .eq('id', id);
 
     if (tableError) {
-      console.error('Erro ao atualizar tabela:', tableError);
+
       throw tableError;
     }
 
@@ -474,12 +458,12 @@ export const freightRatesService = {
   },
 
   async createRate(rate: Omit<FreightRate, 'id' | 'created_at' | 'updated_at'>): Promise<FreightRate> {
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('🚀 [CREATE RATE] INÍCIO DO PROCESSO DE CRIAÇÃO DE TARIFA');
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('📋 [CREATE RATE] Dados recebidos:', JSON.stringify(rate, null, 2));
-    console.log('🔑 [CREATE RATE] freight_rate_table_id:', rate.freight_rate_table_id);
-    console.log('🔑 [CREATE RATE] codigo:', rate.codigo);
+
+
+
+
+
+
 
     // Obter dados do usuário para organization_id e environment_id
     const savedUser = localStorage.getItem('tms-user');
@@ -494,7 +478,7 @@ export const freightRatesService = {
 
     // Verificar se já existe uma tarifa com o mesmo código na mesma tabela
     if (rate.codigo && rate.freight_rate_table_id) {
-      console.log('🔍 [CREATE RATE] Verificando se código já existe...');
+
       const { data: existing } = await supabase
         .from('freight_rates')
         .select('id')
@@ -503,16 +487,16 @@ export const freightRatesService = {
         .maybeSingle();
 
       if (existing) {
-        console.error('❌ [CREATE RATE] Código duplicado detectado:', rate.codigo);
+
         throw new Error(`Já existe uma tarifa com o código "${rate.codigo}" nesta tabela. Por favor, use um código diferente.`);
       }
-      console.log('✅ [CREATE RATE] Código disponível');
+
     }
 
     // Filtrar apenas campos válidos
-    console.log('🔍 [CREATE RATE] Filtrando campos válidos...');
+
     const filteredRate = filterValidFields(rate, VALID_FREIGHT_RATE_FIELDS);
-    console.log('📊 [CREATE RATE] Campos filtrados:', JSON.stringify(filteredRate, null, 2));
+
 
     // Limpar campos com strings vazias (geralmente problemas com UUID)
     const cleanedRate = {
@@ -522,16 +506,16 @@ export const freightRatesService = {
     };
     Object.keys(cleanedRate).forEach(key => {
       if (cleanedRate[key] === '') {
-        console.log(`🧹 [CREATE RATE] Removendo campo vazio: ${key}`);
+
         delete cleanedRate[key];
       }
     });
 
-    console.log('───────────────────────────────────────────────────────────────');
-    console.log('💾 [CREATE RATE] DADOS FINAIS PARA INSERÇÃO');
-    console.log('───────────────────────────────────────────────────────────────');
-    console.log('💾 [CREATE RATE] cleanedRate (completo):', JSON.stringify(cleanedRate, null, 2));
-    console.log('⏱️  [CREATE RATE] Timestamp PRÉ-INSERT:', new Date().toISOString());
+
+
+
+
+
 
     const { data, error } = await supabase
       .from('freight_rates')
@@ -539,39 +523,39 @@ export const freightRatesService = {
       .select()
       .single();
 
-    console.log('⏱️  [CREATE RATE] Timestamp PÓS-INSERT:', new Date().toISOString());
+
 
     if (error) {
-      console.log('═══════════════════════════════════════════════════════════════');
-      console.error('❌ [CREATE RATE ERROR] ERRO AO INSERIR TARIFA');
-      console.log('═══════════════════════════════════════════════════════════════');
-      console.error('❌ [CREATE RATE ERROR] Error code:', error.code);
-      console.error('❌ [CREATE RATE ERROR] Error message:', error.message);
-      console.error('❌ [CREATE RATE ERROR] Error details:', error.details);
-      console.error('❌ [CREATE RATE ERROR] Error hint:', error.hint);
-      console.error('❌ [CREATE RATE ERROR] Full error:', JSON.stringify(error, null, 2));
-      console.error('❌ [CREATE RATE ERROR] Dados tentados:', JSON.stringify(cleanedRate, null, 2));
+
+
+
+
+
+
+
+
+
 
       // Se o erro for de constraint unique, fornecer mensagem mais clara
       if (error.code === '23505' && error.message.includes('freight_rates_table_codigo_unique')) {
-        console.error('🔐 [CREATE RATE ERROR] Erro de constraint unique detectado');
+
         throw new Error(`Já existe uma tarifa com o código "${rate.codigo}" nesta tabela. Por favor, use um código diferente.`);
       }
 
       // Erro específico de RLS
       if (error.code === '42501' || error.message.includes('row-level security')) {
-        console.error('🔐 [CREATE RATE RLS ERROR] ERRO DE ROW-LEVEL SECURITY DETECTADO');
-        console.error('🔐 [CREATE RATE RLS ERROR] Verifique se o contexto está configurado');
+
+
       }
 
       throw error;
     }
 
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('✅ [CREATE RATE SUCCESS] TARIFA CRIADA COM SUCESSO!');
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('✅ [CREATE RATE SUCCESS] ID da tarifa criada:', data.id);
-    console.log('✅ [CREATE RATE SUCCESS] Dados da tarifa:', JSON.stringify(data, null, 2));
+
+
+
+
+
 
     return data;
   },
@@ -579,27 +563,27 @@ export const freightRatesService = {
   async updateRate(id: string, updates: Partial<FreightRate>): Promise<FreightRate> {
     const { detalhes, created_by, updated_by, created_at, id: rateId, ...rateData } = updates;
 
-    console.log('🔄 [updateRate] INÍCIO - Atualizando tarifa ID:', id);
-    console.log('🔄 [updateRate] Updates completos recebidos:', JSON.stringify(updates, null, 2));
-    console.log('🔄 [updateRate] Dados da tarifa (sem detalhes):', JSON.stringify(rateData, null, 2));
-    console.log('🔄 [updateRate] Quantidade de detalhes recebidos:', detalhes?.length || 0);
+
+
+
+
 
     try {
       // Filtrar apenas campos válidos
       const filteredData = filterValidFields(rateData, VALID_FREIGHT_RATE_FIELDS);
-      console.log('🔄 [updateRate] Dados filtrados (apenas campos válidos):', JSON.stringify(filteredData, null, 2));
+
 
       // Limpar campos com strings vazias (geralmente problemas com UUID)
       const cleanedData = { ...formatRateData(filteredData), updated_at: new Date().toISOString() };
       Object.keys(cleanedData).forEach(key => {
         if (cleanedData[key] === '') {
-          console.log(`⚠️ [updateRate] Removendo campo vazio: ${key}`);
+
           delete cleanedData[key];
         }
       });
 
-      console.log('🔄 [updateRate] Dados limpos para atualização:', JSON.stringify(cleanedData, null, 2));
-      console.log('🔄 [updateRate] Enviando UPDATE para o banco...');
+
+
 
       // O trigger ensure_gris_three_decimals no banco garante 3 casas decimais
       const { data, error } = await supabase
@@ -610,12 +594,12 @@ export const freightRatesService = {
         .single();
 
       if (error) {
-        console.error('❌ [updateRate] ERRO AO ATUALIZAR TARIFA');
-        console.error('❌ [updateRate] Error code:', error.code);
-        console.error('❌ [updateRate] Error message:', error.message);
-        console.error('❌ [updateRate] Error details:', error.details);
-        console.error('❌ [updateRate] Error hint:', error.hint);
-        console.error('❌ [updateRate] Full error:', JSON.stringify(error, null, 2));
+
+
+
+
+
+
         throw new Error(`Erro ao atualizar tarifa: ${error.message || error.code || 'Erro desconhecido'}`);
       }
 
@@ -623,11 +607,11 @@ export const freightRatesService = {
         throw new Error('Tarifa não encontrada após atualização');
       }
 
-      console.log('✅ [updateRate] Tarifa atualizada com sucesso no banco');
+
 
       if (detalhes !== undefined) {
-        console.log('🗑️ [updateRate] Iniciando atualização de detalhes...');
-        console.log('🗑️ [updateRate] Deletando detalhes antigos da tarifa ID:', id);
+
+
 
         const { error: deleteError } = await supabase
           .from('freight_rate_details')
@@ -635,12 +619,12 @@ export const freightRatesService = {
           .eq('freight_rate_id', id);
 
         if (deleteError) {
-          console.error('❌ [updateRate] ERRO ao deletar detalhes antigos');
-          console.error('❌ [updateRate] Delete error:', JSON.stringify(deleteError, null, 2));
+
+
           throw new Error(`Erro ao deletar detalhes antigos: ${deleteError.message || deleteError.code || 'Erro desconhecido'}`);
         }
 
-        console.log('✅ [updateRate] Detalhes antigos deletados com sucesso');
+
 
         if (detalhes.length > 0) {
           const detailsData = detalhes.map((detail, index) => {
@@ -664,13 +648,13 @@ export const freightRatesService = {
               taxa_minima: Number(detailWithoutId.taxa_minima) || 0
             };
 
-            console.log(`📝 [updateRate] Detalhe ${index + 1} ORIGINAL:`, JSON.stringify(detail, null, 2));
-            console.log(`📝 [updateRate] Detalhe ${index + 1} PROCESSADO:`, JSON.stringify(processedDetail, null, 2));
+
+
 
             return processedDetail;
           });
 
-          console.log('💾 [updateRate] Inserindo', detailsData.length, 'novos detalhes...');
+
 
           const { error: insertError, data: insertedData } = await supabase
             .from('freight_rate_details')
@@ -678,26 +662,26 @@ export const freightRatesService = {
             .select();
 
           if (insertError) {
-            console.error('❌ [updateRate] ERRO ao inserir novos detalhes');
-            console.error('❌ [updateRate] Insert error code:', insertError.code);
-            console.error('❌ [updateRate] Insert error message:', insertError.message);
-            console.error('❌ [updateRate] Insert error details:', insertError.details);
-            console.error('❌ [updateRate] Full insert error:', JSON.stringify(insertError, null, 2));
+
+
+
+
+
             throw new Error(`Erro ao inserir novos detalhes: ${insertError.message || insertError.code || 'Erro desconhecido'}`);
           }
 
-          console.log('✅ [updateRate] Novos detalhes inseridos com sucesso:', insertedData?.length || 0, 'registros');
-          console.log('✅ [updateRate] Detalhes inseridos:', JSON.stringify(insertedData, null, 2));
+
+
         } else {
-          console.log('ℹ️ [updateRate] Array de detalhes vazio - nenhum detalhe para inserir');
+
         }
       } else {
-        console.log('ℹ️ [updateRate] Detalhes não foram fornecidos para atualização (undefined)');
+
       }
 
       return data;
     } catch (error) {
-      console.error('❌ [freightRatesService] Erro geral ao atualizar tarifa:', error);
+
       throw error;
     }
   },
@@ -874,7 +858,7 @@ export const freightRatesService = {
 
       return { rate, table };
     } catch (error) {
-      console.error('Erro ao buscar tarifa:', error);
+
       return null;
     }
   },
@@ -897,7 +881,7 @@ export const freightRatesService = {
         detalhes: details
       };
     } catch (error) {
-      console.error('Erro ao buscar tarifa por ID:', error);
+
       return null;
     }
   }

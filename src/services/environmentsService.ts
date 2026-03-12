@@ -149,7 +149,7 @@ class EnvironmentsService {
         .select()
         .single();
 
-      if (estError) console.error('[SAAS_ADMIN] Erro ao criar estabelecimento padrão:', estError);
+      if (estError) /*log_removed*/
 
       // 2. Criar usuário admin vinculado
       if (estData) {
@@ -173,7 +173,7 @@ class EnvironmentsService {
           .select()
           .single();
 
-        if (userError) console.error('[SAAS_ADMIN] Erro ao criar usuário admin padrão:', userError);
+        if (userError) /*log_removed*/
 
         // 3. Vincular usuário na tabela N para N user_establishments
         if (userData) {
@@ -187,7 +187,7 @@ class EnvironmentsService {
         }
       }
     } catch (autoGenError) {
-      console.error('[SAAS_ADMIN] Falha no provisionamento automático de org/env:', autoGenError);
+
     }
 
     return data;

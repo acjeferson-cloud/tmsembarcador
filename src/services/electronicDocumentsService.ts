@@ -38,7 +38,7 @@ export const electronicDocumentsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar documentos eletrônicos:', error);
+
       return [];
     }
   },
@@ -54,7 +54,7 @@ export const electronicDocumentsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar documento eletrônico:', error);
+
       return null;
     }
   },
@@ -70,7 +70,7 @@ export const electronicDocumentsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar documento por chave:', error);
+
       return null;
     }
   },
@@ -91,7 +91,7 @@ export const electronicDocumentsService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar documento eletrônico:', error);
+
       return { success: false, error: 'Erro ao criar documento' };
     }
   },
@@ -109,7 +109,7 @@ export const electronicDocumentsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar documento eletrônico:', error);
+
       return { success: false, error: 'Erro ao atualizar documento' };
     }
   },
@@ -124,7 +124,7 @@ export const electronicDocumentsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir documento eletrônico:', error);
+
       return { success: false, error: 'Erro ao excluir documento' };
     }
   },
@@ -140,7 +140,7 @@ export const electronicDocumentsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar documentos por tipo:', error);
+
       return [];
     }
   }

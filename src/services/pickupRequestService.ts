@@ -126,7 +126,7 @@ export const pickupRequestService = {
 
       return { success: true, pdfBase64, romaneioData };
     } catch (error) {
-      console.error('Erro ao gerar romaneio:', error);
+
       return { success: false, error: 'Erro ao gerar romaneio' };
     }
   },
@@ -288,14 +288,14 @@ export const pickupRequestService = {
 
       if (params.notificationMethod === 'email' || params.notificationMethod === 'both') {
         if (params.carrierEmail) {
-          console.log(`📧 Enviando romaneio por email para: ${params.carrierEmail}`);
+
           emailSent = true;
         }
       }
 
       if (params.notificationMethod === 'whatsapp' || params.notificationMethod === 'both') {
         if (params.carrierPhone) {
-          console.log(`📱 Enviando romaneio por WhatsApp para: ${params.carrierPhone}`);
+
           whatsappSent = true;
         }
       }
@@ -312,7 +312,7 @@ export const pickupRequestService = {
 
       return { success: true, requestId: request.id };
     } catch (error) {
-      console.error('Erro ao solicitar coleta:', error);
+
       return { success: false, error: 'Erro ao solicitar coleta' };
     }
   },
@@ -328,7 +328,7 @@ export const pickupRequestService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar solicitações de coleta:', error);
+
       return [];
     }
   }

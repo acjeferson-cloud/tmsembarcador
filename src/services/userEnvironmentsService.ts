@@ -24,7 +24,7 @@ export const userEnvironmentsService = {
     });
 
     if (error) {
-      console.error('Error fetching user environments:', error);
+
       throw new Error('Não foi possível carregar os ambientes disponíveis');
     }
 

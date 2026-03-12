@@ -35,7 +35,7 @@ export const ChangeLog: React.FC = () => {
       setLogs(result.logs);
       setTotalCount(result.totalCount);
     } catch (error) {
-      console.error('Error loading logs:', error);
+
     } finally {
       setIsLoading(false);
     }

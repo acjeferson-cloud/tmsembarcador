@@ -37,29 +37,29 @@ class Logger {
 
   debug(message: string, context?: string, ...args: unknown[]): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage('debug', message, context), ...args);
+
     }
   }
 
   info(message: string, context?: string, ...args: unknown[]): void {
     if (this.shouldLog('info')) {
-      console.log(this.formatMessage('info', message, context), ...args);
+
     }
   }
 
   warn(message: string, context?: string, ...args: unknown[]): void {
     if (this.shouldLog('warn')) {
-      console.warn(this.formatMessage('warn', message, context), ...args);
+
     }
   }
 
   error(message: string, error?: Error | unknown, context?: string): void {
     if (this.shouldLog('error')) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(this.formatMessage('error', `${message} - ${errorMsg}`, context));
+
 
       if (error instanceof Error && error.stack) {
-        console.error('Stack trace:', error.stack);
+
       }
     }
   }

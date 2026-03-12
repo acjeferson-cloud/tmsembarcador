@@ -81,7 +81,7 @@ class PickupSchedulingService {
 
       return { success: true, data: scheduling };
     } catch (error: any) {
-      console.error('Erro ao criar agendamento:', error);
+
       return { success: false, error: error.message };
     }
   }
@@ -139,7 +139,7 @@ class PickupSchedulingService {
 
       return { success: true, data: result };
     } catch (error: any) {
-      console.error('Erro ao buscar agendamento:', error);
+
       return { success: false, error: error.message };
     }
   }
@@ -160,7 +160,7 @@ class PickupSchedulingService {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar agendamento:', error);
+
       return { success: false, error: error.message };
     }
   }
@@ -199,7 +199,7 @@ class PickupSchedulingService {
 
       return { success: true, data: schedulingsWithInvoices };
     } catch (error: any) {
-      console.error('Erro ao buscar agendamentos:', error);
+
       return { success: false, error: error.message };
     }
   }
@@ -220,7 +220,7 @@ class PickupSchedulingService {
 
       return { success: true, data: schedulings as PickupScheduling[] };
     } catch (error: any) {
-      console.error('Erro ao buscar agendamentos da nota fiscal:', error);
+
       return { success: false, error: error.message };
     }
   }
@@ -236,7 +236,7 @@ class PickupSchedulingService {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir agendamento:', error);
+
       return { success: false, error: error.message };
     }
   }

@@ -69,13 +69,13 @@ export const implementationService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar configuração ERP:', error);
+
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configuração ERP:', error);
+
       return null;
     }
   },
@@ -99,13 +99,13 @@ export const implementationService = {
         });
 
       if (error) {
-        console.error('Erro ao salvar configuração ERP:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao salvar configuração ERP:', error);
+
       return { success: false, error: 'Erro ao salvar configuração' };
     }
   },
@@ -121,13 +121,13 @@ export const implementationService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao atualizar configuração ERP:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar configuração ERP:', error);
+
       return { success: false, error: 'Erro ao atualizar configuração' };
     }
   },
@@ -146,13 +146,13 @@ export const implementationService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar log de importação:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar log de importação:', error);
+
       return { success: false, error: 'Erro ao criar log' };
     }
   },
@@ -165,13 +165,13 @@ export const implementationService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao atualizar log de importação:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar log de importação:', error);
+
       return { success: false, error: 'Erro ao atualizar log' };
     }
   },
@@ -185,13 +185,13 @@ export const implementationService = {
         .limit(limit);
 
       if (error) {
-        console.error('Erro ao buscar logs de importação:', error);
+
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs de importação:', error);
+
       return [];
     }
   },
@@ -206,13 +206,13 @@ export const implementationService = {
         .limit(limit);
 
       if (error) {
-        console.error('Erro ao buscar logs por tipo:', error);
+
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logs por tipo:', error);
+
       return [];
     }
   },
@@ -231,13 +231,13 @@ export const implementationService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar registro de reajuste:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar registro de reajuste:', error);
+
       return { success: false, error: 'Erro ao criar registro' };
     }
   },
@@ -251,13 +251,13 @@ export const implementationService = {
         .limit(limit);
 
       if (error) {
-        console.error('Erro ao buscar histórico de reajustes:', error);
+
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar histórico de reajustes:', error);
+
       return [];
     }
   },
@@ -409,7 +409,7 @@ export const implementationService = {
         errors: recordsError > 0 ? errors : undefined
       };
     } catch (error) {
-      console.error('Erro ao processar importação:', error);
+
       return { success: false, message: 'Erro ao processar arquivo' };
     }
   },
@@ -455,7 +455,7 @@ export const implementationService = {
       const tarifasMap = new Map<string, string>();
 
       // ETAPA 1: Processar Tabelas
-      console.log('=== PROCESSANDO TABELAS ===');
+
       for (let i = 0; i < tabelas.length; i++) {
         const row = tabelas[i];
         const lineNumber = i + 2;
@@ -492,18 +492,18 @@ export const implementationService = {
           tabelasMap.set(tabelaKey, tabelaResult.id);
 
           recordsSuccess++;
-          console.log(`Tabela criada: ${row.tabela_nome} (ID: ${tabelaResult.id})`);
+
 
         } catch (error) {
           recordsError++;
           const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
           errors.push(`Tabela linha ${lineNumber}: ${errorMessage}`);
-          console.error(`Erro na tabela linha ${lineNumber}:`, errorMessage);
+
         }
       }
 
       // ETAPA 2: Processar Tarifas
-      console.log('=== PROCESSANDO TARIFAS ===');
+
       for (let i = 0; i < tarifas.length; i++) {
         const row = tarifas[i];
         const lineNumber = i + 2;
@@ -570,18 +570,18 @@ export const implementationService = {
           tarifasMap.set(tarifaKey, tarifaResult.id);
 
           recordsSuccess++;
-          console.log(`Tarifa criada: ${row.codigo} (ID: ${tarifaResult.id})`);
+
 
         } catch (error) {
           recordsError++;
           const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
           errors.push(`Tarifa linha ${lineNumber}: ${errorMessage}`);
-          console.error(`Erro na tarifa linha ${lineNumber}:`, errorMessage);
+
         }
       }
 
       // ETAPA 3: Processar Faixas
-      console.log('=== PROCESSANDO FAIXAS ===');
+
       for (let i = 0; i < faixas.length; i++) {
         const row = faixas[i];
         const lineNumber = i + 2;
@@ -618,13 +618,13 @@ export const implementationService = {
 
           await freightRatesService.createRateDetail(faixaToCreate as any);
           recordsSuccess++;
-          console.log(`Faixa criada: Tarifa ${row.tarifa_codigo}, Ordem ${row.ordem}`);
+
 
         } catch (error) {
           recordsError++;
           const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
           errors.push(`Faixa linha ${lineNumber}: ${errorMessage}`);
-          console.error(`Erro na faixa linha ${lineNumber}:`, errorMessage);
+
         }
       }
 
@@ -653,7 +653,7 @@ export const implementationService = {
         errors: recordsError > 0 ? errors : undefined
       };
     } catch (error) {
-      console.error('Erro ao processar importação:', error);
+
       return { success: false, message: 'Erro ao processar arquivo: ' + (error as Error).message };
     }
   },
@@ -696,7 +696,7 @@ export const implementationService = {
         recordsProcessed
       };
     } catch (error) {
-      console.error('Erro ao processar importação:', error);
+
       return { success: false, message: 'Erro ao processar arquivo' };
     }
   },
@@ -731,7 +731,7 @@ export const implementationService = {
         message: `Reajuste aplicado com sucesso em ${affectedTables} tabelas e ${affectedRoutes} rotas`
       };
     } catch (error) {
-      console.error('Erro ao aplicar reajuste:', error);
+
       return {
         success: false,
         affectedTables: 0,

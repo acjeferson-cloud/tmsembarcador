@@ -135,11 +135,11 @@ export const freightCostCalculator = {
     businessPartnerId?: string
   ): Promise<AdditionalFee[]> {
     try {
-      console.log('🔍 Buscando taxas adicionais...');
-      console.log('  Table ID:', tableId);
-      console.log('  City ID:', cityId);
-      console.log('  State ID:', stateId);
-      console.log('  Business Partner ID:', businessPartnerId);
+
+
+
+
+
 
       const { data: fees, error } = await supabase
         .from('freight_rate_additional_fees')
@@ -149,7 +149,7 @@ export const freightCostCalculator = {
 
       if (error) throw error;
       if (!fees || fees.length === 0) {
-        console.log('❌ Nenhuma taxa adicional encontrada para esta tabela');
+
         return [];
       }
 
@@ -184,14 +184,14 @@ export const freightCostCalculator = {
         return true;
       });
 
-      console.log(`✅ ${applicableFees.length} taxas adicionais aplicáveis encontradas`);
+
       applicableFees.forEach(fee => {
-        console.log(`  - ${fee.fee_type}: R$ ${fee.fee_value} (${fee.value_type})`);
+
       });
 
       return applicableFees;
     } catch (error) {
-      console.error('❌ Erro ao buscar taxas adicionais:', error);
+
       return [];
     }
   },
@@ -269,16 +269,16 @@ export const freightCostCalculator = {
     // Se o CT-e tem cargo_weight_for_calculation, usar esse peso
     if (cte.cargo_weight_for_calculation && cte.cargo_weight_for_calculation > 0) {
       totalWeight = parseFloat(cte.cargo_weight_for_calculation.toString());
-      console.log('Peso para cálculo (maior entre real e cubado):', totalWeight, 'kg');
+
     }
     // Fallback: usar cargo_weight se não tiver cargo_weight_for_calculation
     else if (cte.cargo_weight && cte.cargo_weight > 0) {
       totalWeight = parseFloat(cte.cargo_weight.toString());
-      console.log('Usando peso real:', totalWeight, 'kg');
+
     }
     if (cte.cargo_value && cte.cargo_value > 0) {
       totalValue = parseFloat(cte.cargo_value.toString());
-      console.log('Valor da mercadoria extraído do CT-e:', totalValue);
+
     }
     if (cte.cargo_volume && cte.cargo_volume > 0) {
       totalVolume = parseFloat(cte.cargo_volume.toString());
@@ -323,7 +323,7 @@ export const freightCostCalculator = {
 
         if (pesoReal) {
           totalWeight = parseFloat(pesoReal.qCarga || '0');
-          console.log('Peso extraído do XML:', totalWeight, 'kg - Tipo:', pesoReal.tpMed);
+
         }
       }
 
@@ -355,23 +355,23 @@ export const freightCostCalculator = {
 
     // PRIORIDADE 4: FALLBACK - usar cálculo reverso dos valores do CT-e (último recurso)
     if (totalWeight === 0 || totalValue === 0) {
-      console.warn('⚠️ ATENÇÃO: Dados incompletos para cálculo');
-      console.warn('Peso:', totalWeight, 'kg');
-      console.warn('Valor:', totalValue);
+
+
+
 
       // Calcular valor da mercadoria a partir do Frete Valor (ad valorem)
       const freteValorCte = parseFloat(cte.freight_value_value?.toString() || '0');
       if (freteValorCte > 0 && totalValue === 0) {
         // Assumir 0,3% como padrão comum
         totalValue = freteValorCte / 0.003;
-        console.log('Valor estimado a partir do frete valor:', totalValue);
+
       }
 
       // Calcular valor a partir do GRIS
       const grisCte = parseFloat(cte.ademe_gris_value?.toString() || '0');
       if (grisCte > 0 && totalValue === 0) {
         totalValue = grisCte / 0.0015;
-        console.log('Valor estimado a partir do GRIS:', totalValue);
+
       }
 
       // NÃO estimar peso baseado no frete peso (cria loop circular)
@@ -437,10 +437,10 @@ export const freightCostCalculator = {
     // Verificar se a faixa tem tipo_taxa = "sem_taxas"
     const semTaxas = weightRange?.tipo_taxa === 'sem_taxas';
 
-    console.log('=== VERIFICAÇÃO TIPO TAXA ===');
-    console.log('Tipo taxa da faixa:', weightRange?.tipo_taxa);
-    console.log('Sem taxas?', semTaxas);
-    console.log('============================');
+
+
+
+
 
     // 1. FRETE PESO (arredondar individualmente)
     const fretePeso = this.roundValue(this.calculateFretePeso(weightRange, invoiceData.weight, tariff));
@@ -476,7 +476,7 @@ export const freightCostCalculator = {
     let trt = 0;
 
     if (!semTaxas && additionalFees.length > 0) {
-      console.log('=== CALCULANDO TAXAS ADICIONAIS ===');
+
 
       // O valor do CT-e para cálculo percentual é a soma do frete peso + frete valor
       const valorCTeParaCalculo = fretePeso + freteValor;
@@ -495,23 +495,23 @@ export const freightCostCalculator = {
         switch (fee.fee_type) {
           case 'TDA':
             tda += feeValue;
-            console.log(`  TDA: R$ ${feeValue.toFixed(2)}`);
+
             break;
           case 'TDE':
             tde += feeValue;
-            console.log(`  TDE: R$ ${feeValue.toFixed(2)}`);
+
             break;
           case 'TRT':
             trt += feeValue;
-            console.log(`  TRT: R$ ${feeValue.toFixed(2)}`);
+
             break;
         }
       });
 
-      console.log(`  Total TDA: R$ ${tda.toFixed(2)}`);
-      console.log(`  Total TDE: R$ ${tde.toFixed(2)}`);
-      console.log(`  Total TRT: R$ ${trt.toFixed(2)}`);
-      console.log('===================================');
+
+
+
+
     }
 
     // 11. BASE DE CÁLCULO (sem outros valores) - somar valores já arredondados
@@ -526,10 +526,10 @@ export const freightCostCalculator = {
     let outrosValores = 0;
     let baseFrete = 0;
 
-    console.log('🔍 Verificando configuração ICMS da tarifa:');
-    console.log('  - Alíquota ICMS:', icmsAliquota + '%');
-    console.log('  - ICMS Embutido (tarifa):', tariff.icms_embutido_tabela);
-    console.log('  - ICMS Embutido (flag):', icmsEmbutido);
+
+
+
+
 
     if (icmsAliquota > 0) {
       if (icmsEmbutido) {
@@ -545,15 +545,15 @@ export const freightCostCalculator = {
         icmsBase = this.roundValue(valorComICMS);
         icmsValor = this.roundValue(valorComICMS - baseFrete);
 
-        console.log('=== ICMS EMBUTIDO ===');
-        console.log('Base cálculo:', baseCalculo.toFixed(2));
-        console.log('Outros valores (%):', outrosValores.toFixed(2));
-        console.log('Base frete:', baseFrete.toFixed(2));
-        console.log('Alíquota ICMS:', icmsAliquota + '%');
-        console.log('Valor com ICMS:', valorComICMS.toFixed(2));
-        console.log('Base ICMS:', icmsBase.toFixed(2));
-        console.log('ICMS embutido:', icmsValor.toFixed(2));
-        console.log('=====================');
+
+
+
+
+
+
+
+
+
       } else {
         // ICMS NÃO EMBUTIDO: "Outros Valores" = ICMS (não calcular percentual)
         // Base do frete SEM "outros valores"
@@ -566,15 +566,15 @@ export const freightCostCalculator = {
         // "Outros Valores" é igual ao ICMS quando não está embutido
         outrosValores = icmsValor;
 
-        console.log('=== ICMS NÃO EMBUTIDO (POR FORA) ===');
-        console.log('Base cálculo (sem outros valores):', baseCalculo.toFixed(2));
-        console.log('Alíquota ICMS:', icmsAliquota + '%');
-        console.log('ICMS (por fora):', icmsValor.toFixed(2));
-        console.log('Base ICMS:', icmsBase.toFixed(2));
-        console.log('Outros valores = ICMS:', outrosValores.toFixed(2));
-        console.log('Fórmula ICMS: Base × Alíquota / (100 - Alíquota)');
-        console.log('Cálculo:', baseFrete.toFixed(2), '×', icmsAliquota, '/ (100 -', icmsAliquota, ') =', icmsValor.toFixed(2));
-        console.log('=====================================');
+
+
+
+
+
+
+
+
+
       }
     } else {
       // Sem ICMS: calcular "outros valores" normalmente
@@ -587,27 +587,27 @@ export const freightCostCalculator = {
     // ICMS EMBUTIDO: Total = baseCalculo + outrosValores (que é percentual) + icmsValor
     const valorTotal = icmsEmbutido ? icmsBase : this.roundValue(baseCalculo + outrosValores);
 
-    console.log('=== RESUMO CÁLCULO ===');
-    console.log('Frete Peso:', fretePeso.toFixed(2));
-    console.log('Frete Valor:', freteValor.toFixed(2));
-    console.log('GRIS:', gris.toFixed(2));
-    console.log('Pedágio:', pedagio.toFixed(2));
-    console.log('TAS:', tas.toFixed(2));
-    console.log('SECCAT:', seccat.toFixed(2));
-    console.log('Despacho:', despacho.toFixed(2));
-    console.log('ITR:', itr.toFixed(2));
-    console.log('Coleta/Entrega:', coletaEntrega.toFixed(2));
-    console.log('TDA:', tda.toFixed(2));
-    console.log('TDE:', tde.toFixed(2));
-    console.log('TRT:', trt.toFixed(2));
-    console.log('Outros Valores:', outrosValores.toFixed(2));
-    console.log('Base Frete:', baseFrete.toFixed(2));
-    console.log('ICMS Base:', icmsBase.toFixed(2));
-    console.log('ICMS Alíquota:', icmsAliquota + '%');
-    console.log('ICMS Valor:', icmsValor.toFixed(2));
-    console.log('ICMS Embutido:', icmsEmbutido ? 'Sim' : 'Não');
-    console.log('Valor Total:', valorTotal.toFixed(2));
-    console.log('======================');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     return {
       fretePeso,
@@ -668,11 +668,11 @@ export const freightCostCalculator = {
 
     let calculated = valorFaixa;
 
-    console.log('=== CÁLCULO FRETE PESO ===');
-    console.log('Peso da carga:', weight, 'KG');
-    console.log('Peso até (faixa):', weightRange.peso_ate, 'KG');
-    console.log('Valor da faixa:', valorFaixa.toFixed(2));
-    console.log('Tipo de cálculo:', tipoCalculo);
+
+
+
+
+
 
     // Se o tipo de cálculo for "excedente", aplicar a regra de cálculo específica
     if (tipoCalculo === 'excedente') {
@@ -688,34 +688,34 @@ export const freightCostCalculator = {
         const pesoExcedente = weight - pesoAnterior;
         const valorPorKgExcedente = valorFaixa;
 
-        console.log('--- EXCEDENTE (faixa superior) ---');
-        console.log('Valor base (faixa anterior):', valorBase.toFixed(2));
-        console.log('Peso anterior:', pesoAnterior, 'KG');
-        console.log('Peso excedente:', pesoExcedente.toFixed(2), 'KG');
-        console.log('Valor por KG excedente:', valorPorKgExcedente.toFixed(5));
-        console.log('Cálculo: R$', valorBase.toFixed(2), '+ (', pesoExcedente.toFixed(2), '× R$', valorPorKgExcedente.toFixed(5), ')');
+
+
+
+
+
+
 
         // Fórmula: Valor da faixa anterior + (Peso excedente × Valor por KG excedente)
         calculated = valorBase + (pesoExcedente * valorPorKgExcedente);
 
-        console.log('Valor final:', calculated.toFixed(2));
+
       } else {
         // Primeira faixa com tipo excedente: usar valor fixo da faixa
         // NÃO multiplicar pelo peso, pois o valor já representa o custo fixo até esse peso
-        console.log('--- PRIMEIRA FAIXA ---');
-        console.log('Usando valor fixo da faixa:', valorFaixa.toFixed(2));
+
+
         calculated = valorFaixa;
       }
     } else {
       // Tipo "valor_faixa": usar o valor fixo da faixa
-      console.log('--- VALOR FIXO DA FAIXA ---');
-      console.log('Usando valor fixo:', valorFaixa.toFixed(2));
+
+
       calculated = valorFaixa;
     }
 
     const resultado = Math.max(calculated, freteMinimo);
-    console.log('Frete peso final (após aplicar mínimo):', resultado.toFixed(2));
-    console.log('==========================');
+
+
 
     return resultado;
   },
@@ -746,16 +746,16 @@ export const freightCostCalculator = {
     const percentual = parseFloat(tariff.percentual_gris?.toString() || '0');
     const grisMinimo = parseFloat(tariff.gris_minimo?.toString() || '0');
 
-    console.log('=== CÁLCULO GRIS ===');
-    console.log('Valor mercadoria:', valorMercadoria);
-    console.log('Percentual GRIS:', percentual);
-    console.log('GRIS mínimo:', grisMinimo);
+
+
+
+
 
     const calculated = (valorMercadoria * percentual) / 100;
 
-    console.log('GRIS calculado (antes arredondar):', calculated);
-    console.log('GRIS final:', Math.max(calculated, grisMinimo));
-    console.log('====================');
+
+
+
 
     return Math.max(calculated, grisMinimo);
   },
@@ -768,13 +768,13 @@ export const freightCostCalculator = {
     const pedagioPorKg = tariff.pedagio_por_kg || 0;
     const pedagioACadaKg = tariff.pedagio_a_cada_kg || 100; // padrão: a cada 100kg
 
-    console.log('=== CÁLCULO DE PEDÁGIO ===');
-    console.log('Peso usado:', weight, 'kg');
-    console.log('Pedágio por kg:', pedagioPorKg);
-    console.log('A cada kg:', pedagioACadaKg);
+
+
+
+
 
     if (pedagioPorKg === 0) {
-      console.log('Pedágio por kg = 0, retornando mínimo:', pedagioMinimo);
+
       return pedagioMinimo;
     }
 
@@ -782,11 +782,11 @@ export const freightCostCalculator = {
     const fracoes = Math.ceil(weight / pedagioACadaKg);
     const calculated = fracoes * pedagioPorKg;
 
-    console.log('Frações calculadas:', fracoes, '(Math.ceil(' + weight + ' / ' + pedagioACadaKg + '))');
-    console.log('Pedágio calculado:', calculated.toFixed(2), '(' + fracoes + ' × ' + pedagioPorKg + ')');
-    console.log('Pedágio mínimo:', pedagioMinimo);
-    console.log('Pedágio final:', Math.max(calculated, pedagioMinimo).toFixed(2));
-    console.log('==========================');
+
+
+
+
+
 
     return Math.max(calculated, pedagioMinimo);
   },
@@ -830,7 +830,7 @@ export const freightCostCalculator = {
         .eq('id', cteId);
 
       if (updateError) {
-        console.error('Erro ao salvar tarifa no CT-e:', updateError);
+
       }
     }
 
@@ -859,11 +859,11 @@ export const freightCostCalculator = {
       { cte_id: cteId, cost_type: 'icms_value', cost_value: calculation.icmsValor }
     ];
 
-    console.log('💾 Salvando custos no banco:', costs);
-    console.log('📊 Base ICMS que será salva:', calculation.icmsBase);
-    console.log('📊 Valor ICMS que será salvo:', calculation.icmsValor);
-    console.log('📊 Outros Valores que será salvo:', calculation.outrosValores);
-    console.log('📊 Valor Total que será salvo:', calculation.valorTotal);
+
+
+
+
+
 
     // Inserir novos custos
     const { error } = await supabase
@@ -872,7 +872,7 @@ export const freightCostCalculator = {
 
     if (error) throw error;
 
-    console.log('✅ Custos salvos com sucesso!');
+
 
     // Atualizar o valor total no CT-e (não sobrescrever o valor original do XML)
     // O valor calculado será mostrado na comparação

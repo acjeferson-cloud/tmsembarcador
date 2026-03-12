@@ -58,21 +58,21 @@ interface BusinessPartnerContact {
 export const businessPartnersService = {
   async getAll(): Promise<BusinessPartner[]> {
     try {
-      console.log('🤝 [PARTNERS] Início');
+
 
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) {
-        console.error('❌ [PARTNERS] User not found');
+
         return [];
       }
 
       const userData = JSON.parse(savedUser);
       const { organization_id, environment_id } = userData;
 
-      console.log('🤝 [PARTNERS] User:', { organization_id, environment_id });
+
 
       if (!organization_id || !environment_id) {
-        console.error('❌ [PARTNERS] Missing org/env');
+
         return [];
       }
 
@@ -88,11 +88,11 @@ export const businessPartnersService = {
         .order('razao_social');
 
       if (error) {
-        console.error('❌ [PARTNERS] Error:', error);
+
         return [];
       }
 
-      console.log(`✅ [PARTNERS] Found: ${data?.length || 0}`);
+
 
       // Mapear campos do banco (português) para interface (inglês)
       const mapped = (data || []).map(item => ({
@@ -121,7 +121,7 @@ export const businessPartnersService = {
 
       return mapped;
     } catch (error) {
-      console.error('[businessPartnersService] Exception:', error);
+
       return [];
     }
   },
@@ -139,7 +139,7 @@ export const businessPartnersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar parceiro:', error);
+
         return null;
       }
 
@@ -170,14 +170,14 @@ export const businessPartnersService = {
         }))
       };
     } catch (error) {
-      console.error('Erro ao buscar parceiro:', error);
+
       return null;
     }
   },
 
   async create(partner: BusinessPartner, userId: number): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-      console.log('📝 [CREATE] Iniciando criação do parceiro:', partner);
+
       const { contacts, addresses, ...partnerData } = partner;
 
       // Buscar dados do usuário do localStorage
@@ -193,7 +193,7 @@ export const businessPartnersService = {
         return { success: false, error: 'Organização ou ambiente não encontrado' };
       }
 
-      console.log('🏢 [CREATE] Org/Env:', { organization_id, environment_id });
+
 
       // Verificar se o documento já existe
       const { data: existingPartner } = await supabase
@@ -230,7 +230,7 @@ export const businessPartnersService = {
         ativo: partnerData.status === 'active'
       };
 
-      console.log('💾 [CREATE] Inserindo parceiro no banco:', partnerDbData);
+
 
       const { data: newPartner, error: partnerError } = await supabase
         .from('business_partners')
@@ -239,17 +239,17 @@ export const businessPartnersService = {
         .single();
 
       if (partnerError) {
-        console.error('❌ [CREATE] Erro ao criar parceiro:', partnerError);
+
         if (partnerError.code === '23505') {
           return { success: false, error: 'Este documento já está cadastrado no sistema' };
         }
         return { success: false, error: partnerError.message };
       }
 
-      console.log('✅ [CREATE] Parceiro criado:', newPartner.id);
+
 
       if (contacts && contacts.length > 0) {
-        console.log('👥 [CREATE] Inserindo', contacts.length, 'contatos...');
+
         const contactsToInsert = contacts.map(contact => {
           const { id: _, ...contactWithoutId } = contact;
           return {
@@ -267,27 +267,21 @@ export const businessPartnersService = {
           .insert(contactsToInsert);
 
         if (contactsError) {
-          console.error('❌ [CREATE] Erro ao criar contatos:', contactsError);
+
         } else {
-          console.log('✅ [CREATE] Contatos inseridos');
+
         }
       }
 
       if (addresses && addresses.length > 0) {
-        console.log('🏠 [CREATE] Processando', addresses.length, 'endereços...');
+
 
         for (const address of addresses) {
-          console.log('🔍 [CREATE] Verificando endereço recebido:', address);
+
 
           // Validar campos obrigatórios antes de inserir
           if (!address.type || !address.street || !address.city || !address.state || !address.zip_code) {
-            console.error('❌ [CREATE] Endereço com campos obrigatórios faltando:', {
-              type: address.type || 'FALTANDO',
-              street: address.street ? 'OK' : 'FALTANDO',
-              city: address.city ? 'OK' : 'FALTANDO',
-              state: address.state ? 'OK' : 'FALTANDO',
-              zip_code: address.zip_code ? 'OK' : 'FALTANDO'
-            });
+
             return {
               success: false,
               error: 'Endereço incompleto. Verifique se todos os campos obrigatórios estão preenchidos (tipo, logradouro, cidade, estado, CEP).'
@@ -297,7 +291,7 @@ export const businessPartnersService = {
           // Garantir que o tipo é válido
           const validTypes = ['billing', 'delivery', 'correspondence', 'commercial'];
           if (!validTypes.includes(address.type)) {
-            console.error('❌ [CREATE] Tipo de endereço inválido:', address.type);
+
             return {
               success: false,
               error: `Tipo de endereço inválido: ${address.type}. Deve ser um de: ${validTypes.join(', ')}`
@@ -307,7 +301,7 @@ export const businessPartnersService = {
           // Buscar city_id se cidade foi informada
           let city_id = null;
           if (address.city && address.state) {
-            console.log('🔍 [CREATE] Buscando cidade:', address.city, '/', address.state);
+
             const { data: cityData } = await supabase
               .from('cities')
               .select('id')
@@ -317,16 +311,16 @@ export const businessPartnersService = {
 
             if (cityData) {
               city_id = cityData.id;
-              console.log('✅ [CREATE] Cidade encontrada:', city_id);
+
             } else {
-              console.log('⚠️ [CREATE] Cidade não encontrada no cadastro');
+
             }
           }
 
           // Limpar e validar CEP
           const cleanZipCode = address.zip_code.replace(/\D/g, '');
           if (cleanZipCode.length !== 8) {
-            console.error('❌ [CREATE] CEP inválido:', address.zip_code);
+
             return { success: false, error: 'CEP deve conter exatamente 8 dígitos' };
           }
 
@@ -352,14 +346,14 @@ export const businessPartnersService = {
             updated_at: new Date().toISOString()
           };
 
-          console.log('💾 [CREATE] Inserindo endereço:', addressToInsert);
+
 
           const { error: addressError } = await supabase
             .from('business_partner_addresses')
             .insert(addressToInsert);
 
           if (addressError) {
-            console.error('❌ [CREATE] Erro ao criar endereço:', addressError);
+
             let errorMessage = 'Erro ao salvar endereço';
 
             if (addressError.code === '23502') {
@@ -370,23 +364,23 @@ export const businessPartnersService = {
 
             return { success: false, error: errorMessage };
           } else {
-            console.log('✅ [CREATE] Endereço inserido com sucesso');
+
           }
         }
       }
 
-      console.log('✅ [CREATE] Parceiro criado com sucesso!');
+
       return { success: true, id: newPartner.id };
     } catch (error) {
-      console.error('❌ [CREATE] Exceção:', error);
+
       return { success: false, error: 'Erro ao criar parceiro' };
     }
   },
 
   async update(id: string, partner: Partial<BusinessPartner>, userId: number): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('🔧 [UPDATE] Iniciando update do parceiro:', id);
-      console.log('🔧 [UPDATE] Dados recebidos:', partner);
+
+
 
       const { contacts, addresses, ...partnerData } = partner;
 
@@ -399,8 +393,8 @@ export const businessPartnersService = {
       const userData = JSON.parse(savedUser);
       const { organization_id, environment_id } = userData;
 
-      console.log('🔧 [UPDATE] Contatos extraídos:', contacts);
-      console.log('🔧 [UPDATE] Endereços extraídos:', addresses);
+
+
 
       // Se o documento está sendo alterado, verificar se já existe
       if (partnerData.document) {
@@ -438,37 +432,37 @@ export const businessPartnersService = {
 
       partnerDbData.updated_at = new Date().toISOString();
 
-      console.log('🔧 [UPDATE] Atualizando dados básicos do parceiro...');
+
       const { error: partnerError } = await supabase
         .from('business_partners')
         .update(partnerDbData)
         .eq('id', id);
 
       if (partnerError) {
-        console.error('❌ [UPDATE] Erro ao atualizar parceiro:', partnerError);
+
         if (partnerError.code === '23505') {
           return { success: false, error: 'Este documento já está cadastrado no sistema' };
         }
         return { success: false, error: partnerError.message };
       }
-      console.log('✅ [UPDATE] Dados básicos atualizados com sucesso');
+
 
       if (contacts !== undefined) {
-        console.log('🔧 [businessPartnersService.update] Processando contatos...');
-        console.log('🔧 [businessPartnersService.update] Deletando contatos antigos...');
+
+
         const { error: deleteContactsError } = await supabase
           .from('business_partner_contacts')
           .delete()
           .eq('partner_id', id);
 
         if (deleteContactsError) {
-          console.error('❌ [businessPartnersService.update] Erro ao deletar contatos:', deleteContactsError);
+
         } else {
-          console.log('✅ [businessPartnersService.update] Contatos antigos deletados');
+
         }
 
         if (contacts.length > 0) {
-          console.log('🔧 [businessPartnersService.update] Inserindo', contacts.length, 'contatos novos...');
+
           const contactsToInsert = contacts.map(contact => {
             const { id: _, ...contactWithoutId } = contact;
             return {
@@ -481,46 +475,46 @@ export const businessPartnersService = {
             };
           });
 
-          console.log('🔧 [businessPartnersService.update] Contatos a inserir:', contactsToInsert);
+
 
           const { error: contactsError } = await supabase
             .from('business_partner_contacts')
             .insert(contactsToInsert);
 
           if (contactsError) {
-            console.error('❌ [businessPartnersService.update] Erro ao inserir contatos:', contactsError);
+
           } else {
-            console.log('✅ [businessPartnersService.update] Contatos inseridos com sucesso');
+
           }
         } else {
-          console.log('ℹ️ [businessPartnersService.update] Nenhum contato para inserir');
+
         }
       } else {
-        console.log('ℹ️ [businessPartnersService.update] Contatos não fornecidos (undefined), mantendo existentes');
+
       }
 
       if (addresses !== undefined) {
-        console.log('🔧 [UPDATE] Processando endereços...');
-        console.log('🔧 [UPDATE] Deletando endereços antigos...');
+
+
         const { error: deleteAddressesError } = await supabase
           .from('business_partner_addresses')
           .delete()
           .eq('partner_id', id);
 
         if (deleteAddressesError) {
-          console.error('❌ [UPDATE] Erro ao deletar endereços:', deleteAddressesError);
+
         } else {
-          console.log('✅ [UPDATE] Endereços antigos deletados');
+
         }
 
         if (addresses.length > 0) {
-          console.log('🔧 [UPDATE] Processando', addresses.length, 'endereços novos...');
+
 
           for (const address of addresses) {
             // Buscar city_id se cidade foi informada
             let city_id = null;
             if (address.city && address.state) {
-              console.log('🔍 [UPDATE] Buscando cidade:', address.city, '/', address.state);
+
               const { data: cityData } = await supabase
                 .from('cities')
                 .select('id')
@@ -530,9 +524,9 @@ export const businessPartnersService = {
 
               if (cityData) {
                 city_id = cityData.id;
-                console.log('✅ [UPDATE] Cidade encontrada:', city_id);
+
               } else {
-                console.log('⚠️ [UPDATE] Cidade não encontrada no cadastro');
+
               }
             }
 
@@ -555,44 +549,44 @@ export const businessPartnersService = {
               updated_at: new Date().toISOString()
             };
 
-            console.log('💾 [UPDATE] Inserindo endereço:', addressToInsert);
+
 
             const { error: addressError } = await supabase
               .from('business_partner_addresses')
               .insert(addressToInsert);
 
             if (addressError) {
-              console.error('❌ [UPDATE] Erro ao inserir endereço:', addressError);
+
             } else {
-              console.log('✅ [UPDATE] Endereço inserido');
+
             }
           }
         } else {
-          console.log('ℹ️ [UPDATE] Nenhum endereço para inserir');
+
         }
       } else {
-        console.log('ℹ️ [UPDATE] Endereços não fornecidos (undefined), mantendo existentes');
+
       }
 
-      console.log('✅ [businessPartnersService.update] Update concluído com sucesso!');
+
       return { success: true };
     } catch (error) {
-      console.error('❌ [businessPartnersService.update] Erro ao atualizar parceiro:', error);
+
       return { success: false, error: 'Erro ao atualizar parceiro' };
     }
   },
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('🗑️ [businessPartnersService] Iniciando exclusão do parceiro:', id);
+
 
       if (!id) {
-        console.error('❌ [businessPartnersService] ID não fornecido');
+
         return { success: false, error: 'ID do parceiro não fornecido' };
       }
 
       // Verificar se o parceiro existe antes de tentar excluir
-      console.log('🔍 [businessPartnersService] Buscando parceiro...');
+
       const { data: existingPartner, error: checkError } = await supabase
         .from('business_partners')
         .select('id, razao_social, cpf_cnpj')
@@ -600,76 +594,68 @@ export const businessPartnersService = {
         .maybeSingle();
 
       if (checkError) {
-        console.error('❌ [businessPartnersService] Erro ao verificar parceiro:', checkError);
-        console.error('❌ [businessPartnersService] Detalhes do erro:', JSON.stringify(checkError, null, 2));
+
+
         return { success: false, error: `Erro ao verificar parceiro: ${checkError.message}` };
       }
 
       if (!existingPartner) {
-        console.error('❌ [businessPartnersService] Parceiro não encontrado:', id);
+
         return { success: false, error: 'Parceiro não encontrado no banco de dados' };
       }
 
-      console.log('✅ [businessPartnersService] Parceiro encontrado:', {
-        id: existingPartner.id,
-        razao_social: existingPartner.razao_social,
-        cpf_cnpj: existingPartner.cpf_cnpj
-      });
+
 
       // Executar exclusão FORÇADA
-      console.log('🗑️ [businessPartnersService] Executando DELETE FORÇADO...');
+
 
       // Primeiro: deletar contatos relacionados
-      console.log('🔗 [businessPartnersService] Deletando contatos relacionados...');
+
       const { error: contactsDeleteError } = await supabase
         .from('business_partner_contacts')
         .delete()
         .eq('partner_id', id);
 
       if (contactsDeleteError) {
-        console.warn('⚠️ [businessPartnersService] Aviso ao deletar contatos:', contactsDeleteError);
+
       }
 
       // Segundo: deletar endereços relacionados
-      console.log('🔗 [businessPartnersService] Deletando endereços relacionados...');
+
       const { error: addressesDeleteError } = await supabase
         .from('business_partner_addresses')
         .delete()
         .eq('partner_id', id);
 
       if (addressesDeleteError) {
-        console.warn('⚠️ [businessPartnersService] Aviso ao deletar endereços:', addressesDeleteError);
+
       }
 
       // Terceiro: deletar o parceiro
-      console.log('🗑️ [businessPartnersService] Deletando parceiro principal...');
+
       const { error: deleteError, data: deleteData, count } = await supabase
         .from('business_partners')
         .delete()
         .eq('id', id)
         .select();
 
-      console.log('📊 [businessPartnersService] Resultado do DELETE:', {
-        error: deleteError,
-        data: deleteData,
-        count: count
-      });
+
 
       if (deleteError) {
-        console.error('❌ [businessPartnersService] Erro ao excluir parceiro:', deleteError);
-        console.error('❌ [businessPartnersService] Código do erro:', deleteError.code);
-        console.error('❌ [businessPartnersService] Mensagem:', deleteError.message);
-        console.error('❌ [businessPartnersService] Detalhes:', deleteError.details);
-        console.error('❌ [businessPartnersService] Hint:', deleteError.hint);
+
+
+
+
+
         return { success: false, error: `Erro ao excluir: ${deleteError.message}` };
       }
 
-      console.log('✅ [businessPartnersService] Parceiro excluído com sucesso!');
-      console.log('✅ [businessPartnersService] Registros afetados:', count || 'N/A');
+
+
       return { success: true };
     } catch (error) {
-      console.error('❌ [businessPartnersService] Exceção ao excluir parceiro:', error);
-      console.error('❌ [businessPartnersService] Stack trace:', error instanceof Error ? error.stack : 'N/A');
+
+
       return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido ao excluir parceiro' };
     }
   },
@@ -687,7 +673,7 @@ export const businessPartnersService = {
         .order('razao_social');
 
       if (error) {
-        console.error('Erro ao buscar parceiros:', error);
+
         return [];
       }
 
@@ -711,7 +697,7 @@ export const businessPartnersService = {
 
       return mapped;
     } catch (error) {
-      console.error('Erro ao buscar parceiros:', error);
+
       return [];
     }
   },
@@ -732,7 +718,7 @@ export const businessPartnersService = {
         .order('razao_social');
 
       if (error) {
-        console.error('Erro ao buscar parceiros por tipo:', error);
+
         return [];
       }
 
@@ -756,7 +742,7 @@ export const businessPartnersService = {
 
       return mapped;
     } catch (error) {
-      console.error('Erro ao buscar parceiros por tipo:', error);
+
       return [];
     }
   }

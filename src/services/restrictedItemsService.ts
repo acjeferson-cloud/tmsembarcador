@@ -21,13 +21,13 @@ export const restrictedItemsService = {
         .order('item_code');
 
       if (error) {
-        console.error('Erro ao buscar itens restritos:', error);
+
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar itens restritos:', error);
+
       return [];
     }
   },
@@ -57,13 +57,13 @@ export const restrictedItemsService = {
         });
 
       if (error) {
-        console.error('Erro ao criar item restrito:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao criar item restrito:', error);
+
       return { success: false, error: 'Erro ao criar item restrito' };
     }
   },
@@ -85,13 +85,13 @@ export const restrictedItemsService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao atualizar item restrito:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar item restrito:', error);
+
       return { success: false, error: 'Erro ao atualizar item restrito' };
     }
   },
@@ -104,13 +104,13 @@ export const restrictedItemsService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao excluir item restrito:', error);
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir item restrito:', error);
+
       return { success: false, error: 'Erro ao excluir item restrito' };
     }
   },
@@ -125,13 +125,13 @@ export const restrictedItemsService = {
         .order('item_code');
 
       if (error) {
-        console.error('Erro ao buscar itens restritos:', error);
+
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar itens restritos:', error);
+
       return [];
     }
   },
@@ -146,13 +146,13 @@ export const restrictedItemsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao verificar item restrito:', error);
+
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao verificar item restrito:', error);
+
       return null;
     }
   },
@@ -166,13 +166,13 @@ export const restrictedItemsService = {
         .in('item_code', itemCodes);
 
       if (error) {
-        console.error('Erro ao verificar itens restritos:', error);
+
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao verificar itens restritos:', error);
+
       return [];
     }
   }

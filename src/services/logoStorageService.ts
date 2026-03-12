@@ -64,7 +64,7 @@ export const logoStorageService = {
         });
 
       if (uploadError) {
-        console.error('Erro ao fazer upload:', uploadError);
+
         return {
           success: false,
           error: uploadError.message,
@@ -87,7 +87,7 @@ export const logoStorageService = {
         logoUrl: publicUrlData.publicUrl,
       };
     } catch (error: any) {
-      console.error('Erro ao processar logo:', error);
+
       return {
         success: false,
         error: error.message || 'Erro desconhecido',
@@ -115,7 +115,7 @@ export const logoStorageService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao deletar logo:', error);
+
       return false;
     }
   },

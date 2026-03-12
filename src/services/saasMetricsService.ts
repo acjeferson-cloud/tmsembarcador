@@ -68,7 +68,7 @@ export const saasMetricsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar métricas:', error);
+
       return [];
     }
   },
@@ -102,7 +102,7 @@ export const saasMetricsService = {
 
       return summary;
     } catch (error) {
-      console.error('Erro ao buscar resumo de métricas:', error);
+
       return {};
     }
   },
@@ -125,7 +125,7 @@ export const saasMetricsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar health checks:', error);
+
       return [];
     }
   },
@@ -146,7 +146,7 @@ export const saasMetricsService = {
         lastCheck: latestCheck?.checked_at || null
       };
     } catch (error) {
-      console.error('Erro ao buscar status de saúde:', error);
+
       return { status: 'unknown', lastCheck: null };
     }
   },
@@ -172,7 +172,7 @@ export const saasMetricsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar alertas:', error);
+
       return [];
     }
   },
@@ -188,7 +188,7 @@ export const saasMetricsService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar alerta:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -214,7 +214,7 @@ export const saasMetricsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar status do alerta:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -230,7 +230,7 @@ export const saasMetricsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar conexões de banco:', error);
+
       return [];
     }
   }

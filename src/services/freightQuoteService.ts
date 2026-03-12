@@ -120,7 +120,7 @@ export const freightQuoteService = {
 
   async calculateQuote(params: QuoteParams, userId?: string, userName?: string, userEmail?: string): Promise<QuoteResult[]> {
     const startTime = performance.now();
-    console.log('🚀 === INÍCIO DA COTAÇÃO OTIMIZADA ===');
+
 
     let originCityId: string | undefined = params.originCityId;
     let destinationCityId: string | undefined = params.destinationCityId;
@@ -162,42 +162,35 @@ export const freightQuoteService = {
     const cityId = cityData.id; // UUID
     const stateAbbr = (cityData as any).states?.sigla;
     const stateId = cityData.state_id; // UUID
-    console.log('🏙️ Cidade:', cityData.nome, '-', stateAbbr, '- ID:', cityId);
-    console.log('🗺️ State ID (UUID):', stateId);
+
+
 
     // Usar a função SQL otimizada para buscar todas as tarifas aplicáveis
     const selectedModals = params.selectedModals || ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'];
 
-    console.log('📋 Parâmetros da RPC:', {
-      p_destination_city_id: cityId,
-      p_selected_modals: selectedModals
-    });
+
 
     const { data: ratesData, error: ratesError } = await supabase.rpc('calculate_freight_quotes', {
       p_destination_city_id: cityId,
       p_selected_modals: selectedModals
     });
 
-    console.log(`⚡ Query otimizada retornou ${ratesData?.length || 0} tarifas em ${(performance.now() - startTime).toFixed(0)}ms`);
+
 
     if (ratesError) {
-      console.error('❌ Erro ao buscar tarifas:', ratesError);
+
       throw new Error(`Erro ao buscar tarifas: ${ratesError.message}`);
     }
 
     if (!ratesData || ratesData.length === 0) {
-      console.log('❌ Nenhuma tarifa encontrada para os critérios:');
-      console.log('   - Cidade ID:', cityId);
-      console.log('   - Modais:', selectedModals);
-      console.log('   - Data atual:', new Date().toISOString().split('T')[0]);
+
+
+
+
       return [];
     }
 
-    console.log('✅ Tarifas encontradas:', ratesData.map((r: any) => ({
-      carrier: r.carrier_name,
-      modal: r.modal,
-      freight_rate_id: r.freight_rate_id
-    })));
+
 
     const results: QuoteResult[] = [];
 
@@ -241,7 +234,7 @@ export const freightQuoteService = {
           npsInterno: rateData.carrier_nps_interno || undefined
         };
       } catch (error) {
-        console.error(`❌ Erro ao calcular frete para ${rateData.carrier_name}:`, error);
+
         return null;
       }
     });
@@ -267,7 +260,7 @@ export const freightQuoteService = {
     }
 
     const totalTime = performance.now() - startTime;
-    console.log(`✅ Cotação concluída: ${results.length} transportadoras em ${totalTime.toFixed(0)}ms`);
+
 
     // Salvar histórico com UUIDs corretos
     await this.saveQuoteHistory({
@@ -285,12 +278,12 @@ export const freightQuoteService = {
   },
 
   async saveQuoteHistory(data: any): Promise<void> {
-    console.log('💾 === SALVANDO HISTÓRICO DE COTAÇÃO ===');
+
 
     try {
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) {
-        console.error('❌ Usuário não encontrado no localStorage');
+
         return;
       }
 
@@ -298,16 +291,11 @@ export const freightQuoteService = {
       const { organization_id, environment_id, codigo, nome, email } = userData;
 
       if (!organization_id || !environment_id) {
-        console.error('❌ Missing org/env IDs');
+
         return;
       }
 
-      console.log('📋 Contexto de sessão:', {
-        orgId: organization_id.substring(0, 8) + '...',
-        envId: environment_id.substring(0, 8) + '...',
-        userCodigo: codigo,
-        userName: nome
-      });
+
 
       const bestCarrier = data.results.length > 0 ? data.results[0] : null;
 
@@ -425,15 +413,7 @@ export const freightQuoteService = {
         selected_modals: data.selectedModals || ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
       };
 
-      console.log('💾 Dados para inserir:', {
-        organization_id: insertData.organization_id?.substring(0, 8) + '...',
-        environment_id: insertData.environment_id?.substring(0, 8) + '...',
-        user_id: insertData.user_id?.substring(0, 8) + '...' || 'null',
-        establishment_id: insertData.establishment_id?.substring(0, 8) + '...' || 'null',
-        weight: insertData.weight,
-        cargo_value: insertData.cargo_value,
-        quote_results: `${(insertData.quote_results as any[]).length} resultados`
-      });
+
 
       const { data: insertedData, error } = await supabase
         .from('freight_quotes_history')
@@ -441,22 +421,14 @@ export const freightQuoteService = {
         .select();
 
       if (error) {
-        console.error('❌ Erro ao salvar histórico:', error);
-        console.error('❌ Detalhes do erro:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+
+
         throw new Error(`Falha ao salvar histórico: ${error.message}`);
       } else {
-        console.log('✅ Histórico salvo com sucesso!', {
-          id: insertedData?.[0]?.id,
-          created_at: insertedData?.[0]?.created_at
-        });
+
       }
     } catch (error) {
-      console.error('❌ Erro ao salvar histórico de cotação:', error);
+
       throw error;
     }
   },
@@ -464,7 +436,7 @@ export const freightQuoteService = {
   async getHistory(userId?: string, limit = 50): Promise<FreightQuoteHistory[]> {
     const savedUser = localStorage.getItem('tms-user');
     if (!savedUser) {
-      console.error('❌ Usuário não encontrado');
+
       return [];
     }
 
@@ -472,7 +444,7 @@ export const freightQuoteService = {
     const { organization_id, environment_id } = userData;
 
     if (!organization_id || !environment_id) {
-      console.error('❌ Missing org/env');
+
       return [];
     }
 
@@ -511,7 +483,7 @@ export const freightQuoteService = {
       .limit(limit);
 
     if (error) {
-      console.error('❌ Erro ao buscar histórico:', error);
+
       return [];
     }
 
@@ -519,7 +491,7 @@ export const freightQuoteService = {
       return [];
     }
 
-    console.log('✅ Histórico:', data?.length || 0, 'registros');
+
     return data || [];
   }
 };

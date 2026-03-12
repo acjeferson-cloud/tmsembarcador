@@ -28,7 +28,7 @@ export const cepService = {
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar CEP:', error);
+
       return null;
     }
   },
@@ -44,7 +44,7 @@ export const cepService = {
 
       return null;
     } catch (error) {
-      console.error('Erro ao buscar cidade:', error);
+
       return null;
     }
   }

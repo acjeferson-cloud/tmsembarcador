@@ -353,7 +353,7 @@ export const parseXML = (xmlContent: string): Partial<ElectronicDocument> => {
       modalTransporte
     };
   } catch (error) {
-    console.error('Erro ao analisar XML:', error);
+
     throw new Error(`Erro ao analisar XML: ${(error as Error).message}`);
   }
 };
@@ -389,7 +389,7 @@ const extractChaveAcesso = (xmlContent: string): string | null => {
     
     return null;
   } catch (error) {
-    console.error('Erro ao extrair chave de acesso:', error);
+
     return null;
   }
 };

@@ -13,7 +13,7 @@ export function useFilterCache<T extends Record<string, any>>(
         setFilters(parsed);
       }
     } catch (error) {
-      console.error('Erro ao carregar filtros do cache:', error);
+
     }
   }, [cacheKey]);
 
@@ -21,7 +21,7 @@ export function useFilterCache<T extends Record<string, any>>(
     try {
       sessionStorage.setItem(cacheKey, JSON.stringify(filters));
     } catch (error) {
-      console.error('Erro ao salvar filtros no cache:', error);
+
     }
   }, [cacheKey, filters]);
 
@@ -33,7 +33,7 @@ export function useFilterCache<T extends Record<string, any>>(
     try {
       sessionStorage.removeItem(cacheKey);
     } catch (error) {
-      console.error('Erro ao limpar cache de filtros:', error);
+
     }
   }, [cacheKey]);
 

@@ -189,7 +189,7 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
 
     return nfeData;
   } catch (error) {
-    console.error('Error parsing NFe XML:', error);
+
     return null;
   }
 };
@@ -213,10 +213,10 @@ export const importNFeToDatabase = async (
     if (nfeData.carrier?.cnpj) {
       const cnpjClean = nfeData.carrier.cnpj.replace(/\D/g, '');
 
-      console.log('=== BUSCANDO TRANSPORTADOR ===');
-      console.log('CNPJ original:', nfeData.carrier.cnpj);
-      console.log('CNPJ limpo:', cnpjClean);
-      console.log('Nome do transportador:', nfeData.carrier.name);
+
+
+
+
 
       const { data: carrier, error: carrierError } = await supabase
         .from('carriers')
@@ -225,24 +225,20 @@ export const importNFeToDatabase = async (
         .maybeSingle();
 
       if (carrierError) {
-        console.error('Erro ao buscar transportador:', carrierError);
+
       }
 
       if (carrier) {
         carrierId = carrier.id;
-        console.log('✅ Transportador encontrado:', {
-          id: carrier.id,
-          codigo: carrier.codigo,
-          nome: carrier.nome_fantasia || carrier.razao_social
-        });
+
       } else {
-        console.warn('⚠️ Transportador NÃO encontrado no cadastro');
-        console.warn('CNPJ buscado:', cnpjClean);
-        console.warn('Nome no XML:', nfeData.carrier.name);
-        console.warn('A nota será importada sem vínculo com transportador.');
+
+
+
+
       }
     } else {
-      console.log('ℹ️ XML não contém informações de transportador na tag <transporta>');
+
     }
 
     const { data: invoice, error: invoiceError } = await supabase
@@ -317,11 +313,11 @@ export const importNFeToDatabase = async (
     }
 
     // XML já está salvo em invoices_nfe.xml_data
-    console.log('✅ XML da NFe salvo em invoices_nfe.xml_data');
+
 
     return { success: true, invoiceId: invoice.id };
   } catch (error: any) {
-    console.error('Error importing NFe to database:', error);
+
     return { success: false, error: error.message };
   }
 };

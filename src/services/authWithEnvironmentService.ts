@@ -47,7 +47,7 @@ export const authWithEnvironmentService = {
       });
 
       if (error) {
-        console.error('Error validating credentials:', error);
+
         return {
           success: false,
           error: 'Erro ao validar credenciais'
@@ -63,7 +63,7 @@ export const authWithEnvironmentService = {
 
       return data as ValidateCredentialsResponse;
     } catch (err) {
-      console.error('Exception validating credentials:', err);
+
       return {
         success: false,
         error: 'Erro ao validar credenciais'
@@ -86,7 +86,7 @@ export const authWithEnvironmentService = {
       });
 
       if (error) {
-        console.error('Error logging in with environment:', error);
+
         return {
           success: false,
           error: 'Erro ao fazer login no ambiente selecionado'
@@ -102,7 +102,7 @@ export const authWithEnvironmentService = {
 
       return data as LoginWithEnvironmentResponse;
     } catch (err) {
-      console.error('Exception logging in with environment:', err);
+
       return {
         success: false,
         error: 'Erro ao fazer login no ambiente selecionado'

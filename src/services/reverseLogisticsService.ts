@@ -57,7 +57,7 @@ export const reverseLogisticsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar logística reversa:', error);
+
       return [];
     }
   },
@@ -76,7 +76,7 @@ export const reverseLogisticsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar logística reversa:', error);
+
       return null;
     }
   },
@@ -109,7 +109,7 @@ export const reverseLogisticsService = {
 
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar logística reversa:', error);
+
       return { success: false, error: 'Erro ao criar logística reversa' };
     }
   },
@@ -129,7 +129,7 @@ export const reverseLogisticsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar logística reversa:', error);
+
       return { success: false, error: 'Erro ao atualizar logística reversa' };
     }
   },
@@ -144,7 +144,7 @@ export const reverseLogisticsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir logística reversa:', error);
+
       return { success: false, error: 'Erro ao excluir logística reversa' };
     }
   }

@@ -20,7 +20,7 @@ const saveData = <T>(key: string, data: T[]): void => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (error) {
-    console.error(`Erro ao salvar dados em ${key}:`, error);
+
   }
 };
 
@@ -29,7 +29,7 @@ const loadData = <T>(key: string, defaultData: T[]): T[] => {
     const storedData = localStorage.getItem(key);
     return storedData ? JSON.parse(storedData) : defaultData;
   } catch (error) {
-    console.error(`Erro ao carregar dados de ${key}:`, error);
+
     return defaultData;
   }
 };

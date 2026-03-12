@@ -176,7 +176,7 @@ export const cteDivergenceReportService = {
 
       return doc.output('blob');
     } catch (error: any) {
-      console.error('Erro detalhado ao gerar PDF:', error);
+
       throw new Error(`Falha ao gerar PDF: ${error?.message || 'Erro desconhecido'}`);
     }
   },

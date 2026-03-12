@@ -86,7 +86,7 @@ export const pickupsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar coletas:', error);
+
       return [];
     }
   },
@@ -102,7 +102,7 @@ export const pickupsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar coleta:', error);
+
       return null;
     }
   },
@@ -133,7 +133,7 @@ export const pickupsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar notas da coleta:', error);
+
       return [];
     }
   },
@@ -211,7 +211,7 @@ export const pickupsService = {
           .single();
 
         if (pickupError || !pickup) {
-          console.error('Erro ao criar coleta:', pickupError);
+
           continue;
         }
 
@@ -255,7 +255,7 @@ export const pickupsService = {
       };
 
     } catch (error) {
-      console.error('Erro ao criar coletas:', error);
+
       return { success: false, error: 'Erro ao criar coletas a partir das notas fiscais' };
     }
   },
@@ -273,7 +273,7 @@ export const pickupsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar coleta:', error);
+
       return { success: false, error: 'Erro ao atualizar coleta' };
     }
   },
@@ -288,7 +288,7 @@ export const pickupsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir coleta:', error);
+
       return { success: false, error: 'Erro ao excluir coleta' };
     }
   },
@@ -305,7 +305,7 @@ export const pickupsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar coletas por período:', error);
+
       return [];
     }
   }

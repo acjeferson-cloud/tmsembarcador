@@ -1135,7 +1135,7 @@ export const generateFreightRateCitiesTemplate = (): void => {
     // Gerar arquivo e fazer download
     XLSX.writeFile(wb, 'Template_Cidades_Tarifas.xlsx');
   } catch (error) {
-    console.error('Erro ao gerar template de cidades:', error);
+
     throw new Error('Não foi possível gerar o template de cidades. Verifique se o navegador permite downloads.');
   }
 };
@@ -1271,7 +1271,7 @@ export const generateAdditionalFeesTemplate = (): void => {
     // Gerar arquivo e fazer download
     XLSX.writeFile(wb, 'Template_Taxas_Adicionais.xlsx');
   } catch (error) {
-    console.error('Erro ao gerar template de taxas adicionais:', error);
+
     throw new Error('Não foi possível gerar o template de taxas adicionais. Verifique se o navegador permite downloads.');
   }
 };

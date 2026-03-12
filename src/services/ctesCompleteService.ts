@@ -100,27 +100,27 @@ export interface CTeWithRelations extends CTe {
 export const ctesCompleteService = {
   async getAll(): Promise<CTeWithRelations[]> {
     try {
-      console.log('📦 [CTes] Iniciando busca de CT-es...');
+
 
       // Buscar os CT-es priorizados (o contexto é configurado automaticamente)
-      console.log('📊 [CTes] Chamando get_ctes_prioritized...');
+
       const { data: prioritizedData, error: rpcError } = await supabase.rpc('get_ctes_prioritized');
 
       if (rpcError) {
-        console.error('❌ [CTes] Erro ao buscar CT-es priorizados:', rpcError);
+
         throw rpcError;
       }
 
-      console.log(`✅ [CTes] CT-es priorizados retornados: ${prioritizedData?.length || 0}`);
+
 
       if (!prioritizedData || prioritizedData.length === 0) {
-        console.log('ℹ️ [CTes] Nenhum CT-e encontrado');
+
         return [];
       }
 
       // Extrair IDs dos CT-es priorizados
       const cteIds = prioritizedData.map((cte: any) => cte.id);
-      console.log(`📋 [CTes] Buscando detalhes de ${cteIds.length} CT-es...`);
+
 
       // Buscar os CT-es completos com relacionamentos, na mesma ordem
       const { data, error } = await supabase
@@ -135,21 +135,21 @@ export const ctesCompleteService = {
         .in('id', cteIds);
 
       if (error) {
-        console.error('❌ [CTes] Erro ao buscar relacionamentos dos CT-es:', error);
+
         throw error;
       }
 
-      console.log(`✅ [CTes] Detalhes carregados: ${data?.length || 0} CT-es`);
+
 
       // Ordenar os dados conforme a ordem priorizada
       const orderedData = cteIds.map(id =>
         data?.find((cte: any) => cte.id === id)
       ).filter(Boolean);
 
-      console.log(`📦 [CTes] Retornando ${orderedData.length} CT-es ordenados`);
+
       return orderedData || [];
     } catch (error) {
-      console.error('❌ [CTes] Erro ao buscar CT-es:', error);
+
 
       // Re-lançar o erro para que possa ser exibido na UI
       if (error instanceof Error) {
@@ -177,7 +177,7 @@ export const ctesCompleteService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar CT-e:', error);
+
       return null;
     }
   },
@@ -200,13 +200,13 @@ export const ctesCompleteService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar CT-es:', error);
+
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar CT-es:', error);
+
       return [];
     }
   },
@@ -234,7 +234,7 @@ export const ctesCompleteService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar CT-e por chave de acesso:', error);
+
       return null;
     }
   },
@@ -314,7 +314,7 @@ export const ctesCompleteService = {
 
       // XML já está salvo em xml_data do CT-e
       if (cte.xml_data && cte.xml_data.original) {
-        console.log('✅ XML do CT-e salvo em ctes_complete.xml_data');
+
       }
 
       // CÁLCULO AUTOMÁTICO: Executar cálculo de custos após importação
@@ -327,23 +327,23 @@ export const ctesCompleteService = {
           const fullCTe = await this.getById(data.id);
 
           if (fullCTe) {
-            console.log('🧮 Calculando custos automaticamente para CT-e', fullCTe.number);
+
 
             const calculation = await freightCostCalculator.calculateCTeCost(fullCTe);
             await freightCostCalculator.saveCostsToCTe(data.id, calculation);
 
-            console.log('✅ Custos calculados com sucesso! Valor Total:', calculation.valorTotal);
+
           }
         } catch (calcError: any) {
           // Não falhar a importação se o cálculo der erro
-          console.warn('⚠️ Erro ao calcular custos automaticamente:', calcError.message);
-          console.warn('O CT-e foi importado, mas os custos não foram calculados.');
+
+
         }
       }
 
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('Erro ao criar CT-e:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -388,7 +388,7 @@ export const ctesCompleteService = {
       }
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar CT-e:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -403,7 +403,7 @@ export const ctesCompleteService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir CT-e:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -417,7 +417,7 @@ export const ctesCompleteService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao adicionar nota fiscal ao CT-e:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -432,7 +432,7 @@ export const ctesCompleteService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao remover nota fiscal do CT-e:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -446,7 +446,7 @@ export const ctesCompleteService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao adicionar custo ao CT-e:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -461,7 +461,7 @@ export const ctesCompleteService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao remover custo do CT-e:', error);
+
       return { success: false, error: error.message };
     }
   }

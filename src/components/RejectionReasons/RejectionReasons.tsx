@@ -55,7 +55,7 @@ export const RejectionReasons: React.FC = () => {
       setCategories(['Todas', ...allCategories]);
       setStats(stats);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+
       setToast({ message: 'Erro ao carregar dados.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -136,7 +136,7 @@ export const RejectionReasons: React.FC = () => {
       setEditingReason(null);
       await forceRefresh();
     } catch (error) {
-      console.error('Error saving rejection reason:', error);
+
       setToast({ message: 'Erro ao salvar motivo de rejeição. Tente novamente.', type: 'error' });
     }
   };

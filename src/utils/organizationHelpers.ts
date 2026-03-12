@@ -22,7 +22,7 @@ export async function isDemoOrganization(): Promise<boolean> {
 
     return context.organizationId === DEMO_ORGANIZATION_ID;
   } catch (error) {
-    console.error('[organizationHelpers] Erro ao verificar organization:', error);
+
     return false;
   }
 }

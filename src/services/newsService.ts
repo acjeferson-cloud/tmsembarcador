@@ -152,9 +152,9 @@ export class NewsService {
       this.news = mockNews;
       this.lastUpdate = new Date();
       
-      console.log('Notícias carregadas:', this.news.length);
+
     } catch (error) {
-      console.error('Erro ao carregar notícias:', error);
+
       // Em caso de erro, usar dados mock como fallback
       this.news = mockNews;
       this.lastUpdate = new Date();

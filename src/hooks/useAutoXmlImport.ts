@@ -41,7 +41,7 @@ export const useAutoXmlImport = () => {
           isGloballyInitialized = true;
         }
       } catch (error) {
-        console.error('Error starting auto import:', error);
+
       }
     };
 

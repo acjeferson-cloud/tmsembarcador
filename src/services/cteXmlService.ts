@@ -338,12 +338,12 @@ export const cteXmlService = {
       // Peso para cálculo: usar o MAIOR entre peso real e peso cubado
       const pesoParaCalculo = Math.max(cargaPeso, pesoCubado);
 
-      console.log('📊 Análise de Pesos do CT-e:');
-      console.log('  Peso Real:', pesoReal || cargaPeso, 'kg');
-      console.log('  Peso Cubado (XML):', pesoCubadoXml, 'kg');
-      console.log('  Peso Cubado (Calculado):', pesoCubadoCalculado, 'kg');
-      console.log('  Peso Cubado (Final):', pesoCubado, 'kg');
-      console.log('  ✅ Peso para Cálculo (MAIOR):', pesoParaCalculo, 'kg');
+
+
+
+
+
+
 
       return {
         number: numero,
@@ -410,7 +410,7 @@ export const cteXmlService = {
       };
 
     } catch (error: any) {
-      console.error('Erro ao fazer parse do XML do CT-e:', error);
+
       throw new Error(`Erro ao processar XML do CT-e: ${error.message}`);
     }
   },

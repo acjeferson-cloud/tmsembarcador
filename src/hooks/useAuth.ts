@@ -39,7 +39,7 @@ export const useAuth = () => {
         const estabelecimentosPermitidos = userWithEstablishments?.estabelecimentos_permitidos || [];
         const foto_perfil_url = userWithEstablishments?.foto_perfil_url || dbUser.foto_perfil_url;
 
-        console.log('📸 [useAuth] Foto do perfil carregada:', foto_perfil_url);
+
 
         return {
           id: parseInt(dbUser.codigo) || 1,
@@ -55,7 +55,7 @@ export const useAuth = () => {
       } else {
       }
     } catch (error) {
-      console.error('❌ Error loading user from database:', error);
+
     }
 
     return {
@@ -95,10 +95,7 @@ export const useAuth = () => {
               if (userData.organization_id && userData.environment_id) {
                 localStorage.setItem('tms-selected-org-id', userData.organization_id);
                 localStorage.setItem('tms-selected-env-id', userData.environment_id);
-                console.log('✅ [SESSION RESTORE] Contexto org/env restaurado:', {
-                  orgId: userData.organization_id,
-                  envId: userData.environment_id
-                });
+
               }
 
               // Disparar evento para iniciar heartbeat
@@ -117,7 +114,7 @@ export const useAuth = () => {
                     .maybeSingle();
 
                   if (!dbUser) {
-                    console.error('❌ Usuário não encontrado no banco');
+
                     setShowEstablishmentSelector(true);
                     setIsLoading(false);
                     return;
@@ -162,7 +159,7 @@ export const useAuth = () => {
                     }
                   } else {
                     // FALLBACK: RPC retornou vazio, buscar diretamente
-                    console.warn('⚠️ [SESSION] RPC retornou vazio, usando fallback direto');
+
                     const { data: fbEsts } = await supabase
                       .from('establishments')
                       .select('*')
@@ -178,7 +175,7 @@ export const useAuth = () => {
                         setCurrentEstablishment(establishment);
                         localStorage.setItem('tms-current-establishment', JSON.stringify(establishment));
                         setShowEstablishmentSelector(false);
-                        console.log('✅ [SESSION] Fallback: estabelecimento único auto-selecionado');
+
                       } else {
                         setShowEstablishmentSelector(true);
                       }
@@ -187,7 +184,7 @@ export const useAuth = () => {
                     }
                   }
                 } catch (error) {
-                  console.error('❌ Erro ao buscar estabelecimentos:', error);
+
                   setShowEstablishmentSelector(true);
                 }
               } else {
@@ -196,7 +193,7 @@ export const useAuth = () => {
                   setCurrentEstablishment(establishment);
                   setShowEstablishmentSelector(false);
                 } catch (error) {
-                  console.error('❌ Erro ao parsear estabelecimento:', error);
+
                   setCurrentEstablishment(null);
                   setShowEstablishmentSelector(true);
                 }
@@ -210,7 +207,7 @@ export const useAuth = () => {
               localStorage.removeItem('tms-current-establishment');
             }
           } catch (error) {
-            console.error('Error parsing saved session:', error);
+
             localStorage.removeItem('tms-user');
             localStorage.removeItem('tms-session');
             localStorage.removeItem('tms-current-establishment');
@@ -237,7 +234,7 @@ export const useAuth = () => {
               // Buscar estabelecimentos e auto-selecionar se houver apenas 1
               try {
                 if (!dbUser) {
-                  console.error('❌ Dados do usuário não disponíveis');
+
                   setShowEstablishmentSelector(true);
                   return;
                 }
@@ -283,7 +280,7 @@ export const useAuth = () => {
                   setShowEstablishmentSelector(true);
                 }
               } catch (error) {
-                console.error('❌ Erro ao buscar estabelecimentos:', error);
+
                 setShowEstablishmentSelector(true);
               }
             } else {
@@ -292,7 +289,7 @@ export const useAuth = () => {
                 setCurrentEstablishment(establishment);
                 setShowEstablishmentSelector(false);
               } catch (error) {
-                console.error('❌ Erro ao parsear estabelecimento:', error);
+
                 setCurrentEstablishment(null);
                 setShowEstablishmentSelector(true);
               }
@@ -300,7 +297,7 @@ export const useAuth = () => {
           }
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+
       } finally {
         setIsLoading(false);
       }
@@ -320,7 +317,7 @@ export const useAuth = () => {
             const savedSession = localStorage.getItem('tms-session');
             if (savedSession) {
               // Se há sessão customizada, ignorar eventos do Supabase Auth
-              console.debug('ℹ️ Evento Supabase Auth ignorado (sessão customizada ativa):', event);
+
               return;
             }
 
@@ -368,7 +365,7 @@ export const useAuth = () => {
         throw new Error('Serviço de autenticação não disponível no momento.');
       }
 
-      console.log('🔐 [LOGIN] Processando login com dados do environment:', loginData);
+
 
       // Criar objeto do usuário com TODOS os dados
       const userData: User & { supabaseUser?: SupabaseUser } = {
@@ -394,25 +391,15 @@ export const useAuth = () => {
         supabaseUser: undefined
       };
 
-      console.log('✅ [LOGIN] Dados do usuário preparados:', {
-        email: userData.email,
-        codigo: userData.codigo,
-        organization_id: userData.organization_id,
-        environment_id: userData.environment_id,
-        establishment_id: userData.establishment_id
-      });
+
 
       setUser(userData);
       localStorage.setItem('tms-user', JSON.stringify(userData));
-      console.log('✅ [LOGIN] Usuário salvo no localStorage');
+
 
       // CRÍTICO: Configurar contexto da sessão no banco
       if (userData.organization_id && userData.environment_id) {
-        console.log('🔧 [LOGIN] Configurando contexto da sessão:', {
-          organization_id: userData.organization_id,
-          environment_id: userData.environment_id,
-          establishment_id: userData.establishment_id
-        });
+
 
         const { error: contextError } = await supabase.rpc('set_session_context', {
           p_organization_id: userData.organization_id,
@@ -421,9 +408,9 @@ export const useAuth = () => {
         });
 
         if (contextError) {
-          console.error('⚠️ [LOGIN] Erro ao configurar contexto (não crítico):', contextError);
+
         } else {
-          console.log('✅ [LOGIN] Contexto da sessão configurado com sucesso');
+
         }
 
         // Salvar também no localStorage para uso do wrapper
@@ -449,11 +436,7 @@ export const useAuth = () => {
       // Buscar estabelecimentos da organização/environment
       if (userData.organization_id && userData.environment_id) {
         try {
-          console.log('🔍 [LOGIN] Buscando estabelecimentos com:', {
-            email: userData.email,
-            organization_id: userData.organization_id,
-            environment_id: userData.environment_id
-          });
+
 
           const { data: dbEstablishments, error: establishmentsError } = await supabase
             .rpc('get_user_establishments', {
@@ -462,11 +445,7 @@ export const useAuth = () => {
               p_environment_id: userData.environment_id
             });
 
-          console.log('📊 [LOGIN] Resultado da busca:', {
-            error: establishmentsError,
-            establishments: dbEstablishments,
-            count: dbEstablishments?.length || 0
-          });
+
 
           const mapEstablishments = (rawList: any[]) => rawList.map((est: any) => ({
               id: parseInt(est.codigo) || 1,
@@ -490,7 +469,7 @@ export const useAuth = () => {
             const allowedEstablishments = mapEstablishments(dbEstablishments);
 
             setAvailableEstablishments(allowedEstablishments);
-            console.log('✅ [LOGIN] Available establishments set:', allowedEstablishments.length);
+
 
             // Se houver apenas 1, selecionar automaticamente
             if (allowedEstablishments.length === 1) {
@@ -498,15 +477,15 @@ export const useAuth = () => {
               setCurrentEstablishment(establishment);
               localStorage.setItem('tms-current-establishment', JSON.stringify(establishment));
               setShowEstablishmentSelector(false);
-              console.log('✅ [LOGIN] Estabelecimento único selecionado automaticamente');
+
             } else {
               // Mais de 1 estabelecimento, mostrar modal
               setShowEstablishmentSelector(true);
-              console.log('📋 [LOGIN] Múltiplos estabelecimentos disponíveis, mostrando seletor');
+
             }
           } else {
             // FALLBACK: RPC falhou ou retornou vazio, buscar diretamente da tabela
-            console.warn('⚠️ [LOGIN] RPC get_user_establishments retornou vazio, usando fallback direto');
+
             try {
               const { data: fallbackEstablishments, error: fallbackError } = await supabase
                 .from('establishments')
@@ -515,10 +494,7 @@ export const useAuth = () => {
                 .eq('environment_id', userData.environment_id)
                 .order('codigo');
 
-              console.log('📊 [LOGIN] Fallback establishments:', {
-                count: fallbackEstablishments?.length || 0,
-                error: fallbackError
-              });
+
 
               if (!fallbackError && fallbackEstablishments && fallbackEstablishments.length > 0) {
                 const allowedEstablishments = mapEstablishments(fallbackEstablishments);
@@ -529,28 +505,28 @@ export const useAuth = () => {
                   setCurrentEstablishment(establishment);
                   localStorage.setItem('tms-current-establishment', JSON.stringify(establishment));
                   setShowEstablishmentSelector(false);
-                  console.log('✅ [LOGIN] Fallback: estabelecimento único selecionado automaticamente');
+
                 } else {
                   setShowEstablishmentSelector(true);
                 }
               } else {
-                console.warn('⚠️ [LOGIN] Fallback também não encontrou estabelecimentos');
+
                 setShowEstablishmentSelector(true);
               }
             } catch (fallbackErr) {
-              console.error('❌ [LOGIN] Erro no fallback de estabelecimentos:', fallbackErr);
+
               setShowEstablishmentSelector(true);
             }
           }
         } catch (error) {
-          console.error('❌ [LOGIN] Erro ao buscar estabelecimentos:', error);
+
           setShowEstablishmentSelector(true);
         }
       }
 
-      console.log('✅ [LOGIN] Login completo!');
+
     } catch (error) {
-      console.error('❌ [LOGIN] Erro fatal:', error);
+
       if (error instanceof Error) {
         throw error;
       }
@@ -565,7 +541,7 @@ export const useAuth = () => {
         throw new Error('Serviço de autenticação não disponível no momento.');
       }
 
-      console.log('🔐 [LOGIN] Iniciando login para:', email);
+
 
       // Usar tms_login que retorna TUDO que precisamos
       const { data: loginResult, error: loginError } = await supabase
@@ -575,17 +551,17 @@ export const useAuth = () => {
         });
 
       if (loginError) {
-        console.error('❌ [LOGIN] Erro:', loginError);
+
         throw new Error('Erro ao fazer login. Tente novamente.');
       }
 
       if (!loginResult || !loginResult.success) {
         const errorMsg = loginResult?.error || 'Email ou senha incorretos';
-        console.error('❌ [LOGIN] Falha:', errorMsg);
+
         throw new Error(errorMsg);
       }
 
-      console.log('✅ [LOGIN] Sucesso! Dados retornados:', loginResult);
+
 
       // Criar objeto do usuário com TODOS os dados
       const userData: User & { supabaseUser?: SupabaseUser } = {
@@ -611,25 +587,15 @@ export const useAuth = () => {
         supabaseUser: undefined
       };
 
-      console.log('✅ [LOGIN] Dados do usuário preparados:', {
-        email: userData.email,
-        codigo: userData.codigo,
-        organization_id: userData.organization_id,
-        environment_id: userData.environment_id,
-        establishment_id: userData.establishment_id
-      });
+
 
       setUser(userData);
       localStorage.setItem('tms-user', JSON.stringify(userData));
-      console.log('✅ [LOGIN] Usuário salvo no localStorage');
+
 
       // CRÍTICO: Configurar contexto da sessão no banco
       if (userData.organization_id && userData.environment_id) {
-        console.log('🔧 [LOGIN] Configurando contexto da sessão:', {
-          organization_id: userData.organization_id,
-          environment_id: userData.environment_id,
-          establishment_id: userData.establishment_id
-        });
+
 
         const { error: contextError } = await supabase.rpc('set_session_context', {
           p_organization_id: userData.organization_id,
@@ -638,9 +604,9 @@ export const useAuth = () => {
         });
 
         if (contextError) {
-          console.error('⚠️ [LOGIN] Erro ao configurar contexto (não crítico):', contextError);
+
         } else {
-          console.log('✅ [LOGIN] Contexto da sessão configurado com sucesso');
+
         }
 
         // Salvar também no localStorage para uso do wrapper
@@ -694,16 +660,16 @@ export const useAuth = () => {
             setCurrentEstablishment(mappedEstablishment);
             localStorage.setItem('tms-current-establishment', JSON.stringify(mappedEstablishment));
             setShowEstablishmentSelector(false);
-            console.log('✅ [LOGIN] Estabelecimento selecionado automaticamente:', mappedEstablishment.codigo);
+
           }
         } catch (error) {
-          console.error('⚠️ [LOGIN] Erro ao buscar estabelecimento (não crítico):', error);
+
         }
       }
 
-      console.log('✅ [LOGIN] Login completo!');
+
     } catch (error) {
-      console.error('❌ [LOGIN] Erro fatal:', error);
+
       if (error instanceof Error) {
         throw error;
       }
@@ -733,7 +699,7 @@ export const useAuth = () => {
       localStorage.removeItem('tms-current-establishment');
       window.location.reload();
     }).catch((error) => {
-      console.error('Logout error:', error);
+
       setUser(null);
       setCurrentEstablishment(null);
       localStorage.removeItem('tms-user');
@@ -746,7 +712,7 @@ export const useAuth = () => {
   const selectOrganizationEnvironment = async (orgId: string, envId: string) => {
     try {
       if (!user || !supabase) {
-        console.error('❌ Usuário ou Supabase não disponível');
+
         return;
       }
 
@@ -768,7 +734,7 @@ export const useAuth = () => {
         });
 
       if (!dbEstablishments || dbEstablishments.length === 0) {
-        console.error('❌ Nenhum estabelecimento encontrado');
+
         throw new Error('Nenhum estabelecimento encontrado nesta organização/ambiente.');
       }
 
@@ -804,7 +770,7 @@ export const useAuth = () => {
         setShowEstablishmentSelector(true);
       }
     } catch (error) {
-      console.error('❌ Erro ao selecionar org/env:', error);
+
       throw error;
     }
   };
@@ -815,7 +781,7 @@ export const useAuth = () => {
       const establishment = availableEstablishments.find(est => est.id === establishmentId);
 
       if (!establishment) {
-        console.error('❌ Estabelecimento não encontrado:', establishmentId);
+
         return;
       }
 
@@ -823,7 +789,7 @@ export const useAuth = () => {
       localStorage.setItem('tms-current-establishment', JSON.stringify(establishment));
       setShowEstablishmentSelector(false);
     } catch (error) {
-      console.error('❌ Erro ao selecionar estabelecimento:', error);
+
     }
   };
   
@@ -893,7 +859,7 @@ export const useAuth = () => {
       // Otherwise, return all establishments (for admin users without restrictions)
       return formattedEstablishments;
     } catch (error) {
-      console.error('Error fetching establishments from DB:', error);
+
       return [];
     }
   };

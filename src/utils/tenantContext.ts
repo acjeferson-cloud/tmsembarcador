@@ -15,7 +15,7 @@ export class TenantContextHelper {
       .maybeSingle();
 
     if (error) {
-      console.error('Erro ao buscar perfil do usuário:', error);
+
       throw new Error('Falha ao buscar perfil do usuário');
     }
 
@@ -27,21 +27,21 @@ export class TenantContextHelper {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user || !user.email) {
-        console.error('Usuário não autenticado');
+
         return null;
       }
 
       const userProfile = await this.getUserProfile(user.email);
 
       if (!userProfile) {
-        console.error('Perfil do usuário não encontrado');
+
         return null;
       }
 
       const organizationId = userProfile.organization_id;
 
       if (!organizationId) {
-        console.error('Organization ID não encontrado');
+
         return null;
       }
 
@@ -70,7 +70,7 @@ export class TenantContextHelper {
         userEmail: user.email
       };
     } catch (error) {
-      console.error('Erro ao obter contexto do tenant:', error);
+
       return null;
     }
   }
@@ -93,7 +93,7 @@ export class TenantContextHelper {
         p_user_email: context.userEmail
       });
     } catch (error) {
-      console.error('Erro ao configurar contexto da sessão:', error);
+
       throw new Error('Falha ao configurar contexto da sessão');
     }
   }
@@ -108,7 +108,7 @@ export class TenantContextHelper {
 
       return user.email === 'admin@logaxis.com.br';
     } catch (error) {
-      console.error('Erro ao verificar super admin:', error);
+
       return false;
     }
   }
@@ -131,7 +131,7 @@ export class TenantContextHelper {
         is_active: org.status === 'ativo'
       }));
     } catch (error) {
-      console.error('Erro ao buscar organizações saas:', error);
+
       return [];
     }
   }
@@ -159,7 +159,7 @@ export class TenantContextHelper {
         is_active: env.status === 'ativo'
       }));
     } catch (error) {
-      console.error('Erro ao buscar ambientes saas:', error);
+
       return [];
     }
   }
@@ -178,12 +178,9 @@ export class TenantContextHelper {
 
       localStorage.setItem('tms-selected-organization', organizationId);
 
-      console.log('✅ Contexto alterado com sucesso:', {
-        organizationId,
-        environmentId
-      });
+
     } catch (error) {
-      console.error('Erro ao trocar contexto:', error);
+
       throw error;
     }
   }

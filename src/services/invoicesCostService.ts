@@ -56,7 +56,7 @@ export const invoicesCostService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar custos da nota fiscal:', error);
+
       return [];
     }
   },
@@ -69,10 +69,10 @@ export const invoicesCostService = {
     carrierId: string,
     issueDate?: string
   ) {
-    console.log('=== invoicesCostService.calculateInvoiceCost ===');
-    console.log('Invoice Data:', invoiceData);
-    console.log('Carrier ID:', carrierId);
-    console.log('Issue Date:', issueDate);
+
+
+
+
 
     // Criar um objeto CT-e mockado para usar o motor de cálculo existente
     const mockCte = {
@@ -88,12 +88,12 @@ export const invoicesCostService = {
       icms_value: 0,
     };
 
-    console.log('Mock CTE criado:', mockCte);
+
 
     // Usar o motor de cálculo do CT-e (mesma lógica exata)
     const calculation = await freightCostCalculator.calculateCTeCost(mockCte as any);
 
-    console.log('Cálculo realizado:', calculation);
+
 
     return calculation;
   },
@@ -122,10 +122,10 @@ export const invoicesCostService = {
     carrierData: any,
     freightType: string = 'CIF'
   ): Promise<void> {
-    console.log('=== Salvando custos no banco ===');
-    console.log('Invoice ID:', invoiceId);
-    console.log('Carrier ID:', carrierId);
-    console.log('Calculation:', calculation);
+
+
+
+
 
     // Calcular PIS e COFINS sobre a base
     const baseCalculo = calculation.fretePeso + calculation.freteValor +
@@ -170,15 +170,15 @@ export const invoicesCostService = {
       },
     };
 
-    console.log('Dados para inserir:', cost);
+
 
     const { error } = await supabase.from('invoices_nfe_carrier_costs').insert(cost);
 
     if (error) {
-      console.error('Erro ao inserir no banco:', error);
+
       throw error;
     }
 
-    console.log('✅ Custos salvos com sucesso!');
+
   },
 };

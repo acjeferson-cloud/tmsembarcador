@@ -101,7 +101,7 @@ export const npsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configuração NPS:', error);
+
       throw error;
     }
   },
@@ -125,7 +125,7 @@ export const npsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao salvar configuração NPS:', error);
+
       throw error;
     }
   },
@@ -137,27 +137,19 @@ export const npsService = {
 
       // Log 1: Verificar sessão atual
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('🔐 [NPS] Verificando sessão de autenticação:', {
-        temSessao: !!sessionData?.session,
-        usuario: sessionData?.session?.user?.email,
-        role: sessionData?.session?.user?.role,
-        errorSessao: sessionError
-      });
+
 
       // NOVO: Obter contexto (organization_id e environment_id)
-      console.log('🔍 [NPS] Obtendo contexto do tenant...');
+
       const context = await TenantContextHelper.getCurrentContext();
 
       if (!context || !context.organizationId || !context.environmentId) {
         const errorMsg = 'Contexto multi-tenant não encontrado. É necessário estar logado e ter organização/ambiente selecionados.';
-        console.error('❌ [NPS]', errorMsg, context);
+
         throw new Error(errorMsg);
       }
 
-      console.log('✅ [NPS] Contexto obtido:', {
-        organizationId: context.organizationId,
-        environmentId: context.environmentId
-      });
+
 
       // Log 2: Verificar dados que serão inseridos (incluindo context)
       const dadosInsert = {
@@ -166,10 +158,10 @@ export const npsService = {
         environment_id: context.environmentId,
         created_at: new Date().toISOString(),
       };
-      console.log('📝 [NPS] Dados que serão inseridos:', dadosInsert);
+
 
       // Log 3: Tentar inserir
-      console.log('⏳ [NPS] Iniciando INSERT na tabela nps_pesquisas_cliente...');
+
       const { data, error } = await supabase
         .from('nps_pesquisas_cliente')
         .insert(dadosInsert)
@@ -178,23 +170,14 @@ export const npsService = {
 
       // Log 4: Resultado
       if (error) {
-        console.error('❌ [NPS] ERRO ao inserir pesquisa:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
+
         throw error;
       }
 
-      console.log('✅ [NPS] Pesquisa criada com sucesso:', data);
+
       return data;
     } catch (error: any) {
-      console.error('💥 [NPS] ERRO GERAL ao criar pesquisa NPS cliente:', {
-        message: error.message,
-        stack: error.stack,
-        error: error
-      });
+
       throw error;
     }
   },
@@ -236,7 +219,7 @@ export const npsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar pesquisas NPS:', error);
+
       throw error;
     }
   },
@@ -262,7 +245,7 @@ export const npsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar avaliações de clientes:', error);
+
       throw error;
     }
   },
@@ -296,7 +279,7 @@ export const npsService = {
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar avaliações internas:', error);
+
       throw error;
     }
   },
@@ -439,7 +422,7 @@ export const npsService = {
 
   async getPesquisaByToken(token: string): Promise<NPSPesquisaCliente | null> {
     try {
-      console.log('🔎 Buscando pesquisa NPS por token:', token);
+
 
       const { data, error } = await supabase
         .from('nps_pesquisas_cliente')
@@ -450,16 +433,16 @@ export const npsService = {
         .eq('token_pesquisa', token)
         .maybeSingle();
 
-      console.log('📥 Resultado da busca:', { data, error });
+
 
       if (error) {
-        console.error('❌ Erro no Supabase:', error);
+
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('❌ Erro ao buscar pesquisa por token:', error);
+
       throw error;
     }
   },
@@ -474,8 +457,8 @@ export const npsService = {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      console.log('Enviando email NPS:', { estabelecimentoId, to });
-      console.log('URL:', `${supabaseUrl}/functions/v1/enviar-email-nps`);
+
+
 
       const response = await fetch(`${supabaseUrl}/functions/v1/enviar-email-nps`, {
         method: 'POST',
@@ -492,14 +475,14 @@ export const npsService = {
         }),
       });
 
-      console.log('Status da resposta:', response.status);
+
 
       if (!response.ok) {
         let errorMessage = 'Erro ao enviar email';
         try {
           const result = await response.json();
           errorMessage = result.message || result.error || errorMessage;
-          console.error('Erro da Edge Function:', result);
+
         } catch {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
@@ -507,11 +490,11 @@ export const npsService = {
       }
 
       const result = await response.json();
-      console.log('Resposta da Edge Function:', result);
+
 
       return result;
     } catch (error: any) {
-      console.error('Erro ao enviar email NPS:', error);
+
       if (error.message?.includes('Failed to fetch')) {
         throw new Error('Não foi possível conectar ao servidor de email. Verifique sua conexão e tente novamente.');
       }
@@ -547,7 +530,7 @@ export const npsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao responder pesquisa:', error);
+
       throw error;
     }
   },
@@ -573,7 +556,7 @@ export const npsService = {
         detratores: 0,
       };
     } catch (error) {
-      console.error('Erro ao calcular NPS cliente:', error);
+
       throw error;
     }
   },
@@ -595,7 +578,7 @@ export const npsService = {
       if (error) throw error;
       return data || 0;
     } catch (error) {
-      console.error('Erro ao calcular NPS interno:', error);
+
       throw error;
     }
   },
@@ -614,7 +597,7 @@ export const npsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao salvar avaliação interna:', error);
+
       throw error;
     }
   },
@@ -651,7 +634,7 @@ export const npsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar avaliações internas:', error);
+
       throw error;
     }
   },
@@ -760,7 +743,7 @@ export const npsService = {
         return Object.values(grouped).sort((a: any, b: any) => b.nps - a.nps);
       }
     } catch (error) {
-      console.error('Erro ao buscar ranking transportadoras:', error);
+
       throw error;
     }
   },
@@ -779,7 +762,7 @@ export const npsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao registrar envio:', error);
+
       throw error;
     }
   },
@@ -806,7 +789,7 @@ export const npsService = {
       if (error) throw error;
       return data?.length || 0;
     } catch (error) {
-      console.error('Erro ao expirar pesquisas:', error);
+
       throw error;
     }
   },

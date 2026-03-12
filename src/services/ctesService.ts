@@ -46,7 +46,7 @@ export const ctesService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar CT-es:', error);
+
       return [];
     }
   },
@@ -62,7 +62,7 @@ export const ctesService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar CT-e:', error);
+
       return null;
     }
   },
@@ -82,7 +82,7 @@ export const ctesService = {
       if (error) return { success: false, error: error.message };
       return { success: true, id: data.id };
     } catch (error) {
-      console.error('Erro ao criar CT-e:', error);
+
       return { success: false, error: 'Erro ao criar CT-e' };
     }
   },
@@ -100,7 +100,7 @@ export const ctesService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar CT-e:', error);
+
       return { success: false, error: 'Erro ao atualizar CT-e' };
     }
   },
@@ -115,7 +115,7 @@ export const ctesService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir CT-e:', error);
+
       return { success: false, error: 'Erro ao excluir CT-e' };
     }
   }

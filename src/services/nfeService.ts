@@ -80,7 +80,7 @@ export const nfeService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar notas fiscais:', error);
+
         throw error;
       }
 
@@ -91,7 +91,7 @@ export const nfeService = {
         products: invoice.products || []
       }));
     } catch (error) {
-      console.error('Erro ao buscar notas fiscais:', error);
+
       return [];
     }
   },
@@ -126,7 +126,7 @@ export const nfeService = {
         products: data.products || []
       };
     } catch (error) {
-      console.error('Erro ao buscar nota fiscal:', error);
+
       return null;
     }
   },
@@ -155,7 +155,7 @@ export const nfeService = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar notas fiscais:', error);
+
         throw error;
       }
 
@@ -165,7 +165,7 @@ export const nfeService = {
         products: invoice.products || []
       }));
     } catch (error) {
-      console.error('Erro ao buscar notas fiscais:', error);
+
       return [];
     }
   },
@@ -183,7 +183,7 @@ export const nfeService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao atualizar status:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -198,7 +198,7 @@ export const nfeService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao excluir nota fiscal:', error);
+
       return { success: false, error: error.message };
     }
   }

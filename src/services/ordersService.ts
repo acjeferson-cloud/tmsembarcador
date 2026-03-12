@@ -78,23 +78,23 @@ const mapOrderFromDb = (dbOrder: any): Order => {
 export const ordersService = {
   async getAll(): Promise<Order[]> {
     try {
-      console.log('📦 [ORDERS] Buscando pedidos...');
+
       const { data, error } = await supabase.rpc('get_orders_prioritized');
 
       if (error) {
-        console.error('❌ [ORDERS] Erro:', error);
+
         throw error;
       }
 
-      console.log(`✅ [ORDERS] Encontrados: ${data?.length || 0} pedidos`);
+
 
       // Mapear dados do banco (português) para interface (inglês)
       const mapped = (data || []).map(mapOrderFromDb);
 
-      console.log('✅ [ORDERS] Pedidos mapeados:', mapped.length);
+
       return mapped;
     } catch (error) {
-      console.error('❌ [ORDERS] Erro ao buscar pedidos:', error);
+
       return [];
     }
   },
@@ -114,20 +114,20 @@ export const ordersService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar pedido:', error);
+
       return null;
     }
   },
 
   async create(order: Order): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-      console.log('[ordersService.create] Iniciando criação do pedido');
-      console.log('[ordersService.create] Supabase client disponível:', !!supabase);
-      console.log('[ordersService.create] Dados recebidos:', order);
+
+
+
 
       const { delivery_status, ...orderData } = order;
 
-      console.log('[ordersService.create] Dados limpos (sem delivery_status):', orderData);
+
 
       const dataToInsert = {
         ...orderData,
@@ -135,7 +135,7 @@ export const ordersService = {
         updated_at: new Date().toISOString()
       };
 
-      console.log('[ordersService.create] Dados a inserir:', dataToInsert);
+
 
       const { data, error } = await supabase
         .from('orders')
@@ -143,14 +143,14 @@ export const ordersService = {
         .select()
         .single();
 
-      console.log('[ordersService.create] Resultado da inserção - data:', data);
-      console.log('[ordersService.create] Resultado da inserção - error:', error);
+
+
 
       if (error) {
-        console.error('[ordersService.create] Erro do Supabase:', error);
-        console.error('[ordersService.create] Código do erro:', error.code);
-        console.error('[ordersService.create] Detalhes do erro:', error.details);
-        console.error('[ordersService.create] Hint:', error.hint);
+
+
+
+
         return { success: false, error: error.message || 'Erro desconhecido ao criar pedido' };
       }
 
@@ -164,13 +164,13 @@ export const ordersService = {
         await supabase.from('order_delivery_status').insert(statusToInsert);
       }
 
-      console.log('[ordersService.create] Pedido criado com sucesso, ID:', data.id);
+
       return { success: true, id: data.id };
     } catch (error: any) {
-      console.error('[ordersService.create] Erro capturado no catch:', error);
-      console.error('[ordersService.create] Tipo do erro:', typeof error);
-      console.error('[ordersService.create] Nome do erro:', error.name);
-      console.error('[ordersService.create] Mensagem do erro:', error.message);
+
+
+
+
 
       let errorMessage = 'Erro ao criar pedido';
 
@@ -199,7 +199,7 @@ export const ordersService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao atualizar pedido:', error);
+
       return { success: false, error: 'Erro ao atualizar pedido' };
     }
   },
@@ -217,7 +217,7 @@ export const ordersService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao adicionar status:', error);
+
       return { success: false, error: 'Erro ao adicionar status' };
     }
   },
@@ -232,16 +232,16 @@ export const ordersService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Erro ao excluir pedido:', error);
+
       return { success: false, error: 'Erro ao excluir pedido' };
     }
   },
 
   async addItems(orderId: string, items: any[]): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[ordersService.addItems] Iniciando adição de itens');
-      console.log('[ordersService.addItems] Order ID:', orderId);
-      console.log('[ordersService.addItems] Items recebidos:', items);
+
+
+
 
       const itemsToInsert = items.map(item => ({
         order_id: orderId,
@@ -252,48 +252,48 @@ export const ordersService = {
         total_price: item.total_price
       }));
 
-      console.log('[ordersService.addItems] Items a inserir:', itemsToInsert);
+
 
       const { error } = await supabase
         .from('order_items')
         .insert(itemsToInsert);
 
-      console.log('[ordersService.addItems] Resultado - error:', error);
+
 
       if (error) {
-        console.error('[ordersService.addItems] Erro do Supabase:', error);
+
         return { success: false, error: error.message };
       }
 
-      console.log('[ordersService.addItems] Itens adicionados com sucesso');
+
       return { success: true };
     } catch (error) {
-      console.error('[ordersService.addItems] Erro capturado no catch:', error);
+
       return { success: false, error: 'Erro ao adicionar itens' };
     }
   },
 
   async updateItems(orderId: string, items: any[]): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('[ordersService.updateItems] Iniciando atualização de itens');
-      console.log('[ordersService.updateItems] Order ID:', orderId);
-      console.log('[ordersService.updateItems] Items recebidos:', items);
+
+
+
 
       // Delete existing items
-      console.log('[ordersService.updateItems] Deletando itens existentes...');
+
       const { error: deleteError } = await supabase
         .from('order_items')
         .delete()
         .eq('order_id', orderId);
 
       if (deleteError) {
-        console.error('[ordersService.updateItems] Erro ao deletar itens:', deleteError);
+
         return { success: false, error: deleteError.message };
       }
 
       // Insert new items
       if (items.length > 0) {
-        console.log('[ordersService.updateItems] Inserindo novos itens...');
+
         const itemsToInsert = items.map(item => ({
           order_id: orderId,
           product_code: item.product_code,
@@ -303,22 +303,22 @@ export const ordersService = {
           total_price: item.total_price
         }));
 
-        console.log('[ordersService.updateItems] Items a inserir:', itemsToInsert);
+
 
         const { error: insertError } = await supabase
           .from('order_items')
           .insert(itemsToInsert);
 
         if (insertError) {
-          console.error('[ordersService.updateItems] Erro ao inserir itens:', insertError);
+
           return { success: false, error: insertError.message };
         }
       }
 
-      console.log('[ordersService.updateItems] Itens atualizados com sucesso');
+
       return { success: true };
     } catch (error) {
-      console.error('[ordersService.updateItems] Erro capturado no catch:', error);
+
       return { success: false, error: 'Erro ao atualizar itens' };
     }
   }
