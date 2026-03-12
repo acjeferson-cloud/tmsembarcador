@@ -234,7 +234,7 @@ const emailOutgoingConfigService = {
         if (responseData?.logs && Array.isArray(responseData.logs)) {
 
 
-          responseData.logs.forEach((log: string) => /*log_removed*/
+          responseData.logs.forEach((log: string) => { /*log_removed*/ });
 
         }
 
@@ -249,7 +249,7 @@ const emailOutgoingConfigService = {
       if (responseData?.logs && Array.isArray(responseData.logs)) {
 
 
-        responseData.logs.forEach((log: string) => /*log_removed*/
+        responseData.logs.forEach((log: string) => { /*log_removed*/ });
 
       }
 
