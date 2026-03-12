@@ -8,40 +8,60 @@ export interface TenantContext {
 
 export class TenantContextHelper {
   private static async getUserProfile(userEmail: string) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('organization_id, environment_id, supabase_user_id')
-      .eq('email', userEmail)
-      .maybeSingle();
+    const { data: rawData, error } = await (supabase as any)
+      .rpc('get_user_context_for_session', { p_email: userEmail });
+      
+    const data = rawData as any;
 
-    if (error) {
-
-      throw new Error('Falha ao buscar perfil do usuário');
+    if (error || !data || !data.success) {
+      console.error('Falha ao buscar perfil do usuário via RPC', error || data?.error);
+      return null;
     }
 
-    return data;
+    return {
+      organization_id: data.organization_id as string,
+      environment_id: data.environment_id as string | null,
+      supabase_user_id: userEmail
+    };
   }
 
   static async getCurrentContext(): Promise<TenantContext | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      let userEmail: string | null = null;
+      const sessionResponse = await supabase?.auth.getUser();
+      const user = sessionResponse?.data?.user;
 
-      if (!user || !user.email) {
+      if (user?.email) {
+        userEmail = user.email;
+      } else {
+        // Fallback para o localStorage cacheado
+        const savedUser = localStorage.getItem('tms-user');
+        if (savedUser) {
+          try {
+            const userData = JSON.parse(savedUser);
+            if (userData?.email) userEmail = userData.email;
+          } catch (e) {
+            console.warn('Erro ao ler tms-user do localStorage', e);
+          }
+        }
+      }
 
+      if (!userEmail) {
+        console.warn('TenantContext: Usuário não autenticado ou sem e-mail.');
         return null;
       }
 
-      const userProfile = await this.getUserProfile(user.email);
+      const userProfile = await this.getUserProfile(userEmail);
 
       if (!userProfile) {
-
+        console.warn(`TenantContext: Perfil não encontrado para o e-mail ${userEmail}`);
         return null;
       }
 
       const organizationId = userProfile.organization_id;
 
       if (!organizationId) {
-
+        console.warn(`TenantContext: Perfil sem organization_id para o e-mail ${userEmail}`);
         return null;
       }
 
@@ -54,7 +74,7 @@ export class TenantContextHelper {
       } else if (userProfile.environment_id) {
         environmentId = userProfile.environment_id;
       } else {
-        const { data: defaultEnv } = await supabase
+        const { data: defaultEnv } = await (supabase as any)
           .from('saas_environments')
           .select('id')
           .eq('organization_id', organizationId)
@@ -67,7 +87,7 @@ export class TenantContextHelper {
       return {
         organizationId,
         environmentId,
-        userEmail: user.email
+        userEmail: userEmail as string
       };
     } catch (error) {
 
@@ -87,7 +107,7 @@ export class TenantContextHelper {
 
   static async setSessionContext(context: TenantContext): Promise<void> {
     try {
-      await supabase.rpc('set_session_context', {
+      await (supabase as any).rpc('set_session_context', {
         p_organization_id: context.organizationId,
         p_environment_id: context.environmentId,
         p_user_email: context.userEmail
@@ -100,7 +120,8 @@ export class TenantContextHelper {
 
   static async isSuperAdmin(): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const sessionResponse = await supabase?.auth.getUser();
+      const user = sessionResponse?.data?.user;
 
       if (!user || !user.email) {
         return false;
@@ -115,7 +136,7 @@ export class TenantContextHelper {
 
   static async getAllOrganizations() {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('saas_organizations')
         .select('id, nome, nome_fantasia, codigo, status')
         .eq('status', 'ativo')
@@ -123,7 +144,7 @@ export class TenantContextHelper {
 
       if (error) throw error;
 
-      return (data || []).map(org => ({
+      return (data || []).map((org: any) => ({
         id: org.id,
         name: org.nome,
         trade_name: org.nome_fantasia || org.nome,
@@ -138,7 +159,7 @@ export class TenantContextHelper {
 
   static async getEnvironmentsByOrganization(organizationId: string) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('saas_environments')
         .select('id, nome, tipo, status')
         .eq('organization_id', organizationId)
@@ -148,7 +169,7 @@ export class TenantContextHelper {
 
       if (error) throw error;
 
-      return (data || []).map(env => ({
+      return (data || []).map((env: any) => ({
         id: env.id,
         name: env.nome,
         type: env.tipo === 'producao' ? 'production' :

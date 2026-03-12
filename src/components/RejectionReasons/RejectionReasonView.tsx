@@ -6,9 +6,10 @@ interface RejectionReasonViewProps {
   onBack: () => void;
   onEdit: () => void;
   reason: RejectionReason;
+  isAdmin?: boolean;
 }
 
-export const RejectionReasonView: React.FC<RejectionReasonViewProps> = ({ onBack, onEdit, reason }) => {
+export const RejectionReasonView: React.FC<RejectionReasonViewProps> = ({ onBack, onEdit, reason, isAdmin }) => {
   // Get category color based on category name
   const getCategoryColor = () => {
     if (reason.categoria.includes('Dados do Documento')) return 'bg-blue-100 text-blue-800';
@@ -39,13 +40,15 @@ export const RejectionReasonView: React.FC<RejectionReasonViewProps> = ({ onBack
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Motivo de Rejeição</h1>
             <p className="text-gray-600 dark:text-gray-400">Detalhes completos do motivo de rejeição</p>
           </div>
-          <button
-            onClick={onEdit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Edit size={20} />
-            <span>Editar</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <Edit size={20} />
+              <span>Editar</span>
+            </button>
+          )}
         </div>
       </div>
 

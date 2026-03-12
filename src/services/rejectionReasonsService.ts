@@ -14,24 +14,9 @@ interface RejectionReason {
 export const rejectionReasonsService = {
   async getAll(): Promise<RejectionReason[]> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        return [];
-      }
-
-      const userData = JSON.parse(savedUser);
-      const { organization_id, environment_id } = userData;
-
-      if (!organization_id || !environment_id) {
-        return [];
-      }
-
-      // Buscar dados globais (organization_id NULL e environment_id NULL)
-      // OU dados específicos da organização/ambiente
       const { data, error } = await supabase
         .from('rejection_reasons')
         .select('*')
-        .or(`and(organization_id.is.null,environment_id.is.null),and(organization_id.eq.${organization_id},environment_id.eq.${environment_id})`)
         .order('codigo', { ascending: true });
 
       if (error) {
@@ -124,7 +109,7 @@ export const rejectionReasonsService = {
           categoria: reason.categoria,
           descricao: reason.descricao,
           ativo: reason.ativo !== undefined ? reason.ativo : true,
-        })
+        } as any)
         .select()
         .single();
 

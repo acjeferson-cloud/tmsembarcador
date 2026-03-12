@@ -67,6 +67,7 @@ export const NPSConfiguration: React.FC = () => {
         .from('establishments')
         .select('id, codigo, razao_social, organization_id, environment_id')
         .eq('codigo', codigo)
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -92,7 +93,7 @@ export const NPSConfiguration: React.FC = () => {
       if (!data?.id) {
         console.warn('⚠️ [NPSConfig] Estabelecimento não encontrado com código:', codigo);
         setToast({
-          message: `Estabelecimento ${codigo} não encontrado nesta organização/ambiente`,
+          message: `Estabelecimento não encontrado nesta organização/ambiente`,
           type: 'error',
         });
         return null;
@@ -150,7 +151,7 @@ export const NPSConfiguration: React.FC = () => {
 
       await npsService.saveConfig({
         ...config,
-        estabelecimento_id: estabelecimentoId,
+        establishment_id: estabelecimentoId,
       });
 
       setToast({
@@ -225,7 +226,7 @@ export const NPSConfiguration: React.FC = () => {
       const { supabase } = await import('../../lib/supabase');
       const { data: estabelecimentoData, error: fetchError } = await supabase
         .from('establishments')
-        .select('razao_social, cnpj, codigo, logo_url, logo_light_base64, logo_nps_base64')
+        .select('razao_social, cnpj, codigo')
         .eq('id', estabId)
         .maybeSingle();
 
@@ -235,15 +236,12 @@ export const NPSConfiguration: React.FC = () => {
 
       console.log('Dados do estabelecimento (fresco do banco):', {
         razao_social: estabelecimentoData?.razao_social,
-        logo_url: estabelecimentoData?.logo_url,
-        tem_logo_nps_base64: !!estabelecimentoData?.logo_nps_base64,
-        tem_logo_light_base64: !!estabelecimentoData?.logo_light_base64
       });
 
       // Priorizar logo_nps_base64 para emails NPS
-      let logoNps = estabelecimentoData?.logo_nps_base64;
+      let logoNps = null;
 
-      console.log('Logo NPS selecionado:', logoNps ? 'Logo NPS específico encontrado' : 'Usando logo padrão');
+      console.log('Logo NPS selecionado: Usando logo padrão');
 
       // Buscar transportadora de exemplo do banco
       const { data: transportadoraData } = await supabase
@@ -261,20 +259,23 @@ export const NPSConfiguration: React.FC = () => {
       });
 
       console.log('📋 [NPSConfig] Criando pesquisa NPS com dados:', {
-        estabelecimento_id: estabId,
+        establishment_id: estabId,
         transportador_id: transportadoraData?.id || null,
         transportador_nome: transportadoraData?.fantasia || transportadoraData?.razao_social,
         cliente_email: testEmail
       });
 
+      const tokenGerado = Array.from({ length: 32 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 32);
+
       const pesquisa = await npsService.criarPesquisaCliente({
-        estabelecimento_id: estabId,
+        establishment_id: estabId,
         transportador_id: transportadoraData?.id || null,
         cliente_nome: 'Cliente Teste',
         cliente_email: testEmail,
         status: 'pendente',
         canal_envio: 'email',
         data_envio: new Date().toISOString(),
+        token_pesquisa: tokenGerado,
       });
 
       // Gerar HTML com o template profissional

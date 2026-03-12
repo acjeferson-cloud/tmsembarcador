@@ -1,0 +1,1 @@
+ALTER TABLE invoices_nfe ADD COLUMN IF NOT EXISTS establishment_id uuid REFERENCES establishments(id); ALTER TABLE invoices_nfe ADD COLUMN IF NOT EXISTS carrier_id uuid REFERENCES carriers(id);

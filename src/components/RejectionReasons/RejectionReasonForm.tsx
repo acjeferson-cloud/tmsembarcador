@@ -69,7 +69,7 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
       return false;
     }
 
-    if (!isRejectionReasonCodeUnique(codigo, reason?.id)) {
+    if (!reason && !isRejectionReasonCodeUnique(codigo)) {
       setCodeError('Este código já está sendo usado por outro motivo de rejeição');
       return false;
     }

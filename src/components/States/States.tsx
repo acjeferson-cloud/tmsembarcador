@@ -9,8 +9,11 @@ import { BrazilMap } from './BrazilMap';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
+import { useAuth } from '../../hooks/useAuth';
 
 export const States: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
     { label: 'Configurações' },
     { label: 'Estados', current: true }
@@ -194,6 +197,7 @@ export const States: React.FC = () => {
           handleEditState(viewingState);
         }}
         state={viewingState}
+        isAdmin={isAdmin}
       />
     );
   }
@@ -206,13 +210,15 @@ export const States: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Estados do Brasil</h1>
           <p className="text-gray-600 dark:text-gray-400">Gerencie o cadastro de estados brasileiros</p>
         </div>
-        <button
-          onClick={handleNewState}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-        >
-          <Plus size={20} />
-          <span>Novo Estado</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={handleNewState}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Plus size={20} />
+            <span>Novo Estado</span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -306,6 +312,7 @@ export const States: React.FC = () => {
                   onView={handleViewState}
                   onEdit={handleEditState}
                   onDelete={handleDeleteState}
+                  isAdmin={isAdmin}
                 />
               ))}
             </div>

@@ -78,38 +78,87 @@ interface CreatePickupResult {
 export const pickupsService = {
   async getAll(): Promise<Pickup[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pickups')
-        .select('*')
+        .select(`
+          *,
+          carrier:carriers(id, razao_social)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map((p: any) => ({
+        id: p.id,
+        pickup_number: p.numero_coleta,
+        establishment_id: p.establishment_id,
+        customer_name: p.contato_nome || '',
+        carrier_id: p.carrier_id,
+        carrier_name: p.carrier?.razao_social || '',
+        scheduled_date: p.data_agendada || p.data_solicitacao,
+        pickup_address: p.logradouro || '',
+        pickup_city: p.cidade || '',
+        pickup_state: p.estado || '',
+        pickup_zip: p.cep || '',
+        contact_name: p.contato_nome || '',
+        contact_phone: p.contato_telefone || '',
+        packages_quantity: p.quantidade_volumes || 0,
+        total_weight: p.peso_total || 0,
+        total_volume: p.valor_total || 0,
+        status: p.status,
+        created_at: p.created_at,
+        observations: p.observacoes || ''
+      })) as Pickup[];
     } catch (error) {
-
+      console.error('Error fetching pickups:', error);
       return [];
     }
   },
 
   async getById(id: string): Promise<Pickup | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pickups')
-        .select('*')
+        .select(`
+          *,
+          carrier:carriers(id, razao_social)
+        `)
         .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
-      return data;
-    } catch (error) {
+      if (!data) return null;
 
+      return {
+        id: data.id,
+        pickup_number: data.numero_coleta,
+        establishment_id: data.establishment_id,
+        customer_name: data.contato_nome || '',
+        carrier_id: data.carrier_id,
+        carrier_name: data.carrier?.razao_social || '',
+        scheduled_date: data.data_agendada || data.data_solicitacao,
+        pickup_address: data.logradouro || '',
+        pickup_city: data.cidade || '',
+        pickup_state: data.estado || '',
+        pickup_zip: data.cep || '',
+        contact_name: data.contato_nome || '',
+        contact_phone: data.contato_telefone || '',
+        packages_quantity: data.quantidade_volumes || 0,
+        total_weight: data.peso_total || 0,
+        total_volume: data.valor_total || 0,
+        status: data.status,
+        created_at: data.created_at,
+        observations: data.observacoes || ''
+      } as Pickup;
+    } catch (error) {
+      console.error('Error in getById:', error);
       return null;
     }
   },
 
   async getPickupInvoices(pickupId: string): Promise<any[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pickup_invoices')
         .select(`
           *,
@@ -135,6 +184,138 @@ export const pickupsService = {
     } catch (error) {
 
       return [];
+    }
+  },
+
+  async createFromNfes(params: CreatePickupFromInvoicesParams): Promise<CreatePickupResult> {
+    try {
+      const { invoiceIds, establishmentId, userId } = params;
+
+      if (!invoiceIds || invoiceIds.length === 0) {
+        return { success: false, error: 'Nenhuma nota fiscal selecionada' };
+      }
+
+      // Buscar as NFes com clientes/transportadores já usando a tabela nova do sistema
+      const { data: invoices, error: invoicesError } = await (supabase as any)
+        .from('invoices_nfe')
+        .select(`
+          *,
+          customer:invoices_nfe_customers(*),
+          carrier:carriers(
+            id,
+            razao_social,
+            cnpj,
+            codigo
+          ),
+          products:invoices_nfe_products(*)
+        `)
+        .in('id', invoiceIds);
+
+      if (invoicesError || !invoices || invoices.length === 0) {
+        return { success: false, error: 'Erro ao buscar notas fiscais selecionadas' };
+      }
+
+      // Group by carrier
+      const invoicesByCarrier = invoices.reduce((acc: any, invoice: any) => {
+        const carrierId = invoice.carrier?.id || 'sem_transportador';
+        const carrierName = invoice.carrier?.razao_social || 'Sem Transportador';
+
+        if (!acc[carrierId]) {
+          acc[carrierId] = {
+            carrierName,
+            carrierId: invoice.carrier?.id,
+            invoices: []
+          };
+        }
+        acc[carrierId].invoices.push(invoice);
+        return acc;
+      }, {});
+
+      const carrierGroups = Object.values(invoicesByCarrier) as any[];
+      const multipleCarriers = carrierGroups.length > 1;
+
+      const createdPickups = [];
+
+      for (const group of carrierGroups) {
+        const firstInvoice = group.invoices[0];
+        const dest = firstInvoice.customer?.[0] || {};
+
+        // In XML NFe imported, we didn't strictly map total weight and volume globally in the DB schema, 
+        // we map it if present or leave it 0
+        const totalWeight = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.peso) || 0), 0);
+        const totalVolume = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.metros_cubicos) || 0), 0);
+        const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.quantidade_volumes) || 0), 0);
+
+        const pickupNumber = `COL-${Date.now().toString().slice(-6)}`;
+
+        const pickupData = {
+          establishment_id: establishmentId,
+          carrier_id: group.carrierId,
+          numero_coleta: pickupNumber,
+          data_agendada: new Date().toISOString().split('T')[0],
+          data_solicitacao: new Date().toISOString(),
+          logradouro: dest.endereco || '',
+          cidade: dest.cidade || '',
+          estado: dest.estado || '',
+          cep: dest.cep || '',
+          contato_nome: dest.razao_social || '',
+          contato_telefone: dest.telefone || '',
+          quantidade_volumes: totalPackages,
+          peso_total: totalWeight,
+          valor_total: 0,
+          status: 'solicitada',
+          observacoes: `Coleta criada automaticamente a partir de ${group.invoices.length} NFe(s)`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const { data: pickup, error: pickupError } = await (supabase as any)
+          .from('pickups')
+          .insert(pickupData as any)
+          .select('id')
+          .single();
+
+        if (pickupError || !pickup) {
+          console.error('Error creating pickup:', pickupError);
+          continue;
+        }
+
+        const pickupInvoices = group.invoices.map((invoice: any) => ({
+          pickup_id: pickup.id,
+          invoice_id: invoice.id,
+          // nfe_invoice doesn't have freight_table out of the box so setting null or mock
+          freight_table_name: null,
+          freight_rate_value: null,
+          created_at: new Date().toISOString()
+        }));
+
+        await (supabase as any)
+          .from('pickup_invoices')
+          .insert(pickupInvoices as any);
+
+        createdPickups.push({
+          pickupId: pickup.id,
+          pickupNumber,
+          carrierName: group.carrierName,
+          invoiceCount: group.invoices.length
+        });
+      }
+
+      if (createdPickups.length === 0) {
+        return { success: false, error: 'Não foi possível criar nenhuma coleta' };
+      }
+
+      return {
+        success: true,
+        pickups: createdPickups,
+        warning: multipleCarriers
+          ? `As notas fiscais pertencem a ${carrierGroups.length} transportadores diferentes. Foram criadas ${createdPickups.length} coletas separadas.`
+          : undefined
+      };
+
+    } catch (error) {
+      console.error('Error in createFromNfes:', error);
+      return { success: false, error: 'Erro ao criar coletas a partir das NFes' };
     }
   },
 
@@ -182,45 +363,39 @@ export const pickupsService = {
         const totalVolume = group.invoices.reduce((sum: number, inv: any) => sum + (inv.metros_cubicos || 0), 0);
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (inv.quantidade_volumes || 0), 0);
 
+        const pickupNumber = `COL-${Date.now().toString().slice(-6)}`;
+
         const pickupData = {
           establishment_id: establishmentId,
           carrier_id: group.carrierId,
-          carrier_name: group.carrierName,
-          customer_name: firstInvoice.destinatario_nome || 'Cliente',
-          scheduled_date: new Date().toISOString(),
-          pickup_address: firstInvoice.remetente_endereco || '',
-          pickup_city: firstInvoice.remetente_cidade || '',
-          pickup_state: firstInvoice.remetente_uf || '',
-          pickup_zip: firstInvoice.remetente_cep || '',
-          contact_name: firstInvoice.remetente_nome || '',
-          contact_phone: firstInvoice.remetente_telefone || '',
-          packages_quantity: totalPackages,
-          total_weight: totalWeight,
-          total_volume: totalVolume > 0 ? totalVolume : null,
-          status: 'coleta_emitida' as const,
-          observations: `Coleta criada automaticamente a partir de ${group.invoices.length} nota(s) fiscal(is)`,
-          created_by: userId,
+          numero_coleta: pickupNumber,
+          data_agendada: new Date().toISOString().split('T')[0],
+          data_solicitacao: new Date().toISOString(),
+          logradouro: firstInvoice.remetente_endereco || '',
+          cidade: firstInvoice.remetente_cidade || '',
+          estado: firstInvoice.remetente_uf || '',
+          cep: firstInvoice.remetente_cep || '',
+          contato_nome: firstInvoice.remetente_nome || '',
+          contato_telefone: firstInvoice.remetente_telefone || '',
+          quantidade_volumes: totalPackages,
+          peso_total: totalWeight,
+          valor_total: 0,
+          status: 'solicitada',
+          observacoes: `Coleta criada automaticamente a partir de ${group.invoices.length} nota(s) fiscal(is)`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
-        const { data: pickup, error: pickupError } = await supabase
+        const { data: pickup, error: pickupError } = await (supabase as any)
           .from('pickups')
           .insert(pickupData)
-          .select('id, pickup_number_seq')
+          .select('id')
           .single();
 
         if (pickupError || !pickup) {
-
+          console.error('Error creating pickup:', pickupError);
           continue;
         }
-
-        const pickupNumber = `COL-${String(pickup.pickup_number_seq).padStart(5, '0')}`;
-
-        await supabase
-          .from('pickups')
-          .update({ pickup_number: pickupNumber })
-          .eq('id', pickup.id);
 
         const pickupInvoices = group.invoices.map((invoice: any) => ({
           pickup_id: pickup.id,
@@ -262,7 +437,7 @@ export const pickupsService = {
 
   async update(id: string, pickup: Partial<Pickup>): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('pickups')
         .update({
           ...pickup,
@@ -280,7 +455,7 @@ export const pickupsService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('pickups')
         .delete()
         .eq('id', id);
@@ -295,15 +470,39 @@ export const pickupsService = {
 
   async getByDateRange(startDate: string, endDate: string): Promise<Pickup[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('pickups')
-        .select('*')
-        .gte('scheduled_date', startDate)
-        .lte('scheduled_date', endDate)
-        .order('scheduled_date');
+        .select(`
+          *,
+          carrier:carriers(id, razao_social)
+        `)
+        .gte('data_agendada', startDate)
+        .lte('data_agendada', endDate)
+        .order('data_agendada');
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map((p: any) => ({
+        id: p.id,
+        pickup_number: p.numero_coleta,
+        establishment_id: p.establishment_id,
+        customer_name: p.contato_nome || '',
+        carrier_id: p.carrier_id,
+        carrier_name: p.carrier?.razao_social || '',
+        scheduled_date: p.data_agendada || p.data_solicitacao,
+        pickup_address: p.logradouro || '',
+        pickup_city: p.cidade || '',
+        pickup_state: p.estado || '',
+        pickup_zip: p.cep || '',
+        contact_name: p.contato_nome || '',
+        contact_phone: p.contato_telefone || '',
+        packages_quantity: p.quantidade_volumes || 0,
+        total_weight: p.peso_total || 0,
+        total_volume: p.valor_total || 0,
+        status: p.status,
+        created_at: p.created_at,
+        observations: p.observacoes || ''
+      })) as Pickup[];
     } catch (error) {
 
       return [];

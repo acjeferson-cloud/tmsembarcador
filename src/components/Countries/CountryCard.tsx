@@ -7,13 +7,15 @@ interface CountryCardProps {
   onView: (country: Country) => void;
   onEdit: (country: Country) => void;
   onDelete: (countryId: string | number) => void;
+  isAdmin?: boolean;
 }
 
 export const CountryCard: React.FC<CountryCardProps> = ({ 
   country, 
   onView, 
   onEdit, 
-  onDelete 
+  onDelete,
+  isAdmin
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow flex flex-col h-full">
@@ -45,20 +47,24 @@ export const CountryCard: React.FC<CountryCardProps> = ({
           >
             <Eye size={16} />
           </button>
-          <button 
-            onClick={() => onEdit(country)}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Editar"
-          >
-            <Edit size={16} />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete(country.id!); }}
-            className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-            title="Excluir"
-          >
-            <Trash2 size={16} />
-          </button>
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => onEdit(country)}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+                title="Editar"
+              >
+                <Edit size={16} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(country.id!); }}
+                className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
+                title="Excluir"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       

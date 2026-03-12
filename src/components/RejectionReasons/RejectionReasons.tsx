@@ -7,8 +7,11 @@ import { RejectionReasonView } from './RejectionReasonView';
 import { RejectionReasonForm } from './RejectionReasonForm';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 export const RejectionReasons: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
     { label: 'Configurações' },
     { label: 'Motivos de Rejeição', current: true }
@@ -188,6 +191,7 @@ export const RejectionReasons: React.FC = () => {
           handleEditReason(viewingReason);
         }}
         reason={viewingReason}
+        isAdmin={isAdmin}
       />
     );
   }
@@ -200,13 +204,15 @@ export const RejectionReasons: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Motivos de Rejeições de Documentos</h1>
           <p className="text-gray-600 dark:text-gray-400">Gerencie os motivos de rejeição para conferência eletrônica de documentos</p>
         </div>
-        <button 
-          onClick={handleNewReason}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-        >
-          <Plus size={20} />
-          <span>Novo Motivo</span>
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={handleNewReason}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Plus size={20} />
+            <span>Novo Motivo</span>
+          </button>
+        )}
       </div>
 
       {/* Statistics Cards */}
@@ -330,6 +336,7 @@ export const RejectionReasons: React.FC = () => {
             onView={handleViewReason}
             onEdit={handleEditReason}
             onDelete={handleDeleteReason}
+            isAdmin={isAdmin}
           />
         ))}
       </div>

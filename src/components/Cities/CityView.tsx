@@ -7,9 +7,10 @@ interface CityViewProps {
   onBack: () => void;
   onEdit: () => void;
   city: BrazilianCity;
+  isAdmin?: boolean;
 }
 
-export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city }) => {
+export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmin }) => {
   const [showZipRanges, setShowZipRanges] = useState(false);
   const [fullCity, setFullCity] = useState<BrazilianCity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,15 +74,17 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Cidade</h1>
-            <p className="text-gray-600 dark:text-gray-400">Detalhes completos da localidade com faixas de CEP</p>
+            <p className="text-gray-600 dark:text-gray-400">Detalhes completos da cidade</p>
           </div>
-          <button
-            onClick={onEdit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Edit size={20} />
-            <span>Editar</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <Edit size={20} />
+              <span>Editar</span>
+            </button>
+          )}
         </div>
       </div>
 

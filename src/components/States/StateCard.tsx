@@ -7,13 +7,15 @@ interface StateCardProps {
   onView: (state: State) => void;
   onEdit: (state: State) => void;
   onDelete: (stateId: string | number) => void;
+  isAdmin?: boolean;
 }
 
 export const StateCard: React.FC<StateCardProps> = ({
   state,
   onView,
   onEdit,
-  onDelete
+  onDelete,
+  isAdmin
 }) => {
   const getRegionColor = (region: string) => {
     switch (region) {
@@ -54,20 +56,24 @@ export const StateCard: React.FC<StateCardProps> = ({
           >
             <Eye size={16} />
           </button>
-          <button 
-            onClick={() => onEdit(state)}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Editar"
-          >
-            <Edit size={16} />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete(state.id!); }}
-            className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-            title="Excluir"
-          >
-            <Trash2 size={16} />
-          </button>
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => onEdit(state)}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+                title="Editar"
+              >
+                <Edit size={16} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(state.id!); }}
+                className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
+                title="Excluir"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       

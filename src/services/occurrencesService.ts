@@ -5,8 +5,6 @@ export interface Occurrence {
   id: string;
   codigo: string;
   descricao: string;
-  organization_id?: string;
-  environment_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -14,23 +12,9 @@ export interface Occurrence {
 export const occurrencesService = {
   async getAll(): Promise<Occurrence[]> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        return [];
-      }
-
-      const userData = JSON.parse(savedUser);
-      const { organization_id, environment_id } = userData;
-
-      if (!organization_id || !environment_id) {
-        return [];
-      }
-
       const { data, error } = await supabase
         .from('occurrences')
         .select('*')
-        .or(`organization_id.eq.${organization_id},organization_id.is.null`)
-        .or(`environment_id.eq.${environment_id},environment_id.is.null`)
         .order('codigo', { ascending: true });
 
       if (error) {
@@ -80,17 +64,12 @@ export const occurrencesService = {
 
   async create(occurrence: Omit<Occurrence, 'id' | 'created_at' | 'updated_at'>): Promise<Occurrence | null> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      const { organization_id, environment_id } = savedUser ? JSON.parse(savedUser) : { organization_id: null, environment_id: null };
-
       const { data, error } = await supabase
         .from('occurrences')
         .insert({
           codigo: occurrence.codigo,
-          descricao: occurrence.descricao,
-          organization_id,
-          environment_id
-        })
+          descricao: occurrence.descricao
+        } as any)
         .select()
         .single();
 
@@ -147,15 +126,10 @@ export const occurrencesService = {
 
   async search(searchTerm: string): Promise<Occurrence[]> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      const { organization_id, environment_id } = savedUser ? JSON.parse(savedUser) : { organization_id: null, environment_id: null };
-
       const { data, error } = await supabase
         .from('occurrences')
         .select('*')
         .or(`codigo.ilike.%${searchTerm}%,descricao.ilike.%${searchTerm}%`)
-        .or(`organization_id.eq.${organization_id},organization_id.is.null`)
-        .or(`environment_id.eq.${environment_id},environment_id.is.null`)
         .order('codigo', { ascending: true });
 
       if (error) {
@@ -170,14 +144,9 @@ export const occurrencesService = {
 
   async getNextCode(): Promise<string> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      const { organization_id, environment_id } = savedUser ? JSON.parse(savedUser) : { organization_id: null, environment_id: null };
-
       const { data, error } = await supabase
         .from('occurrences')
         .select('codigo')
-        .or(`organization_id.eq.${organization_id},organization_id.is.null`)
-        .or(`environment_id.eq.${environment_id},environment_id.is.null`)
         .order('codigo', { ascending: false })
         .limit(1);
 
@@ -197,15 +166,10 @@ export const occurrencesService = {
 
   async isCodeUnique(codigo: string, excludeId?: string): Promise<boolean> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      const { organization_id, environment_id } = savedUser ? JSON.parse(savedUser) : { organization_id: null, environment_id: null };
-
       let query = supabase
         .from('occurrences')
         .select('id')
-        .eq('codigo', codigo)
-        .or(`organization_id.eq.${organization_id},organization_id.is.null`)
-        .or(`environment_id.eq.${environment_id},environment_id.is.null`);
+        .eq('codigo', codigo);
 
       if (excludeId) {
         query = query.neq('id', excludeId);

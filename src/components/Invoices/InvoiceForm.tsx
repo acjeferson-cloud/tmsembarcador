@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Info, DollarSign, Users, FileText, Package, Upload, CheckCircle, AlertCircle, Save } from 'lucide-react';
 import { parseNFeXml, importNFeToDatabase, NFeXmlData } from '../../services/nfeXmlService';
 import { carriersService } from '../../services/carriersService';
+import { TenantContextHelper } from '../../utils/tenantContext';
 
 interface InvoiceFormProps {
   onBack: () => void;
@@ -90,9 +91,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   useEffect(() => {
     if (xmlData) {
+      let matchedCarrierId = '';
+      if (xmlData.carrier?.cnpj && carriers.length > 0) {
+        const cnpjClean = xmlData.carrier.cnpj.replace(/\D/g, '');
+        const matched = carriers.find((c: any) => c.cnpj && c.cnpj.replace(/\D/g, '') === cnpjClean);
+        if (matched) {
+          matchedCarrierId = matched.id;
+        }
+      }
+
       setFormData({
         establishment_id: establishmentId,
-        carrier_id: '',
+        carrier_id: matchedCarrierId,
         invoice_type: xmlData.invoiceType,
         number: xmlData.number,
         series: xmlData.series,
@@ -138,8 +148,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         unit: p.unit,
         unit_value: p.unitValue,
         total_value: p.totalValue,
-        ncm: p.ncm,
-        ean: p.ean
+        ncm: p.ncm || '',
+        ean: p.ean || ''
       })));
     }
   }, [xmlData, establishmentId]);
@@ -183,7 +193,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setError('');
 
     try {
-      const result = await importNFeToDatabase(xmlData, establishmentId);
+      const context = await TenantContextHelper.getCurrentContext();
+      if (!context || !context.organizationId || !context.environmentId) {
+        throw new Error('Você perdeu o acesso à sessão atual. Atualize a página e tente novamente.');
+      }
+
+      const result = await importNFeToDatabase(
+        xmlData, 
+        establishmentId, 
+        context.organizationId, 
+        context.environmentId,
+        formData.carrier_id || undefined
+      );
 
       if (result.success) {
         setSuccess('Nota Fiscal importada com sucesso!');

@@ -6,9 +6,10 @@ interface CountryViewProps {
   onBack: () => void;
   onEdit: () => void;
   country: Country;
+  isAdmin?: boolean;
 }
 
-export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, country }) => {
+export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, country, isAdmin }) => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
@@ -24,13 +25,15 @@ export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, countr
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar País</h1>
             <p className="text-gray-600 dark:text-gray-400">Detalhes completos do país</p>
           </div>
-          <button
-            onClick={onEdit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Edit size={20} />
-            <span>Editar</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <Edit size={20} />
+              <span>Editar</span>
+            </button>
+          )}
         </div>
       </div>
 

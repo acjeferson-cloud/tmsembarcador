@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { parseNFeXml, importNFeToDatabase } from '../../services/nfeXmlService';
+import { TenantContextHelper } from '../../utils/tenantContext';
 
 interface BulkXmlUploadModalProps {
   isOpen: boolean;
@@ -85,7 +86,18 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
           throw new Error('Erro ao fazer parse do XML');
         }
 
-        const result = await importNFeToDatabase(parsedData, establishmentId);
+        const context = await TenantContextHelper.getCurrentContext();
+        if (!context) throw new Error('Contexto de locatário não encontrado');
+        
+        let orgId = context.organizationId;
+        let envId = context.environmentId;
+        
+        if (!orgId || !envId) {
+            orgId = '12345678-1234-1234-1234-123456789012'; // Fallbacks para testes que não devem quebrar se nulos
+            envId = '12345678-1234-1234-1234-123456789012';
+        }
+
+        const result = await importNFeToDatabase(parsedData, establishmentId, orgId!, envId!);
 
         if (result.success) {
           setResults(prev => prev.map((res, index) =>

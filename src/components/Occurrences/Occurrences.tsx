@@ -7,8 +7,11 @@ import { OccurrenceView } from './OccurrenceView';
 import { OccurrenceForm } from './OccurrenceForm';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 export const Occurrences: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
     { label: 'Logística Reversa' },
     { label: 'Ocorrências', current: true }
@@ -155,6 +158,7 @@ export const Occurrences: React.FC = () => {
           handleEditOccurrence(viewingOccurrence);
         }}
         occurrence={viewingOccurrence}
+        isAdmin={isAdmin}
       />
     );
   }
@@ -167,13 +171,15 @@ export const Occurrences: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Históricos de Ocorrências</h1>
           <p className="text-gray-600 dark:text-gray-400">Gerencie os códigos de ocorrências para integração EDI</p>
         </div>
-        <button 
-          onClick={handleNewOccurrence}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-        >
-          <Plus size={20} />
-          <span>Nova Ocorrência</span>
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={handleNewOccurrence}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Plus size={20} />
+            <span>Nova Ocorrência</span>
+          </button>
+        )}
       </div>
 
       {/* Statistics Cards */}
@@ -258,6 +264,7 @@ export const Occurrences: React.FC = () => {
             onView={handleViewOccurrence}
             onEdit={handleEditOccurrence}
             onDelete={handleDeleteOccurrence}
+            isAdmin={isAdmin}
           />
         ))}
       </div>

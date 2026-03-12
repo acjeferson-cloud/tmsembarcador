@@ -182,9 +182,7 @@ export const statesService = {
 
   async update(id: string, state: Partial<State>): Promise<State | null> {
     try {
-      const updateData: any = {
-        updated_by: state.updated_by,
-      };
+      const updateData: any = {};
 
       if (state.name !== undefined) updateData.nome = state.name;
       if (state.abbreviation !== undefined) updateData.sigla = state.abbreviation;

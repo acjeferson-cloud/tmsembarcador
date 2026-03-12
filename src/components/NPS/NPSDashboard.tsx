@@ -60,22 +60,13 @@ export const NPSDashboard: React.FC = () => {
   }, [estabelecimentoId, periodoInicio, periodoFim, tipoNPS]);
 
   useEffect(() => {
-    const loadEstabelecimentoUUID = async () => {
+    const loadEstabelecimentoUUID = () => {
       const estabelecimentoStr = localStorage.getItem('tms-current-establishment');
       if (!estabelecimentoStr) return;
 
       const estabelecimento = JSON.parse(estabelecimentoStr);
-      const codigo = estabelecimento.codigo;
-
-      const { supabase } = await import('../../lib/supabase');
-      const { data } = await supabase
-        .from('establishments')
-        .select('id')
-        .eq('codigo', codigo)
-        .maybeSingle();
-
-      if (data?.id) {
-        setEstabelecimentoId(data.id);
+      if (estabelecimento?.id) {
+        setEstabelecimentoId(estabelecimento.id);
       }
     };
 

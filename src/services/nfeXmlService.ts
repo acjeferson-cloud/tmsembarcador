@@ -196,116 +196,122 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
 
 export const importNFeToDatabase = async (
   nfeData: NFeXmlData,
-  establishmentId: string
+  establishmentId: string,
+  organizationId: string,
+  environmentId: string,
+  carrierId?: string
 ): Promise<{ success: boolean; invoiceId?: string; error?: string }> => {
   try {
-    // Obter contexto do tenant (organization_id e environment_id)
-    const tenantContext = await TenantContextHelper.getCurrentContext();
-    if (!tenantContext || !tenantContext.organizationId || !tenantContext.environmentId) {
+    if (!organizationId || !environmentId) {
       throw new Error('Contexto de organização/ambiente não encontrado');
     }
 
-    const { organizationId, environmentId } = tenantContext;
+    const { data: existingInvoice, error: searchError } = await supabase
+      .from('invoices_nfe')
+      .select('id')
+      .eq('chave_acesso', nfeData.accessKey)
+      .maybeSingle();
 
-    let carrierId: string | undefined;
+    if (searchError) throw searchError;
 
-    // Buscar transportador pelo CNPJ se disponível
-    if (nfeData.carrier?.cnpj) {
-      const cnpjClean = nfeData.carrier.cnpj.replace(/\D/g, '');
+    let invoiceId: string;
 
-
-
-
-
-
-      const { data: carrier, error: carrierError } = await supabase
-        .from('carriers')
-        .select('id, codigo, razao_social, nome_fantasia, cnpj')
-        .eq('cnpj', cnpjClean)
-        .maybeSingle();
-
-      if (carrierError) {
-
-      }
-
-      if (carrier) {
-        carrierId = carrier.id;
-
-      } else {
-
-
-
-
-      }
+    if (existingInvoice) {
+      invoiceId = existingInvoice.id;
+      // Atualiza os dados da invoice existente
+      const { error: updateError } = await (supabase as any)
+        .from('invoices_nfe')
+        .update({
+          organization_id: organizationId,
+          environment_id: environmentId,
+          numero: nfeData.number,
+          serie: nfeData.series,
+          data_emissao: nfeData.issueDate,
+          natureza_operacao: nfeData.operationNature,
+          modelo: '55',
+          destinatario_cnpj: nfeData.customer.cnpj,
+          destinatario_nome: nfeData.customer.name,
+          valor_total: nfeData.totalValue,
+          valor_produtos: nfeData.totalValue - nfeData.icmsValue,
+          valor_icms: nfeData.icmsValue,
+          carrier_id: carrierId,
+          establishment_id: establishmentId
+        })
+        .eq('id', invoiceId);
+        
+      if (updateError) throw updateError;
     } else {
-
+      // Insere nova
+      const { data: inserted, error: insertError } = await (supabase as any)
+        .from('invoices_nfe')
+        .insert({
+          organization_id: organizationId,
+          environment_id: environmentId,
+          numero: nfeData.number,
+          serie: nfeData.series,
+          chave_acesso: nfeData.accessKey,
+          data_emissao: nfeData.issueDate,
+          natureza_operacao: nfeData.operationNature,
+          modelo: '55',
+          destinatario_cnpj: nfeData.customer.cnpj,
+          destinatario_nome: nfeData.customer.name,
+          valor_total: nfeData.totalValue,
+          valor_produtos: nfeData.totalValue - nfeData.icmsValue,
+          valor_icms: nfeData.icmsValue,
+          situacao: 'pendente',
+          xml_content: '', // O XML raw idealmente seria salvo aqui caso houvesse na sourceData.
+          carrier_id: carrierId,
+          establishment_id: establishmentId
+        })
+        .select()
+        .single();
+        
+      if (insertError) throw insertError;
+      invoiceId = inserted.id;
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
-      .from('invoices_nfe')
-      .insert({
-        establishment_id: establishmentId,
-        organization_id: organizationId,
-        environment_id: environmentId,
-        invoice_type: nfeData.invoiceType,
-        number: nfeData.number,
-        series: nfeData.series,
-        access_key: nfeData.accessKey,
-        issue_date: nfeData.issueDate,
-        delivery_forecast_date: nfeData.deliveryForecastDate,
-        operation_nature: nfeData.operationNature,
-        order_number: nfeData.orderNumber,
-        weight: nfeData.weight,
-        volumes: nfeData.volumes,
-        total_value: nfeData.totalValue,
-        pis_value: nfeData.pisValue,
-        cofins_value: nfeData.cofinsValue,
-        icms_value: nfeData.icmsValue,
-        status: nfeData.status,
-        xml_data: nfeData.xmlData,
-        carrier_id: carrierId
-      })
-      .select()
-      .single();
+    // Apaga cliente e produtos (se for reprocessamento) pra recriar
+    await (supabase as any).from('invoices_nfe_customers').delete().eq('invoice_nfe_id', invoiceId);
+    await (supabase as any).from('invoices_nfe_products').delete().eq('invoice_nfe_id', invoiceId);
 
-    if (invoiceError) throw invoiceError;
-
-    const { error: customerError } = await supabase
+    const { error: customerError } = await (supabase as any)
       .from('invoices_nfe_customers')
       .insert({
-        invoice_id: invoice.id,
-        name: nfeData.customer.name,
-        cnpj: nfeData.customer.cnpj,
-        state_registration: nfeData.customer.stateRegistration,
-        address: nfeData.customer.address,
-        number: nfeData.customer.number,
-        complement: nfeData.customer.complement,
-        neighborhood: nfeData.customer.neighborhood,
-        city: nfeData.customer.city,
-        state: nfeData.customer.state,
-        zip_code: nfeData.customer.zipCode,
-        country: nfeData.customer.country,
-        phone: nfeData.customer.phone,
+        invoice_nfe_id: invoiceId,
+        organization_id: organizationId,
+        environment_id: environmentId,
+        cnpj_cpf: nfeData.customer.cnpj,
+        razao_social: nfeData.customer.name,
+        inscricao_estadual: nfeData.customer.stateRegistration,
+        logradouro: nfeData.customer.address,
+        numero: nfeData.customer.number,
+        complemento: nfeData.customer.complement,
+        bairro: nfeData.customer.neighborhood,
+        cidade: nfeData.customer.city,
+        estado: nfeData.customer.state,
+        cep: nfeData.customer.zipCode,
+        telefone: nfeData.customer.phone,
         email: nfeData.customer.email
       });
 
     if (customerError) throw customerError;
 
     if (nfeData.products.length > 0) {
-      const { error: productsError } = await supabase
+      const { error: productsError } = await (supabase as any)
         .from('invoices_nfe_products')
         .insert(
           nfeData.products.map(product => ({
-            invoice_id: invoice.id,
-            item_order: product.itemOrder,
-            product_code: product.productCode,
-            description: product.description,
-            quantity: product.quantity,
-            unit: product.unit,
-            unit_value: product.unitValue,
-            total_value: product.totalValue,
-            ncm: product.ncm,
-            ean: product.ean
+            invoice_nfe_id: invoiceId,
+            organization_id: organizationId,
+            environment_id: environmentId,
+            numero_item: product.itemOrder,
+            codigo_produto: product.productCode,
+            descricao: product.description,
+            quantidade: product.quantity,
+            unidade: product.unit,
+            valor_unitario: product.unitValue,
+            valor_total: product.totalValue,
+            ncm: product.ncm
           }))
         );
 
@@ -314,8 +320,7 @@ export const importNFeToDatabase = async (
 
     // XML já está salvo em invoices_nfe.xml_data
 
-
-    return { success: true, invoiceId: invoice.id };
+    return { success: true, invoiceId: invoiceId };
   } catch (error: any) {
 
     return { success: false, error: error.message };

@@ -7,13 +7,15 @@ interface OccurrenceCardProps {
   onView: (occurrence: Occurrence) => void;
   onEdit: (occurrence: Occurrence) => void;
   onDelete: (occurrenceId: number) => void;
+  isAdmin?: boolean;
 }
 
 export const OccurrenceCard: React.FC<OccurrenceCardProps> = ({ 
   occurrence, 
   onView, 
   onEdit, 
-  onDelete 
+  onDelete,
+  isAdmin
 }) => {
   // Determine if this is a delivery success or problem occurrence
   const isDeliveryProblem = parseInt(occurrence.codigo) >= 50 || 
@@ -47,20 +49,24 @@ export const OccurrenceCard: React.FC<OccurrenceCardProps> = ({
           >
             <Eye size={16} />
           </button>
-          <button 
-            onClick={() => onEdit(occurrence)}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Editar"
-          >
-            <Edit size={16} />
-          </button>
-          <button 
-            onClick={() => onDelete(occurrence.id)}
-            className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-            title="Excluir"
-          >
-            <Trash2 size={16} />
-          </button>
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => onEdit(occurrence)}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+                title="Editar"
+              >
+                <Edit size={16} />
+              </button>
+              <button 
+                onClick={() => onDelete(occurrence.id)}
+                className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
+                title="Excluir"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       

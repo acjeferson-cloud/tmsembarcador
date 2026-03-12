@@ -6,9 +6,10 @@ interface StateViewProps {
   onBack: () => void;
   onEdit: () => void;
   state: State;
+  isAdmin?: boolean;
 }
 
-export const StateView: React.FC<StateViewProps> = ({ onBack, onEdit, state }) => {
+export const StateView: React.FC<StateViewProps> = ({ onBack, onEdit, state, isAdmin }) => {
   const getRegionColor = (region: string) => {
     switch (region) {
       case 'Norte': return 'bg-green-100 text-green-800';
@@ -35,13 +36,15 @@ export const StateView: React.FC<StateViewProps> = ({ onBack, onEdit, state }) =
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Estado</h1>
             <p className="text-gray-600 dark:text-gray-400">Detalhes completos do estado</p>
           </div>
-          <button
-            onClick={onEdit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Edit size={20} />
-            <span>Editar</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <Edit size={20} />
+              <span>Editar</span>
+            </button>
+          )}
         </div>
       </div>
 

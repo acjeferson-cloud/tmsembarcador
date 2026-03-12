@@ -7,13 +7,15 @@ interface CityCardProps {
   onView: (city: BrazilianCity) => void;
   onEdit: (city: BrazilianCity) => void;
   onDelete: (cityId: number) => void;
+  isAdmin?: boolean;
 }
 
 export const CityCard: React.FC<CityCardProps> = ({ 
   city, 
   onView, 
   onEdit, 
-  onDelete 
+  onDelete,
+  isAdmin
 }) => {
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -55,20 +57,24 @@ export const CityCard: React.FC<CityCardProps> = ({
           >
             <Eye size={16} />
           </button>
-          <button 
-            onClick={() => onEdit(city)}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Editar"
-          >
-            <Edit size={16} />
-          </button>
-          <button 
-            onClick={() => onDelete(city.id)}
-            className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-            title="Excluir"
-          >
-            <Trash2 size={16} />
-          </button>
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => onEdit(city)}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+                title="Editar"
+              >
+                <Edit size={16} />
+              </button>
+              <button 
+                onClick={() => onDelete(city.id)}
+                className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
+                title="Excluir"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       

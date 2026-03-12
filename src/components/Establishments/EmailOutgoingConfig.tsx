@@ -22,7 +22,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
     establishment_id: establishmentId,
     smtp_host: '',
     smtp_port: 587,
-    smtp_secure: true,
+    smtp_secure: 'TLS',
     smtp_user: '',
     smtp_password: '',
     from_email: '',
@@ -64,6 +64,8 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
   };
 
   const handleSave = async () => {
+    // A validação original estava verificando from_email/from_name, 
+    // mas o formulário (e o tipo final service) usa sender_email/sender_name
     if (!formData.smtp_host || !formData.smtp_user || !formData.smtp_password ||
         !formData.from_email || !formData.from_name) {
       setToast({ message: 'Preencha todos os campos obrigatórios', type: 'error' });
@@ -160,7 +162,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Configuração Atual</h4>
             <div className="flex items-center gap-2">
-              {config.is_active && (
+              {config.ativo && (
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-1">
                   <CheckCircle className="w-4 h-4" />
                   Ativa
@@ -214,7 +216,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               <Mail className="w-5 h-5 text-gray-400 mt-1" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">E-mail Remetente</p>
-                <p className="font-medium text-gray-900 dark:text-white">{config.sender_email}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{config.from_email}</p>
               </div>
             </div>
 
@@ -222,7 +224,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               <User className="w-5 h-5 text-gray-400 mt-1" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Nome do Remetente</p>
-                <p className="font-medium text-gray-900 dark:text-white">{config.sender_name}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{config.from_name}</p>
               </div>
             </div>
 
@@ -459,8 +461,8 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               </label>
               <input
                 type="email"
-                value={formData.sender_email}
-                onChange={(e) => setFormData({ ...formData, sender_email: e.target.value })}
+                value={formData.from_email}
+                onChange={(e) => setFormData({ ...formData, from_email: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="noreply@empresa.com"
               />
@@ -472,8 +474,8 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               </label>
               <input
                 type="text"
-                value={formData.sender_name}
-                onChange={(e) => setFormData({ ...formData, sender_name: e.target.value })}
+                value={formData.from_name}
+                onChange={(e) => setFormData({ ...formData, from_name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="TMS - Sistema de Gestão"
               />
@@ -495,12 +497,12 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-center">
               <input
                 type="checkbox"
-                id="is_active"
-                checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                id="ativo"
+                checked={formData.ativo || false}
+                onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="is_active" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="ativo" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Configuração ativa (usada para envio de e-mails)
               </label>
             </div>

@@ -28,6 +28,7 @@ export const Cities: React.FC = () => {
   ];
 
   const { user } = useAuth();
+  const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const { isActive: correiosActive, isLoading: correiosLoading } = useInnovation(
     INNOVATION_IDS.CORREIOS,
     user?.id
@@ -240,6 +241,7 @@ export const Cities: React.FC = () => {
           handleEditCity(viewingCity);
         }}
         city={viewingCity}
+        isAdmin={isAdmin}
       />
     );
   }
@@ -254,7 +256,7 @@ export const Cities: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">Gerencie o cadastro completo de cidades, distritos e povoados do Brasil</p>
         </div>
         <div className="flex items-center space-x-3">
-          {stats.total === 0 && (
+          {stats.total === 0 && isAdmin && (
             <button
               onClick={handleImportAlagoas}
               disabled={isImporting}
@@ -273,13 +275,15 @@ export const Cities: React.FC = () => {
             <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
             <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar API'}</span>
           </button>
-          <button
-            onClick={handleNewCity}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Plus size={20} />
-            <span>Nova Cidade</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={handleNewCity}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <Plus size={20} />
+              <span>Nova Cidade</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -468,6 +472,7 @@ export const Cities: React.FC = () => {
               onView={handleViewCity}
               onEdit={handleEditCity}
               onDelete={handleDeleteCity}
+              isAdmin={isAdmin}
             />
           ))}
         </div>

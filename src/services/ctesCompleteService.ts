@@ -100,30 +100,7 @@ export interface CTeWithRelations extends CTe {
 export const ctesCompleteService = {
   async getAll(): Promise<CTeWithRelations[]> {
     try {
-
-
-      // Buscar os CT-es priorizados (o contexto é configurado automaticamente)
-
-      const { data: prioritizedData, error: rpcError } = await supabase.rpc('get_ctes_prioritized');
-
-      if (rpcError) {
-
-        throw rpcError;
-      }
-
-
-
-      if (!prioritizedData || prioritizedData.length === 0) {
-
-        return [];
-      }
-
-      // Extrair IDs dos CT-es priorizados
-      const cteIds = prioritizedData.map((cte: any) => cte.id);
-
-
-      // Buscar os CT-es completos com relacionamentos, na mesma ordem
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ctes_complete')
         .select(`
           *,
@@ -132,22 +109,13 @@ export const ctesCompleteService = {
           carrier:carriers(id, codigo, razao_social),
           establishment:establishments(id, codigo, razao_social)
         `)
-        .in('id', cteIds);
+        .order('created_at', { ascending: false });
 
       if (error) {
-
         throw error;
       }
 
-
-
-      // Ordenar os dados conforme a ordem priorizada
-      const orderedData = cteIds.map(id =>
-        data?.find((cte: any) => cte.id === id)
-      ).filter(Boolean);
-
-
-      return orderedData || [];
+      return data || [];
     } catch (error) {
 
 

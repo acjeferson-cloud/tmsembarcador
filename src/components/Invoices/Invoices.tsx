@@ -238,7 +238,7 @@ export const Invoices: React.FC = () => {
       return;
     }
 
-    const selectedInvoicesData = await invoicesService.getByIds(selectedInvoices);
+    const selectedInvoicesData = await nfeService.getByIds(selectedInvoices);
 
     if (selectedInvoicesData.length === 0) {
       setToast({ message: 'Nenhuma nota fiscal encontrada', type: 'error' });
@@ -246,7 +246,7 @@ export const Invoices: React.FC = () => {
     }
 
     const invoicesByCarrier = selectedInvoicesData.reduce((acc: any, invoice: any) => {
-      const carrierName = invoice.transportador_nome || 'Sem Transportador';
+      const carrierName = invoice.carrier?.razao_social || 'Sem Transportador';
       if (!acc[carrierName]) {
         acc[carrierName] = [];
       }
@@ -279,7 +279,7 @@ export const Invoices: React.FC = () => {
     (window as any).__pendingPickupCreation = async () => {
       setIsLoading(true);
       try {
-        const result = await pickupsService.createFromInvoices({
+        const result = await pickupsService.createFromNfes({
           invoiceIds: selectedInvoices,
           establishmentId: currentEstablishment.id,
           userId: user.id

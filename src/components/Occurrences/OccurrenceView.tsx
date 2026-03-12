@@ -6,9 +6,10 @@ interface OccurrenceViewProps {
   onBack: () => void;
   onEdit: () => void;
   occurrence: Occurrence;
+  isAdmin?: boolean;
 }
 
-export const OccurrenceView: React.FC<OccurrenceViewProps> = ({ onBack, onEdit, occurrence }) => {
+export const OccurrenceView: React.FC<OccurrenceViewProps> = ({ onBack, onEdit, occurrence, isAdmin }) => {
   // Determine if this is a delivery success or problem occurrence
   const isDeliveryProblem = parseInt(occurrence.codigo) >= 50 || 
                            ['003', '004', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016'].includes(occurrence.codigo);
@@ -37,15 +38,17 @@ export const OccurrenceView: React.FC<OccurrenceViewProps> = ({ onBack, onEdit, 
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Ocorrência</h1>
-            <p className="text-gray-600 dark:text-gray-400">Detalhes completos da ocorrência</p>
+            <p className="text-gray-600 dark:text-gray-400">Detalhes do código de ocorrência EDI</p>
           </div>
-          <button
-            onClick={onEdit}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Edit size={20} />
-            <span>Editar</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={onEdit}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <Edit size={20} />
+              <span>Editar</span>
+            </button>
+          )}
         </div>
       </div>
 

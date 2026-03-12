@@ -295,26 +295,34 @@ const FreightQuote: React.FC = () => {
       </div>
 
       {activeTab === 'quote' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dados da Cotação</h2>
+        <div className="space-y-6">
+          {/* Filtros no Topo 100% */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Dados da Cotação</h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-md font-medium text-gray-900 dark:text-white">Origem</h3>
-                    <div className="flex gap-2">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Box de Origem e Destino Lado a Lado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Origem */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-md font-medium text-gray-900 dark:text-white flex items-center">
+                      <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                      Origem
+                    </h3>
+                    <div className="flex bg-white dark:bg-gray-800 rounded-md p-1 border border-gray-200 dark:border-gray-700">
                       <button
                         type="button"
                         onClick={() => {
                           setOriginMode('cidade');
                           setFormData({ ...formData, originZipCode: '' });
                         }}
-                        className={`px-3 py-1 text-xs rounded ${
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
                           originMode === 'cidade'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-blue-600 text-white font-medium shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         UF+Cidade
@@ -327,10 +335,10 @@ const FreightQuote: React.FC = () => {
                           setOriginCity('');
                           setFormData({ ...formData, originCityId: undefined });
                         }}
-                        className={`px-3 py-1 text-xs rounded ${
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
                           originMode === 'cep'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-blue-600 text-white font-medium shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         CEP
@@ -339,15 +347,13 @@ const FreightQuote: React.FC = () => {
                   </div>
 
                   {originMode === 'cidade' ? (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          UF
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">UF</label>
                         <select
                           value={originState}
                           onChange={(e) => handleStateChange('origin', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                         >
                           <option value="">Selecione...</option>
                           {states.map(state => (
@@ -356,31 +362,25 @@ const FreightQuote: React.FC = () => {
                         </select>
                       </div>
 
-                      {originState && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Cidade
-                          </label>
-                          <select
-                            value={originCity}
-                            onChange={(e) => handleCityChange('origin', e.target.value)}
-                            disabled={loadingOriginCities}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
-                          >
-                            <option value="">{loadingOriginCities ? 'Carregando...' : 'Selecione...'}</option>
-                            {sortedOriginCities.map(city => (
-                              <option key={city.ibgeCode} value={city.ibgeCode}>{city.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                      <div className={!originState ? 'opacity-50 pointer-events-none' : ''}>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cidade</label>
+                        <select
+                          value={originCity}
+                          onChange={(e) => handleCityChange('origin', e.target.value)}
+                          disabled={loadingOriginCities || !originState}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 dark:bg-gray-800 dark:text-white"
+                        >
+                          <option value="">{loadingOriginCities ? 'Carregando...' : 'Selecione a cidade...'}</option>
+                          {sortedOriginCities.map(city => (
+                            <option key={city.ibgeCode} value={city.ibgeCode}>{city.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          CEP
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CEP</label>
                         <input
                           type="text"
                           placeholder="00000000"
@@ -395,31 +395,27 @@ const FreightQuote: React.FC = () => {
                             }
                           }}
                           maxLength={8}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                         />
                       </div>
                       {originCity && originState && (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              UF
-                            </label>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">UF (Automático)</label>
                             <input
                               type="text"
                               value={originState}
                               readOnly
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 cursor-not-allowed"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Cidade
-                            </label>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Cidade (Automático)</label>
                             <input
                               type="text"
                               value={originCities.find(c => c.ibgeCode === originCity)?.name || ''}
                               readOnly
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 cursor-not-allowed"
                             />
                           </div>
                         </div>
@@ -428,20 +424,24 @@ const FreightQuote: React.FC = () => {
                   )}
                 </div>
 
-                <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-md font-medium text-gray-900 dark:text-white">Destino *</h3>
-                    <div className="flex gap-2">
+                {/* Destino */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-md font-medium text-gray-900 dark:text-white flex items-center">
+                      <MapPin className="w-4 h-4 mr-2 text-red-500" />
+                      Destino <span className="text-red-500 ml-1">*</span>
+                    </h3>
+                    <div className="flex bg-white dark:bg-gray-800 rounded-md p-1 border border-gray-200 dark:border-gray-700">
                       <button
                         type="button"
                         onClick={() => {
                           setDestinationMode('cidade');
                           setFormData({ ...formData, destinationZipCode: '' });
                         }}
-                        className={`px-3 py-1 text-xs rounded ${
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
                           destinationMode === 'cidade'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-blue-600 text-white font-medium shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         UF+Cidade
@@ -454,10 +454,10 @@ const FreightQuote: React.FC = () => {
                           setDestinationCity('');
                           setFormData({ ...formData, destinationCityId: undefined });
                         }}
-                        className={`px-3 py-1 text-xs rounded ${
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
                           destinationMode === 'cep'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-blue-600 text-white font-medium shadow-sm'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         CEP
@@ -466,16 +466,14 @@ const FreightQuote: React.FC = () => {
                   </div>
 
                   {destinationMode === 'cidade' ? (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          UF *
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">UF *</label>
                         <select
                           required
                           value={destinationState}
                           onChange={(e) => handleStateChange('destination', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                         >
                           <option value="">Selecione...</option>
                           {states.map(state => (
@@ -484,32 +482,26 @@ const FreightQuote: React.FC = () => {
                         </select>
                       </div>
 
-                      {destinationState && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Cidade *
-                          </label>
-                          <select
-                            required
-                            value={destinationCity}
-                            onChange={(e) => handleCityChange('destination', e.target.value)}
-                            disabled={loadingDestCities}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
-                          >
-                            <option value="">{loadingDestCities ? 'Carregando...' : 'Selecione...'}</option>
-                            {sortedDestinationCities.map(city => (
-                              <option key={city.ibgeCode} value={city.ibgeCode}>{city.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                      <div className={!destinationState ? 'opacity-50 pointer-events-none' : ''}>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Cidade *</label>
+                        <select
+                          required
+                          value={destinationCity}
+                          onChange={(e) => handleCityChange('destination', e.target.value)}
+                          disabled={loadingDestCities || !destinationState}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 dark:bg-gray-800 dark:text-white"
+                        >
+                          <option value="">{loadingDestCities ? 'Carregando...' : 'Selecione a cidade...'}</option>
+                          {sortedDestinationCities.map(city => (
+                            <option key={city.ibgeCode} value={city.ibgeCode}>{city.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          CEP *
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">CEP *</label>
                         <input
                           type="text"
                           placeholder="00000000"
@@ -525,31 +517,27 @@ const FreightQuote: React.FC = () => {
                             }
                           }}
                           maxLength={8}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                         />
                       </div>
                       {destinationCity && destinationState && (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              UF
-                            </label>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">UF (Automático)</label>
                             <input
                               type="text"
                               value={destinationState}
                               readOnly
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 cursor-not-allowed"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Cidade
-                            </label>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Cidade (Automático)</label>
                             <input
                               type="text"
                               value={destinationCities.find(c => c.ibgeCode === destinationCity)?.name || ''}
                               readOnly
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 cursor-not-allowed"
                             />
                           </div>
                         </div>
@@ -558,17 +546,23 @@ const FreightQuote: React.FC = () => {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Users className="w-4 h-4 inline mr-1" />
+              </div>
+
+              {/* Parametros da Carga em Grid Line */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                
+                {/* Parceiro */}
+                <div className="lg:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
+                    <Users className="w-4 h-4 inline mr-1 text-gray-500" />
                     Parceiro de Negócios
                   </label>
                   <select
                     value={formData.businessPartnerId || ''}
                     onChange={(e) => setFormData({ ...formData, businessPartnerId: e.target.value || undefined })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                   >
-                    <option value="">Selecione...</option>
+                    <option value="">Opcional...</option>
                     {businessPartners.map(partner => (
                       <option key={partner.id} value={partner.id}>
                         {partner.name}
@@ -577,60 +571,10 @@ const FreightQuote: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Peso (kg) *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={weightFormatted}
-                      onChange={(e) => {
-                        const formatted = formatNumber(e.target.value, 3);
-                        setWeightFormatted(formatted);
-                        setFormData({ ...formData, weight: parseFormattedNumber(formatted) });
-                      }}
-                      placeholder="0,000"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Volumes *
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={formData.volumeQty || ''}
-                      onChange={(e) => setFormData({ ...formData, volumeQty: parseInt(e.target.value) || 1 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
+                {/* Valor NF */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    M³ (Cubagem)
-                  </label>
-                  <input
-                    type="text"
-                    value={cubicMetersFormatted}
-                    onChange={(e) => {
-                      const formatted = formatNumber(e.target.value, 4);
-                      setCubicMetersFormatted(formatted);
-                      setFormData({ ...formData, cubicMeters: parseFormattedNumber(formatted) });
-                    }}
-                    placeholder="0,0000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <DollarSign className="w-4 h-4 inline mr-1" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
+                    <DollarSign className="w-4 h-4 inline mr-1 text-green-500" />
                     Valor da Mercadoria *
                   </label>
                   <input
@@ -643,83 +587,146 @@ const FreightQuote: React.FC = () => {
                       setFormData({ ...formData, cargoValue: parseFormattedNumber(formatted) });
                     }}
                     placeholder="0,00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                   />
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Modais de Transporte *
+                {/* Peso */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Peso Real (kg) *
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                  <input
+                    type="text"
+                    required
+                    value={weightFormatted}
+                    onChange={(e) => {
+                      const formatted = formatNumber(e.target.value, 3);
+                      setWeightFormatted(formatted);
+                      setFormData({ ...formData, weight: parseFormattedNumber(formatted) });
+                    }}
+                    placeholder="0,000"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+
+                {/* Volumes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Volumes (Qtd) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={formData.volumeQty || ''}
+                    onChange={(e) => setFormData({ ...formData, volumeQty: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+
+                {/* M3 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    M³ (Cubagem)
+                  </label>
+                  <input
+                    type="text"
+                    value={cubicMetersFormatted}
+                    onChange={(e) => {
+                      const formatted = formatNumber(e.target.value, 4);
+                      setCubicMetersFormatted(formatted);
+                      setFormData({ ...formData, cubicMeters: parseFormattedNumber(formatted) });
+                    }}
+                    placeholder="0,0000"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+
+              </div>
+
+              {/* Botão e Modais no Bottom do form */}
+              <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                
+                <div className="w-full lg:w-auto">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Modais de Transporte Considerados *
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    <label className={`flex items-center space-x-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-all ${selectedModals.includes('rodoviario') ? 'border-purple-500 bg-purple-50/30' : 'border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                       <input
                         type="checkbox"
                         checked={selectedModals.includes('rodoviario')}
                         onChange={() => handleModalToggle('rodoviario')}
                         className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">🚛 Rodoviário</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">🚛 Rodoviário</span>
                     </label>
-                    <label className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                    <label className={`flex items-center space-x-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-all ${selectedModals.includes('aereo') ? 'border-sky-500 bg-sky-50/30' : 'border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                       <input
                         type="checkbox"
                         checked={selectedModals.includes('aereo')}
                         onChange={() => handleModalToggle('aereo')}
                         className="w-4 h-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">✈️ Aéreo</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">✈️ Aéreo</span>
                     </label>
-                    <label className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                    <label className={`flex items-center space-x-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-all ${selectedModals.includes('aquaviario') ? 'border-cyan-500 bg-cyan-50/30' : 'border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                       <input
                         type="checkbox"
                         checked={selectedModals.includes('aquaviario')}
                         onChange={() => handleModalToggle('aquaviario')}
                         className="w-4 h-4 text-cyan-600 border-gray-300 rounded focus:ring-cyan-500"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">🚢 Aquaviário</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">🚢 Aquaviário</span>
                     </label>
-                    <label className="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                    <label className={`flex items-center space-x-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-all ${selectedModals.includes('ferroviario') ? 'border-gray-500 bg-gray-50/30 dark:bg-gray-800' : 'border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                       <input
                         type="checkbox"
                         checked={selectedModals.includes('ferroviario')}
                         onChange={() => handleModalToggle('ferroviario')}
                         className="w-4 h-4 text-gray-600 dark:text-gray-400 border-gray-300 rounded focus:ring-gray-500"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">🚂 Ferroviário</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">🚂 Ferroviário</span>
                     </label>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Selecione os modais que deseja considerar na cotação
-                  </p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? (
-                    <span>Calculando...</span>
-                  ) : (
-                    <span>
-                      <Search className="w-4 h-4 inline mr-2" />
-                      Cotar Frete
-                    </span>
-                  )}
-                </button>
-              </form>
-            </div>
+                <div className="w-full lg:w-auto mt-2 lg:mt-0">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full lg:w-auto px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center justify-center whitespace-nowrap"
+                  >
+                    {loading ? (
+                      <span className="flex items-center">
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                        Calculando...
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <Search className="w-5 h-5 mr-2" />
+                        Simular Cotações
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+            </form>
           </div>
 
-          <div className="lg:col-span-2">
+          {/* Resultados 100% */}
+          <div className="w-full">
             {results.length > 0 ? (
               <QuoteResultsTable results={results} cargoValue={formData.cargoValue} />
             ) : (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhuma cotação realizada</h3>
-                <p className="text-gray-600 dark:text-gray-400">Preencha os dados ao lado e clique em "Cotar Frete"</p>
+                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Pronto para Cotar</h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                  Preencha os dados de origem, destino e características da carga acima para buscar as melhores transportadoras.
+                </p>
               </div>
             )}
           </div>

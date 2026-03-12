@@ -54,7 +54,7 @@ export const OccurrenceForm: React.FC<OccurrenceFormProps> = ({ onBack, onSave, 
       return false;
     }
 
-    if (!isOccurrenceCodeUnique(codigo, occurrence?.id)) {
+    if (!occurrence && !isOccurrenceCodeUnique(codigo)) {
       setCodeError('Este código já está sendo usado por outra ocorrência');
       return false;
     }
