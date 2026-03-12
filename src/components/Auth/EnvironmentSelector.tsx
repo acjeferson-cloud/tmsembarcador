@@ -309,12 +309,9 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
 
                       {/* Nome e Código do Ambiente - Centralizados */}
                       <div className="text-center mb-4">
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">
                           {org.organization_nome}
                         </h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                          ({org.organization_codigo})
-                        </p>
                       </div>
 
                       {/* Linha Separadora */}

@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 
 export interface RestrictedItem {
   id?: string;
-  freight_rate_id: string;
+  freight_rate_table_id: string;
   item_code: string;
   item_description: string;
   ncm_code?: string;
@@ -12,12 +12,12 @@ export interface RestrictedItem {
 }
 
 export const restrictedItemsService = {
-  async getByFreightRateId(freightRateId: string): Promise<RestrictedItem[]> {
+  async getByFreightRateTableId(freightRateTableId: string): Promise<RestrictedItem[]> {
     try {
       const { data, error } = await supabase
         .from('freight_rate_restricted_items')
         .select('*')
-        .eq('freight_rate_id', freightRateId)
+        .eq('freight_rate_table_id', freightRateTableId)
         .order('item_code');
 
       if (error) {
@@ -34,13 +34,18 @@ export const restrictedItemsService = {
 
   async create(item: RestrictedItem): Promise<{ success: boolean; error?: string }> {
     try {
-      const organizationId = sessionStorage.getItem('organization_id');
-      const environmentId = sessionStorage.getItem('environment_id');
+      const savedUser = localStorage.getItem('tms-user');
+      if (!savedUser) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+      const userData = JSON.parse(savedUser);
+      const organizationId = userData.organization_id;
+      const environmentId = userData.environment_id;
 
       const { error } = await supabase
         .from('freight_rate_restricted_items')
         .insert({
-          freight_rate_id: item.freight_rate_id,
+          freight_rate_table_id: item.freight_rate_table_id,
           item_code: item.item_code.trim(),
           item_description: item.item_description.trim(),
           ncm_code: item.ncm_code?.trim() || null,
@@ -110,12 +115,12 @@ export const restrictedItemsService = {
     }
   },
 
-  async search(freightRateId: string, searchTerm: string): Promise<RestrictedItem[]> {
+  async search(freightRateTableId: string, searchTerm: string): Promise<RestrictedItem[]> {
     try {
       const { data, error } = await supabase
         .from('freight_rate_restricted_items')
         .select('*')
-        .eq('freight_rate_id', freightRateId)
+        .eq('freight_rate_table_id', freightRateTableId)
         .or(`item_code.ilike.%${searchTerm}%,item_description.ilike.%${searchTerm}%,ncm_code.ilike.%${searchTerm}%,ean_code.ilike.%${searchTerm}%`)
         .order('item_code');
 
@@ -131,12 +136,12 @@ export const restrictedItemsService = {
     }
   },
 
-  async checkRestrictedItem(freightRateId: string, itemCode: string): Promise<RestrictedItem | null> {
+  async checkRestrictedItem(freightRateTableId: string, itemCode: string): Promise<RestrictedItem | null> {
     try {
       const { data, error } = await supabase
         .from('freight_rate_restricted_items')
         .select('*')
-        .eq('freight_rate_id', freightRateId)
+        .eq('freight_rate_table_id', freightRateTableId)
         .eq('item_code', itemCode)
         .maybeSingle();
 
@@ -152,12 +157,12 @@ export const restrictedItemsService = {
     }
   },
 
-  async checkRestrictedItems(freightRateId: string, itemCodes: string[]): Promise<RestrictedItem[]> {
+  async checkRestrictedItems(freightRateTableId: string, itemCodes: string[]): Promise<RestrictedItem[]> {
     try {
       const { data, error } = await supabase
         .from('freight_rate_restricted_items')
         .select('*')
-        .eq('freight_rate_id', freightRateId)
+        .eq('freight_rate_table_id', freightRateTableId)
         .in('item_code', itemCodes);
 
       if (error) {

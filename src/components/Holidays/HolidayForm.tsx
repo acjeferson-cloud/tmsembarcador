@@ -27,7 +27,9 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Busca Paises, e de lá ele re-hidrata Estados e Cidades baseados no holiday ou no default(BR)
     loadCountries();
+    
     if (holiday?.id) {
       setFormData({
         name: holiday.name || '',
@@ -38,62 +40,80 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
         state_id: holiday.state_id || '',
         city_id: holiday.city_id || ''
       });
-      if (holiday.state_id) {
-        loadCities(holiday.state_id);
-      }
     } else if (holiday?.type) {
       setFormData(prev => ({ ...prev, type: holiday.type }));
     }
   }, [holiday]);
 
-  useEffect(() => {
-    loadStates();
-  }, []);
+  // Removido useEffect isolado do loadStates para não sobrescrever o loading com país padrão
 
   const loadCountries = async () => {
+    if (!supabase) return; // Prevent linting error if Supabase client is temporarily undefined
     const { data } = await supabase
       .from('countries')
-      .select('id, nome, codigo')
+      .select('id, nome, codigo, sigla_iso2')
       .order('nome');
 
-    if (data) {
-      setCountries(data);
+    if (data && data.length > 0) {
+      const dbCountries = data as any[];
+      setCountries(dbCountries);
 
-      // Definir Brasil como padrão se não houver country_id
-      if (!formData.country_id && !holiday?.id) {
-        const brazil = data.find(c => c.codigo === 'BR');
-        if (brazil) {
+      // Definir Brasil como padrão se não houver country_id listado e sendo cadastro novo
+      if (!formData.country_id && (!holiday || !holiday.id)) {
+         // Procura pelo Brasil ("BR", "BRA" ou "Brasil")
+        const brazil = dbCountries.find(c => c.codigo === 'BR' || c.sigla_iso2 === 'BR' || String(c.nome).toLowerCase() === 'brasil');
+        if (brazil && brazil.id) {
           setFormData(prev => ({ ...prev, country_id: brazil.id }));
+          await loadStates(brazil.id);
+        } else {
+           // Fallback seguro caso 'loadCountries' não reconheça BR de primeira
+           setStates([]);
         }
+      } else if (holiday?.id && holiday.country_id) {
+         await loadStates(holiday.country_id);
+         if (holiday.state_id) {
+           await loadCities(holiday.state_id);
+         }
+      } else if (formData.country_id) {
+         await loadStates(formData.country_id);
+         if (formData.state_id) {
+           await loadCities(formData.state_id);
+         }
       }
     }
   };
 
-  const loadStates = async () => {
-    const { data } = await supabase
-      .from('states')
-      .select('id, name, uf')
-      .order('name');
+  const loadStates = async (countryId?: string) => {
+    // Se não tiver countryId, não faça a query de estados
+    if (!countryId || !supabase) {
+      setStates([]);
+      return;
+    }
+
+    const { data } = await supabase.from('states').select('id, nome, sigla').eq('country_id', countryId).order('nome');
 
     if (data) {
-      setStates(data);
+      const statesMapped = data.map((s: any) => ({...s, name: s.nome, uf: s.sigla}));
+      setStates(statesMapped);
     }
   };
 
   const loadCities = async (stateId: string) => {
-    if (!stateId) {
+    if (!stateId || !supabase) {
       setCities([]);
       return;
     }
 
     const { data } = await supabase
       .from('cities')
-      .select('id, name')
+      .select('id, nome') // 'nome' is the proper key according to DDL instead of 'name'
       .eq('state_id', stateId)
-      .order('name');
+      .order('nome');
 
     if (data) {
-      setCities(data);
+      // Maps 'nome' to 'name' so frontend maps match properly for selects
+      const citiesMapped = data.map((c: any) => ({...c, name: c.nome}));
+      setCities(citiesMapped);
     }
   };
 
@@ -163,16 +183,28 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
 
       onSave();
     } catch (err) {
-      console.error('Erro ao salvar feriado:', err);
       setError('Erro ao salvar feriado. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleCountryChange = (countryId: string) => {
+    setFormData(prev => ({ ...prev, country_id: countryId, state_id: '', city_id: '' }));
+    loadStates(countryId);
+    setCities([]);
+  };
+
   const handleStateChange = (stateId: string) => {
     setFormData(prev => ({ ...prev, state_id: stateId, city_id: '' }));
     loadCities(stateId);
+  };
+
+  const handleTypeChange = (newType: string) => {
+    setFormData(prev => ({ ...prev, type: newType as any }));
+    if ((newType === 'estadual' || newType === 'municipal') && formData.country_id && states.length === 0) {
+      loadStates(formData.country_id);
+    }
   };
 
   return (
@@ -230,7 +262,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
             </label>
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+              onChange={(e) => handleTypeChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
@@ -259,7 +291,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
             </label>
             <select
               value={formData.country_id}
-              onChange={(e) => setFormData({ ...formData, country_id: e.target.value })}
+              onChange={(e) => handleCountryChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >

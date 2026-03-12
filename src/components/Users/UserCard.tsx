@@ -6,7 +6,7 @@ interface UserCardProps {
   user: UserType;
   onView: (user: UserType) => void;
   onEdit: (user: UserType) => void;
-  onDelete: (userId: number) => void;
+  onDelete: (userId: string) => void;
 }
 
 export const UserCard: React.FC<UserCardProps> = ({ 
@@ -136,11 +136,11 @@ export const UserCard: React.FC<UserCardProps> = ({
         </div>
 
         {/* Login attempts warning */}
-        {user.tentativasLogin > 0 && (
+        {(user.tentativas_login || 0) > 0 && (
           <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-2 py-1 rounded">
             <AlertTriangle size={14} />
             <span className="text-xs font-medium">
-              {user.tentativasLogin} tentativa{user.tentativasLogin > 1 ? 's' : ''} de login
+              {user.tentativas_login} tentativa{(user.tentativas_login || 0) > 1 ? 's' : ''} de login
             </span>
           </div>
         )}

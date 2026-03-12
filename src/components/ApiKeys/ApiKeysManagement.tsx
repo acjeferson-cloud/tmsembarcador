@@ -47,7 +47,6 @@ export const ApiKeysManagement: React.FC = () => {
       const data = await apiKeysService.getAllKeys(user?.estabelecimento_id);
       setApiKeys(data);
     } catch (error) {
-      console.error('Error loading API keys:', error);
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +57,6 @@ export const ApiKeysManagement: React.FC = () => {
       const statsData = await apiKeysService.getUsageStats(user?.estabelecimento_id);
       setStats(statsData);
     } catch (error) {
-      console.error('Error loading stats:', error);
     }
   };
 
@@ -67,7 +65,6 @@ export const ApiKeysManagement: React.FC = () => {
       const alertsData = await apiKeysService.checkAlerts(user?.estabelecimento_id);
       setAlerts(alertsData);
     } catch (error) {
-      console.error('Error loading alerts:', error);
     }
   };
 
@@ -119,7 +116,6 @@ export const ApiKeysManagement: React.FC = () => {
         type: 'success'
       });
     } catch (error) {
-      console.error('Error deleting key:', error);
       setToast({
         message: 'Erro ao excluir a chave. Tente novamente.',
         type: 'error'

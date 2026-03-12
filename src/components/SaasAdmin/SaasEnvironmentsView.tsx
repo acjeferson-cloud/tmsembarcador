@@ -25,8 +25,8 @@ export function SaasEnvironmentsView() {
 
       const { data, error } = await supabase
         .from('saas_organizations')
-        .select('id, nome, codigo, status')
-        .order('nome');
+        .select('id, nome, nome_fantasia, codigo, status')
+        .order('codigo', { ascending: false });
 
       if (error) {
         console.error('[SAAS_ENVIRONMENTS_VIEW] Erro ao carregar organizações:', error);
@@ -36,7 +36,7 @@ export function SaasEnvironmentsView() {
       // Mapear dados de saas_organizations para formato Organization
       const mapped = (data || []).map(org => ({
         id: org.id,
-        name: org.nome,
+        name: org.nome_fantasia || org.nome,
         code: org.codigo,
         status: org.status
       }));

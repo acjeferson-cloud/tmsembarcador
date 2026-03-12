@@ -68,7 +68,6 @@ export const DeployAgent: React.FC = () => {
       await loadProjects();
       setSelectedProject(project.id);
     } catch (error: any) {
-      console.error('Error creating project:', error);
       const errorMessage = error?.message || 'Erro ao criar projeto. Verifique o console para mais detalhes.';
       setToast({ message: errorMessage, type: 'error' });
     }
@@ -112,7 +111,6 @@ export const DeployAgent: React.FC = () => {
       setDeleteConfirm(null);
       await loadProjects();
     } catch (error: any) {
-      console.error('Error deleting project:', error);
       const errorMessage = error?.message || 'Erro ao excluir projeto';
       setToast({ message: errorMessage, type: 'error' });
       setDeleteConfirm(null);

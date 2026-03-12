@@ -57,7 +57,6 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
         setIsEditing(true);
       }
     } catch (error: any) {
-      console.error('Error loading config:', error);
       setToast({ message: 'Erro ao carregar configuração', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -89,7 +88,6 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
       await loadConfig();
     } catch (error: any) {
-      console.error('Error saving config:', error);
       setToast({ message: error.message || 'Erro ao salvar configuração', type: 'error' });
     } finally {
       setIsSaving(false);
@@ -131,7 +129,6 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
         });
       }
     } catch (error: any) {
-      console.error('Error testing email:', error);
       setToast({ message: 'Erro ao testar envio de e-mail', type: 'error' });
     } finally {
       setIsTesting(false);

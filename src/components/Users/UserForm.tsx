@@ -63,7 +63,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
         const data = await establishmentsService.getAll();
         setEstablishments(data);
       } catch (error) {
-        console.error('Erro ao carregar estabelecimentos:', error);
       }
     };
     loadEstablishments();
@@ -338,8 +337,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('📝 handleSubmit - Form submetido');
-
     // Validate all required fields
     const requiredFields = ['codigo', 'nome', 'email', 'cpf', 'cargo', 'departamento', 'perfil'];
     if (!user) requiredFields.push('senha', 'confirmarSenha');
@@ -347,22 +344,16 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     let hasErrors = false;
     requiredFields.forEach(field => {
       if (!validateField(field, formData[field as keyof typeof formData] as string)) {
-        console.error(`❌ Campo inválido: ${field}`);
         hasErrors = true;
       }
     });
 
     if (hasErrors) {
-      console.warn('⚠️ Validação falhou - campos obrigatórios com erro');
       setToast({ message: 'Por favor, corrija os erros antes de continuar.', type: 'warning' });
       return;
     }
-
-    console.log('✅ Validação de campos passou');
-
     // Validate permissions for personalizado profile
     if (formData.perfil === 'personalizado' && (!formData.permissoes || formData.permissoes.length === 0)) {
-      console.warn('⚠️ Perfil personalizado sem permissões');
       setToast({ message: 'Por favor, selecione pelo menos uma permissão para o perfil personalizado.', type: 'warning' });
       return;
     }
@@ -385,9 +376,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
       criadoPor: 1,
       alteradoPor: user ? 1 : undefined
     };
-
-    console.log('💾 Salvando usuário com estabelecimentos permitidos:', userData.estabelecimentosPermitidos);
-
     // Remove password confirmation from data
     const { confirmarSenha, ...finalData } = userData;
 
@@ -438,8 +426,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
       ...finalData,
       _profilePhoto: profilePhoto // Temporary field to pass the photo file
     };
-
-    console.log('💾 Chamando onSave com dados finais:', dataToSave);
     onSave(dataToSave);
   };
 
@@ -463,7 +449,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
   };
 
   const handleEstablishmentsChange = (establishmentCodes: string[]) => {
-    console.log('🏢 Estabelecimentos alterados:', establishmentCodes);
     setFormData(prev => ({
       ...prev,
       estabelecimentosPermitidos: establishmentCodes

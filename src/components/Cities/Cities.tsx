@@ -78,7 +78,6 @@ export const Cities: React.FC = () => {
       const states = await statesService.getAll();
       setBrazilianStates(states);
     } catch (error) {
-      console.error('Error loading states:', error);
     }
   };
 
@@ -99,7 +98,6 @@ export const Cities: React.FC = () => {
       setCitiesList(result.cities);
       setTotalCount(result.totalCount);
     } catch (error) {
-      console.error('Error loading cities:', error);
       setToast({ message: 'Erro ao carregar cidades. Tente novamente.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -111,7 +109,6 @@ export const Cities: React.FC = () => {
       const stats = await getCitiesStats();
       setStats(stats);
     } catch (error) {
-      console.error('Error loading cities stats:', error);
     }
   };
 
@@ -139,7 +136,7 @@ export const Cities: React.FC = () => {
   const confirmDelete = async () => {
     if (confirmDialog.cityId) {
       try {
-        const city = cities.find(c => c.id === confirmDialog.cityId);
+        const city = citiesList.find(c => c.id === confirmDialog.cityId);
         await deleteCity(confirmDialog.cityId);
         if (city) {
           await logDelete('city', confirmDialog.cityId, city, 1, 'Administrador');
@@ -148,7 +145,6 @@ export const Cities: React.FC = () => {
         await loadCities();
         await loadStats();
       } catch (error) {
-        console.error('Error deleting city:', error);
         setToast({ message: 'Erro ao excluir cidade. Tente novamente.', type: 'error' });
       }
     }
@@ -195,7 +191,6 @@ export const Cities: React.FC = () => {
       await loadCities();
       await loadStats();
     } catch (error) {
-      console.error('Erro ao importar cidades de Alagoas:', error);
       setToast({ message: 'Erro ao importar cidades de Alagoas. Tente novamente.', type: 'error' });
     } finally {
       setIsImporting(false);
@@ -576,6 +571,7 @@ export const Cities: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title={confirmDialog.cityId === -1 ? "Confirmar Importação" : "Confirmar Exclusão"}
           message={
             confirmDialog.cityId === -1

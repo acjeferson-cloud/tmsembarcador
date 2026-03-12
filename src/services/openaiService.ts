@@ -18,14 +18,9 @@ export interface OpenAIConfig {
 export const openaiService = {
   async getActiveConfig(): Promise<OpenAIConfig | null> {
     try {
-      console.log('🤖 [OPENAI] Loading config...');
-
       // Get organization and environment from localStorage
-      const organizationId = localStorage.getItem('organizationId');
-      const environmentId = localStorage.getItem('environmentId');
-
-      console.log('🔍 [OPENAI] Context:', { organizationId, environmentId });
-
+      const organizationId = localStorage.getItem('tms-selected-org-id');
+      const environmentId = localStorage.getItem('tms-selected-env-id');
       let query = supabase
         .from('openai_config')
         .select('*')
@@ -46,14 +41,10 @@ export const openaiService = {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [OPENAI] Error:', error);
         return null;
       }
-
-      console.log('✅ [OPENAI] Config:', data ? 'Found' : 'Not found');
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configuração do OpenAI:', error);
       return null;
     }
   },
@@ -61,19 +52,11 @@ export const openaiService = {
   async saveConfig(config: OpenAIConfig): Promise<{ success: boolean; error?: string }> {
     try {
       // Get organization, environment and establishment from localStorage
-      const organizationId = localStorage.getItem('organizationId');
-      const environmentId = localStorage.getItem('environmentId');
+      const organizationId = localStorage.getItem('tms-selected-org-id');
+      const environmentId = localStorage.getItem('tms-selected-env-id');
       const establishmentId = localStorage.getItem('establishmentId');
-
-      console.log('💾 [OPENAI] Saving config with context:', {
-        organizationId,
-        environmentId,
-        establishmentId
-      });
-
       // Validate required fields
       if (!organizationId || !environmentId) {
-        console.error('❌ [OPENAI] Missing organization_id or environment_id');
         return {
           success: false,
           error: 'Dados de organização ou environment não encontrados. Faça login novamente.'
@@ -104,27 +87,15 @@ export const openaiService = {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-
-      console.log('📝 [OPENAI] Insert data:', insertData);
-
       const { error } = await supabase
         .from('openai_config')
         .insert(insertData);
 
       if (error) {
-        console.error('❌ [OPENAI] Error saving:', error);
         return { success: false, error: error.message };
       }
-
-      console.log('✅ [OPENAI] Config saved successfully with context:', {
-        organization_id: organizationId,
-        environment_id: environmentId,
-        establishment_id: establishmentId
-      });
-
       return { success: true };
     } catch (error) {
-      console.error('❌ [OPENAI] Exception:', error);
       return { success: false, error: 'Erro ao salvar configuração' };
     }
   },
@@ -181,7 +152,6 @@ export const openaiService = {
         };
       }
     } catch (error) {
-      console.error('Erro ao testar conexão:', error);
       return {
         success: false,
         error: 'Erro de rede ao testar API. Verifique sua conexão com a internet.'
@@ -245,7 +215,6 @@ export const openaiService = {
         };
       }
     } catch (error) {
-      console.error('Erro ao gerar chat completion:', error);
       return {
         success: false,
         error: 'Erro ao se comunicar com a API OpenAI'
@@ -281,7 +250,7 @@ export const openaiService = {
         prompt_tokens: params.promptTokens,
         completion_tokens: params.completionTokens,
         total_tokens: params.totalTokens,
-        user_id: params.userId,
+        user_id: undefined, // IGNORADO: O ID de usuário do TMS é numérico, e a coluna no BD é UUID
         establishment_id: params.establishmentId,
         order_id: params.orderId,
         quote_id: params.quoteId,
@@ -295,7 +264,6 @@ export const openaiService = {
         response_data: params.responseData
       });
     } catch (error) {
-      console.error('Erro ao registrar transação OpenAI:', error);
     }
   },
 

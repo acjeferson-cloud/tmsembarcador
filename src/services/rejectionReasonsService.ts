@@ -9,18 +9,13 @@ interface RejectionReason {
   ativo: boolean;
   created_at?: string;
   updated_at?: string;
-  created_by?: string;
-  updated_by?: string;
 }
 
 export const rejectionReasonsService = {
   async getAll(): Promise<RejectionReason[]> {
     try {
-      console.log('❌ [REJECTION_REASONS] Início');
-
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) {
-        console.error('❌ [REJECTION_REASONS] User not found');
         return [];
       }
 
@@ -28,7 +23,6 @@ export const rejectionReasonsService = {
       const { organization_id, environment_id } = userData;
 
       if (!organization_id || !environment_id) {
-        console.error('❌ [REJECTION_REASONS] Missing org/env');
         return [];
       }
 
@@ -41,14 +35,10 @@ export const rejectionReasonsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('❌ [REJECTION_REASONS] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [REJECTION_REASONS] Found: ${data?.length || 0}`);
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar motivos de rejeição:', error);
       return [];
     }
   },
@@ -62,13 +52,11 @@ export const rejectionReasonsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar motivo:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar motivo:', error);
       return null;
     }
   },
@@ -82,13 +70,11 @@ export const rejectionReasonsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar motivo por código:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar motivo por código:', error);
       return null;
     }
   },
@@ -102,13 +88,11 @@ export const rejectionReasonsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar motivos por categoria:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar motivos por categoria:', error);
       return [];
     }
   },
@@ -122,13 +106,11 @@ export const rejectionReasonsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar motivos ativos:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar motivos ativos:', error);
       return [];
     }
   },
@@ -142,28 +124,23 @@ export const rejectionReasonsService = {
           categoria: reason.categoria,
           descricao: reason.descricao,
           ativo: reason.ativo !== undefined ? reason.ativo : true,
-          created_by: reason.created_by,
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Erro ao criar motivo:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao criar motivo:', error);
       throw error;
     }
   },
 
   async update(id: string, reason: Partial<RejectionReason>): Promise<RejectionReason | null> {
     try {
-      const updateData: any = {
-        updated_by: reason.updated_by,
-      };
+      const updateData: any = {};
 
       if (reason.codigo !== undefined) updateData.codigo = reason.codigo;
       if (reason.categoria !== undefined) updateData.categoria = reason.categoria;
@@ -178,13 +155,11 @@ export const rejectionReasonsService = {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar motivo:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao atualizar motivo:', error);
       throw error;
     }
   },
@@ -197,13 +172,11 @@ export const rejectionReasonsService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao excluir motivo:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Erro ao excluir motivo:', error);
       return false;
     }
   },
@@ -217,13 +190,11 @@ export const rejectionReasonsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar motivos:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar motivos:', error);
       return [];
     }
   },
@@ -246,7 +217,6 @@ export const rejectionReasonsService = {
 
       return '001';
     } catch (error) {
-      console.error('Erro ao obter próximo código:', error);
       return '001';
     }
   },
@@ -268,7 +238,6 @@ export const rejectionReasonsService = {
 
       return !data || data.length === 0;
     } catch (error) {
-      console.error('Erro ao verificar unicidade do código:', error);
       return false;
     }
   },
@@ -285,7 +254,6 @@ export const rejectionReasonsService = {
       const categories = Array.from(new Set(data?.map(r => r.categoria) || []));
       return categories;
     } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
       return [];
     }
   },
@@ -313,7 +281,6 @@ export const rejectionReasonsService = {
         byCategory
       };
     } catch (error) {
-      console.error('Erro ao calcular estatísticas:', error);
       return {
         total: 0,
         active: 0,

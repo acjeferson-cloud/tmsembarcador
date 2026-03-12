@@ -5,14 +5,14 @@ import { Toast } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface RestrictedItemsModalProps {
-  freightRateId: string;
-  freightRateName: string;
+  freightRateTableId: string;
+  freightRateTableName: string;
   onClose: () => void;
 }
 
 const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
-  freightRateId,
-  freightRateName,
+  freightRateTableId,
+  freightRateTableName,
   onClose
 }) => {
   const [items, setItems] = useState<RestrictedItem[]>([]);
@@ -32,11 +32,11 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
 
   useEffect(() => {
     loadItems();
-  }, [freightRateId]);
+  }, [freightRateTableId]);
 
   const loadItems = async () => {
     setLoading(true);
-    const data = await restrictedItemsService.getByFreightRateId(freightRateId);
+    const data = await restrictedItemsService.getByFreightRateTableId(freightRateTableId);
     setItems(data);
     setLoading(false);
   };
@@ -47,7 +47,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       return;
     }
     setLoading(true);
-    const data = await restrictedItemsService.search(freightRateId, searchTerm);
+    const data = await restrictedItemsService.search(freightRateTableId, searchTerm);
     setItems(data);
     setLoading(false);
   };
@@ -115,7 +115,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
     }
 
     const itemData: RestrictedItem = {
-      freight_rate_id: freightRateId,
+      freight_rate_table_id: freightRateTableId,
       item_code: formData.item_code,
       item_description: formData.item_description,
       ncm_code: formData.ncm_code || undefined,
@@ -157,7 +157,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Itens Restritos</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{freightRateName}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{freightRateTableName}</p>
               </div>
             </div>
             <button

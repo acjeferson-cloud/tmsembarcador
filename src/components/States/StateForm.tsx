@@ -1,21 +1,26 @@
-import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { BrazilianState, regions } from '../../data/statesData';
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, Upload } from 'lucide-react';
+import { State } from '../../services/statesService';
+import { supabase } from '../../lib/supabase';
 
 interface StateFormProps {
   onBack: () => void;
   onSave: (state: any) => void;
-  state?: BrazilianState;
+  state?: State;
 }
 
 export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) => {
   const [formData, setFormData] = useState({
     name: state?.name || '',
     abbreviation: state?.abbreviation || '',
-    ibgeCode: state?.ibgeCode || (state as any)?.ibge_code || '',
+    ibge_code: state?.ibge_code || '',
     capital: state?.capital || '',
-    region: state?.region || ''
+    region: state?.region || '',
+    bandeira_url: state?.bandeira_url || ''
   });
+
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -23,6 +28,41 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `state_${Date.now()}.${fileExt}`;
+      const filePath = `states/${fileName}`;
+
+      if (!supabase) throw new Error('Supabase client not initialized');
+
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from('logos').getPublicUrl(filePath);
+      
+      if (data?.publicUrl) {
+        setFormData(prev => ({ ...prev, bandeira_url: data.publicUrl }));
+      }
+    } catch (error) {
+      alert('Erro ao fazer upload da imagem.');
+    } finally {
+      setIsUploading(false);
+      // Reset input para permitir selecionar o mesmo arquivo novamente
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -61,8 +101,8 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
                 value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="São Paulo"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700"
+                placeholder="Acre"
               />
             </div>
 
@@ -77,8 +117,8 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
                 onChange={handleInputChange}
                 required
                 maxLength={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="SP"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700"
+                placeholder="AC"
               />
             </div>
 
@@ -88,13 +128,13 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
               </label>
               <input
                 type="text"
-                name="ibgeCode"
-                value={formData.ibgeCode}
+                name="ibge_code"
+                value={formData.ibge_code}
                 onChange={handleInputChange}
                 required
                 maxLength={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="35"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700"
+                placeholder="12"
               />
             </div>
 
@@ -108,8 +148,8 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
                 value={formData.capital}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="São Paulo"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700"
+                placeholder="Rio Branco"
               />
             </div>
 
@@ -122,16 +162,63 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
                 value={formData.region}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-900 dark:text-white dark:border-gray-700"
               >
                 <option value="">Selecione a região</option>
-                {regions.filter(r => r !== 'Todos').map(region => (
+                {['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'].map(region => (
                   <option key={region} value={region}>
                     {region}
                   </option>
                 ))}
               </select>
             </div>
+
+            <div className="md:col-span-2 mt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Bandeira Oficial (Imagem)
+              </label>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="w-40 h-24 flex-shrink-0 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex items-center justify-center shadow-sm">
+                  {formData.bandeira_url ? (
+                    <img src={formData.bandeira_url} alt="Bandeira Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-gray-400 text-xs">Sem bandeira</span>
+                  )}
+                </div>
+                
+                <div 
+                  className="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer relative"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input 
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                    onChange={handleFileChange}
+                    disabled={isUploading}
+                  />
+                  
+                  {isUploading ? (
+                    <div className="flex flex-col items-center text-blue-600">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                      <span className="text-sm">Enviando...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload size={32} className="text-gray-400 mb-2 dark:text-gray-500" />
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700">
+                        Fazer upload de um arquivo
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        PNG, JPG, SVG ou WEBP até 2MB
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -140,13 +227,14 @@ export const StateForm: React.FC<StateFormProps> = ({ onBack, onSave, state }) =
           <button
             type="button"
             onClick={onBack}
-            className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+            className="px-6 py-2 border border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-white dark:bg-gray-800"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isUploading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             {state ? 'Atualizar' : 'Salvar'} Estado
           </button>

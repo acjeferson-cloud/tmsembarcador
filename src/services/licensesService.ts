@@ -23,24 +23,36 @@ export interface LicenseLog {
 }
 
 export interface UserWithLicense {
+  id?: string;
   codigo: string;
   nome: string;
   email: string;
   perfil: string;
   status: string;
   has_license: boolean;
-  license_key?: string;
+  license_id?: string;
 }
 
 export const licensesService = {
   async getLicenseConfig(): Promise<License | null> {
     try {
       console.log('🔑 [LICENSES] Starting query...');
+      
+      const savedUser = localStorage.getItem('tms-user');
+      if (!savedUser) return null;
+      const userData = JSON.parse(savedUser);
+      const organizationId = userData.organization_id;
+
+      if (!organizationId) {
+        console.warn('❌ [LICENSES] No organization_id found in tms-user');
+        return null;
+      }
 
       const { data, error } = await supabase
         .from('licenses')
         .select('*')
-        .eq('company_id', 'default')
+        .eq('organization_id', organizationId)
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -58,10 +70,19 @@ export const licensesService = {
 
   async getUsersWithLicenseStatus(): Promise<UserWithLicense[]> {
     try {
-      const { data, error } = await supabase
+      const savedUser = localStorage.getItem('tms-user');
+      const organizationId = savedUser ? JSON.parse(savedUser).organization_id : null;
+
+      let query = supabase
         .from('users')
-        .select('codigo, nome, email, perfil, status, has_license, license_key')
+        .select('id, codigo, nome, email, perfil, status, has_license, license_id')
         .order('nome');
+        
+      if (organizationId) {
+          query = query.eq('organization_id', organizationId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Erro ao buscar usuários:', error);
@@ -83,14 +104,14 @@ export const licensesService = {
         throw new Error('Não há licenças disponíveis');
       }
 
-      const { error: updateUserError } = await supabase
+      const { error: updateUserError } = await (supabase as any)
         .from('users')
         .update({ has_license: true })
         .eq('codigo', userId);
 
       if (updateUserError) throw updateUserError;
 
-      const { error: updateLicensesError } = await supabase
+      const { error: updateLicensesError } = await (supabase as any)
         .from('licenses')
         .update({
           available_licenses: config.available_licenses - 1
@@ -99,7 +120,7 @@ export const licensesService = {
 
       if (updateLicensesError) throw updateLicensesError;
 
-      const { error: logError } = await supabase
+      const { error: logError } = await (supabase as any)
         .from('license_logs')
         .insert({
           user_id: userId,
@@ -134,14 +155,14 @@ export const licensesService = {
         throw new Error('Configuração de licenças não encontrada');
       }
 
-      const { error: updateUserError } = await supabase
+      const { error: updateUserError } = await (supabase as any)
         .from('users')
         .update({ has_license: false })
         .eq('codigo', userId);
 
       if (updateUserError) throw updateUserError;
 
-      const { error: updateLicensesError } = await supabase
+      const { error: updateLicensesError } = await (supabase as any)
         .from('licenses')
         .update({
           available_licenses: config.available_licenses + 1
@@ -150,7 +171,7 @@ export const licensesService = {
 
       if (updateLicensesError) throw updateLicensesError;
 
-      const { error: logError } = await supabase
+      const { error: logError } = await (supabase as any)
         .from('license_logs')
         .insert({
           user_id: userId,
@@ -184,21 +205,21 @@ export const licensesService = {
     notes?: string
   ): Promise<boolean> {
     try {
-      const { error: updateFromError } = await supabase
+      const { error: updateFromError } = await (supabase as any)
         .from('users')
         .update({ has_license: false })
         .eq('codigo', fromUserId);
 
       if (updateFromError) throw updateFromError;
 
-      const { error: updateToError } = await supabase
+      const { error: updateToError } = await (supabase as any)
         .from('users')
         .update({ has_license: true })
         .eq('codigo', toUserId);
 
       if (updateToError) throw updateToError;
 
-      const { error: logError } = await supabase
+      const { error: logError } = await (supabase as any)
         .from('license_logs')
         .insert({
           action: 'transferred',
@@ -243,7 +264,7 @@ export const licensesService = {
         throw new Error('Configuração de licenças não encontrada');
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('licenses')
         .update({
           total_licenses: config.total_licenses + quantity,
@@ -253,7 +274,7 @@ export const licensesService = {
 
       if (updateError) throw updateError;
 
-      const { error: logError } = await supabase
+      const { error: logError } = await (supabase as any)
         .from('license_logs')
         .insert({
           action: 'purchased',
@@ -291,7 +312,7 @@ export const licensesService = {
 
   async getLicenseLogs(limit: number = 50): Promise<LicenseLog[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('license_logs')
         .select('*')
         .order('created_at', { ascending: false })
@@ -311,7 +332,7 @@ export const licensesService = {
 
   async checkUserLicense(email: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('users')
         .select('has_license')
         .eq('email', email)
@@ -348,11 +369,11 @@ export const licensesService = {
       const licenseKey = keyData as string;
 
       // Atualizar usuário com licença e código
-      const { error: updateUserError } = await supabase
+      const { error: updateUserError } = await (supabase as any)
         .from('users')
         .update({
           has_license: true,
-          license_key: licenseKey
+          license_id: licenseKey
         })
         .eq('codigo', userId);
 
@@ -361,7 +382,7 @@ export const licensesService = {
       }
 
       // Atualizar quantidade de licenças disponíveis
-      const { error: updateLicensesError } = await supabase
+      const { error: updateLicensesError } = await (supabase as any)
         .from('licenses')
         .update({
           available_licenses: config.available_licenses - 1
@@ -373,7 +394,7 @@ export const licensesService = {
       }
 
       // Criar log
-      const { error: logError } = await supabase
+      const { error: logError } = await (supabase as any)
         .from('license_logs')
         .insert({
           user_id: userId,

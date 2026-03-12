@@ -83,7 +83,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="admin@saas.local"
+                  placeholder="admin@exemplo.com.br"
                   required
                   autoComplete="email"
                 />
@@ -149,22 +149,13 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
             </div>
           </div>
 
-          {/* Development Info */}
-          {import.meta.env.DEV && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800 font-mono">
-                <strong>DEV MODE:</strong><br />
-                Email: admin@saas.local<br />
-                Senha: admin123
-              </p>
-            </div>
-          )}
+
         </div>
 
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2026 TMS SaaS Platform. Todos os direitos reservados.
+            © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
         </div>
       </div>

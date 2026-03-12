@@ -81,7 +81,7 @@ export const saasTenantsService = {
       }
 
       // Mapear colunas em português para interface em inglês
-      const plans = (data || []).map(plan => ({
+      const plans = (data as any[] || []).map(plan => ({
         id: plan.id,
         name: plan.nome,
         display_name: plan.nome,
@@ -167,6 +167,7 @@ export const saasTenantsService = {
           id,
           codigo,
           nome,
+          nome_fantasia,
           cnpj,
           email,
           telefone,
@@ -176,16 +177,16 @@ export const saasTenantsService = {
           updated_at,
           plan:saas_plans(*)
         `)
-        .order('created_at', { ascending: false });
+        .order('codigo', { ascending: false });
 
       if (error) throw error;
 
       // Mapear saas_organizations para formato SaasTenant
-      const tenants = (data || []).map(org => ({
+      const tenants = (data as any[] || []).map(org => ({
         id: org.id,
         tenant_code: org.codigo,
         company_name: org.nome,
-        trade_name: org.nome,
+        trade_name: org.nome_fantasia || org.nome,
         document: org.cnpj || '',
         plan_id: org.plan_id,
         status: (org.status === 'ativo' ? 'active' : 'inactive') as any,
@@ -193,7 +194,15 @@ export const saasTenantsService = {
         contact_phone: org.telefone || '',
         created_at: org.created_at,
         updated_at: org.updated_at,
-        plan: org.plan
+        plan: org.plan ? {
+          ...org.plan,
+          id: org.plan.id,
+          name: org.plan.nome,
+          display_name: org.plan.nome,
+          price_monthly: parseFloat(org.plan.valor_mensal || '0'),
+          price_yearly: parseFloat(org.plan.valor_mensal || '0') * 12,
+          is_active: org.plan.ativo,
+        } : undefined
       }));
 
       return tenants;
@@ -211,6 +220,7 @@ export const saasTenantsService = {
           id,
           codigo,
           nome,
+          nome_fantasia,
           cnpj,
           email,
           telefone,
@@ -226,21 +236,30 @@ export const saasTenantsService = {
       if (error) throw error;
 
       if (!data) return null;
+      const org = data as any;
 
       // Mapear saas_organization para formato SaasTenant
       return {
-        id: data.id,
-        tenant_code: data.codigo,
-        company_name: data.nome,
-        trade_name: data.nome,
-        document: data.cnpj || '',
-        plan_id: data.plan_id,
-        status: (data.status === 'ativo' ? 'active' : 'inactive') as any,
-        contact_email: data.email || '',
-        contact_phone: data.telefone || '',
-        created_at: data.created_at,
-updated_at: data.updated_at,
-        plan: data.plan
+        id: org.id,
+        tenant_code: org.codigo,
+        company_name: org.nome,
+        trade_name: org.nome_fantasia || org.nome,
+        document: org.cnpj || '',
+        plan_id: org.plan_id,
+        status: (org.status === 'ativo' ? 'active' : 'inactive') as any,
+        contact_email: org.email || '',
+        contact_phone: org.telefone || '',
+        created_at: org.created_at,
+        updated_at: org.updated_at,
+        plan: org.plan ? {
+          ...org.plan,
+          id: org.plan.id,
+          name: org.plan.nome,
+          display_name: org.plan.nome,
+          price_monthly: parseFloat(org.plan.valor_mensal || '0'),
+          price_yearly: parseFloat(org.plan.valor_mensal || '0') * 12,
+          is_active: org.plan.ativo,
+        } : undefined
       };
     } catch (error) {
       console.error('Erro ao buscar tenant:', error);
@@ -255,6 +274,7 @@ updated_at: data.updated_at,
       // Mapear SaasTenant para formato saas_organizations
       const orgData = {
         nome: tenant.company_name,
+        nome_fantasia: tenant.trade_name || tenant.company_name,
         cnpj: tenant.document || null,
         email: tenant.contact_email || null,
         telefone: tenant.contact_phone || null,
@@ -288,15 +308,15 @@ updated_at: data.updated_at,
     try {
       console.log('[SAAS_ADMIN] Atualizando organização:', id, tenant);
 
-      // Mapear SaasTenant para formato saas_organizations
       const orgData: any = {
         updated_at: new Date().toISOString()
       };
 
       if (tenant.company_name) orgData.nome = tenant.company_name;
-      if (tenant.document) orgData.cnpj = tenant.document;
-      if (tenant.contact_email) orgData.email = tenant.contact_email;
-      if (tenant.contact_phone) orgData.telefone = tenant.contact_phone;
+      if (tenant.trade_name !== undefined) orgData.nome_fantasia = tenant.trade_name;
+      if (tenant.document !== undefined) orgData.cnpj = tenant.document;
+      if (tenant.contact_email !== undefined) orgData.email = tenant.contact_email;
+      if (tenant.contact_phone !== undefined) orgData.telefone = tenant.contact_phone;
       if (tenant.plan_id) orgData.plan_id = tenant.plan_id;
       if (tenant.status) {
         orgData.status = tenant.status === 'active' ? 'ativo' : 'inativo';

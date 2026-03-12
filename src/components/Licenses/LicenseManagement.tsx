@@ -272,7 +272,6 @@ export const LicenseManagement: React.FC = () => {
         setUsers([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       setUsers([]);
     }
 
@@ -360,7 +359,6 @@ export const LicenseManagement: React.FC = () => {
       setEditingUser(null);
       loadData();
     } catch (error) {
-      console.error('Erro ao salvar usuário:', error);
       setToast({ message: 'Erro ao salvar usuário.', type: 'error' });
     }
   };
@@ -571,8 +569,8 @@ export const LicenseManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {paginatedUsers.map((userItem) => (
-                  <tr key={userItem.codigo} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                {paginatedUsers.map((userItem, index) => (
+                  <tr key={userItem.id || `${userItem.codigo}-${index}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {userItem.codigo}
                     </td>
@@ -612,10 +610,10 @@ export const LicenseManagement: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {userItem.license_key ? (
+                      {userItem.license_id ? (
                         <div className="text-sm">
                           <code className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono text-gray-900 dark:text-gray-100">
-                            {userItem.license_key}
+                            {userItem.license_id}
                           </code>
                         </div>
                       ) : (
@@ -625,7 +623,7 @@ export const LicenseManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end space-x-2">
                         <button
-                          onClick={() => handleEditUser(userItem.id)}
+                          onClick={() => userItem.id && handleEditUser(userItem.id)}
                           className="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                           title="Editar usuário"
                         >

@@ -14,14 +14,9 @@ export interface GoogleMapsConfig {
 export const googleMapsService = {
   async getActiveConfig(): Promise<GoogleMapsConfig | null> {
     try {
-      console.log('🗺️ [GOOGLE_MAPS] Loading config...');
-
       // Get organization and environment from localStorage (same keys as OpenAI)
-      const organizationId = localStorage.getItem('organizationId');
-      const environmentId = localStorage.getItem('environmentId');
-
-      console.log('🔍 [GOOGLE_MAPS] Context:', { organizationId, environmentId });
-
+      const organizationId = localStorage.getItem('tms-selected-org-id');
+      const environmentId = localStorage.getItem('tms-selected-env-id');
       let query = supabase
         .from('google_maps_config')
         .select('*')
@@ -42,14 +37,10 @@ export const googleMapsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [GOOGLE_MAPS] Error:', error);
         return null;
       }
-
-      console.log('✅ [GOOGLE_MAPS] Config:', data ? 'Found' : 'Not found');
       return data;
     } catch (error) {
-      console.error('❌ [GOOGLE_MAPS] Erro ao buscar configuração:', error);
       return null;
     }
   },
@@ -57,19 +48,12 @@ export const googleMapsService = {
   async saveConfig(config: GoogleMapsConfig): Promise<{ success: boolean; error?: string }> {
     try {
       // Get organization, environment and establishment from localStorage
-      const organizationId = localStorage.getItem('organizationId');
-      const environmentId = localStorage.getItem('environmentId');
-      const establishmentId = localStorage.getItem('establishmentId');
-
-      console.log('💾 [GOOGLE_MAPS] Saving config with context:', {
-        organizationId,
-        environmentId,
-        establishmentId
-      });
-
+      const organizationId = localStorage.getItem('tms-selected-org-id');
+      const environmentId = localStorage.getItem('tms-selected-env-id');
+      const savedEstablishment = localStorage.getItem('tms-current-establishment');
+      const establishmentId = savedEstablishment ? JSON.parse(savedEstablishment).id : null;
       // Validate required fields
       if (!organizationId || !environmentId) {
-        console.error('❌ [GOOGLE_MAPS] Missing organization_id or environment_id');
         return {
           success: false,
           error: 'Dados de organização ou environment não encontrados. Faça login novamente.'
@@ -84,37 +68,24 @@ export const googleMapsService = {
         .eq('organization_id', organizationId)
         .eq('environment_id', environmentId);
 
-      // Insert the new configuration with org/env/establishment context
+      // Insert the new configuration with org/env context
       const insertData = {
         organization_id: organizationId,
         environment_id: environmentId,
-        establishment_id: establishmentId || null,
         api_key: config.api_key,
         is_active: config.is_active,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-
-      console.log('📝 [GOOGLE_MAPS] Insert data:', insertData);
-
       const { error } = await supabase
         .from('google_maps_config')
         .insert(insertData);
 
       if (error) {
-        console.error('❌ [GOOGLE_MAPS] Error saving:', error);
         return { success: false, error: error.message };
       }
-
-      console.log('✅ [GOOGLE_MAPS] Config saved successfully with context:', {
-        organization_id: organizationId,
-        environment_id: environmentId,
-        establishment_id: establishmentId
-      });
-
       return { success: true };
     } catch (error) {
-      console.error('❌ [GOOGLE_MAPS] Exception:', error);
       return { success: false, error: 'Erro ao salvar configuração' };
     }
   },
@@ -147,7 +118,6 @@ export const googleMapsService = {
         };
       }
     } catch (error) {
-      console.error('Erro ao testar conexão:', error);
       return {
         success: false,
         error: 'Erro de rede ao testar API. Verifique sua conexão com a internet.'
@@ -181,7 +151,7 @@ export const googleMapsService = {
         origin: params.origin,
         destination: params.destination,
         coordinates: params.coordinates,
-        user_id: params.userId,
+        user_id: undefined, // IGNORADO: O ID de usuário do TMS é numérico, e a coluna no BD é UUID
         establishment_id: params.establishmentId,
         order_id: params.orderId,
         quote_id: params.quoteId,
@@ -195,7 +165,6 @@ export const googleMapsService = {
         api_response: params.apiResponse
       });
     } catch (error) {
-      console.error('Erro ao registrar transação Google Maps:', error);
     }
   },
 

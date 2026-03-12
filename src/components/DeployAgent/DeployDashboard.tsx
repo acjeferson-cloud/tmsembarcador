@@ -26,7 +26,6 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
       const data = await deployAgentService.getProjectDashboard(projectId);
       setDashboardData(data);
     } catch (error) {
-      console.error('Error loading dashboard:', error);
     } finally {
       setIsLoading(false);
     }
@@ -43,6 +42,25 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
   }
 
   const { project, uploads, validations, suggestions, stats } = dashboardData;
+
+  const handleApproveSuggestion = async (id: string) => {
+    try {
+      await deployAgentService.approveSuggestion(id);
+      loadDashboard();
+    } catch (error) {
+      alert('Erro ao aprovar sugestão');
+    }
+  };
+
+  const handleExecuteUpload = async (uploadId: string) => {
+    try {
+      await deployAgentService.executeConfiguration(uploadId);
+      loadDashboard();
+      alert('Arquivo processado e importado com sucesso!');
+    } catch (error) {
+      alert('Erro ao executar importação');
+    }
+  };
 
   return (
     <div className="p-6">
@@ -181,13 +199,25 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
                       <div className="font-medium text-gray-900 dark:text-white">{upload.file_name}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 capitalize">{upload.data_category.replace('_', ' ')}</div>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      upload.status === 'executed' ? 'bg-green-100 text-green-800' :
-                      upload.status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {upload.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {upload.status === 'validated' && (
+                        <button
+                          onClick={() => handleExecuteUpload(upload.id)}
+                          className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                        >
+                          Efetivar Importação
+                        </button>
+                      )}
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        upload.status === 'executed' ? 'bg-green-100 text-green-800' :
+                        upload.status === 'failed' ? 'bg-red-100 text-red-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {upload.status === 'executed' ? 'Importado (100%)' :
+                         upload.status === 'validated' ? 'Aguardando Importação' : 
+                         upload.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -258,7 +288,10 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{suggestion.description}</div>
                     </div>
                     {suggestion.status === 'pending' && (
-                      <button className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors">
+                      <button 
+                        onClick={() => handleApproveSuggestion(suggestion.id)}
+                        className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                      >
                         Aprovar
                       </button>
                     )}

@@ -51,7 +51,6 @@ export const Countries: React.FC = () => {
       const data = await countriesService.getAll();
       setCountriesList(data);
     } catch (error) {
-      console.error('Erro ao carregar países:', error);
       setToast({ message: 'Erro ao carregar países.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -85,13 +84,13 @@ export const Countries: React.FC = () => {
     setShowView(true);
   };
 
-  const handleDeleteCountry = (countryId: string) => {
-    setConfirmDialog({ isOpen: true, countryId });
+  const handleDeleteCountry = (countryId: string | number) => {
+    setConfirmDialog({ isOpen: true, countryId: String(countryId) });
   };
 
   const confirmDelete = async () => {
     if (confirmDialog.countryId) {
-      const country = countriesList.find(c => c.id === confirmDialog.countryId);
+      const country = countriesList.find(c => String(c.id) === String(confirmDialog.countryId));
       const success = await countriesService.delete(confirmDialog.countryId);
       if (success) {
         if (country) {
@@ -145,7 +144,6 @@ export const Countries: React.FC = () => {
       setEditingCountry(null);
       await loadCountries();
     } catch (error) {
-      console.error('Error saving country:', error);
       setToast({ message: 'Erro ao salvar país. Tente novamente.', type: 'error' });
     }
   };
@@ -352,6 +350,7 @@ export const Countries: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este país? Esta ação não pode ser desfeita."
           confirmText="Excluir"

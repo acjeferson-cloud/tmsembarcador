@@ -54,7 +54,6 @@ export const InnovationsCrud: React.FC = () => {
       setInnovations(data);
       setFilteredInnovations(data);
     } catch (error) {
-      console.error('Erro ao carregar inovações:', error);
       setToast({ message: 'Erro ao carregar inovações', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -87,7 +86,6 @@ export const InnovationsCrud: React.FC = () => {
           setToast({ message: 'Inovação excluída com sucesso', type: 'success' });
           loadInnovations();
         } catch (error) {
-          console.error('Erro ao excluir inovação:', error);
           setToast({ message: 'Erro ao excluir inovação', type: 'error' });
         }
       }
@@ -106,7 +104,6 @@ export const InnovationsCrud: React.FC = () => {
       setShowForm(false);
       loadInnovations();
     } catch (error) {
-      console.error('Erro ao salvar inovação:', error);
       setToast({ message: 'Erro ao salvar inovação', type: 'error' });
     }
   };

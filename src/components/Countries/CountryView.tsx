@@ -1,11 +1,11 @@
 import React from 'react';
 import { ArrowLeft, Edit, MapPin, Globe, Languages, Building } from 'lucide-react';
-import { WorldCountry } from '../../data/countriesData';
+import { Country } from '../../services/countriesService';
 
 interface CountryViewProps {
   onBack: () => void;
   onEdit: () => void;
-  country: WorldCountry;
+  country: Country;
 }
 
 export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, country }) => {
@@ -38,9 +38,12 @@ export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, countr
         {/* Header Card */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-start space-x-6">
-            {/* Flag */}
             <div className="flex-shrink-0">
-              <div className="text-8xl">{country.flag}</div>
+              {country.bandeira_url ? (
+                <img src={country.bandeira_url} alt={`Bandeira de ${country.name}`} className="w-24 h-24 rounded-full object-cover shadow-lg border border-gray-200 dark:border-gray-700" />
+              ) : (
+                <div className="text-8xl">{country.flag}</div>
+              )}
             </div>
 
             {/* Basic Info */}
@@ -61,6 +64,12 @@ export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, countr
                   <p className="text-sm text-gray-600 dark:text-gray-400">Idioma Principal</p>
                   <p className="font-medium text-gray-900 dark:text-white">{country.language}</p>
                 </div>
+                {country.iso3 && (
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Cod. ISO 3166-1</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{country.iso3}</p>
+                  </div>
+                )}
                 {country.bacenCode && (
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Código do Bacen</p>
@@ -136,7 +145,7 @@ export const CountryView: React.FC<CountryViewProps> = ({ onBack, onEdit, countr
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <p className="text-2xl font-bold text-green-600">{country.flag}</p>
-              <p className="text-sm text-green-700">Bandeira</p>
+              <p className="text-sm text-green-700">Bandeira (Emoji)</p>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <p className="text-2xl font-bold text-purple-600">{country.continent}</p>

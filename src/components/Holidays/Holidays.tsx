@@ -32,7 +32,6 @@ export const Holidays: React.FC = () => {
       const data = await holidaysService.getByYear(selectedYear);
       setHolidaysList(data);
     } catch (error) {
-      console.error('Erro ao carregar feriados:', error);
       setToast({ message: 'Erro ao carregar feriados.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -325,6 +324,7 @@ export const Holidays: React.FC = () => {
 
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este feriado? Esta ação não pode ser desfeita."
           onConfirm={confirmDelete}

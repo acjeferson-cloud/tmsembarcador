@@ -75,7 +75,6 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
       await apiKeysService.rotateKey(apiKey.id, newApiKey, currentUserId, rotationReason);
 
       if (notes.trim()) {
-        console.log('Rotation notes:', notes);
       }
 
       setToast({
@@ -88,7 +87,6 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
         onClose();
       }, 1000);
     } catch (error) {
-      console.error('Error rotating key:', error);
       setToast({
         message: 'Erro ao rotacionar a chave. Tente novamente.',
         type: 'error'

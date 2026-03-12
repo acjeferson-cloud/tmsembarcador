@@ -44,7 +44,6 @@ export const WhatsAppExtract: React.FC = () => {
       setTransactions(transactionsData);
       setSummary(summaryData);
     } catch (error) {
-      console.error('Erro ao carregar transações:', error);
     } finally {
       setLoading(false);
     }

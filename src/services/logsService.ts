@@ -29,9 +29,20 @@ export interface LogFilters {
  */
 async function getContextIds(): Promise<{ organizationId: string | null; environmentId: string | null }> {
   try {
+    const savedUser = localStorage.getItem('tms-user');
+    if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        if (userData.organization_id && userData.environment_id) {
+           return {
+             organizationId: userData.organization_id,
+             environmentId: userData.environment_id
+           };
+        }
+    }
+
+    // Fallback original
     const context = await TenantContextHelper.getCurrentContext();
     if (!context) {
-      console.warn('⚠️ Contexto não encontrado ao registrar log');
       return { organizationId: null, environmentId: null };
     }
     return {
@@ -39,7 +50,6 @@ async function getContextIds(): Promise<{ organizationId: string | null; environ
       environmentId: context.environmentId
     };
   } catch (error) {
-    console.error('❌ Erro ao obter contexto para log:', error);
     return { organizationId: null, environmentId: null };
   }
 }
@@ -59,11 +69,10 @@ export async function logCreate(
     const { organizationId, environmentId } = await getContextIds();
 
     if (!organizationId || !environmentId) {
-      console.error('❌ Não é possível registrar log sem organization_id e environment_id');
       return;
     }
 
-    const logs: Omit<ChangeLog, 'id' | 'created_at'>[] = [];
+    const logs: any[] = [];
 
     // Para CREATE, registramos os valores principais como novos valores
     Object.entries(newData).forEach(([key, value]) => {
@@ -86,15 +95,13 @@ export async function logCreate(
 
     if (logs.length > 0) {
       const { error } = await supabase
-        .from('change_logs')
-        .insert(logs);
+        .from('audit_logs')
+        .insert(logs as any);
 
       if (error) {
-        console.error('Error logging creation:', error);
       }
     }
   } catch (error) {
-    console.error('Error in logCreate:', error);
   }
 }
 
@@ -114,11 +121,10 @@ export async function logUpdate(
     const { organizationId, environmentId } = await getContextIds();
 
     if (!organizationId || !environmentId) {
-      console.error('❌ Não é possível registrar log sem organization_id e environment_id');
       return;
     }
 
-    const logs: Omit<ChangeLog, 'id' | 'created_at'>[] = [];
+    const logs: any[] = [];
 
     // Comparar os dados antigos com os novos e registrar apenas as diferenças
     Object.entries(newData).forEach(([key, newValue]) => {
@@ -144,15 +150,13 @@ export async function logUpdate(
 
     if (logs.length > 0) {
       const { error } = await supabase
-        .from('change_logs')
-        .insert(logs);
+        .from('audit_logs')
+        .insert(logs as any);
 
       if (error) {
-        console.error('Error logging update:', error);
       }
     }
   } catch (error) {
-    console.error('Error in logUpdate:', error);
   }
 }
 
@@ -171,7 +175,6 @@ export async function logDelete(
     const { organizationId, environmentId } = await getContextIds();
 
     if (!organizationId || !environmentId) {
-      console.error('❌ Não é possível registrar log sem organization_id e environment_id');
       return;
     }
 
@@ -198,15 +201,13 @@ export async function logDelete(
 
     if (logs.length > 0) {
       const { error } = await supabase
-        .from('change_logs')
-        .insert(logs);
+        .from('audit_logs')
+        .insert(logs as any);
 
       if (error) {
-        console.error('Error logging deletion:', error);
       }
     }
   } catch (error) {
-    console.error('Error in logDelete:', error);
   }
 }
 
@@ -219,14 +220,19 @@ export async function fetchLogs(
   filters: LogFilters = {}
 ): Promise<{ logs: ChangeLog[]; totalCount: number }> {
   try {
-    console.log('🔍 Fetching logs from change_logs table...');
-    console.log('📄 Page:', page, 'PageSize:', pageSize);
-    console.log('🔧 Filters:', filters);
+    // Obter contexto
+    const { organizationId, environmentId } = await getContextIds();
+
+    if (!organizationId || !environmentId) {
+      return { logs: [], totalCount: 0 };
+    }
 
     // Buscar o count separadamente para evitar problemas
-    let countQuery = supabase
-      .from('change_logs')
-      .select('*', { count: 'exact', head: true });
+    let countQuery = (supabase as any)
+      .from('audit_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', organizationId)
+      .eq('environment_id', environmentId);
 
     // Aplicar os mesmos filtros ao count
     if (filters.entityType) {
@@ -248,15 +254,13 @@ export async function fetchLogs(
     const { count, error: countError } = await countQuery;
 
     if (countError) {
-      console.error('❌ Error fetching count:', countError);
     }
-
-    console.log('📊 Total count from separate query:', count);
-
     // Buscar os dados com paginação
-    let dataQuery = supabase
-      .from('change_logs')
-      .select('*');
+    let dataQuery = (supabase as any)
+      .from('audit_logs')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('environment_id', environmentId);
 
     // Aplicar filtros
     if (filters.entityType) {
@@ -283,20 +287,13 @@ export async function fetchLogs(
     const { data, error } = await dataQuery;
 
     if (error) {
-      console.error('❌ Error fetching logs:', error);
       return { logs: [], totalCount: 0 };
     }
-
-    console.log('✅ Logs fetched successfully!');
-    console.log('📦 Data length:', data?.length);
-    console.log('📝 Sample data:', data?.[0]);
-
     return {
       logs: data || [],
       totalCount: count || 0
     };
   } catch (error) {
-    console.error('❌ Error in fetchLogs:', error);
     return { logs: [], totalCount: 0 };
   }
 }
@@ -309,21 +306,19 @@ async function fetchEntityLogs(
   entityId: string
 ): Promise<ChangeLog[]> {
   try {
-    const { data, error } = await supabase
-      .from('change_logs')
+    const { data, error } = await (supabase as any)
+      .from('audit_logs')
       .select('*')
       .eq('entity_type', entityType)
       .eq('entity_id', entityId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching entity logs:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in fetchEntityLogs:', error);
     return [];
   }
 }
@@ -337,19 +332,22 @@ export async function getLogsStats(): Promise<{
   byEntity: Record<string, number>;
 }> {
   try {
-    console.log('📊 Fetching logs stats from change_logs table...');
+    // Obter contexto
+    const { organizationId, environmentId } = await getContextIds();
 
-    const { data, error } = await supabase
-      .from('change_logs')
-      .select('action_type, entity_type');
-
-    if (error) {
-      console.error('❌ Error fetching logs stats:', error);
-      return { total: 0, byAction: {}, byEntity: {} };
+    if (!organizationId || !environmentId) {
+       return { total: 0, byAction: {}, byEntity: {} };
     }
 
-    console.log('✅ Stats data fetched:', data?.length, 'records');
+    const { data, error } = await (supabase as any)
+      .from('audit_logs')
+      .select('action_type, entity_type')
+      .eq('organization_id', organizationId)
+      .eq('environment_id', environmentId);
 
+    if (error) {
+      return { total: 0, byAction: {}, byEntity: {} };
+    }
     const byAction: Record<string, number> = {};
     const byEntity: Record<string, number> = {};
 
@@ -357,16 +355,12 @@ export async function getLogsStats(): Promise<{
       byAction[log.action_type] = (byAction[log.action_type] || 0) + 1;
       byEntity[log.entity_type] = (byEntity[log.entity_type] || 0) + 1;
     });
-
-    console.log('📈 Stats calculated:', { total: data?.length || 0, byAction, byEntity });
-
     return {
       total: data?.length || 0,
       byAction,
       byEntity
     };
   } catch (error) {
-    console.error('❌ Error in getLogsStats:', error);
     return { total: 0, byAction: {}, byEntity: {} };
   }
 }

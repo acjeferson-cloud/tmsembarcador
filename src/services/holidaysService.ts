@@ -22,19 +22,14 @@ class HolidaysService {
    * Busca todos os feriados
    */
   async getAll(): Promise<Holiday[]> {
-    console.log('📅 [HOLIDAYS] Starting query...');
-
     const { data, error } = await supabase
       .from('holidays')
       .select('*')
       .order('date', { ascending: true });
 
     if (error) {
-      console.error('❌ [HOLIDAYS] Error:', error);
       throw error;
     }
-
-    console.log(`✅ [HOLIDAYS] Found: ${data?.length || 0}`);
     return data || [];
   }
 

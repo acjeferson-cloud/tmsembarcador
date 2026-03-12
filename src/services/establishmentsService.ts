@@ -1,4 +1,4 @@
-import { supabase, ensureSessionContext } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { logoStorageService } from './logoStorageService';
 
 export interface EmailConfig {
@@ -57,32 +57,19 @@ export interface Establishment {
 // Helper para obter organização do usuário atual
 function getUserOrganization(): { organizationId: string; environmentId: string | null } | null {
   try {
-    console.log('🔍 [getUserOrganization] INÍCIO');
-
     const savedUser = localStorage.getItem('tms-user');
-    console.log('🔍 [getUserOrganization] localStorage tms-user:', savedUser ? 'EXISTE' : 'NÃO EXISTE');
-
     if (!savedUser) {
-      console.error('❌ [getUserOrganization] Usuário não autenticado - localStorage vazio');
       return null;
     }
 
     let userData: any;
     try {
       userData = JSON.parse(savedUser);
-      console.log('🔍 [getUserOrganization] userData parseado:', {
-        email: userData.email,
-        nome: userData.nome,
-        organization_id: userData.organization_id,
-        environment_id: userData.environment_id
-      });
     } catch (parseError) {
-      console.error('❌ [getUserOrganization] Erro ao parsear JSON:', parseError);
       return null;
     }
 
     if (!userData.organization_id) {
-      console.error('❌ [getUserOrganization] organization_id não encontrado no userData');
       return null;
     }
 
@@ -90,11 +77,8 @@ function getUserOrganization(): { organizationId: string; environmentId: string 
       organizationId: userData.organization_id,
       environmentId: userData.environment_id || null
     };
-
-    console.log('✅ [getUserOrganization] Retornando:', result);
     return result;
   } catch (error) {
-    console.error('❌ [getUserOrganization] Erro geral:', error);
     return null;
   }
 }
@@ -102,31 +86,16 @@ function getUserOrganization(): { organizationId: string; environmentId: string 
 export const establishmentsService = {
   async getAll(): Promise<Establishment[]> {
     try {
-      console.log('🏢 [ESTABLISHMENTS] Início');
-
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) {
-        console.error('❌ [ESTABLISHMENTS] User not found');
         return [];
       }
 
       const userData = JSON.parse(savedUser);
       const { organization_id, environment_id, email, codigo } = userData;
-
-      console.log('🏢 [ESTABLISHMENTS] User:', {
-        email,
-        codigo,
-        organization_id,
-        environment_id
-      });
-
       if (!organization_id || !environment_id) {
-        console.error('❌ [ESTABLISHMENTS] Missing org/env');
         return [];
       }
-
-      console.log('🏢 [ESTABLISHMENTS] Querying establishments...');
-
       // Buscar estabelecimentos diretamente com filtros (RLS vai proteger)
       const { data, error } = await supabase
         .from('establishments')
@@ -136,34 +105,25 @@ export const establishmentsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('❌ [ESTABLISHMENTS] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [ESTABLISHMENTS] Found: ${data?.length || 0}`);
-
       if (data && data.length > 0) {
-        console.log('📋 [ESTABLISHMENTS] First 2:', data.slice(0, 2).map(e => ({
-          codigo: e.codigo,
-          razao_social: e.razao_social
-        })));
       }
 
       // Mapear para incluir campos legados para compatibilidade com UI
-      const mappedData = (data || []).map(est => ({
+      const mappedData = (data || []).map((est: any) => ({
         ...est,
         fantasia: est.nome_fantasia,
         endereco: est.logradouro,
         tracking_prefix: est.metadata?.tracking_prefix,
         email_config: est.metadata?.email_config,
-        logo_light_base64: est.metadata?.logo_light_base64,
-        logo_dark_base64: est.metadata?.logo_dark_base64,
-        logo_nps_base64: est.metadata?.logo_nps_base64,
+        logo_light_base64: est.metadata?.logo_light_url || est.metadata?.logo_light_base64,
+        logo_dark_base64: est.metadata?.logo_dark_url || est.metadata?.logo_dark_base64,
+        logo_nps_base64: est.metadata?.logo_nps_url || est.metadata?.logo_nps_base64,
       }));
 
       return mappedData;
     } catch (error) {
-      console.error('❌ [establishmentsService.getAll] Erro geral:', error);
       return [];
     }
   },
@@ -185,7 +145,6 @@ export const establishmentsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar estabelecimento:', error);
         throw error;
       }
 
@@ -198,12 +157,11 @@ export const establishmentsService = {
         endereco: data.logradouro,
         tracking_prefix: data.metadata?.tracking_prefix,
         email_config: data.metadata?.email_config,
-        logo_light_base64: data.metadata?.logo_light_base64,
-        logo_dark_base64: data.metadata?.logo_dark_base64,
-        logo_nps_base64: data.metadata?.logo_nps_base64,
+        logo_light_base64: data.metadata?.logo_light_url || data.metadata?.logo_light_base64,
+        logo_dark_base64: data.metadata?.logo_dark_url || data.metadata?.logo_dark_base64,
+        logo_nps_base64: data.metadata?.logo_nps_url || data.metadata?.logo_nps_base64,
       };
     } catch (error) {
-      console.error('Erro ao buscar estabelecimento:', error);
       return null;
     }
   },
@@ -225,7 +183,6 @@ export const establishmentsService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar estabelecimento por código:', error);
         throw error;
       }
 
@@ -238,12 +195,11 @@ export const establishmentsService = {
         endereco: data.logradouro,
         tracking_prefix: data.metadata?.tracking_prefix,
         email_config: data.metadata?.email_config,
-        logo_light_base64: data.metadata?.logo_light_base64,
-        logo_dark_base64: data.metadata?.logo_dark_base64,
-        logo_nps_base64: data.metadata?.logo_nps_base64,
+        logo_light_base64: data.metadata?.logo_light_url || data.metadata?.logo_light_base64,
+        logo_dark_base64: data.metadata?.logo_dark_url || data.metadata?.logo_dark_base64,
+        logo_nps_base64: data.metadata?.logo_nps_url || data.metadata?.logo_nps_base64,
       };
     } catch (error) {
-      console.error('Erro ao buscar estabelecimento por código:', error);
       return null;
     }
   },
@@ -303,23 +259,33 @@ export const establishmentsService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar estabelecimento:', error);
         throw error;
       }
 
-      if (data?.id && establishment.logo_light_base64) {
-        const uploadResult = await logoStorageService.uploadLogoFromBase64(
-          data.id,
-          establishment.logo_light_base64
-        );
+      if (data?.id) {
+        const currentMetadata = insertData.metadata || {};
+        let metadataUpdated = false;
 
-        if (uploadResult.success && uploadResult.logoUrl) {
+        const uploadLogo = async (base64: string, type: 'light' | 'dark' | 'nps') => {
+          if (!base64 || !base64.startsWith('data:image/')) return;
+          const result = await logoStorageService.uploadLogoFromBase64(data.id, base64, type);
+          if (result.success && result.logoUrl) {
+            currentMetadata[`logo_${type}_url`] = result.logoUrl;
+            metadataUpdated = true;
+          }
+        };
+
+        if (establishment.logo_light_base64) await uploadLogo(establishment.logo_light_base64, 'light');
+        if (establishment.logo_dark_base64) await uploadLogo(establishment.logo_dark_base64, 'dark');
+        if (establishment.logo_nps_base64) await uploadLogo(establishment.logo_nps_base64, 'nps');
+
+        if (metadataUpdated) {
           await supabase
             .from('establishments')
-            .update({ logo_url: uploadResult.logoUrl })
+            .update({ metadata: currentMetadata })
             .eq('id', data.id);
 
-          data.logo_url = uploadResult.logoUrl;
+          data.metadata = currentMetadata;
         }
       }
 
@@ -332,12 +298,11 @@ export const establishmentsService = {
         endereco: data.logradouro,
         tracking_prefix: data.metadata?.tracking_prefix,
         email_config: data.metadata?.email_config,
-        logo_light_base64: data.metadata?.logo_light_base64,
-        logo_dark_base64: data.metadata?.logo_dark_base64,
-        logo_nps_base64: data.metadata?.logo_nps_base64,
+        logo_light_base64: data.metadata?.logo_light_url || data.metadata?.logo_light_base64,
+        logo_dark_base64: data.metadata?.logo_dark_url || data.metadata?.logo_dark_base64,
+        logo_nps_base64: data.metadata?.logo_nps_url || data.metadata?.logo_nps_base64,
       };
     } catch (error) {
-      console.error('Erro ao criar estabelecimento:', error);
       throw error;
     }
   },
@@ -404,15 +369,19 @@ export const establishmentsService = {
         };
       }
 
-      if (establishment.logo_light_base64) {
-        const uploadResult = await logoStorageService.uploadLogoFromBase64(
-          id,
-          establishment.logo_light_base64
-        );
+      if (establishment.logo_light_base64 || establishment.logo_dark_base64 || establishment.logo_nps_base64) {
+        const uploadLogo = async (base64: string, type: 'light' | 'dark' | 'nps') => {
+          if (!base64 || !base64.startsWith('data:image/')) return;
+          const result = await logoStorageService.uploadLogoFromBase64(id, base64, type);
+          if (result.success && result.logoUrl) {
+            updateData.metadata = updateData.metadata || {};
+            updateData.metadata[`logo_${type}_url`] = result.logoUrl;
+          }
+        };
 
-        if (uploadResult.success && uploadResult.logoUrl) {
-          updateData.logo_url = uploadResult.logoUrl;
-        }
+        if (establishment.logo_light_base64) await uploadLogo(establishment.logo_light_base64, 'light');
+        if (establishment.logo_dark_base64) await uploadLogo(establishment.logo_dark_base64, 'dark');
+        if (establishment.logo_nps_base64) await uploadLogo(establishment.logo_nps_base64, 'nps');
       }
 
       const { data, error } = await supabase
@@ -424,7 +393,6 @@ export const establishmentsService = {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar estabelecimento:', error);
         throw error;
       }
 
@@ -442,7 +410,6 @@ export const establishmentsService = {
         logo_nps_base64: data.metadata?.logo_nps_base64,
       };
     } catch (error) {
-      console.error('Erro ao atualizar estabelecimento:', error);
       throw error;
     }
   },
@@ -468,7 +435,6 @@ export const establishmentsService = {
           .limit(1);
 
         if (error) {
-          console.error(`Erro ao verificar ${table}:`, error);
           continue;
         }
 
@@ -498,7 +464,6 @@ export const establishmentsService = {
 
       return { canDelete: true };
     } catch (error) {
-      console.error('Erro ao verificar possibilidade de exclusão:', error);
       return {
         canDelete: false,
         reason: 'Erro ao verificar possibilidade de exclusão. Tente novamente.'
@@ -522,13 +487,11 @@ export const establishmentsService = {
         .eq('organization_id', organizationId);
 
       if (error) {
-        console.error('Erro ao excluir estabelecimento:', error);
         throw error;
       }
 
       return true;
     } catch (error) {
-      console.error('Erro ao excluir estabelecimento:', error);
       return false;
     }
   },
@@ -550,7 +513,6 @@ export const establishmentsService = {
         .limit(1);
 
       if (error) {
-        console.error('Erro ao buscar último código:', error);
         return '0001';
       }
 
@@ -568,7 +530,6 @@ export const establishmentsService = {
 
       return '0001';
     } catch (error) {
-      console.error('Erro ao gerar próximo código:', error);
       return '0001';
     }
   },
@@ -590,7 +551,6 @@ export const establishmentsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar estabelecimentos por estado:', error);
         throw error;
       }
 
@@ -601,14 +561,13 @@ export const establishmentsService = {
         endereco: est.logradouro,
         tracking_prefix: est.metadata?.tracking_prefix,
         email_config: est.metadata?.email_config,
-        logo_light_base64: est.metadata?.logo_light_base64,
-        logo_dark_base64: est.metadata?.logo_dark_base64,
-        logo_nps_base64: est.metadata?.logo_nps_base64,
+        logo_light_base64: est.metadata?.logo_light_url || est.metadata?.logo_light_base64,
+        logo_dark_base64: est.metadata?.logo_dark_url || est.metadata?.logo_dark_base64,
+        logo_nps_base64: est.metadata?.logo_nps_url || est.metadata?.logo_nps_base64,
       }));
 
       return mappedData;
     } catch (error) {
-      console.error('Erro ao buscar estabelecimentos por estado:', error);
       return [];
     }
   },
@@ -630,7 +589,6 @@ export const establishmentsService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar estabelecimentos:', error);
         throw error;
       }
 
@@ -648,7 +606,6 @@ export const establishmentsService = {
 
       return mappedData;
     } catch (error) {
-      console.error('Erro ao buscar estabelecimentos:', error);
       return [];
     }
   },

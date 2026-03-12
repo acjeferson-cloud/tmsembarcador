@@ -48,7 +48,6 @@ export const WhatsAppConfig: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
     }
   };
 
@@ -67,7 +66,6 @@ export const WhatsAppConfig: React.FC = () => {
       }));
       setTemplates(validTemplates);
     } catch (error) {
-      console.error('Erro ao carregar templates:', error);
       setTemplates([]);
     }
   };

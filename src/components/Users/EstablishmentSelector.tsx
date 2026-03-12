@@ -22,7 +22,6 @@ export const EstablishmentSelector: React.FC<EstablishmentSelectorProps> = ({
         const data = await establishmentsService.getAll();
         setEstablishments(data);
       } catch (error) {
-        console.error('Erro ao carregar estabelecimentos:', error);
       }
     };
     loadEstablishments();
@@ -45,8 +44,6 @@ export const EstablishmentSelector: React.FC<EstablishmentSelectorProps> = ({
     const newEstablishments = localEstablishments.includes(establishmentCode)
       ? localEstablishments.filter(code => code !== establishmentCode)
       : [...localEstablishments, establishmentCode];
-
-    console.log('🏢 Estabelecimentos selecionados:', newEstablishments);
     setLocalEstablishments(newEstablishments);
     onChange(newEstablishments);
   };
@@ -54,7 +51,6 @@ export const EstablishmentSelector: React.FC<EstablishmentSelectorProps> = ({
   // Select all establishments
   const selectAll = () => {
     const allCodes = establishments.map(e => e.codigo);
-    console.log('🏢 Selecionando todos os estabelecimentos:', allCodes);
     setLocalEstablishments(allCodes);
     onChange(allCodes);
   };

@@ -46,8 +46,13 @@ export const additionalFeesService = {
   async create(fee: Omit<AdditionalFee, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<AdditionalFee> {
     const { data: { user } } = await supabase.auth.getUser();
 
-    const organizationId = sessionStorage.getItem('organization_id');
-    const environmentId = sessionStorage.getItem('environment_id');
+    const savedUser = localStorage.getItem('tms-user');
+    if (!savedUser) {
+      throw new Error('Usuário não autenticado. Faça login novamente.');
+    }
+    const userData = JSON.parse(savedUser);
+    const organizationId = userData.organization_id;
+    const environmentId = userData.environment_id;
 
     const { data, error } = await supabase
       .from('freight_rate_additional_fees')

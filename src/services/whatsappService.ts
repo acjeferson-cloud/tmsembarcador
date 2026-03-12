@@ -77,8 +77,17 @@ interface SendMessageParams {
 function getUserOrganization(): { organizationId: string; environmentId: string } | null {
   try {
     // Buscar do localStorage (salvo no login)
-    const orgId = localStorage.getItem('tms-selected-org-id');
-    const envId = localStorage.getItem('tms-selected-env-id');
+    let orgId = localStorage.getItem('tms-selected-org-id');
+    let envId = localStorage.getItem('tms-selected-env-id');
+
+    if (!orgId || !envId) {
+      const userData = localStorage.getItem('tms-user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        orgId = orgId || parsedUser.organization_id;
+        envId = envId || parsedUser.environment_id;
+      }
+    }
 
     if (!orgId || !envId) {
       console.error('❌ [whatsappService] Contexto org/env não encontrado');
@@ -160,22 +169,14 @@ class WhatsAppService {
       }
       console.log('✅ [whatsappService] Contexto de sessão configurado');
 
-      const { data: existingConfigs, error: fetchError } = await supabase
+      const existingConfigResult = await supabase
         .from('whatsapp_config')
         .select('id')
-        .eq('is_active', true)
-        .eq('organization_id', organizationId);
+        .eq('organization_id', organizationId)
+        .eq('environment_id', environmentId)
+        .maybeSingle();
 
-      if (fetchError) throw fetchError;
-
-      if (existingConfigs && existingConfigs.length > 0) {
-        const { error: updateError } = await supabase
-          .from('whatsapp_config')
-          .update({ is_active: false })
-          .in('id', existingConfigs.map(c => c.id));
-
-        if (updateError) throw updateError;
-      }
+      const existingId = existingConfigResult?.data?.id;
 
       console.log('💾 [whatsappService] Salvando configuração do WhatsApp...');
       console.log('💾 [whatsappService] Dados a salvar:', {
@@ -189,28 +190,54 @@ class WhatsAppService {
         environment_id: environmentId
       });
 
-      const { error: insertError } = await supabase
-        .from('whatsapp_config')
-        .insert({
-          access_token: config.access_token,
-          phone_number_id: config.phone_number_id,
-          business_account_id: config.business_account_id,
-          webhook_verify_token: config.webhook_verify_token,
-          is_active: true,
-          created_by: config.created_by,
-          organization_id: organizationId,
-          environment_id: environmentId,
-          updated_at: new Date().toISOString()
-        });
+      const savePayload: any = {
+        access_token: config.access_token,
+        phone_number_id: config.phone_number_id,
+        business_account_id: config.business_account_id,
+        webhook_verify_token: config.webhook_verify_token,
+        is_active: true,
+        organization_id: organizationId,
+        environment_id: environmentId,
+        updated_at: new Date().toISOString()
+      };
 
-      if (insertError) {
-        console.error('❌ [whatsappService] Erro ao inserir configuração');
-        console.error('❌ [whatsappService] Error code:', insertError.code);
-        console.error('❌ [whatsappService] Error message:', insertError.message);
-        console.error('❌ [whatsappService] Error details:', insertError.details);
-        console.error('❌ [whatsappService] Error hint:', insertError.hint);
-        console.error('❌ [whatsappService] Full error:', JSON.stringify(insertError, null, 2));
-        throw insertError;
+      if (!existingId) {
+        savePayload.created_by = config.created_by;
+      }
+
+      let saveError;
+      if (existingId) {
+        const { error } = await supabase
+          .from('whatsapp_config')
+          .update(savePayload)
+          .eq('id', existingId);
+        saveError = error;
+      } else {
+        const { error } = await supabase
+          .from('whatsapp_config')
+          .insert(savePayload);
+        
+        if (error && error.code === '23505') {
+          console.log('⚠️ [whatsappService] Conflito de chave única detectado. Realizando UPDATE fallback...');
+          const { error: updateError } = await supabase
+            .from('whatsapp_config')
+            .update(savePayload)
+            .eq('organization_id', organizationId)
+            .eq('environment_id', environmentId);
+          saveError = updateError;
+        } else {
+          saveError = error;
+        }
+      }
+
+      if (saveError) {
+        console.error('❌ [whatsappService] Erro ao salvar configuração');
+        console.error('❌ [whatsappService] Error code:', saveError.code);
+        console.error('❌ [whatsappService] Error message:', saveError.message);
+        console.error('❌ [whatsappService] Error details:', saveError.details);
+        console.error('❌ [whatsappService] Error hint:', saveError.hint);
+        console.error('❌ [whatsappService] Full error:', JSON.stringify(saveError, null, 2));
+        throw saveError;
       }
 
       console.log('✅ [whatsappService] Configuração salva com sucesso');

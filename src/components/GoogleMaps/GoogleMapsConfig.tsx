@@ -45,7 +45,6 @@ export const GoogleMapsConfig: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
     }
   };
 
@@ -65,7 +64,7 @@ export const GoogleMapsConfig: React.FC = () => {
 
     const result = await googleMapsService.saveConfig({
       ...config,
-      created_by: user?.supabaseUser?.id
+      created_by: (user?.supabaseUser?.id as unknown) as number
     });
 
     if (result.success) {
@@ -269,15 +268,35 @@ export const GoogleMapsConfig: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6">
-        <div className="flex items-start space-x-3">
-          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              {t('googleMaps.organizationIsolation.description')}
-            </p>
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-6">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
+                Como obter as credenciais do Google Maps:
+              </h3>
+              <ol className="text-sm text-green-800 dark:text-green-400 space-y-2 list-decimal list-inside">
+                <li>Acesse o <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Cloud Console</a></li>
+                <li>Crie ou selecione um Projeto</li>
+                <li>Vá em "APIs e Serviços" &gt; "Biblioteca" e habilite: <strong>Geocoding API</strong>, <strong>Maps JavaScript API</strong>, e <strong>Places API</strong></li>
+                <li>Vá em "APIs e Serviços" &gt; "Credenciais"</li>
+                <li>Clique em "Criar Credenciais" e escolha "Chave de API"</li>
+              </ol>
+              <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-300 dark:border-yellow-700">
+                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">Custos da Plataforma Google Maps:</p>
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
+                  O Google Maps Platform não é gratuito para uso em produção contínua. As requisições (como extração de coordenadas, cálculo de distâncias ou autocompletar de endereços)
+                  geram custo em dólar conforme a tabela oficial da Google.
+                </p>
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
+                  É <strong>obrigatório</strong> ter uma conta de faturamento (cartão de crédito) vinculada no Google Cloud, mesmo que o Google ofereça um crédito recorrente mensal de $200. Recomendamos configurar quotas/limites por API no Console para evitar gastos inesperados.
+                </p>
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
+                  {t('googleMaps.organizationIsolation.description')}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
         </div>
       </>
       )}

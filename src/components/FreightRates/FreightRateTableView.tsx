@@ -564,8 +564,8 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
 
       {showRestrictedItemsModal && (
         <RestrictedItemsModal
-          freightRateId={table.id.toString()}
-          freightRateName={table.nome}
+          freightRateTableId={table.id.toString()}
+          freightRateTableName={table.nome}
           onClose={() => setShowRestrictedItemsModal(false)}
         />
       )}

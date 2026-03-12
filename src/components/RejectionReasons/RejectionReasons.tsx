@@ -117,8 +117,7 @@ export const RejectionReasons: React.FC = () => {
     try {
       if (editingReason) {
         const updated = await rejectionReasonsService.update(editingReason.id, {
-          ...reasonData,
-          updated_by: 'current-user-id'
+          ...reasonData
         });
         if (updated) {
           setToast({ message: 'Motivo de rejeição atualizado com sucesso!', type: 'success' });
@@ -128,8 +127,7 @@ export const RejectionReasons: React.FC = () => {
         }
       } else {
         await rejectionReasonsService.create({
-          ...reasonData,
-          created_by: 'current-user-id'
+          ...reasonData
         });
         setToast({ message: 'Motivo de rejeição criado com sucesso!', type: 'success' });
       }
@@ -432,6 +430,7 @@ export const RejectionReasons: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este motivo de rejeição? Esta ação não pode ser desfeita."
           confirmText="Excluir"

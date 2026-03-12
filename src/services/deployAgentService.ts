@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { openaiService } from './openaiService';
+import { TenantContextHelper } from '../utils/tenantContext';
+import { carriersService } from './carriersService';
 
 export interface DeployProject {
   id: string;
@@ -15,6 +17,8 @@ export interface DeployProject {
   require_approval: boolean;
   created_at: string;
   updated_at: string;
+  organization_id?: string;
+  environment_id?: string;
 }
 
 interface DeployUpload {
@@ -34,6 +38,8 @@ interface DeployUpload {
   uploaded_at: string;
   processed_at?: string;
   created_at: string;
+  organization_id?: string;
+  environment_id?: string;
 }
 
 interface DeployInterpretation {
@@ -58,6 +64,8 @@ interface DeployInterpretation {
   }>;
   interpreted_at: string;
   created_at: string;
+  organization_id?: string;
+  environment_id?: string;
 }
 
 interface DeployValidation {
@@ -75,6 +83,8 @@ interface DeployValidation {
   resolution_action?: string;
   resolved_at?: string;
   created_at: string;
+  organization_id?: string;
+  environment_id?: string;
 }
 
 interface DeploySuggestion {
@@ -93,6 +103,8 @@ interface DeploySuggestion {
   approved_at?: string;
   implemented_at?: string;
   created_at: string;
+  organization_id?: string;
+  environment_id?: string;
 }
 
 export const deployAgentService = {
@@ -106,6 +118,10 @@ export const deployAgentService = {
     user_id?: string;
   }): Promise<DeployProject> {
     try {
+      const context = await TenantContextHelper.getCurrentContext();
+      const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+      const envId = context?.environmentId || localStorage.getItem('tms-selected-env-id');
+
       // Se user_id foi fornecido, usar ele. Caso contrário, tentar pegar do Supabase Auth
       let userId = data.user_id;
 
@@ -114,7 +130,6 @@ export const deployAgentService = {
 
         if (authError || !user) {
           // Para demonstração, usar um user_id padrão se não houver sessão
-          console.warn('No auth session found, using demo user_id');
           userId = '00000000-0000-0000-0000-000000000000';
         } else {
           userId = user.id;
@@ -128,13 +143,14 @@ export const deployAgentService = {
           project_name: data.project_name,
           client_name: data.client_name,
           auto_execute: data.auto_execute || false,
-          require_approval: data.require_approval !== false
+          require_approval: data.require_approval !== false,
+          organization_id: orgId || null,
+          environment_id: envId || null
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Database error:', error);
         throw new Error('Erro ao criar projeto: ' + error.message);
       }
 
@@ -144,23 +160,27 @@ export const deployAgentService = {
 
       return project;
     } catch (error) {
-      console.error('Create project error:', error);
       throw error;
     }
   },
 
   async getProjects(): Promise<DeployProject[]> {
-    const { data, error } = await supabase
-      .from('deploy_projects')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const context = await TenantContextHelper.getCurrentContext();
+    const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+
+    let query = (supabase as any).from('deploy_projects').select('*');
+    if (orgId) {
+      query = query.eq('organization_id', orgId);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
   },
 
   async getProject(id: string): Promise<DeployProject> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('deploy_projects')
       .select('*')
       .eq('id', id)
@@ -171,7 +191,7 @@ export const deployAgentService = {
   },
 
   async updateProject(id: string, updates: Partial<DeployProject>): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('deploy_projects')
       .update({
         ...updates,
@@ -183,13 +203,12 @@ export const deployAgentService = {
   },
 
   async deleteProject(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('deploy_projects')
       .delete()
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting project:', error);
       throw new Error('Erro ao excluir projeto: ' + error.message);
     }
   },
@@ -204,9 +223,19 @@ export const deployAgentService = {
     file_content: string;
     data_category: string;
   }): Promise<DeployUpload> {
-    const { data: upload, error } = await supabase
+    const context = await TenantContextHelper.getCurrentContext();
+    const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+    const envId = context?.environmentId || localStorage.getItem('tms-selected-env-id');
+
+    const payload = {
+        ...data,
+        organization_id: orgId || null,
+        environment_id: envId || null
+    };
+
+    const { data: upload, error } = await (supabase as any)
       .from('deploy_uploads')
-      .insert(data)
+      .insert(payload)
       .select()
       .single();
 
@@ -215,7 +244,7 @@ export const deployAgentService = {
   },
 
   async getProjectUploads(projectId: string): Promise<DeployUpload[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('deploy_uploads')
       .select('*')
       .eq('project_id', projectId)
@@ -231,7 +260,7 @@ export const deployAgentService = {
     const prompt = this.buildInterpretationPrompt(fileContent, category);
 
     try {
-      const { data: upload } = await supabase
+      const { data: upload } = await (supabase as any)
         .from('deploy_uploads')
         .select('project_id')
         .eq('id', uploadId)
@@ -245,26 +274,21 @@ export const deployAgentService = {
 
       try {
         // Try to use OpenAI if configured
-        const response = await openaiService.chat([
-          {
-            role: 'system',
-            content: 'You are an expert data analyst specializing in logistics and TMS systems. Analyze data files and provide structured interpretations. Return ONLY valid JSON.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]);
-
-        interpretation = JSON.parse(response);
+        const result = await openaiService.generateChatCompletion(prompt);
+        if (!result.success || !result.response) {
+            throw new Error(result.error || 'Falha na IA');
+        }
+        interpretation = JSON.parse(result.response);
       } catch (aiError: any) {
-        console.warn('OpenAI not available or error:', aiError?.message);
-
         // Generate mock interpretation for development
         interpretation = this.generateMockInterpretation(fileContent, category);
       }
 
-      const { data: result, error } = await supabase
+      const context = await TenantContextHelper.getCurrentContext();
+      const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+      const envId = context?.environmentId || localStorage.getItem('tms-selected-env-id');
+
+      const { data: result, error } = await (supabase as any)
         .from('deploy_interpretations')
         .insert({
           upload_id: uploadId,
@@ -276,19 +300,19 @@ export const deployAgentService = {
           data_quality_score: interpretation.quality_score || 75,
           confidence_level: interpretation.confidence || 'medium',
           issues_found: interpretation.issues || [],
-          recommendations: interpretation.recommendations || []
+          recommendations: interpretation.recommendations || [],
+          organization_id: orgId || null,
+          environment_id: envId || null
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Database error:', error);
         throw new Error('Erro ao salvar interpretação: ' + error.message);
       }
 
       return result;
     } catch (error: any) {
-      console.error('Error interpreting file:', error);
       throw new Error('Erro ao interpretar arquivo: ' + (error?.message || 'Erro desconhecido'));
     }
   },
@@ -398,15 +422,25 @@ ${content.substring(0, 1000)}`
     row_number?: number;
     details?: any;
   }): Promise<void> {
-    const { error } = await supabase
+    const context = await TenantContextHelper.getCurrentContext();
+    const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+    const envId = context?.environmentId || localStorage.getItem('tms-selected-env-id');
+
+    const payload = {
+      ...data,
+      organization_id: orgId || null,
+      environment_id: envId || null
+    };
+
+    const { error } = await (supabase as any)
       .from('deploy_validations')
-      .insert(data);
+      .insert(payload);
 
     if (error) throw error;
   },
 
   async getProjectValidations(projectId: string): Promise<DeployValidation[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('deploy_validations')
       .select('*')
       .eq('project_id', projectId)
@@ -428,15 +462,25 @@ ${content.substring(0, 1000)}`
     estimated_effort?: string;
     expected_benefit?: string;
   }): Promise<void> {
-    const { error } = await supabase
+    const context = await TenantContextHelper.getCurrentContext();
+    const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+    const envId = context?.environmentId || localStorage.getItem('tms-selected-env-id');
+
+    const payload = {
+      ...data,
+      organization_id: orgId || null,
+      environment_id: envId || null
+    };
+
+    const { error } = await (supabase as any)
       .from('deploy_suggestions')
-      .insert(data);
+      .insert(payload);
 
     if (error) throw error;
   },
 
   async getProjectSuggestions(projectId: string): Promise<DeploySuggestion[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('deploy_suggestions')
       .select('*')
       .eq('project_id', projectId)
@@ -449,7 +493,7 @@ ${content.substring(0, 1000)}`
   async approveSuggestion(id: string): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('deploy_suggestions')
       .update({
         status: 'approved',
@@ -496,12 +540,12 @@ ${content.substring(0, 1000)}`
   // ==================== FILE PROCESSING ====================
 
   async processFile(uploadId: string): Promise<void> {
-    await supabase
+    await (supabase as any)
       .from('deploy_uploads')
       .update({ status: 'processing' })
       .eq('id', uploadId);
 
-    const { data: upload } = await supabase
+    const { data: upload } = await (supabase as any)
       .from('deploy_uploads')
       .select('*')
       .eq('id', uploadId)
@@ -513,7 +557,7 @@ ${content.substring(0, 1000)}`
       // Step 1: Interpret file
       const interpretation = await this.interpretFile(uploadId, upload.file_content, upload.data_category);
 
-      await supabase
+      await (supabase as any)
         .from('deploy_uploads')
         .update({ status: 'interpreted' })
         .eq('id', uploadId);
@@ -530,13 +574,13 @@ ${content.substring(0, 1000)}`
       await this.createSuggestionsFromInterpretation(upload.project_id, interpretation);
 
       // Step 4: Mark as ready for execution
-      await supabase
+      await (supabase as any)
         .from('deploy_uploads')
         .update({ status: 'validated' })
         .eq('id', uploadId);
 
       // Step 5: Execute if auto_execute is enabled
-      const { data: project } = await supabase
+      const { data: project } = await (supabase as any)
         .from('deploy_projects')
         .select('auto_execute')
         .eq('id', upload.project_id)
@@ -552,7 +596,7 @@ ${content.substring(0, 1000)}`
       }
 
     } catch (error) {
-      await supabase
+      await (supabase as any)
         .from('deploy_uploads')
         .update({ status: 'failed' })
         .eq('id', uploadId);
@@ -633,7 +677,7 @@ ${content.substring(0, 1000)}`
   },
 
   async executeConfiguration(uploadId: string): Promise<void> {
-    const { data: upload } = await supabase
+    const { data: upload } = await (supabase as any)
       .from('deploy_uploads')
       .select('*, deploy_interpretations(*)')
       .eq('id', uploadId)
@@ -648,14 +692,23 @@ ${content.substring(0, 1000)}`
       } as Partial<DeployProject>);
 
       // Here you would call the actual configuration services
-      // For now, we'll just mark as executed
-      await supabase
+      switch (upload.data_category) {
+        case 'carriers':
+          await this.autoConfigureCarriers(upload);
+          break;
+        case 'freight_tables':
+          await this.autoConfigureFreightTables(upload);
+          break;
+        // Adicionar outros auto-configuters conforme existam
+      }
+
+      await (supabase as any)
         .from('deploy_uploads')
         .update({ status: 'executed' })
         .eq('id', uploadId);
 
       // Check if all uploads are executed to mark project as completed
-      const { data: allUploads } = await supabase
+      const { data: allUploads } = await (supabase as any)
         .from('deploy_uploads')
         .select('status')
         .eq('project_id', upload.project_id);
@@ -681,7 +734,7 @@ ${content.substring(0, 1000)}`
       }
 
     } catch (error) {
-      await supabase
+      await (supabase as any)
         .from('deploy_uploads')
         .update({ status: 'failed' })
         .eq('id', uploadId);
@@ -692,12 +745,62 @@ ${content.substring(0, 1000)}`
 
   // ==================== AUTO-CONFIGURATION ====================
 
-  async autoConfigureCarriers(interpretation: DeployInterpretation): Promise<void> {
-    // Logic to automatically create carriers based on interpretation
-    // This would integrate with carriersService
+  async autoConfigureCarriers(upload: any): Promise<void> {
+    if (!upload.file_content) return;
+    
+    let rows: any[] = [];
+    try {
+      rows = JSON.parse(upload.file_content);
+    } catch (e) {
+      throw new Error('Formato de arquivo inválido para execução');
+    }
+
+    if (!Array.isArray(rows) || rows.length < 2) return;
+
+    const headers = rows[0].map((h: string) => String(h).toLowerCase().trim());
+    const dataRows = rows.slice(1);
+
+    for (const row of dataRows) {
+      // Cria um objeto genérico key-value da linha usando os headers
+      const rowData: any = {};
+      headers.forEach((header, index) => {
+        rowData[header] = row[index];
+      });
+
+      // Mapeamento dinâmico (Fallback para os campos mais comuns)
+      const carrierPayload: any = {
+        codigo: rowData['codigo'] || '',
+        razao_social: rowData['razao_social'] || rowData['empresa'] || rowData['nome'] || '',
+        fantasia: rowData['fantasia'] || rowData['nome_fantasia'] || '',
+        cnpj: rowData['cnpj'] || rowData['documento'] || '',
+        inscricao_estadual: rowData['inscricao_estadual'] || rowData['ie'] || '',
+        logradouro: rowData['logradouro'] || rowData['endereco'] || rowData['rua'] || '',
+        numero: rowData['numero'] && rowData['numero'] !== 'S/N' ? rowData['numero'] : null,
+        complemento: rowData['complemento'] || '',
+        bairro: rowData['bairro'] || '',
+        cep: rowData['cep'] || '',
+        email: rowData['email'] || '',
+        phone: rowData['telefone'] || rowData['celular'] || rowData['contato'] || '',
+        status: String(rowData['status'] || 'ativo').toLowerCase() === 'inativo' ? 'inativo' : 'ativo',
+        modal_rodoviario: String(rowData['modal_rodoviario'] || rowData['rodoviario'] || 'não').toLowerCase() === 'sim',
+        modal_aereo: String(rowData['modal_aereo'] || rowData['aereo'] || 'não').toLowerCase() === 'sim',
+        modal_aquaviario: String(rowData['modal_aquaviario'] || rowData['aquaviario'] || 'não').toLowerCase() === 'sim',
+        modal_ferroviario: String(rowData['modal_ferroviario'] || rowData['ferroviario'] || 'não').toLowerCase() === 'sim',
+        tolerancia_valor_cte: Number(rowData['tolerancia_valor_cte']) || 0,
+        tolerancia_percentual_cte: Number(rowData['tolerancia_percentual_cte']) || 0,
+        tolerancia_valor_fatura: Number(rowData['tolerancia_valor_fatura']) || 0,
+        tolerancia_percentual_fatura: Number(rowData['tolerancia_percentual_fatura']) || 0,
+      };
+
+      try {
+        await carriersService.create(carrierPayload);
+      } catch (err: any) {
+         throw new Error(`Falha ao integrar Transportadora ${carrierPayload.codigo}: ${err?.message}`);
+      }
+    }
   },
 
-  async autoConfigureFreightTables(interpretation: DeployInterpretation): Promise<void> {
+  async autoConfigureFreightTables(_upload: any): Promise<void> {
     // Logic to automatically create freight tables
     // This would integrate with freightRatesService
   }

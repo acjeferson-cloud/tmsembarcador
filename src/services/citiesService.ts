@@ -27,12 +27,6 @@ const formatZipCode = (zip: string): string => {
 const dbRecordToCity = (record: CityDBRecord, stateName?: string, stateAbbr?: string, region?: string): BrazilianCity => {
   // GARANTIR que TODOS os campos obrigatórios estejam preenchidos
   if (!stateName || !stateAbbr || !region) {
-    console.warn('⚠️ [CITY CONVERT] Missing required fields:', {
-      cityName: record.nome,
-      stateName,
-      stateAbbr,
-      region
-    });
   }
 
   return {
@@ -63,7 +57,6 @@ const cityToDbRecord = async (city: BrazilianCity, stateId?: string) => {
 
     if (stateData) {
       finalStateId = stateData.id;
-      console.log('🔍 [cityToDbRecord] Found state_id by abbreviation:', city.stateAbbreviation, '→', finalStateId);
     }
   }
 
@@ -77,7 +70,6 @@ const cityToDbRecord = async (city: BrazilianCity, stateId?: string) => {
 
 export const citiesService = {
   async getAll() {
-    console.log('🏙️ [CITIES] Starting query...');
     try {
       const { data, error } = await supabase
         .from('cities')
@@ -86,14 +78,10 @@ export const citiesService = {
         .limit(100);
 
       if (error) {
-        console.error('❌ [CITIES] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [CITIES] Found: ${data?.length || 0}`);
       return data || [];
     } catch (error) {
-      console.error('❌ [CITIES] Exception:', error);
       return [];
     }
   }
@@ -145,15 +133,12 @@ export const fetchCities = async (
       totalCount: count || 0
     };
   } catch (error) {
-    console.error('Error fetching cities:', error);
     return { cities: [], totalCount: 0 };
   }
 };
 
 export const fetchCityById = async (id: string | number) => {
   try {
-    console.log('🏙️ [CITY FETCH] Fetching by ID:', id);
-
     // ✅ CORRIGIDO: Adicionar JOIN com states para ter dados completos
     const { data, error } = await supabase
       .from('cities')
@@ -170,17 +155,12 @@ export const fetchCityById = async (id: string | number) => {
       .maybeSingle();
 
     if (error) {
-      console.error('❌ [CITY FETCH] Error:', error);
       throw error;
     }
 
     if (!data) {
-      console.log('⚠️ [CITY FETCH] City not found');
       return null;
     }
-
-    console.log('✅ [CITY FETCH] City found with state:', data);
-
     // Buscar as faixas de CEP da tabela zip_code_ranges
     const { data: zipRanges, error: zipError } = await supabase
       .from('zip_code_ranges')
@@ -188,7 +168,7 @@ export const fetchCityById = async (id: string | number) => {
       .eq('city_id', id)
       .order('start_zip', { ascending: true });
 
-    if (zipError) console.error('Error fetching zip ranges:', zipError);
+    if (zipError) void 0;
 
     // Converter as faixas para o formato esperado pelo frontend
     const formattedZipRanges = (zipRanges || []).map(range => ({
@@ -217,17 +197,10 @@ export const fetchCityById = async (id: string | number) => {
 
       city.zipCodeStart = formatZipCode(minZip.toString().padStart(8, '0'));
       city.zipCodeEnd = formatZipCode(maxZip.toString().padStart(8, '0'));
-
-      console.log('📮 [CITY FETCH] Calculated general range:', {
-        zipCodeStart: city.zipCodeStart,
-        zipCodeEnd: city.zipCodeEnd,
-        basedOn: formattedZipRanges.length + ' ranges'
-      });
     }
 
     return city;
   } catch (error) {
-    console.error('Error fetching city by ID:', error);
     return null;
   }
 };
@@ -243,7 +216,6 @@ export const fetchCityByIbgeCode = async (ibgeCode: string) => {
     if (error) throw error;
     return data ? dbRecordToCity(data) : null;
   } catch (error) {
-    console.error('Error fetching city by IBGE code:', error);
     return null;
   }
 };
@@ -251,9 +223,6 @@ export const fetchCityByIbgeCode = async (ibgeCode: string) => {
 export const fetchCityByZipCode = async (zipCode: string) => {
   try {
     const cleanZip = zipCode.replace(/\D/g, '');
-
-    console.log('📮 [ZIP SEARCH] Looking for ZIP:', cleanZip);
-
     // Buscar na tabela zip_code_ranges
     const { data: zipRangeData, error: zipError } = await supabase
       .from('zip_code_ranges')
@@ -273,17 +242,12 @@ export const fetchCityByZipCode = async (zipCode: string) => {
       .limit(1);
 
     if (zipError) {
-      console.error('❌ [ZIP SEARCH] Error:', zipError);
       throw zipError;
     }
 
     if (!zipRangeData || zipRangeData.length === 0) {
-      console.log('❌ [ZIP SEARCH] ZIP not found in ranges');
       return null;
     }
-
-    console.log('✅ [ZIP SEARCH] Found:', zipRangeData[0]);
-
     const cityData = (zipRangeData[0] as any).cities;
     const city = dbRecordToCity(
       cityData,
@@ -299,15 +263,12 @@ export const fetchCityByZipCode = async (zipCode: string) => {
 
     return city;
   } catch (error) {
-    console.error('❌ [ZIP SEARCH] Exception:', error);
     return null;
   }
 };
 
 export const createCity = async (city: Omit<BrazilianCity, 'id'>) => {
   try {
-    console.log('🏙️ [CITY CREATE] Starting...', city);
-
     const cityRecord = await cityToDbRecord(city as BrazilianCity);
     const { data, error } = await supabase
       .from('cities')
@@ -316,19 +277,10 @@ export const createCity = async (city: Omit<BrazilianCity, 'id'>) => {
       .single();
 
     if (error) {
-      console.error('❌ [CITY CREATE] Error:', error);
       throw error;
     }
-
-    console.log('✅ [CITY CREATE] City created:', data);
-
     // Se houver zipCodeRanges, salvar na tabela zip_code_ranges
     if (city.zipCodeRanges && Array.isArray(city.zipCodeRanges)) {
-      console.log('📦 [CITY CREATE] Processing zip ranges:', {
-        cityId: data.id,
-        rangesCount: city.zipCodeRanges.length
-      });
-
       const zipRangesToInsert = city.zipCodeRanges
         .filter(range => range.start && range.end)
         .map(range => ({
@@ -340,32 +292,24 @@ export const createCity = async (city: Omit<BrazilianCity, 'id'>) => {
         }));
 
       if (zipRangesToInsert.length > 0) {
-        console.log('💾 [CITY CREATE] Saving zip ranges:', zipRangesToInsert);
-
         const { error: zipError } = await supabase
           .from('zip_code_ranges')
           .insert(zipRangesToInsert);
 
         if (zipError) {
-          console.error('❌ [CITY CREATE] Error saving zip ranges:', zipError);
         } else {
-          console.log('✅ [CITY CREATE] Zip ranges saved');
         }
       }
     }
 
     return dbRecordToCity(data);
   } catch (error) {
-    console.error('❌ [CITY CREATE] Exception:', error);
     throw error;
   }
 };
 
 export const updateCity = async (id: string | number, updates: Partial<BrazilianCity>) => {
   try {
-    console.log('🔄 [CITY UPDATE] ID:', id);
-    console.log('🔄 [CITY UPDATE] Updates:', updates);
-
     const dbUpdates: any = {};
 
     if (updates.name !== undefined) dbUpdates.nome = updates.name;
@@ -374,7 +318,6 @@ export const updateCity = async (id: string | number, updates: Partial<Brazilian
     // ✅ CORRIGIDO: Aceitar stateId diretamente OU buscar por stateAbbreviation
     if (updates.stateId) {
       dbUpdates.state_id = updates.stateId;
-      console.log('🔄 [CITY UPDATE] Using stateId:', updates.stateId);
     } else if (updates.stateAbbreviation) {
       const { data: stateData } = await supabase
         .from('states')
@@ -384,12 +327,8 @@ export const updateCity = async (id: string | number, updates: Partial<Brazilian
 
       if (stateData) {
         dbUpdates.state_id = stateData.id;
-        console.log('🔄 [CITY UPDATE] Found state_id by abbr:', stateData.id);
       }
     }
-
-    console.log('🔄 [CITY UPDATE] DB Updates:', dbUpdates);
-
     // ✅ CORRIGIDO: Fazer JOIN com states para retornar dados completos
     const { data, error } = await supabase
       .from('cities')
@@ -407,29 +346,19 @@ export const updateCity = async (id: string | number, updates: Partial<Brazilian
       .single();
 
     if (error) {
-      console.error('❌ [CITY UPDATE] Error:', error);
       throw error;
     }
 
     if (!data) {
-      console.error('❌ [CITY UPDATE] No data returned');
       throw new Error('Cidade não encontrada ou você não tem permissão para editá-la');
     }
-
-    console.log('✅ [CITY UPDATE] Success with state:', data);
-
     // Se houver zipCodeRanges, atualizar a tabela zip_code_ranges
     if (updates.zipCodeRanges && Array.isArray(updates.zipCodeRanges)) {
-      console.log('📦 [CITY UPDATE] Processing zip ranges...');
-
       // Primeiro, deletar as faixas antigas
       await supabase
         .from('zip_code_ranges')
         .delete()
         .eq('city_id', id);
-
-      console.log('🗑️ [CITY UPDATE] Old zip ranges deleted');
-
       // Inserir as novas faixas
       const zipRangesToInsert = updates.zipCodeRanges
         .filter(range => range.start && range.end)
@@ -442,16 +371,12 @@ export const updateCity = async (id: string | number, updates: Partial<Brazilian
         }));
 
       if (zipRangesToInsert.length > 0) {
-        console.log('💾 [CITY UPDATE] Saving new zip ranges:', zipRangesToInsert);
-
         const { error: zipError } = await supabase
           .from('zip_code_ranges')
           .insert(zipRangesToInsert);
 
         if (zipError) {
-          console.error('❌ [CITY UPDATE] Error saving zip ranges:', zipError);
         } else {
-          console.log('✅ [CITY UPDATE] Zip ranges saved');
         }
       }
     }
@@ -464,7 +389,6 @@ export const updateCity = async (id: string | number, updates: Partial<Brazilian
       data.states?.regiao || ''
     );
   } catch (error) {
-    console.error('Error updating city:', error);
     throw error;
   }
 };
@@ -479,7 +403,6 @@ export const deleteCity = async (id: string | number) => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error deleting city:', error);
     return false;
   }
 };
@@ -496,7 +419,6 @@ const importCities = async (cities: BrazilianCity[]) => {
     if (error) throw error;
     return (data || []).map(dbRecordToCity);
   } catch (error) {
-    console.error('Error importing cities:', error);
     throw error;
   }
 };
@@ -544,7 +466,6 @@ export const getCitiesStats = async () => {
 
     return stats;
   } catch (error) {
-    console.error('Error fetching stats:', error);
     return { total: 0, byType: {}, byRegion: {}, byState: {} };
   }
 };
@@ -612,7 +533,6 @@ export const getCitiesByState = async (stateAbbreviation: string) => {
       zipCodeRanges: null
     }));
   } catch (error) {
-    console.error('Error fetching cities by state:', error);
     return [];
   }
 };
@@ -665,7 +585,6 @@ export const getAllCities = async () => {
       )
     );
   } catch (error) {
-    console.error('Error fetching all cities:', error);
     return [];
   }
 };
@@ -683,9 +602,6 @@ export const findCityByCEPFromDatabase = async (zipCode: string) => {
     if (cleanZip.length !== 8) {
       return null;
     }
-
-    console.log('🔍 [CEP SEARCH] Buscando cidade para CEP:', cleanZip);
-
     // Busca diretamente nas faixas detalhadas de CEP
     const { data: detailedRange, error: detailError } = await supabase
       .from('zip_code_ranges')
@@ -706,13 +622,10 @@ export const findCityByCEPFromDatabase = async (zipCode: string) => {
       .maybeSingle();
 
     if (detailError) {
-      console.error('❌ [CEP SEARCH] Erro na busca detalhada:', detailError);
       return null;
     }
 
     if (detailedRange && detailedRange.cities) {
-      console.log('✅ [CEP SEARCH] Cidade encontrada na faixa detalhada:', detailedRange.cities.nome);
-
       const city = dbRecordToCity(
         detailedRange.cities,
         detailedRange.cities.states?.nome || '',
@@ -725,11 +638,8 @@ export const findCityByCEPFromDatabase = async (zipCode: string) => {
 
       return city;
     }
-
-    console.log('⚠️ [CEP SEARCH] CEP não encontrado no banco de dados');
     return null;
   } catch (error) {
-    console.error('❌ [CEP SEARCH] Erro ao buscar CEP:', error);
     return null;
   }
 };
@@ -744,13 +654,10 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
     // Primeiro tenta buscar no banco de dados
     const cityFromDB = await findCityByCEPFromDatabase(zipCode);
     if (cityFromDB) {
-      console.log('✅ [findOrCreateCityByCEP] Cidade encontrada no banco:', cityFromDB.name);
       return cityFromDB;
     }
 
     // Se não encontrou, busca no ViaCEP como fallback
-    console.log('⚠️ [findOrCreateCityByCEP] CEP não encontrado no banco, buscando no ViaCEP...');
-
     const response = await fetch(`https://viacep.com.br/ws/${cleanZip}/json/`);
     if (!response.ok) {
       throw new Error('Erro ao consultar ViaCEP');
@@ -770,16 +677,12 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
       .maybeSingle();
 
     if (stateError) {
-      console.error('❌ [findOrCreateCityByCEP] Erro ao buscar estado:', stateError);
       throw new Error(`Erro ao buscar estado ${cepData.uf}`);
     }
 
     if (!stateData) {
       throw new Error(`Estado ${cepData.uf} não encontrado no sistema`);
     }
-
-    console.log('✅ [findOrCreateCityByCEP] Estado encontrado:', stateData.nome, '(', stateData.sigla, ')');
-
     // Verificar se a cidade já existe (pelo IBGE ou nome + estado)
     const { data: existingCity } = await supabase
       .from('cities')
@@ -796,8 +699,6 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
       .maybeSingle();
 
     if (existingCity) {
-      console.log('✅ [findOrCreateCityByCEP] Cidade já existe no banco:', existingCity.nome);
-
       // Adicionar a faixa de CEP se não existir
       const { data: existingRange } = await supabase
         .from('zip_code_ranges')
@@ -808,7 +709,6 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
         .maybeSingle();
 
       if (!existingRange) {
-        console.log('📦 [findOrCreateCityByCEP] Adicionando faixa de CEP para cidade existente');
         await supabase
           .from('zip_code_ranges')
           .insert([{
@@ -846,9 +746,6 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
         neighborhood: cepData.bairro || ''
       }]
     };
-
-    console.log('🆕 [findOrCreateCityByCEP] Criando nova cidade:', cityData);
-
     const newCity = await createCity(cityData);
 
     try {
@@ -861,12 +758,10 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
         entityType: 'city'
       });
     } catch (logError) {
-      console.error('Erro ao registrar log:', logError);
     }
 
     return newCity;
   } catch (error) {
-    console.error('❌ [findOrCreateCityByCEP] Erro:', error);
     throw error;
   }
 };

@@ -9,7 +9,8 @@ interface LogoUploadResult {
 export const logoStorageService = {
   async uploadLogoFromBase64(
     estabelecimentoId: string,
-    base64Data: string
+    base64Data: string,
+    logoType: 'light' | 'dark' | 'nps' = 'light'
   ): Promise<LogoUploadResult> {
     try {
       if (!base64Data || !base64Data.startsWith('data:image/')) {
@@ -38,13 +39,13 @@ export const logoStorageService = {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: `image/${imageType}` });
 
-      const fileName = `${estabelecimentoId}.${imageType}`;
+      const fileName = `${estabelecimentoId}_${logoType}.${imageType}`;
       const filePath = `establishments/${fileName}`;
 
       const { data: existingFiles } = await supabase.storage
         .from('logos')
         .list('establishments', {
-          search: `${estabelecimentoId}.`,
+          search: `${estabelecimentoId}_${logoType}.`,
         });
 
       if (existingFiles && existingFiles.length > 0) {
@@ -99,7 +100,7 @@ export const logoStorageService = {
       const { data: files } = await supabase.storage
         .from('logos')
         .list('establishments', {
-          search: `${estabelecimentoId}.`,
+          search: `${estabelecimentoId}_`,
         });
 
       if (!files || files.length === 0) {

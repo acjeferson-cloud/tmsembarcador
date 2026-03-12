@@ -50,7 +50,6 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
         if (error) throw error;
         setStates(data || []);
       } catch (error) {
-        console.error('Erro ao carregar estados:', error);
       }
     };
 
@@ -61,11 +60,9 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
   useEffect(() => {
     const loadCityData = async () => {
       if (city?.id) {
-        console.log('🏙️ [CITY FORM] Loading city data for ID:', city.id);
         const fullCity = await fetchCityByIdFromService(city.id);
 
         if (fullCity) {
-          console.log('✅ [CITY FORM] City loaded:', fullCity);
           setFormData({
             name: fullCity.name,
             ibgeCode: fullCity.ibgeCode,
@@ -107,7 +104,6 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
     const selectedState = states.find(s => s.id === stateId);
 
     if (selectedState) {
-      console.log('📍 [CITY FORM] State selected:', selectedState);
       setFormData(prev => ({
         ...prev,
         stateId: selectedState.id,
@@ -234,22 +230,16 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
         region: formData.region,
         zipCodeRanges: validRanges
       };
-
-      console.log('💾 [CITY FORM] Saving city:', cityData);
-
       if (city?.id) {
         // Update existing city
         const updated = await updateCity(city.id, cityData);
-        console.log('✅ [CITY FORM] City updated:', updated);
       } else {
         // Create new city
         const created = await createCity(cityData as any);
-        console.log('✅ [CITY FORM] City created:', created);
       }
 
       onSave();
     } catch (error) {
-      console.error('Error saving city:', error);
       alert('Erro ao salvar cidade. Tente novamente.');
     } finally {
       setIsSubmitting(false);

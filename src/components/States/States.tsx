@@ -50,7 +50,6 @@ export const States: React.FC = () => {
       const data = await statesService.getAll();
       setStatesList(data);
     } catch (error) {
-      console.error('Erro ao carregar estados:', error);
       setToast({ message: 'Erro ao carregar estados.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -60,8 +59,8 @@ export const States: React.FC = () => {
   const filteredStates = statesList.filter(state => {
     const matchesSearch = state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          state.abbreviation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         state.capital.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         state.ibge_code.includes(searchTerm);
+                         state.capital?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         state.ibge_code?.includes(searchTerm);
     const matchesRegion = regionFilter === 'Todos' || state.region === regionFilter;
     return matchesSearch && matchesRegion;
   });
@@ -85,13 +84,13 @@ export const States: React.FC = () => {
     setShowView(true);
   };
 
-  const handleDeleteState = (stateId: string) => {
-    setConfirmDialog({ isOpen: true, stateId });
+  const handleDeleteState = (stateId: string | number) => {
+    setConfirmDialog({ isOpen: true, stateId: String(stateId) });
   };
 
   const confirmDelete = async () => {
     if (confirmDialog.stateId) {
-      const state = states.find(s => s.id === confirmDialog.stateId);
+      const state = statesList.find(s => String(s.id) === String(confirmDialog.stateId));
       const success = await statesService.delete(confirmDialog.stateId);
       if (success) {
         if (state) {
@@ -100,7 +99,7 @@ export const States: React.FC = () => {
         setToast({ message: 'Estado excluído com sucesso!', type: 'success' });
         await loadStates();
       } else {
-        setToast({ message: 'Erro ao excluir estado.', type: 'error' });
+        setToast({ message: 'Erro ao excluir estado (Verifique chaves estrangeiras).', type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -111,9 +110,10 @@ export const States: React.FC = () => {
       const normalizedData = {
         name: stateData.name,
         abbreviation: stateData.abbreviation,
-        ibge_code: stateData.ibgeCode || stateData.ibge_code,
+        ibge_code: stateData.ibge_code,
         capital: stateData.capital,
         region: stateData.region,
+        bandeira_url: stateData.bandeira_url
       };
 
       if (editingState) {
@@ -143,7 +143,6 @@ export const States: React.FC = () => {
       setEditingState(null);
       await loadStates();
     } catch (error) {
-      console.error('Error saving state:', error);
       setToast({ message: 'Erro ao salvar estado. Tente novamente.', type: 'error' });
     }
   };
@@ -392,6 +391,7 @@ export const States: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este estado? Esta ação não pode ser desfeita."
           confirmText="Excluir"

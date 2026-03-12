@@ -44,13 +44,11 @@ export const Users: React.FC = () => {
 
   const loadUsers = async () => {
     try {
-      console.log('[Users] Iniciando loadUsers...');
       setIsLoading(true);
 
       // Validate context before loading
       const context = await usersService.getCurrentContext();
       if (!context.orgId || !context.envId) {
-        console.error('[Users] Contexto não disponível após tentativa de recuperação');
         setToast({
           message: 'Erro: Contexto de sessão não encontrado. Faça logout e login novamente.',
           type: 'error'
@@ -60,17 +58,13 @@ export const Users: React.FC = () => {
       }
 
       const data = await usersService.getAll();
-      console.log('[Users] Usuários carregados:', data.length, data);
       setUsersList(data);
       const statsData = await usersService.getStats();
-      console.log('[Users] Stats carregadas:', statsData);
       setStats(statsData);
     } catch (error) {
-      console.error('[Users] Erro ao carregar usuários:', error);
       setToast({ message: 'Erro ao carregar usuários.', type: 'error' });
     } finally {
       setIsLoading(false);
-      console.log('[Users] loadUsers finalizado');
     }
   };
 
@@ -79,12 +73,12 @@ export const Users: React.FC = () => {
   };
 
   const filteredUsers = usersList.filter(user => {
-    const matchesSearch = user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.cpf.includes(searchTerm) ||
-                         user.codigo.includes(searchTerm) ||
-                         user.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.departamento.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (user.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.cpf || '').includes(searchTerm) ||
+                         (user.codigo || '').includes(searchTerm) ||
+                         (user.cargo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.departamento || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'Todos' || user.status === statusFilter;
     const matchesPerfil = perfilFilter === 'Todos' || user.perfil === perfilFilter;
     const matchesEstablishment = establishmentFilter === 'Todos' || user.estabelecimento_nome?.includes(establishmentFilter);
@@ -149,30 +143,23 @@ export const Users: React.FC = () => {
   };
 
   const handleSaveUser = async (userData: any) => {
-    console.log('🔄 handleSaveUser chamado com dados:', userData);
     try {
       // Extract profile photo if present
       const profilePhoto = userData._profilePhoto;
       const { _profilePhoto, ...userDataWithoutPhoto } = userData;
 
       if (editingUser) {
-        console.log('✏️ Atualizando usuário:', editingUser.id);
-
         // Check if user is editing their own profile
         const currentUserFromStorage = JSON.parse(localStorage.getItem('tms-user') || '{}');
         const isEditingSelf = currentUserFromStorage.email === editingUser.email;
         const languageChanged = isEditingSelf && userData.preferred_language && userData.preferred_language !== editingUser.preferred_language;
 
         const updated = await usersService.update(editingUser.id, userDataWithoutPhoto);
-        console.log('✅ Usuário atualizado:', updated);
-
         if (updated) {
           // Upload profile photo if provided
           if (profilePhoto && profilePhoto instanceof File) {
-            console.log('📸 Fazendo upload da foto de perfil...');
             const photoUrl = await usersService.uploadProfilePhoto(editingUser.id, profilePhoto);
             if (photoUrl) {
-              console.log('✅ Foto de perfil enviada:', photoUrl);
               updated.foto_perfil_url = photoUrl;
             }
           }
@@ -188,9 +175,6 @@ export const Users: React.FC = () => {
               preferred_language: updated.preferred_language
             };
             localStorage.setItem('tms-user', JSON.stringify(updatedUserData));
-            console.log('✅ Dados do usuário logado atualizados no localStorage');
-            console.log('📸 Foto atualizada para:', updated.foto_perfil_url);
-
             // Dispatch custom event to notify Header to update photo
             window.dispatchEvent(new CustomEvent('user-profile-updated', {
               detail: { foto_perfil_url: updated.foto_perfil_url }
@@ -205,11 +189,9 @@ export const Users: React.FC = () => {
           setToast({ message: 'Usuário atualizado com sucesso!', type: 'success' });
 
           if (languageChanged) {
-            console.log('🌐 Idioma alterado, atualizando sistema para:', userData.preferred_language);
             await setLanguage(userData.preferred_language);
 
             setTimeout(() => {
-              console.log('🔄 Recarregando página para aplicar novo idioma em todo o sistema...');
               window.location.reload();
             }, 1500);
 
@@ -220,8 +202,6 @@ export const Users: React.FC = () => {
           return;
         }
       } else {
-        console.log('➕ Criando novo usuário');
-
         // Validate context before creating user
         const context = await usersService.getCurrentContext();
         if (!context.orgId || !context.envId) {
@@ -243,10 +223,8 @@ export const Users: React.FC = () => {
         if (created) {
           // Upload profile photo if provided
           if (profilePhoto && profilePhoto instanceof File) {
-            console.log('📸 Fazendo upload da foto de perfil para novo usuário...');
             const photoUrl = await usersService.uploadProfilePhoto(created.id, profilePhoto);
             if (photoUrl) {
-              console.log('✅ Foto de perfil enviada:', photoUrl);
               // Update user with photo URL
               await usersService.update(created.id, { foto_perfil_url: photoUrl } as any);
             }
@@ -263,7 +241,6 @@ export const Users: React.FC = () => {
       setViewingUser(null);
       forceRefresh();
     } catch (error) {
-      console.error('❌ Erro ao salvar usuário:', error);
       const errorMessage = (error as Error).message;
 
       // Check if error is related to missing context
@@ -322,19 +299,14 @@ export const Users: React.FC = () => {
 
   if (showView) {
     return (
-      <UserView
-        onBack={handleBackToList}
-        onEdit={() => {
-          setShowView(false);
-          handleEditUser(viewingUser);
-        }}
-        onDelete={(id) => {
-          // TODO: Implement user delete with Supabase
-          console.log('Delete user:', id);
-          handleDeleteUser(id);
-        }}
-        user={viewingUser}
-      />
+        <UserView
+          onBack={handleBackToList}
+          onEdit={() => {
+            setShowView(false);
+            handleEditUser(viewingUser);
+          }}
+          user={viewingUser}
+        />
     );
   }
 
@@ -658,6 +630,7 @@ export const Users: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita."
           confirmText="Excluir"

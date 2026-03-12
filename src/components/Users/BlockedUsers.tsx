@@ -85,7 +85,6 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
         setBlockedUsers(usersWithEstablishments as BlockedUser[]);
       }
     } catch (error) {
-      console.error('Erro ao carregar usuários bloqueados:', error);
       setMessage({ type: 'error', text: 'Erro ao carregar usuários bloqueados' });
     } finally {
       setLoading(false);
@@ -122,7 +121,6 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
         loadBlockedUsers();
       }, 2000);
     } catch (error: any) {
-      console.error('Erro ao desbloquear usuário:', error);
       setMessage({ type: 'error', text: error.message || 'Erro ao desbloquear usuário' });
     } finally {
       setUnlocking(null);

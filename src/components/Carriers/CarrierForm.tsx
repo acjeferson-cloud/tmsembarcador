@@ -96,14 +96,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         statesService.getAll(),
         getAllCities()
       ]);
-
-      console.log('Dados carregados:');
-      console.log('- Países:', countriesData.length);
-      console.log('- Estados:', statesData.length);
-      console.log('- Cidades:', citiesData.length);
-
       if (citiesData.length > 0) {
-        console.log('Exemplo de cidade:', citiesData[0]);
       }
 
       setCountries(countriesData);
@@ -125,7 +118,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
     }
   };
 
@@ -140,27 +132,21 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       const stateCities = cities.filter((c: any) => {
         return c.stateAbbreviation === state.abbreviation;
       });
-      console.log('Estado selecionado:', state.name, state.abbreviation);
-      console.log('Cidades filtradas:', stateCities.length);
       setFilteredCities(stateCities);
     } else {
-      console.log('Estado não encontrado para ID:', stateId);
       setFilteredCities([]);
     }
   };
 
   const generateNextCode = async () => {
     try {
-      console.log('Gerando próximo código...');
       const nextCode = await carriersService.getNextCode();
-      console.log('Código gerado:', nextCode);
       setFormData(prev => ({
         ...prev,
         codigo: nextCode
       }));
       setCodeError(''); // Limpar qualquer erro de código
     } catch (error) {
-      console.error('Erro ao gerar código:', error);
       setCodeError('');
     }
   };
@@ -213,28 +199,19 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const validateCode = async (codigo: string): Promise<boolean> => {
     setCodeError('');
-    console.log('validateCode chamado com:', codigo);
-
     if (!codigo) {
       setCodeError('Código é obrigatório');
-      console.log('Validação falhou: código vazio');
       return false;
     }
 
     try {
       const existingCarrier = await carriersService.getByCode(codigo);
-      console.log('Transportador existente encontrado:', existingCarrier);
-
       if (existingCarrier && existingCarrier.id !== carrier?.id) {
         setCodeError('Este código já está sendo usado por outro transportador');
-        console.log('Validação falhou: código já existe');
         return false;
       }
-
-      console.log('Validação bem-sucedida!');
       return true;
     } catch (error) {
-      console.error('Erro ao validar código:', error);
       // Em caso de erro na validação, permitir continuar
       return true;
     }
@@ -258,37 +235,31 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       }));
       setCodeError('');
     } catch (error) {
-      console.error('Erro ao gerar código:', error);
     }
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      console.log('📸 [LOGO UPLOAD] Arquivo:', file.name, file.size);
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
-        console.log('📸 [LOGO UPLOAD] Base64 gerado, tamanho:', result?.length);
         setLogoPreview(result);
         setFormData(prev => {
           const updated = {
             ...prev,
             logotipo: result
           };
-          console.log('📸 [LOGO UPLOAD] FormData atualizado:', { hasLogo: !!updated.logotipo });
           return updated;
         });
       };
       reader.onerror = (error) => {
-        console.error('❌ [LOGO UPLOAD] Erro:', error);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const removeLogo = () => {
-    console.log('🗑️ [LOGO] Removendo');
     setLogoPreview(null);
     setFormData(prev => ({
       ...prev,
@@ -298,11 +269,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log('=== INICIANDO SALVAMENTO ===');
-    console.log('Form data:', formData);
-    console.log('Is editing?', !!carrier);
-
     // Validate required fields
     if (!formData.razaoSocial) {
       alert('Razão Social é obrigatória');
@@ -316,16 +282,11 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
     // Validate code only when creating (not editing)
     if (!carrier) {
-      console.log('Validando código:', formData.codigo);
       const isValid = await validateCode(formData.codigo);
-      console.log('Código válido?', isValid);
-
       if (!isValid) {
-        console.log('Validação falhou. Erro:', codeError);
         return;
       }
     } else {
-      console.log('Modo edição - pulando validação de código');
     }
 
     // Create carrier data with all required fields (remove formatting before saving)
@@ -359,15 +320,9 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       consideraDomingoUtil: formData.consideraDomingoUtil,
       consideraFeriados: formData.consideraFeriados
     };
-
-    console.log('Dados para salvar (formatados):', carrierData);
-    console.log('📸 [SUBMIT] Logo presente?', !!carrierData.logotipo, carrierData.logotipo?.substring(0, 50));
-
     try {
       await onSave(carrierData);
-      console.log('Salvamento concluído com sucesso!');
     } catch (error) {
-      console.error('Erro capturado no handleSubmit:', error);
       alert(`Erro ao salvar transportador: ${error}`);
     }
   };
@@ -526,7 +481,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             }
           }
         } catch (error) {
-          console.error('Erro ao buscar cidade por CEP:', error);
         }
       }
 
@@ -539,7 +493,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         setCnpjMessage(null);
       }, 5000);
     } catch (error: any) {
-      console.error('Erro ao consultar CNPJ:', error);
       setCnpjMessage({
         type: 'error',
         text: error.message || 'Erro ao consultar CNPJ. Tente novamente.'
@@ -565,8 +518,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       const cityFromDB = await findCityByCEPFromDatabase(cleanCEP);
 
       if (cityFromDB) {
-        console.log('✅ Cidade encontrada no banco:', cityFromDB);
-
         // Buscar Brasil como país padrão
         const brasilCountry = countries.find(c =>
           c.name === 'Brasil' || c.name === 'Brazil' || c.codigo_bacen === '1058'
@@ -604,7 +555,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
               bairro = viaCepData.bairro || bairro;
             }
           } catch (error) {
-            console.log('⚠️ Não foi possível buscar logradouro do ViaCEP');
           }
 
           // ✅ Preencher TODOS os campos
@@ -627,8 +577,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         }
       } else {
         // Se não encontrou no banco, busca no ViaCEP como fallback
-        console.log('⚠️ CEP não encontrado no banco, usando ViaCEP...');
-
         const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
         const viaCepData = await viaCepResponse.json();
 
@@ -678,7 +626,6 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         setCepMessage(null);
       }, 5000);
     } catch (error) {
-      console.error('Erro ao buscar CEP:', error);
       setCepMessage({ type: 'error', text: 'Erro ao buscar CEP. Tente novamente.' });
     } finally {
       setLoadingCEP(false);

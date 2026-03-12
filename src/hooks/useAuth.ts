@@ -370,13 +370,6 @@ export const useAuth = () => {
 
       console.log('🔐 [LOGIN] Processando login com dados do environment:', loginData);
 
-      // Buscar foto do perfil
-      const { data: userWithPhoto } = await supabase
-        .from('users')
-        .select('foto_perfil_url')
-        .eq('email', loginData.email)
-        .maybeSingle();
-
       // Criar objeto do usuário com TODOS os dados
       const userData: User & { supabaseUser?: SupabaseUser } = {
         id: parseInt(loginData.codigo) || 1,
@@ -384,7 +377,7 @@ export const useAuth = () => {
         name: loginData.name,
         email: loginData.email,
         role: 'admin',
-        foto_perfil_url: userWithPhoto?.foto_perfil_url || null,
+        foto_perfil_url: loginData.foto_perfil_url || null,
         perfil: loginData.profile || 'usuario',
         permissoes: loginData.permissions || ['all'],
         estabelecimentosPermitidos: [],
@@ -594,13 +587,6 @@ export const useAuth = () => {
 
       console.log('✅ [LOGIN] Sucesso! Dados retornados:', loginResult);
 
-      // Buscar foto do perfil
-      const { data: userWithPhoto } = await supabase
-        .from('users')
-        .select('foto_perfil_url')
-        .eq('email', email)
-        .maybeSingle();
-
       // Criar objeto do usuário com TODOS os dados
       const userData: User & { supabaseUser?: SupabaseUser } = {
         id: parseInt(loginResult.codigo) || 1,
@@ -608,7 +594,7 @@ export const useAuth = () => {
         name: loginResult.name,
         email: loginResult.email,
         role: 'admin',
-        foto_perfil_url: userWithPhoto?.foto_perfil_url || null,
+        foto_perfil_url: loginResult.foto_perfil_url || null,
         perfil: loginResult.profile || 'usuario',
         permissoes: loginResult.permissions || ['all'],
         estabelecimentosPermitidos: [],

@@ -21,7 +21,6 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city }) => {
         const data = await fetchCityById(city.id);
         setFullCity(data);
       } catch (error) {
-        console.error('Error fetching city details:', error);
       } finally {
         setIsLoading(false);
       }

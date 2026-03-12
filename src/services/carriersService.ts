@@ -119,7 +119,6 @@ export const carriersService = {
         nps_externo: Math.round(avgExterno * 10) / 10,
       };
     } catch (error) {
-      console.error('Erro ao buscar avaliações NPS:', error);
       return { nps_interno: 0, nps_externo: 0 };
     }
   },
@@ -129,30 +128,13 @@ export const carriersService = {
       // Buscar contexto do localStorage
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) {
-        console.error('❌ [CARRIERS] Usuário não encontrado no localStorage');
         return [];
       }
-
-      console.log('📦 [CARRIERS] localStorage existe, parseando...');
-
       const userData = JSON.parse(savedUser);
       const { organization_id, environment_id, email, codigo } = userData;
-
-      console.log('👤 [CARRIERS] Dados do usuário:', {
-        email,
-        codigo,
-        organization_id,
-        environment_id
-      });
-
       if (!organization_id || !environment_id) {
-        console.error('❌ [CARRIERS] organization_id ou environment_id não encontrado');
-        console.log('📋 [CARRIERS] userData completo:', userData);
         return [];
       }
-
-      console.log('🔄 [CARRIERS] Querying carriers...');
-
       // Buscar transportadores diretamente com filtros (RLS vai proteger)
       const { data, error } = await supabase
         .from('carriers')
@@ -162,17 +144,9 @@ export const carriersService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('❌ [CARRIERS] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [CARRIERS] Found: ${data?.length || 0}`);
-
       if (data && data.length > 0) {
-        console.log('📋 [CARRIERS] First 2:', data.slice(0, 2).map(c => ({
-          codigo: c.codigo,
-          razao_social: c.razao_social
-        })));
       }
 
       const carriers = data || [];
@@ -241,7 +215,6 @@ export const carriersService = {
 
       return carriersWithNPS;
     } catch (error) {
-      console.error('Erro ao buscar transportadores:', error);
       return [];
     }
   },
@@ -255,13 +228,11 @@ export const carriersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar transportador:', error);
         throw error;
       }
 
       return this.transformCarrierData(data);
     } catch (error) {
-      console.error('Erro ao buscar transportador:', error);
       return null;
     }
   },
@@ -275,30 +246,22 @@ export const carriersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar transportador por código:', error);
         throw error;
       }
 
       return this.transformCarrierData(data);
     } catch (error) {
-      console.error('Erro ao buscar transportador por código:', error);
       return null;
     }
   },
 
   async create(carrier: Omit<Carrier, 'id' | 'created_at' | 'updated_at'>): Promise<Carrier | null> {
     try {
-      console.log('🚛 [CARRIER CREATE] Início');
-      console.log('🚛 [CARRIER CREATE] Dados:', carrier);
-
       const savedUser = localStorage.getItem('tms-user');
       if (!savedUser) {
-        console.error('❌ [CARRIER CREATE] User not found');
         throw new Error('Usuário não encontrado');
       }
       const userData = JSON.parse(savedUser);
-      console.log('🚛 [CARRIER CREATE] User:', { org: userData.organization_id, env: userData.environment_id });
-
       const metadata: any = {};
       if (carrier.modal_rodoviario) metadata.modal_rodoviario = true;
       if (carrier.modal_aereo) metadata.modal_aereo = true;
@@ -376,9 +339,6 @@ export const carriersService = {
         ativo: carrier.status === 'ativo',
         metadata: metadata
       };
-
-      console.log('🚛 [CARRIER CREATE] Insert data:', insertData);
-
       const { data, error } = await supabase
         .from('carriers')
         .insert(insertData)
@@ -386,23 +346,16 @@ export const carriersService = {
         .single();
 
       if (error) {
-        console.error('❌ [CARRIER CREATE] Error:', error);
         throw new Error(`Erro ao criar transportador: ${error.message}`);
       }
-
-      console.log('✅ [CARRIER CREATE] Success:', data);
       return this.transformCarrierData(data);
     } catch (error: any) {
-      console.error('Erro ao criar transportador:', error);
       throw error;
     }
   },
 
   async update(id: string, carrier: Partial<Carrier>): Promise<Carrier | null> {
     try {
-      console.log('🚛 [CARRIER UPDATE] ID:', id);
-      console.log('🚛 [CARRIER UPDATE] Dados:', carrier);
-
       const { data: existing, error: fetchError } = await supabase
         .from('carriers')
         .select('metadata')
@@ -477,9 +430,6 @@ export const carriersService = {
       if (carrier.phone !== undefined) updateData.telefone = carrier.phone;
       if (carrier.status !== undefined) updateData.ativo = carrier.status === 'ativo';
       if (carrier.nps_interno !== undefined) updateData.nps_interno = carrier.nps_interno;
-
-      console.log('🚛 [CARRIER UPDATE] Update data:', updateData);
-
       const { data, error } = await supabase
         .from('carriers')
         .update(updateData)
@@ -488,88 +438,56 @@ export const carriersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [CARRIER UPDATE] Error:', error);
         throw error;
       }
-
-      console.log('✅ [CARRIER UPDATE] Success:', data);
       return this.transformCarrierData(data);
     } catch (error) {
-      console.error('Erro ao atualizar transportador:', error);
       throw error;
     }
   },
 
   async getByCnpj(cnpj: string): Promise<Carrier | null> {
     try {
-      console.log('=== carriersService.getByCnpj chamado ===');
-      console.log('CNPJ recebido:', cnpj);
-
       const cleanCnpj = cnpj.replace(/\D/g, '');
-      console.log('CNPJ limpo (só números):', cleanCnpj);
-
       if (cleanCnpj.length < 8) {
-        console.error('CNPJ inválido, deve ter pelo menos 8 dígitos');
         return null;
       }
 
       const cnpjRoot = cleanCnpj.substring(0, 8);
-      console.log('Raiz do CNPJ (8 primeiros dígitos):', cnpjRoot);
-      console.log('Padrão de busca no banco:', `${cnpjRoot}%`);
-
       const { data, error } = await supabase
         .from('carriers')
         .select('*')
         .ilike('cnpj', `${cnpjRoot}%`)
         .order('codigo', { ascending: true })
         .limit(1);
-
-      console.log('Dados retornados do Supabase:', data);
-      console.log('Erro do Supabase:', error);
-
       if (error) {
-        console.error('Erro ao buscar transportador por raiz do CNPJ:', error);
         return null;
       }
 
       const carrier = Array.isArray(data) ? data[0] : data;
 
       if (carrier) {
-        console.log(`✅ Transportador encontrado:`, {
-          id: carrier.id,
-          codigo: carrier.codigo,
-          razao_social: carrier.razao_social,
-          cnpj: carrier.cnpj
-        });
         return this.transformCarrierData(carrier);
       } else {
-        console.log(`❌ Nenhum transportador encontrado com raiz CNPJ: ${cnpjRoot}`);
         return null;
       }
     } catch (error) {
-      console.error('Erro ao buscar transportador por CNPJ:', error);
       return null;
     }
   },
 
   async delete(id: string): Promise<boolean> {
     try {
-      console.log('🚛 [CARRIER DELETE] ID:', id);
-
       const { error } = await supabase
         .from('carriers')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('❌ [CARRIER DELETE] Error:', error);
         throw error;
       }
-
-      console.log('✅ [CARRIER DELETE] Success');
       return true;
     } catch (error: any) {
-      console.error('❌ [CARRIER DELETE] Exception:', error?.message);
       return false;
     }
   },
@@ -583,13 +501,11 @@ export const carriersService = {
         .order('razao_social', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar transportadores:', error);
         throw error;
       }
 
       return (data || []).map(carrier => this.transformCarrierData(carrier));
     } catch (error) {
-      console.error('Erro ao buscar transportadores:', error);
       return [];
     }
   },
@@ -604,7 +520,6 @@ export const carriersService = {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao buscar próximo código:', error);
         throw error;
       }
 
@@ -622,7 +537,6 @@ export const carriersService = {
 
       return '0001';
     } catch (error) {
-      console.error('Erro ao gerar próximo código:', error);
       return '0001';
     }
   },
@@ -645,7 +559,6 @@ export const carriersService = {
         totalActiveShipments,
       };
     } catch (error) {
-      console.error('Erro ao calcular estatísticas:', error);
       return {
         total: 0,
         active: 0,

@@ -703,7 +703,7 @@
     "subtitle": "Configure sua API Key do Google Maps para ativar funcionalidades de geolocalização",
     "tabs": {
       "config": "Configuração",
-      "extract": "Extrair Coordenadas",
+      "extract": "Extrato",
       "transactions": "Transações"
     },
     "form": {
@@ -788,7 +788,7 @@
     "subtitle": "Configure sua API Key da OpenAI para ativar recursos de inteligência artificial",
     "tabs": {
       "config": "Configuração",
-      "extract": "Testar IA",
+      "extract": "Extrato",
       "transactions": "Transações",
       "organization": "Organização"
     },

@@ -5,6 +5,7 @@ import { TenantContextHelper } from '../../utils/tenantContext';
 interface Organization {
   id: string;
   name: string;
+  trade_name?: string;
   slug: string;
   is_active: boolean;
 }
@@ -155,16 +156,16 @@ export const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
                     <button
                       key={org.id}
                       onClick={() => setSelectedOrganization(org.id)}
-                      className={`p-4 rounded-lg border-2 transition-all text-left ${'${'}
+                      className={`p-4 rounded-lg border-2 transition-all text-left ${
                         selectedOrganization === org.id
-                          ? 'border-blue-600 bg-blue-50 shadow-md'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                      ${'}`}
+                          ? "border-blue-600 bg-blue-50 shadow-md"
+                          : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="font-semibold text-slate-900">
-                            {org.name}
+                            {org.trade_name || org.name}
                           </div>
                           <div className="text-sm text-slate-600 mt-1">
                             Código: {org.slug}
@@ -189,11 +190,11 @@ export const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
                       <button
                         key={env.id}
                         onClick={() => setSelectedEnvironment(env.id)}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${'${'}
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${
                           selectedEnvironment === env.id
-                            ? 'border-blue-600 bg-blue-50 shadow-md'
-                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        ${'}`}
+                            ? "border-blue-600 bg-blue-50 shadow-md"
+                            : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -209,7 +210,7 @@ export const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
                               )}
                             </div>
                             <div className="mt-2">
-                              <span className={`text-xs px-2 py-1 rounded-full border ${'${getEnvironmentBadgeColor(env.type)}'}`}>
+                              <span className={`text-xs px-2 py-1 rounded-full border ${getEnvironmentBadgeColor(env.type)}`}>
                                 {getEnvironmentLabel(env.type)}
                               </span>
                             </div>

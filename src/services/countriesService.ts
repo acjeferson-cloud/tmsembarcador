@@ -24,25 +24,21 @@ export interface Country {
   continent?: string;
   language?: string;
   bacen_code?: string;
+  iso3?: string;
+  bandeira_url?: string;
 }
 
 export const countriesService = {
   async getAll(): Promise<Country[]> {
     try {
-      console.log('🌍 [COUNTRIES] Starting query...');
-
       const { data, error } = await supabase
         .from('countries')
         .select('*')
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('❌ [COUNTRIES] Error:', error);
         throw error;
       }
-
-      console.log(`✅ [COUNTRIES] Found: ${data?.length || 0}`);
-
       return (data || []).map(country => ({
         ...country,
         code: country.codigo,
@@ -51,9 +47,10 @@ export const countriesService = {
         flag: country.sigla_iso2 || '',
         language: country.idioma_principal,
         bacen_code: country.codigo_bacen,
+        iso3: country.sigla_iso3,
+        bandeira_url: country.bandeira_url,
       }));
     } catch (error) {
-      console.error('Erro ao buscar países:', error);
       return [];
     }
   },
@@ -67,13 +64,11 @@ export const countriesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar país:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar país:', error);
       return null;
     }
   },
@@ -87,7 +82,6 @@ export const countriesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar país por código:', error);
         throw error;
       }
 
@@ -101,9 +95,10 @@ export const countriesService = {
         flag: data.sigla_iso2 || '',
         language: data.idioma_principal,
         bacen_code: data.codigo_bacen,
+        iso3: data.sigla_iso3,
+        bandeira_url: data.bandeira_url,
       };
     } catch (error) {
-      console.error('Erro ao buscar país por código:', error);
       return null;
     }
   },
@@ -117,7 +112,6 @@ export const countriesService = {
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar países por continente:', error);
         throw error;
       }
 
@@ -129,9 +123,10 @@ export const countriesService = {
         flag: country.sigla_iso2 || '',
         language: country.idioma_principal,
         bacen_code: country.codigo_bacen,
+        iso3: country.sigla_iso3,
+        bandeira_url: country.bandeira_url,
       }));
     } catch (error) {
-      console.error('Erro ao buscar países por continente:', error);
       return [];
     }
   },
@@ -149,13 +144,14 @@ export const countriesService = {
           capital: country.capital,
           idioma_principal: country.language || country.idioma_principal,
           codigo_bacen: country.bacen_code || country.codigo_bacen,
+          sigla_iso3: country.iso3 || country.sigla_iso3,
+          bandeira_url: country.bandeira_url,
           ativo: true,
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Erro ao criar país:', error);
         throw error;
       }
 
@@ -167,9 +163,10 @@ export const countriesService = {
         flag: data.sigla_iso2 || '',
         language: data.idioma_principal,
         bacen_code: data.codigo_bacen,
+        iso3: data.sigla_iso3,
+        bandeira_url: data.bandeira_url,
       };
     } catch (error) {
-      console.error('Erro ao criar país:', error);
       throw error;
     }
   },
@@ -185,6 +182,8 @@ export const countriesService = {
       if (country.capital !== undefined) updateData.capital = country.capital;
       if (country.language !== undefined) updateData.idioma_principal = country.language;
       if (country.bacen_code !== undefined) updateData.codigo_bacen = country.bacen_code;
+      if (country.iso3 !== undefined) updateData.sigla_iso3 = country.iso3;
+      if (country.bandeira_url !== undefined) updateData.bandeira_url = country.bandeira_url;
 
       const { data, error } = await supabase
         .from('countries')
@@ -194,32 +193,33 @@ export const countriesService = {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar país:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao atualizar país:', error);
       throw error;
     }
   },
 
   async delete(id: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('countries')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
-        console.error('Erro ao excluir país:', error);
         throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Erro ao excluir país:', error);
       return false;
     }
   },
@@ -233,7 +233,6 @@ export const countriesService = {
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar países:', error);
         throw error;
       }
 
@@ -245,9 +244,10 @@ export const countriesService = {
         flag: country.sigla_iso2 || '',
         language: country.idioma_principal,
         bacen_code: country.codigo_bacen,
+        iso3: country.sigla_iso3,
+        bandeira_url: country.bandeira_url,
       }));
     } catch (error) {
-      console.error('Erro ao buscar países:', error);
       return [];
     }
   },
@@ -271,7 +271,6 @@ export const countriesService = {
         byContinents,
       };
     } catch (error) {
-      console.error('Erro ao calcular estatísticas:', error);
       return {
         total: 0,
         byContinents: {},

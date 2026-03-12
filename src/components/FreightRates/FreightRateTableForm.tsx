@@ -956,8 +956,8 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       {/* Modal de Itens Restritos */}
       {showRestrictedItemsModal && table?.id && (
         <RestrictedItemsModal
-          freightRateId={table.id.toString()}
-          freightRateName={table.nome}
+          freightRateTableId={table.id.toString()}
+          freightRateTableName={table.nome}
           onClose={() => setShowRestrictedItemsModal(false)}
         />
       )}

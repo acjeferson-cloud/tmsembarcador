@@ -55,10 +55,10 @@ export class TenantContextHelper {
         environmentId = userProfile.environment_id;
       } else {
         const { data: defaultEnv } = await supabase
-          .from('environments')
+          .from('saas_environments')
           .select('id')
           .eq('organization_id', organizationId)
-          .eq('is_default', true)
+          .eq('tipo', 'producao')
           .maybeSingle();
 
         environmentId = defaultEnv?.id || null;
@@ -116,16 +116,22 @@ export class TenantContextHelper {
   static async getAllOrganizations() {
     try {
       const { data, error } = await supabase
-        .from('organizations')
-        .select('id, name, slug, is_active')
-        .eq('is_active', true)
-        .order('name');
+        .from('saas_organizations')
+        .select('id, nome, nome_fantasia, codigo, status')
+        .eq('status', 'ativo')
+        .order('nome');
 
       if (error) throw error;
 
-      return data || [];
+      return (data || []).map(org => ({
+        id: org.id,
+        name: org.nome,
+        trade_name: org.nome_fantasia || org.nome,
+        slug: org.codigo,
+        is_active: org.status === 'ativo'
+      }));
     } catch (error) {
-      console.error('Erro ao buscar organizações:', error);
+      console.error('Erro ao buscar organizações saas:', error);
       return [];
     }
   }
@@ -133,18 +139,27 @@ export class TenantContextHelper {
   static async getEnvironmentsByOrganization(organizationId: string) {
     try {
       const { data, error } = await supabase
-        .from('environments')
-        .select('id, name, type, is_active')
+        .from('saas_environments')
+        .select('id, nome, tipo, status')
         .eq('organization_id', organizationId)
-        .eq('is_active', true)
-        .order('type', { ascending: true })
-        .order('name');
+        .eq('status', 'ativo')
+        .order('tipo', { ascending: true })
+        .order('nome');
 
       if (error) throw error;
 
-      return data || [];
+      return (data || []).map(env => ({
+        id: env.id,
+        name: env.nome,
+        type: env.tipo === 'producao' ? 'production' :
+              env.tipo === 'homologacao' ? 'staging' :
+              env.tipo === 'teste' ? 'testing' :
+              env.tipo === 'desenvolvimento' ? 'development' : 
+              env.tipo === 'sandbox' ? 'sandbox' : env.tipo,
+        is_active: env.status === 'ativo'
+      }));
     } catch (error) {
-      console.error('Erro ao buscar ambientes:', error);
+      console.error('Erro ao buscar ambientes saas:', error);
       return [];
     }
   }

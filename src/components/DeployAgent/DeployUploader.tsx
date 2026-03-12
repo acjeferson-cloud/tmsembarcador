@@ -69,7 +69,6 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
             resolve(data as string);
           }
         } catch (error: any) {
-          console.error('Error reading file:', error);
           reject(new Error('Erro ao ler arquivo: ' + (error?.message || 'formato inválido')));
         }
       };
@@ -124,8 +123,6 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
 
     } catch (error: any) {
       setStatus('error');
-      console.error('Upload error:', error);
-
       const errorMessage = error?.message || 'Erro ao processar arquivo. Tente novamente.';
       setMessage(errorMessage);
 

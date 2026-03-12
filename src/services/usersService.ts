@@ -27,7 +27,7 @@ export interface User {
   ativo?: boolean;
   bloqueado?: boolean;
   estabelecimento_id?: string;
-  // estabelecimento_nome?: string; // DEPRECATED - Campo não existe no banco, removido
+  estabelecimento_nome?: string;
   estabelecimentosPermitidos?: string[];
   ultimo_login?: string;
   tentativas_login?: number;
@@ -46,20 +46,14 @@ export interface User {
 export const usersService = {
   // Helper function to get current org/env from localStorage with auto-recovery
   async getCurrentContext(): Promise<{ orgId: string | null; envId: string | null }> {
-    console.log('👤 [USERS] Getting context from localStorage...');
     let orgId = localStorage.getItem('tms-selected-org-id');
     let envId = localStorage.getItem('tms-selected-env-id');
-    console.log('👤 [USERS] Context from localStorage:', { orgId, envId });
-
     // If context is missing, try to recover from logged user
     if (!orgId || !envId) {
-      console.log('⚠️ [USERS] Context not found in localStorage, attempting auto-recovery...');
       try {
         const userDataStr = localStorage.getItem('tms-user');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
-          console.log('👤 [USERS] User data from localStorage:', userData);
-
           // Try to get context from user data
           if (userData.organization_id && userData.environment_id) {
             orgId = userData.organization_id;
@@ -68,11 +62,8 @@ export const usersService = {
             // Save to localStorage for future use
             localStorage.setItem('tms-selected-org-id', orgId);
             localStorage.setItem('tms-selected-env-id', envId);
-
-            console.log('✅ [USERS] Context recovered from user data:', { orgId, envId });
           } else if (userData.email) {
             // Try to fetch from database using RPC function
-            console.log('🔍 [USERS] Fetching context from database for user:', userData.email);
             const { data, error } = await supabase.rpc('get_user_context', {
               user_email: userData.email
             });
@@ -84,13 +75,10 @@ export const usersService = {
               // Save to localStorage
               localStorage.setItem('tms-selected-org-id', orgId);
               localStorage.setItem('tms-selected-env-id', envId);
-
-              console.log('✅ [USERS] Context recovered from database:', { orgId, envId });
             }
           }
         }
       } catch (error) {
-        console.error('❌ [USERS] Error during context recovery:', error);
       }
     }
 
@@ -135,7 +123,7 @@ export const usersService = {
       bloqueado: dbUser.bloqueado,
       estabelecimento_id: dbUser.estabelecimento_id,
       estabelecimento_nome: dbUser.estabelecimento_nome ||
-        (dbUser.establishments ? `${dbUser.establishments.codigo} - ${dbUser.establishments.nome}` : undefined),
+        (dbUser.establishments ? `${dbUser.establishments.codigo} - ${dbUser.establishments.nome_fantasia}` : undefined),
       estabelecimentosPermitidos: dbUser.estabelecimentos_permitidos || [],
       ultimo_login: dbUser.ultimo_login || dbUser.last_sign_in_at,
       tentativas_login: dbUser.tentativas_login || 0,
@@ -155,23 +143,13 @@ export const usersService = {
   async getAll(): Promise<User[]> {
     try {
       const { orgId, envId } = await this.getCurrentContext();
-
-      console.log('[UsersService] getAll - Context:', { orgId, envId });
-
       if (!orgId || !envId) {
-        console.error('[UsersService] Erro: Contexto de org/env não disponível');
-        console.log('[UsersService] localStorage keys:', Object.keys(localStorage));
-        console.log('[UsersService] tms-selected-org-id:', localStorage.getItem('tms-selected-org-id'));
-        console.log('[UsersService] tms-selected-env-id:', localStorage.getItem('tms-selected-env-id'));
-
         // Tentar buscar todos os usuários sem filtro para debug
         const { data: allUsers, error: allError } = await supabase
           .from('users')
           .select('*')
           .limit(5);
-
-        console.log('[UsersService] Usuários sem filtro (primeiros 5):', allUsers);
-        if (allError) console.error('[UsersService] Erro ao buscar sem filtro:', allError);
+        if (allError) void 0;
 
         return [];
       }
@@ -182,30 +160,19 @@ export const usersService = {
           *,
           establishments:estabelecimento_id (
             codigo,
-            nome
+            nome_fantasia
           )
         `)
         .eq('organization_id', orgId)
         .eq('environment_id', envId)
         .order('codigo', { ascending: true });
-
-      console.log('[UsersService] Query result:', {
-        count: data?.length || 0,
-        error: error?.message,
-        sample: data?.[0]
-      });
-
       if (error) {
-        console.error('[UsersService] Erro ao buscar usuários:', error);
         throw error;
       }
 
       const mappedUsers = (data || []).map(user => this.mapUserFromDb(user));
-      console.log('[UsersService] Mapped users:', mappedUsers.length);
-
       return mappedUsers;
     } catch (error) {
-      console.error('[UsersService] Erro ao buscar usuários:', error);
       return [];
     }
   },
@@ -219,13 +186,11 @@ export const usersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar usuário:', error);
         throw error;
       }
 
       return data ? this.mapUserFromDb(data) : null;
     } catch (error) {
-      console.error('Erro ao buscar usuário:', error);
       return null;
     }
   },
@@ -239,13 +204,11 @@ export const usersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar usuário por código:', error);
         throw error;
       }
 
       return data ? this.mapUserFromDb(data) : null;
     } catch (error) {
-      console.error('Erro ao buscar usuário por código:', error);
       return null;
     }
   },
@@ -259,13 +222,11 @@ export const usersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar usuário por email:', error);
         throw error;
       }
 
       return data ? this.mapUserFromDb(data) : null;
     } catch (error) {
-      console.error('Erro ao buscar usuário por email:', error);
       return null;
     }
   },
@@ -279,13 +240,11 @@ export const usersService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar usuário por CPF:', error);
         throw error;
       }
 
       return data ? this.mapUserFromDb(data) : null;
     } catch (error) {
-      console.error('Erro ao buscar usuário por CPF:', error);
       return null;
     }
   },
@@ -295,7 +254,6 @@ export const usersService = {
       const { orgId, envId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
-        console.error('Erro: Contexto de org/env não disponível');
         return [];
       }
 
@@ -308,13 +266,11 @@ export const usersService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar usuários por status:', error);
         throw error;
       }
 
       return (data || []).map(user => this.mapUserFromDb(user));
     } catch (error) {
-      console.error('Erro ao buscar usuários por status:', error);
       return [];
     }
   },
@@ -324,7 +280,6 @@ export const usersService = {
       const { orgId, envId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
-        console.error('Erro: Contexto de org/env não disponível');
         return [];
       }
 
@@ -337,13 +292,11 @@ export const usersService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar usuários por perfil:', error);
         throw error;
       }
 
       return (data || []).map(user => this.mapUserFromDb(user));
     } catch (error) {
-      console.error('Erro ao buscar usuários por perfil:', error);
       return [];
     }
   },
@@ -353,7 +306,6 @@ export const usersService = {
       const { orgId, envId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
-        console.error('Erro: Contexto de org/env não disponível');
         return [];
       }
 
@@ -366,13 +318,11 @@ export const usersService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar usuários por estabelecimento:', error);
         throw error;
       }
 
       return (data || []).map(user => this.mapUserFromDb(user));
     } catch (error) {
-      console.error('Erro ao buscar usuários por estabelecimento:', error);
       return [];
     }
   },
@@ -384,8 +334,6 @@ export const usersService = {
       if (!orgId || !envId) {
         throw new Error('Contexto de org/env não disponível');
       }
-
-      console.log('💾 Criando usuário com estabelecimentos permitidos:', user.estabelecimentosPermitidos);
       const { data, error } = await supabase
         .from('users')
         .insert({
@@ -408,6 +356,8 @@ export const usersService = {
           perfil: user.perfil,
           permissoes: user.permissoes,
           status: user.status,
+          ativo: user.status === 'ativo',
+          bloqueado: user.status === 'bloqueado',
           estabelecimento_id: user.estabelecimento_id,
           // estabelecimento_nome removido - campo não existe na tabela
           estabelecimentos_permitidos: user.estabelecimentosPermitidos,
@@ -423,7 +373,6 @@ export const usersService = {
         .single();
 
       if (error) {
-        console.error('Erro ao criar usuário:', error);
         throw error;
       }
 
@@ -437,14 +386,12 @@ export const usersService = {
 
       return this.mapUserFromDb(data);
     } catch (error) {
-      console.error('Erro ao criar usuário:', error);
       throw error;
     }
   },
 
   async update(id: string, user: Partial<User>): Promise<User | null> {
     try {
-      console.log('💾 Atualizando usuário com estabelecimentos permitidos:', user.estabelecimentosPermitidos);
       const oldData = await this.getById(id);
 
       const updateData: any = {
@@ -469,7 +416,11 @@ export const usersService = {
       if (user.estado !== undefined) updateData.estado = user.estado;
       if (user.perfil !== undefined) updateData.perfil = user.perfil;
       if (user.permissoes !== undefined) updateData.permissoes = user.permissoes;
-      if (user.status !== undefined) updateData.status = user.status;
+      if (user.status !== undefined) {
+        updateData.status = user.status;
+        updateData.ativo = user.status === 'ativo';
+        updateData.bloqueado = user.status === 'bloqueado';
+      }
       if (user.estabelecimento_id !== undefined) updateData.estabelecimento_id = user.estabelecimento_id;
       // estabelecimento_nome removido - campo não existe na tabela
       if (user.estabelecimentosPermitidos !== undefined) updateData.estabelecimentos_permitidos = user.estabelecimentosPermitidos;
@@ -491,16 +442,11 @@ export const usersService = {
 
           if (email) {
             await this.updateUserPasswordInAuth(email, user.senha);
-            console.log('Senha atualizada com sucesso no banco e no Supabase Auth');
           }
         } catch (authError) {
-          console.error('Erro ao atualizar senha no Supabase Auth:', authError);
           // Continue with database update even if auth update fails
         }
       }
-
-      console.log('📤 Enviando para o banco:', updateData);
-
       const { data, error } = await supabase
         .from('users')
         .update(updateData)
@@ -509,12 +455,8 @@ export const usersService = {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar usuário:', error);
         throw error;
       }
-
-      console.log('✅ Dados salvos no banco:', data);
-
       if (oldData) {
         await changeLogsService.logMultipleUpdates({
           entityType: 'users',
@@ -528,7 +470,6 @@ export const usersService = {
 
       return this.mapUserFromDb(data);
     } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
       throw error;
     }
   },
@@ -539,7 +480,6 @@ export const usersService = {
       const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
 
       if (listError) {
-        console.error('Erro ao listar usuários:', listError);
         throw listError;
       }
 
@@ -553,16 +493,11 @@ export const usersService = {
         );
 
         if (updateError) {
-          console.error('Erro ao atualizar senha no Auth:', updateError);
           throw updateError;
         }
-
-        console.log('Senha atualizada com sucesso no Supabase Auth para:', email);
       } else {
-        console.warn('Usuário não encontrado no Supabase Auth:', email);
       }
     } catch (error) {
-      console.error('Erro ao atualizar senha no Supabase Auth:', error);
       throw error;
     }
   },
@@ -577,7 +512,6 @@ export const usersService = {
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao excluir usuário:', error);
         throw error;
       }
 
@@ -592,7 +526,6 @@ export const usersService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao excluir usuário:', error);
       return false;
     }
   },
@@ -602,7 +535,6 @@ export const usersService = {
       const { orgId, envId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
-        console.error('Erro: Contexto de org/env não disponível');
         return '0001';
       }
 
@@ -613,7 +545,6 @@ export const usersService = {
         .eq('environment_id', envId);
 
       if (error) {
-        console.error('Erro ao buscar códigos:', error);
         return '0001';
       }
 
@@ -637,7 +568,6 @@ export const usersService = {
       const nextNumber = maxCode + 1;
       return nextNumber.toString().padStart(4, '0');
     } catch (error) {
-      console.error('Erro ao gerar próximo código:', error);
       return '0001';
     }
   },
@@ -647,7 +577,6 @@ export const usersService = {
       const { orgId, envId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
-        console.error('Erro: Contexto de org/env não disponível');
         return [];
       }
 
@@ -660,13 +589,11 @@ export const usersService = {
         .order('codigo', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar usuários:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
       return [];
     }
   },
@@ -692,7 +619,6 @@ export const usersService = {
         perfis: { administradores, gerentes, operadores, visualizadores, personalizados }
       };
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
       return {
         total: 0,
         status: { ativos: 0, inativos: 0, bloqueados: 0 },
@@ -785,7 +711,6 @@ export const usersService = {
         });
 
       if (uploadError) {
-        console.error('Erro ao fazer upload da foto:', uploadError);
         throw uploadError;
       }
 
@@ -797,7 +722,6 @@ export const usersService = {
 
       return publicUrl;
     } catch (error) {
-      console.error('Erro ao fazer upload da foto de perfil:', error);
       return null;
     }
   },
@@ -815,7 +739,6 @@ export const usersService = {
         .remove([fileName]);
 
       if (error) {
-        console.error('Erro ao deletar foto:', error);
         throw error;
       }
 
@@ -823,7 +746,6 @@ export const usersService = {
 
       return true;
     } catch (error) {
-      console.error('Erro ao deletar foto de perfil:', error);
       return false;
     }
   },

@@ -48,9 +48,20 @@ export interface User {
   role: 'admin' | 'user';
   avatar?: string;
   foto_perfil_url?: string;
-  perfil?: 'administrador' | 'gerente' | 'operador' | 'visualizador' | 'personalizado';
+  perfil?: 'administrador' | 'gerente' | 'operador' | 'visualizador' | 'personalizado' | string;
   permissoes?: string[];
   estabelecimentosPermitidos?: number[];
+  codigo?: string;
+  organization_id?: string;
+  organization_code?: string;
+  organization_name?: string;
+  environment_id?: string;
+  environment_code?: string;
+  environment_name?: string;
+  establishment_id?: string;
+  establishment_code?: string;
+  establishment_name?: string;
+  user_id?: string;
 }
 
 export interface Order {

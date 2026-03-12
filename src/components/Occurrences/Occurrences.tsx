@@ -36,7 +36,6 @@ export const Occurrences: React.FC = () => {
       const data = await occurrencesService.getAll();
       setOccurrencesList(data);
     } catch (error) {
-      console.error('Erro ao carregar ocorrências:', error);
       setToast({ message: 'Erro ao carregar ocorrências.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -89,8 +88,7 @@ export const Occurrences: React.FC = () => {
     try {
       if (editingOccurrence) {
         const updated = await occurrencesService.update(editingOccurrence.id, {
-          ...occurrenceData,
-          updated_by: 'current-user-id'
+          ...occurrenceData
         });
         if (updated) {
           setToast({ message: 'Histórico de ocorrência atualizado com sucesso!', type: 'success' });
@@ -100,8 +98,7 @@ export const Occurrences: React.FC = () => {
         }
       } else {
         await occurrencesService.create({
-          ...occurrenceData,
-          created_by: 'current-user-id'
+          ...occurrenceData
         });
         setToast({ message: 'Histórico de ocorrência criado com sucesso!', type: 'success' });
       }
@@ -110,7 +107,6 @@ export const Occurrences: React.FC = () => {
       setEditingOccurrence(null);
       await loadOccurrences();
     } catch (error) {
-      console.error('Error saving occurrence:', error);
       setToast({ message: 'Erro ao salvar histórico de ocorrência. Tente novamente.', type: 'error' });
     }
   };
@@ -362,6 +358,7 @@ export const Occurrences: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este histórico de ocorrência? Esta ação não pode ser desfeita."
           confirmText="Excluir"

@@ -74,8 +74,6 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
         onSuccess();
       }, 1000);
     } catch (error: any) {
-      console.error('Error creating API key:', error);
-
       let errorMessage = 'Erro ao criar chave de API. Tente novamente.';
 
       if (error?.message?.includes('duplicate key') || error?.code === '23505') {

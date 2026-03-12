@@ -18,23 +18,20 @@ export interface State {
   ibge_code?: string;
   capital?: string;
   region?: string;
+  bandeira_url?: string;
 }
 
 export const statesService = {
   async getAll(): Promise<State[]> {
     try {
-      console.log('[statesService] Starting getAll query...');
       const { data, error } = await supabase
         .from('states')
         .select('*')
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('[statesService] Error:', error);
         throw error;
       }
-
-      console.log('[statesService] Success! Found', data?.length || 0, 'states');
       return (data || []).map(state => ({
         ...state,
         name: state.nome,
@@ -42,9 +39,9 @@ export const statesService = {
         ibge_code: state.codigo,
         capital: state.capital,
         region: state.regiao,
+        bandeira_url: state.bandeira_url,
       }));
     } catch (error) {
-      console.error('[statesService] Exception:', error);
       return [];
     }
   },
@@ -58,13 +55,11 @@ export const statesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar estado:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao buscar estado:', error);
       return null;
     }
   },
@@ -78,7 +73,6 @@ export const statesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar estado por sigla:', error);
         throw error;
       }
 
@@ -91,9 +85,9 @@ export const statesService = {
         ibge_code: data.codigo,
         capital: data.capital,
         region: data.regiao,
+        bandeira_url: data.bandeira_url,
       };
     } catch (error) {
-      console.error('Erro ao buscar estado por sigla:', error);
       return null;
     }
   },
@@ -107,7 +101,6 @@ export const statesService = {
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar estados por região:', error);
         throw error;
       }
 
@@ -116,11 +109,11 @@ export const statesService = {
         name: state.nome,
         abbreviation: state.sigla,
         ibge_code: state.codigo,
-        capital: '',
+        capital: state.capital || '',
         region: state.regiao,
+        bandeira_url: state.bandeira_url,
       }));
     } catch (error) {
-      console.error('Erro ao buscar estados por região:', error);
       return [];
     }
   },
@@ -134,7 +127,6 @@ export const statesService = {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao buscar estado por código IBGE:', error);
         throw error;
       }
 
@@ -147,9 +139,9 @@ export const statesService = {
         ibge_code: data.codigo,
         capital: data.capital,
         region: data.regiao,
+        bandeira_url: data.bandeira_url,
       };
     } catch (error) {
-      console.error('Erro ao buscar estado por código IBGE:', error);
       return null;
     }
   },
@@ -163,13 +155,14 @@ export const statesService = {
           nome: state.name || state.nome,
           sigla: state.abbreviation || state.sigla,
           regiao: state.region || state.regiao,
+          capital: state.capital,
+          bandeira_url: state.bandeira_url,
           ativo: true,
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Erro ao criar estado:', error);
         throw error;
       }
 
@@ -180,9 +173,9 @@ export const statesService = {
         ibge_code: data.codigo,
         capital: data.capital,
         region: data.regiao,
+        bandeira_url: data.bandeira_url,
       };
     } catch (error) {
-      console.error('Erro ao criar estado:', error);
       throw error;
     }
   },
@@ -193,11 +186,12 @@ export const statesService = {
         updated_by: state.updated_by,
       };
 
-      if (state.name !== undefined) updateData.name = state.name;
-      if (state.abbreviation !== undefined) updateData.abbreviation = state.abbreviation;
-      if (state.ibge_code !== undefined) updateData.ibge_code = state.ibge_code;
+      if (state.name !== undefined) updateData.nome = state.name;
+      if (state.abbreviation !== undefined) updateData.sigla = state.abbreviation;
+      if (state.ibge_code !== undefined) updateData.codigo = state.ibge_code;
       if (state.capital !== undefined) updateData.capital = state.capital;
-      if (state.region !== undefined) updateData.region = state.region;
+      if (state.region !== undefined) updateData.regiao = state.region;
+      if (state.bandeira_url !== undefined) updateData.bandeira_url = state.bandeira_url;
 
       const { data, error } = await supabase
         .from('states')
@@ -207,32 +201,33 @@ export const statesService = {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar estado:', error);
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Erro ao atualizar estado:', error);
       throw error;
     }
   },
 
   async delete(id: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('states')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
-        console.error('Erro ao excluir estado:', error);
         throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Erro ao excluir estado:', error);
       return false;
     }
   },
@@ -246,7 +241,6 @@ export const statesService = {
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar estados:', error);
         throw error;
       }
 
@@ -255,11 +249,11 @@ export const statesService = {
         name: state.nome,
         abbreviation: state.sigla,
         ibge_code: state.codigo,
-        capital: '',
+        capital: state.capital || '',
         region: state.regiao,
+        bandeira_url: state.bandeira_url,
       }));
     } catch (error) {
-      console.error('Erro ao buscar estados:', error);
       return [];
     }
   },
@@ -283,7 +277,6 @@ export const statesService = {
         byRegion,
       };
     } catch (error) {
-      console.error('Erro ao calcular estatísticas:', error);
       return {
         total: 0,
         byRegion: {},

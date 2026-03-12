@@ -132,6 +132,64 @@ class EnvironmentsService {
       .single();
 
     if (error) throw error;
+
+    try {
+      // 1. Criar estabelecimento padrão "0001"
+      const { data: estData, error: estError } = await supabase
+        .from('establishments')
+        .insert({
+          organization_id: input.organization_id,
+          environment_id: data.id,
+          codigo: '0001',
+          nome_fantasia: 'Estabelecimento Padrão',
+          razao_social: 'Estabelecimento Padrão LTDA',
+          tipo: 'matriz',
+          ativo: true
+        })
+        .select()
+        .single();
+
+      if (estError) console.error('[SAAS_ADMIN] Erro ao criar estabelecimento padrão:', estError);
+
+      // 2. Criar usuário admin vinculado
+      if (estData) {
+        // Obter hash dummy ou real. Como o admin loga pelo TMS Admin, a senha mockada serve para registro, 
+        // mas ele é ativado via link ou o admin já existente masteriza.
+        // O crypto_subtle default password pra '123456' em hex hash mockado, ou null se não enforced:
+        const dummyHash = 'e10adc3949ba59abbe56e057f20f883e'; // 123456 MD5 ou equivalente só pro login não crashar
+        
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .insert({
+            organization_id: input.organization_id,
+            environment_id: data.id,
+            codigo: '0001',
+            email: 'jeferson.costa@logaxis.com.br',
+            senha_hash: dummyHash,
+            nome: 'Jeferson Costa',
+            tipo: 'admin',
+            ativo: true
+          })
+          .select()
+          .single();
+
+        if (userError) console.error('[SAAS_ADMIN] Erro ao criar usuário admin padrão:', userError);
+
+        // 3. Vincular usuário na tabela N para N user_establishments
+        if (userData) {
+          await supabase
+            .from('user_establishments')
+            .insert({
+              user_id: userData.id,
+              establishment_id: estData.id,
+              is_default: true
+            });
+        }
+      }
+    } catch (autoGenError) {
+      console.error('[SAAS_ADMIN] Falha no provisionamento automático de org/env:', autoGenError);
+    }
+
     return data;
   }
 

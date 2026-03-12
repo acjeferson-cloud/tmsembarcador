@@ -17,7 +17,6 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ onStateClick }) => {
       await loadGoogleMapsAPI();
 
       if (!isGoogleMapsLoaded()) {
-        console.error('Google Maps API não foi carregada');
         return;
       }
 
@@ -57,7 +56,6 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ onStateClick }) => {
       });
 
     } catch (error) {
-      console.error('Erro ao inicializar o mapa:', error);
     }
   };
 

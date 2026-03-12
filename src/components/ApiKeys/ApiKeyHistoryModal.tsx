@@ -26,7 +26,6 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
       const data = await apiKeysService.getRotationHistory(apiKey.id);
       setHistory(data);
     } catch (error) {
-      console.error('Error loading history:', error);
     } finally {
       setIsLoading(false);
     }

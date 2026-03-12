@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, TestTube, CheckCircle, XCircle, Brain, Key, Info, Sliders, Receipt, Building2 } from 'lucide-react';
+import { Save, TestTube, CheckCircle, XCircle, Brain, Key, Info, Sliders, Receipt, Building2, AlertCircle } from 'lucide-react';
 import { openaiService, OpenAIConfig as IOpenAIConfig } from '../../services/openaiService';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumbs from '../Layout/Breadcrumbs';
@@ -14,7 +14,7 @@ export const OpenAIConfig: React.FC = () => {
     INNOVATION_IDS.OPENAI,
     user?.id
   );
-  const [activeTab, setActiveTab] = useState<'config' | 'extract' | 'organization'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'extract'>('config');
   const [config, setConfig] = useState<IOpenAIConfig>({
     api_key: '',
     modelo: 'gpt-3.5-turbo',
@@ -62,7 +62,6 @@ export const OpenAIConfig: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
     }
   };
 
@@ -175,19 +174,6 @@ export const OpenAIConfig: React.FC = () => {
             <div className="flex items-center space-x-2">
               <Receipt size={16} />
               <span>{t('openai.tabs.extract')}</span>
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('organization')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'organization'
-                ? 'border-green-500 text-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <Building2 size={16} />
-              <span>{t('openai.tabs.organization')}</span>
             </div>
           </button>
         </nav>
@@ -358,14 +344,30 @@ export const OpenAIConfig: React.FC = () => {
 
         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-6">
           <div className="flex items-start space-x-3">
-            <Info className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm text-green-800 dark:text-green-300 mb-2">
-                {t('openai.organizationIsolation.description')}
-              </p>
-              <p className="text-sm text-green-800 dark:text-green-300 font-medium">
-                {t('openai.organizationIsolation.warning')}
-              </p>
+              <h3 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
+                Como obter as credenciais do ChatGPT (OpenAI):
+              </h3>
+              <ol className="text-sm text-green-800 dark:text-green-400 space-y-2 list-decimal list-inside">
+                <li>Acesse o dashboard <a href="https://platform.openai.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">OpenAI Platform</a></li>
+                <li>No menu esquerdo, vá em "API Keys"</li>
+                <li>Clique em "Create new secret key"</li>
+                <li>Copie a chave gerada e cole no campo acima</li>
+              </ol>
+              <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-300 dark:border-yellow-700">
+                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">Custos da API OpenAI:</p>
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
+                  A API da OpenAI requer créditos pré-pagos ou método de faturamento configurado. Se o seu saldo expirar ou não houver cartão de crédito adicionado na plataforma ("Billing"),
+                  o sistema retornará o erro de limite excedido e a automação de inteligência parará de responder.
+                </p>
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
+                  Você será cobrado por token (fração de palavras) enviadas ou recebidas durante a extração dos dados dos motores de IA. Atente-se também na escolha de modelos; Modelos mais atuais como GPT-4 têm taxas significativamente mais altas do que modelos base como GPT-3.5.
+                </p>
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
+                  {t('openai.organizationIsolation.description')} {t('openai.organizationIsolation.warning')}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -374,68 +376,6 @@ export const OpenAIConfig: React.FC = () => {
 
       {activeTab === 'extract' && <OpenAIExtract />}
 
-      {activeTab === 'organization' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center space-x-2">
-              <Building2 className="h-5 w-5 text-green-600" />
-              <span>{t('openai.organizationIsolation.title')}</span>
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('openai.organizationIsolation.description')}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                {t('openai.organizationIsolation.currentOrg')}
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {organizationId || 'N/A'}
-              </div>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                {t('openai.organizationIsolation.currentEnv')}
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {environmentId || 'N/A'}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4">
-            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
-              {t('openai.organizationIsolation.howItWorks')}
-            </h3>
-            <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
-              <li className="flex items-start space-x-2">
-                <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>{t('openai.organizationIsolation.benefit1')}</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>{t('openai.organizationIsolation.benefit2')}</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>{t('openai.organizationIsolation.benefit3')}</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 p-4">
-            <div className="flex items-start space-x-2">
-              <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                {t('openai.organizationIsolation.warning')}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

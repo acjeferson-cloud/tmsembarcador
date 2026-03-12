@@ -50,13 +50,11 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao carregar configuração de e-mail de saída:', error);
         return;
       }
 
       setEmailOutgoingConfig(data);
     } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
     } finally {
       setLoadingOutgoingConfig(false);
     }

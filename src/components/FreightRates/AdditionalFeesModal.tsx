@@ -607,6 +607,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={true}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir esta taxa adicional? Esta ação não pode ser desfeita."
           onConfirm={confirmDelete}

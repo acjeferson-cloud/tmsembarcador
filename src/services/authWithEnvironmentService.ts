@@ -14,6 +14,8 @@ export interface LoginWithEnvironmentResponse {
   email?: string;
   name?: string;
   codigo?: string;
+  foto_perfil_url?: string;
+  avatar?: string;
   profile?: string;
   organization_id?: string;
   organization_code?: string;

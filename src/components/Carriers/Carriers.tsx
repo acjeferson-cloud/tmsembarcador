@@ -42,7 +42,6 @@ export const Carriers: React.FC = () => {
       const data = await carriersService.getAll();
       setCarriersList(data);
     } catch (error) {
-      console.error('Erro ao carregar transportadores:', error);
       setToast({ message: t('carriers.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
@@ -125,18 +124,14 @@ export const Carriers: React.FC = () => {
   };
 
   const handleDeleteCarrier = (carrierId: string) => {
-    console.log('Solicitando exclusão do transportador:', carrierId);
     setConfirmDialog({ isOpen: true, carrierId });
   };
 
   const confirmDelete = async () => {
     if (confirmDialog.carrierId) {
       try {
-        console.log('Confirmando exclusão do transportador:', confirmDialog.carrierId);
         const carrier = carriersList.find(c => c.id === confirmDialog.carrierId);
         const success = await carriersService.delete(confirmDialog.carrierId);
-        console.log('Resultado da exclusão:', success);
-
         if (success) {
           if (carrier) {
             await logDelete('carrier', confirmDialog.carrierId, carrier, 1, 'Administrador');
@@ -147,7 +142,6 @@ export const Carriers: React.FC = () => {
           setToast({ message: t('carriers.messages.deleteError'), type: 'error' });
         }
       } catch (error) {
-        console.error('Erro ao excluir transportador:', error);
         setToast({ message: t('carriers.messages.deleteError'), type: 'error' });
       }
     }
@@ -156,9 +150,6 @@ export const Carriers: React.FC = () => {
 
   const handleSaveCarrier = async (carrierData: any) => {
     try {
-      console.log('=== HANDLE SAVE CARRIER ===');
-      console.log('Carrier Data recebido:', carrierData);
-
       // Parse tolerances - remove R$ and convert to number
       const parseToleranceValue = (value: string | number | undefined | null) => {
         if (!value) return 0;
@@ -206,11 +197,7 @@ export const Carriers: React.FC = () => {
         considera_domingo_util: carrierData.consideraDomingoUtil || false,
         considera_feriados: carrierData.consideraFeriados || false,
       };
-
-      console.log('Normalized data:', normalizedData);
-
       if (editingCarrier) {
-        console.log('Atualizando transportador existente...', editingCarrier.id);
         const updated = await carriersService.update(editingCarrier.id, {
           ...normalizedData,
           updated_by: null,
@@ -223,12 +210,10 @@ export const Carriers: React.FC = () => {
           return;
         }
       } else {
-        console.log('Criando novo transportador...');
         const result = await carriersService.create({
           ...normalizedData,
           created_by: null,
         });
-        console.log('Resultado da criação:', result);
         if (result) {
           await logCreate('carrier', result.id, result, 1, 'Administrador');
         }
@@ -239,10 +224,6 @@ export const Carriers: React.FC = () => {
       setEditingCarrier(null);
       await loadCarriers();
     } catch (error: any) {
-      console.error('❌ [CARRIER SAVE] Error completo:', error);
-      console.error('❌ [CARRIER SAVE] Error message:', error?.message);
-      console.error('❌ [CARRIER SAVE] Error stack:', error?.stack);
-
       // Mensagem de erro mais detalhada
       const errorMessage = error?.message || t('carriers.messages.saveError');
       setToast({
@@ -585,6 +566,7 @@ export const Carriers: React.FC = () => {
       {/* Confirm Dialog */}
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title="Confirmar Exclusão"
           message="Tem certeza que deseja excluir este transportador? Esta ação não pode ser desfeita."
           confirmText="Excluir"

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 interface ChangeLog {
   id: string;
@@ -11,6 +12,8 @@ interface ChangeLog {
   old_value?: string;
   new_value?: string;
   created_at: string;
+  organization_id?: string;
+  environment_id?: string;
 }
 
 export const changeLogsService = {
@@ -18,8 +21,8 @@ export const changeLogsService = {
     try {
       console.log('📝 [CHANGE_LOGS] Starting query...');
 
-      const { data, error } = await supabase
-        .from('change_logs')
+      const { data, error } = await (supabase as any)
+        .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -39,8 +42,8 @@ export const changeLogsService = {
 
   async getByEntity(entityType: string, entityId: string): Promise<ChangeLog[]> {
     try {
-      const { data, error } = await supabase
-        .from('change_logs')
+      const { data, error } = await (supabase as any)
+        .from('audit_logs')
         .select('*')
         .eq('entity_type', entityType)
         .eq('entity_id', entityId)
@@ -60,8 +63,8 @@ export const changeLogsService = {
 
   async getByUser(userId: number): Promise<ChangeLog[]> {
     try {
-      const { data, error } = await supabase
-        .from('change_logs')
+      const { data, error } = await (supabase as any)
+        .from('audit_logs')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -80,8 +83,12 @@ export const changeLogsService = {
 
   async create(log: Omit<ChangeLog, 'id' | 'created_at'>): Promise<ChangeLog | null> {
     try {
-      const { data, error } = await supabase
-        .from('change_logs')
+      const context = await TenantContextHelper.getCurrentContext();
+      const orgId = context?.organizationId || localStorage.getItem('tms-selected-org-id');
+      const envId = context?.environmentId || localStorage.getItem('tms-selected-env-id');
+
+      const { data, error } = await (supabase as any)
+        .from('audit_logs')
         .insert({
           entity_type: log.entity_type,
           entity_id: log.entity_id,
@@ -91,6 +98,8 @@ export const changeLogsService = {
           field_name: log.field_name,
           old_value: log.old_value,
           new_value: log.new_value,
+          organization_id: orgId || null,
+          environment_id: envId || null,
         })
         .select()
         .single();

@@ -41,15 +41,11 @@ export const Establishments: React.FC = () => {
 
   const loadEstablishments = async () => {
     try {
-      console.log('🏗️ [Establishments.loadEstablishments] INÍCIO');
       setIsLoading(true);
 
       // Buscar email do localStorage (autenticação customizada)
       const savedUser = localStorage.getItem('tms-user');
-      console.log('🏗️ [Establishments.loadEstablishments] localStorage tms-user:', savedUser ? 'EXISTE' : 'NÃO EXISTE');
-
       if (!savedUser) {
-        console.error('❌ [Establishments.loadEstablishments] Usuário não autenticado');
         setEstablishments([]);
         return;
       }
@@ -58,59 +54,30 @@ export const Establishments: React.FC = () => {
       try {
         const userData = JSON.parse(savedUser);
         userEmail = userData.email;
-        console.log('🏗️ [Establishments.loadEstablishments] Email do usuário:', userEmail);
       } catch (parseError) {
-        console.error('❌ [Establishments.loadEstablishments] Erro ao parsear userData:', parseError);
         setEstablishments([]);
         return;
       }
 
       // Buscar estabelecimentos permitidos para o usuário
-      console.log('🏗️ [Establishments.loadEstablishments] Buscando estabelecimentos_permitidos...');
       const { data: userRecord, error: userError } = await supabase
         .from('users')
         .select('estabelecimentos_permitidos')
         .eq('email', userEmail)
         .maybeSingle();
-
-      console.log('🏗️ [Establishments.loadEstablishments] userRecord:', {
-        encontrado: !!userRecord,
-        error: userError?.message,
-        estabelecimentos_permitidos: userRecord?.estabelecimentos_permitidos
-      });
-
       // Buscar todos os estabelecimentos via service
-      console.log('🏗️ [Establishments.loadEstablishments] Chamando establishmentsService.getAll()...');
       let data = await establishmentsService.getAll();
-      console.log('🏗️ [Establishments.loadEstablishments] establishmentsService.getAll() retornou:', {
-        count: data.length,
-        items: data.map(e => ({ codigo: e.codigo, razao_social: e.razao_social }))
-      });
-
       // Filtrar por estabelecimentos permitidos (se houver)
       if (userRecord?.estabelecimentos_permitidos && userRecord.estabelecimentos_permitidos.length > 0) {
         const allowedIds = userRecord.estabelecimentos_permitidos;
-        console.log('🏗️ [Establishments.loadEstablishments] Filtrando por IDs permitidos:', allowedIds);
-
         const beforeFilterCount = data.length;
         data = data.filter(est => allowedIds.includes(est.id));
-
-        console.log('🏗️ [Establishments.loadEstablishments] Após filtro:', {
-          antes: beforeFilterCount,
-          depois: data.length,
-          filtrados: data.map(e => ({ id: e.id, codigo: e.codigo, razao_social: e.razao_social }))
-        });
       } else {
-        console.log('🏗️ [Establishments.loadEstablishments] Sem filtro de estabelecimentos permitidos');
       }
-
-      console.log('✅ [Establishments.loadEstablishments] Definindo estado com', data.length, 'estabelecimentos');
       setEstablishments(data);
     } catch (error) {
-      console.error('❌ [Establishments.loadEstablishments] Erro geral:', error);
       setToast({ message: 'Erro ao carregar estabelecimentos.', type: 'error' });
     } finally {
-      console.log('🏗️ [Establishments.loadEstablishments] FIM');
       setIsLoading(false);
     }
   };
@@ -209,7 +176,6 @@ export const Establishments: React.FC = () => {
           setToast({ message: 'Erro ao excluir estabelecimento.', type: 'error' });
         }
       } catch (error) {
-        console.error('Erro ao excluir:', error);
         setToast({ message: 'Erro ao excluir estabelecimento.', type: 'error' });
       }
     }
@@ -218,8 +184,6 @@ export const Establishments: React.FC = () => {
 
   const handleSaveEstablishment = async (establishmentData: any) => {
     try {
-      console.log('📝 Dados recebidos para salvar:', establishmentData);
-
       // Get current user UUID from localStorage (custom auth system)
       let currentUserId: string | null = null;
 
@@ -242,7 +206,6 @@ export const Establishments: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error('Erro ao obter UUID do usuário:', err);
       }
 
       const dataToSave: any = {
@@ -263,20 +226,14 @@ export const Establishments: React.FC = () => {
         logo_nps_base64: establishmentData.logoNpsBase64,
         email_config: establishmentData.emailConfig,
       };
-
-      console.log('💾 Dados formatados para salvar:', dataToSave);
-
       if (editingEstablishment) {
         // For update, only set updated_by
         if (currentUserId) {
           dataToSave.updated_by = currentUserId;
         }
-
-        console.log('✏️ Atualizando estabelecimento:', editingEstablishment.id);
         const updated = await establishmentsService.update(editingEstablishment.id, dataToSave);
 
         if (updated) {
-          console.log('✅ Estabelecimento atualizado com sucesso!');
           await logUpdate(
             'establishment',
             editingEstablishment.id,
@@ -288,7 +245,6 @@ export const Establishments: React.FC = () => {
 
           setToast({ message: 'Estabelecimento atualizado com sucesso!', type: 'success' });
         } else {
-          console.error('❌ Falha ao atualizar estabelecimento');
           setToast({ message: 'Erro ao atualizar estabelecimento.', type: 'error' });
           return;
         }
@@ -298,12 +254,9 @@ export const Establishments: React.FC = () => {
           dataToSave.created_by = currentUserId;
           dataToSave.updated_by = currentUserId;
         }
-
-        console.log('➕ Criando novo estabelecimento...');
         const newEstablishment = await establishmentsService.create(dataToSave);
 
         if (newEstablishment) {
-          console.log('✅ Estabelecimento criado com sucesso!');
           await logCreate(
             'establishment',
             newEstablishment.id,
@@ -314,7 +267,6 @@ export const Establishments: React.FC = () => {
 
           setToast({ message: 'Estabelecimento criado com sucesso!', type: 'success' });
         } else {
-          console.error('❌ Falha ao criar estabelecimento');
           setToast({ message: 'Erro ao criar estabelecimento.', type: 'error' });
           return;
         }
@@ -324,7 +276,6 @@ export const Establishments: React.FC = () => {
       setEditingEstablishment(null);
       forceRefresh();
     } catch (error: any) {
-      console.error('❌ Erro ao salvar estabelecimento:', error);
       const errorMessage = error?.message || 'Erro ao salvar estabelecimento. Tente novamente.';
       setToast({ message: errorMessage, type: 'error' });
     }
@@ -490,6 +441,7 @@ export const Establishments: React.FC = () => {
 
       {confirmDialog.isOpen && (
         <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
           title={confirmDialog.canDelete ? "Confirmar Exclusão" : "Não é Possível Excluir"}
           message={
             confirmDialog.canDelete

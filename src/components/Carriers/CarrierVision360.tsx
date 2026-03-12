@@ -225,7 +225,6 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent√
 
       setAiInsight(insight);
     } catch (error) {
-      console.error('Erro ao gerar insight:', error);
       setAiInsight('');
     } finally {
       setIsGeneratingInsight(false);
