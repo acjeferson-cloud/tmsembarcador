@@ -58,7 +58,7 @@ steps:
       - 'deploy'
       - 'tms-embarcador'
       - '--image=gcr.io/$PROJECT_ID/tms-embarcador:$SHORT_SHA'
-      - '--region=southamerica-east1'  # 🇧🇷 São Paulo (menor latência para Brasil)
+      - '--region=us-east1'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--memory=512Mi'
