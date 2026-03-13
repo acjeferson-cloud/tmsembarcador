@@ -63,35 +63,36 @@ export const NPSDashboard: React.FC = () => {
   useEffect(() => {
     let finalId = '';
     
-    // Tentar ler do currentEstablishment provido pelo useAuth context
-    if (currentEstablishment?.environmentId) {
-      finalId = currentEstablishment.environmentId;
-      console.log('✅ [NPSDashboard] ID environment capturada via global Auth Context:', finalId);
-    }
-
-    // Tentar ler do LocalStorage root caso o context atrase
-    if (!finalId) {
-      const estabStr = localStorage.getItem('tms-current-establishment');
-      if (estabStr) {
-        try {
-          const estab = JSON.parse(estabStr);
-          if (estab.environmentId) {
-            finalId = estab.environmentId;
-            console.log('✅ [NPSDashboard] ID environment lido via String Cache:', finalId);
-          }
-        } catch (e) {
-          // Ignora
+    // Tentar ler do LocalStorage root PRIMEIRO lugar, pois AuthContext guarda cache velho.
+    const estabStr = localStorage.getItem('tms-current-establishment');
+    if (estabStr) {
+      try {
+        const estab = JSON.parse(estabStr);
+        if (estab.environmentId) {
+          finalId = estab.environmentId;
+          console.log('✅ [NPSDashboard] ID environment lido via String Cache PRIORITÁRIO:', finalId);
+        } else if (estab.environment_id) {
+          finalId = estab.environment_id;
+          console.log('✅ [NPSDashboard] ID environment lido via String Cache PRIORITÁRIO:', finalId);
         }
+      } catch (e) {
+        // Ignora
       }
     }
     
-    // Fallback absoluto via Session Storage Global
+    // Fallback absoluto via Session Storage Global Secundário
     if (!finalId) {
       const envIdLocal = localStorage.getItem('tms-selected-env-id');
       if (envIdLocal) {
         finalId = envIdLocal;
         console.log('✅ [NPSDashboard] Fallback seguro para o ID Selected Env:', finalId);
       }
+    }
+
+    // Último recurso: Tentar ler do currentEstablishment provido pelo useAuth context
+    if (!finalId && currentEstablishment?.environmentId) {
+      finalId = currentEstablishment.environmentId;
+      console.log('✅ [NPSDashboard] ID environment capturada via global Auth Context:', finalId);
     }
 
     if (finalId) {
