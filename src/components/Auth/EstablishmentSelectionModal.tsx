@@ -23,9 +23,7 @@ export const EstablishmentSelectionModal: React.FC<EstablishmentSelectionModalPr
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Debug: Log establishments
-  useEffect(() => {
-  }, [establishments]);
+
 
   // Reset selection when modal opens
   useEffect(() => {

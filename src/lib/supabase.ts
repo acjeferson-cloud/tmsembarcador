@@ -172,13 +172,7 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
       lastVerified: now
     };
 
-    // Log apenas na primeira configuração
-    if (wasFirstConfig && retryCount === 0) {
-        orgId: dbUser.organization_id.substring(0, 8) + '...',
-        envId: dbUser.environment_id.substring(0, 8) + '...',
-        email: userEmail
-      });
-    }
+
   } catch (error) {
     console.error('❌ Erro ao configurar contexto:', error);
 
