@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Save, TestTube, CheckCircle, XCircle, Brain, Key, Info, Sliders, Receipt, Building2, AlertCircle } from 'lucide-react';
+import { Save, TestTube, CheckCircle, XCircle, Brain, Key, Info, Receipt, AlertCircle } from 'lucide-react';
 import { openaiService, OpenAIConfig as IOpenAIConfig } from '../../services/openaiService';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { OpenAIExtract } from './OpenAIExtract';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 
 export const OpenAIConfig: React.FC = () => {
   const { t } = useTranslation();
@@ -29,8 +29,7 @@ export const OpenAIConfig: React.FC = () => {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Get org/env from localStorage
-  const organizationId = localStorage.getItem('organizationId');
-  const environmentId = localStorage.getItem('environmentId');
+
 
   const breadcrumbItems = [
     { label: t('menu.settings') },
@@ -347,22 +346,25 @@ export const OpenAIConfig: React.FC = () => {
             <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
-                Como obter as credenciais do ChatGPT (OpenAI):
+                {t('openai.credentials.title')}
               </h3>
               <ol className="text-sm text-green-800 dark:text-green-400 space-y-2 list-decimal list-inside">
-                <li>Acesse o dashboard <a href="https://platform.openai.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">OpenAI Platform</a></li>
-                <li>No menu esquerdo, vá em "API Keys"</li>
-                <li>Clique em "Create new secret key"</li>
-                <li>Copie a chave gerada e cole no campo acima</li>
+                <li>
+                  <Trans i18nKey="openai.credentials.step1">
+                    Acesse o dashboard <a href="https://platform.openai.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">OpenAI Platform</a>
+                  </Trans>
+                </li>
+                <li>{t('openai.credentials.step2')}</li>
+                <li>{t('openai.credentials.step3')}</li>
+                <li>{t('openai.credentials.step4')}</li>
               </ol>
               <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-300 dark:border-yellow-700">
-                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">Custos da API OpenAI:</p>
+                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">{t('openai.costs.title')}</p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  A API da OpenAI requer créditos pré-pagos ou método de faturamento configurado. Se o seu saldo expirar ou não houver cartão de crédito adicionado na plataforma ("Billing"),
-                  o sistema retornará o erro de limite excedido e a automação de inteligência parará de responder.
+                  {t('openai.costs.warning1')}
                 </p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  Você será cobrado por token (fração de palavras) enviadas ou recebidas durante a extração dos dados dos motores de IA. Atente-se também na escolha de modelos; Modelos mais atuais como GPT-4 têm taxas significativamente mais altas do que modelos base como GPT-3.5.
+                  {t('openai.costs.warning2')}
                 </p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
                   {t('openai.organizationIsolation.description')} {t('openai.organizationIsolation.warning')}

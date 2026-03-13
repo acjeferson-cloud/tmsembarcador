@@ -883,6 +883,70 @@
       "step1": "Cada environment (Produção, Homologação, etc) possui sua própria chave",
       "step2": "As configurações não são compartilhadas entre environments",
       "step3": "Troque de environment no menu para configurar chaves diferentes"
+    },
+    "credentials": {
+      "title": "Como obter as credenciais do ChatGPT (OpenAI):",
+      "step1": "Acesse o dashboard <1>OpenAI Platform</1>",
+      "step2": "No menu esquerdo, vá em \"API Keys\"",
+      "step3": "Clique em \"Create new secret key\"",
+      "step4": "Copie a chave gerada e cole no campo acima"
+    },
+    "costs": {
+      "title": "Custos da API OpenAI:",
+      "warning1": "A API da OpenAI requer créditos pré-pagos ou método de faturamento configurado. Se o seu saldo expirar ou não houver cartão de crédito adicionado na plataforma (\"Billing\"), o sistema retornará o erro de limite excedido e a automação de inteligência parará de responder.",
+      "warning2": "Você será cobrado por token (fração de palavras) enviadas ou recebidas durante a extração dos dados dos motores de IA. Atente-se também na escolha de modelos; Modelos mais atuais como GPT-4 têm taxas significativamente mais altas do que modelos base como GPT-3.5."
+    },
+    "extractPage": {
+      "title": "Extrato de Consumo OpenAI",
+      "subtitle": "Controle detalhado de requisições e tokens consumidos",
+      "filters": "Filtros",
+      "exportCSV": "Exportar CSV",
+      "startDate": "Data Inicial",
+      "endDate": "Data Final",
+      "model": "Modelo",
+      "all": "Todos",
+      "requestType": "Tipo de Requisição",
+      "status": "Status",
+      "applyFilters": "Aplicar Filtros",
+      "clearFilters": "Limpar",
+      "summary": {
+        "totalRequests": "Total de Requisições",
+        "totalTokens": "Total de Tokens",
+        "totalCost": "Custo Total",
+        "successRate": "Taxa de Sucesso"
+      },
+      "table": {
+        "datetime": "Data/Hora",
+        "model": "Modelo",
+        "type": "Tipo",
+        "tokens": "Tokens",
+        "user": "Usuário",
+        "value": "Valor",
+        "status": "Status",
+        "time": "Tempo",
+        "total": "Total",
+        "promptAndCompletion": "P: {{prompt}} / C: {{completion}}"
+      },
+      "empty": "Nenhuma transação encontrada",
+      "footer": {
+        "totalTransactions": "Total de {{count}} transações",
+        "totalTokens": "Total de tokens:",
+        "totalCost": "Custo total:"
+      },
+      "requestTypes": {
+        "chat_completion": "Chat/Conversa",
+        "completion": "Completar Texto",
+        "embedding": "Embeddings",
+        "image_generation": "Geração de Imagem",
+        "audio_transcription": "Transcrição de Áudio"
+      },
+      "statusOptions": {
+        "sucesso": "Sucesso",
+        "erro": "Erro",
+        "timeout": "Timeout",
+        "limite_excedido": "Limite Excedido",
+        "invalido": "Inválido"
+      }
     }
   },
   "businessPartners": {
