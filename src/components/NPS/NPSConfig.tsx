@@ -47,7 +47,6 @@ export const NPSConfiguration: React.FC = () => {
     try {
       const estabelecimentoStr = localStorage.getItem('tms-current-establishment');
       if (!estabelecimentoStr) {
-        console.warn('⚠️ [NPSConfig] Nenhum estabelecimento selecionado no localStorage');
         return null;
       }
 
@@ -55,11 +54,9 @@ export const NPSConfiguration: React.FC = () => {
       const codigo = estabelecimento.codigo;
 
       if (!codigo) {
-        console.warn('⚠️ [NPSConfig] Estabelecimento sem código:', estabelecimento);
         return null;
       }
 
-      console.log('🔍 [NPSConfig] Buscando estabelecimento por código:', codigo);
 
       // Buscar estabelecimento (o contexto é configurado automaticamente)
       const { supabase } = await import('../../lib/supabase');
@@ -71,7 +68,6 @@ export const NPSConfiguration: React.FC = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [NPSConfig] Erro ao buscar estabelecimento:', error);
         console.error('   Código:', error.code);
         console.error('   Mensagem:', error.message);
         console.error('   Detalhes:', error.details);
@@ -91,7 +87,6 @@ export const NPSConfiguration: React.FC = () => {
       }
 
       if (!data?.id) {
-        console.warn('⚠️ [NPSConfig] Estabelecimento não encontrado com código:', codigo);
         setToast({
           message: `Estabelecimento não encontrado nesta organização/ambiente`,
           type: 'error',
@@ -99,7 +94,6 @@ export const NPSConfiguration: React.FC = () => {
         return null;
       }
 
-      console.log('✅ [NPSConfig] Estabelecimento encontrado:', {
         id: data.id,
         codigo: data.codigo,
         razao_social: data.razao_social,
@@ -116,7 +110,6 @@ export const NPSConfiguration: React.FC = () => {
 
       return data.id;
     } catch (error) {
-      console.error('❌ [NPSConfig] Erro ao carregar configuração:', error);
       setToast({
         message: 'Erro ao carregar configuração. Tente novamente',
         type: 'error',
@@ -197,12 +190,10 @@ export const NPSConfiguration: React.FC = () => {
       return;
     }
 
-    console.log('🔍 [NPSConfig] Verificando estabelecimento ID:', estabelecimentoId);
 
     let estabId = estabelecimentoId;
 
     if (!estabId) {
-      console.error('❌ [NPSConfig] estabelecimentoId está vazio!');
       console.log('📋 LocalStorage tms-current-establishment:', localStorage.getItem('tms-current-establishment'));
 
       // Tentar carregar novamente e obter o ID
@@ -220,7 +211,6 @@ export const NPSConfiguration: React.FC = () => {
 
     try {
       setIsSendingTest(true);
-      console.log('✅ [NPSConfig] Iniciando envio de teste com estabelecimento ID:', estabId);
 
       // Buscar dados do estabelecimento SEMPRE COM A VERSÃO MAIS RECENTE
       const { supabase } = await import('../../lib/supabase');
@@ -250,15 +240,12 @@ export const NPSConfiguration: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      console.log('🚀 [NPSConfig] Antes de criar pesquisa - Verificando autenticação...');
       const { data: authCheck } = await supabase.auth.getSession();
-      console.log('🔐 [NPSConfig] Status de autenticação:', {
         autenticado: !!authCheck?.session,
         email: authCheck?.session?.user?.email,
         accessToken: authCheck?.session?.access_token ? 'Presente' : 'Ausente'
       });
 
-      console.log('📋 [NPSConfig] Gerando registro fantasma de teste de Pesquisa NPS com token para validação...');
 
       const tokenGerado = Array.from({ length: 32 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 32);
 
@@ -275,7 +262,6 @@ export const NPSConfiguration: React.FC = () => {
         });
         console.log('✅ Pesquisa de Teste inserida no banco com sucesso!');
       } catch (err) {
-        console.error('⚠️ [NPSConfig] Erro ao criar pesquisa de teste no banco:', err);
       }
 
       // Gerar HTML com o template profissional

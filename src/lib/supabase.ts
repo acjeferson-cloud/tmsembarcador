@@ -174,7 +174,6 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
 
     // Log apenas na primeira configuração
     if (wasFirstConfig && retryCount === 0) {
-      console.log('✅ Contexto de sessão configurado com sucesso:', {
         orgId: dbUser.organization_id.substring(0, 8) + '...',
         envId: dbUser.environment_id.substring(0, 8) + '...',
         email: userEmail

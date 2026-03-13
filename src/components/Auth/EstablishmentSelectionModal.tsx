@@ -25,8 +25,6 @@ export const EstablishmentSelectionModal: React.FC<EstablishmentSelectionModalPr
 
   // Debug: Log establishments
   useEffect(() => {
-    console.log('[EstablishmentSelectionModal] Establishments received:', establishments);
-    console.log('[EstablishmentSelectionModal] Establishments length:', establishments?.length || 0);
   }, [establishments]);
 
   // Reset selection when modal opens
