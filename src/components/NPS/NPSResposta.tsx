@@ -64,17 +64,6 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
       console.log('🔍 Carregando pesquisa NPS com token:', token);
       setIsLoading(true);
 
-      if (token && token.startsWith('TESTE-')) {
-        console.log('💡 Modo de teste detectado');
-        setPesquisa({
-          id: 'test-nps-preview',
-          transportador: { razao_social: 'Transportadora Exemplo (Modo Teste)' },
-          status: 'pendente'
-        });
-        setIsLoading(false);
-        return;
-      }
-
       const data = await npsService.getPesquisaByToken(token);
 
       console.log('📊 Dados da pesquisa:', data);
@@ -129,18 +118,6 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
     try {
       setIsSending(true);
-
-      if (token && token.startsWith('TESTE-')) {
-        setTimeout(() => {
-          setSubmitted(true);
-          setToast({
-            message: 'Obrigado pela sua avaliação! (Modo de Teste)',
-            type: 'success',
-          });
-          setIsSending(false);
-        }, 1000);
-        return;
-      }
 
       await npsService.responderPesquisa(token, {
         nota,

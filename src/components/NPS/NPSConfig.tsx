@@ -258,9 +258,26 @@ export const NPSConfiguration: React.FC = () => {
         accessToken: authCheck?.session?.access_token ? 'Presente' : 'Ausente'
       });
 
-      console.log('📋 [NPSConfig] Pulando a criação de registro fantasma de teste de Pesquisa NPS para apenas testar disparo SMTP...');
+      console.log('📋 [NPSConfig] Gerando registro fantasma de teste de Pesquisa NPS com token para validação...');
 
       const tokenGerado = 'TESTE-' + Array.from({ length: 26 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 26);
+
+      try {
+        await npsService.criarPesquisaCliente({
+          pedido_id: "PEDIDO-TESTE",
+          cliente_nome: "Cliente Teste",
+          cliente_email: testEmail,
+          cliente_telefone: "11999999999",
+          transportador_id: transportadoraData?.id || null,
+          canal_envio: "email",
+          token_pesquisa: tokenGerado,
+          status: "pendente",
+          establishment_id: estabId
+        });
+        console.log('✅ Pesquisa de Teste inserida no banco com sucesso!');
+      } catch (err) {
+        console.error('⚠️ [NPSConfig] Erro ao criar pesquisa de teste no banco:', err);
+      }
 
       // Gerar HTML com o template profissional
       const emailHtml = npsEmailTemplateService.generateNPSEmail(
