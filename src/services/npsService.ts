@@ -496,8 +496,7 @@ export const npsService = {
           opinioes: resposta.opinioes,
           avaliar_anonimo: resposta.avaliar_anonimo,
           status: 'respondida',
-          data_resposta: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          data_resposta: new Date().toISOString()
         })
         .eq('token_pesquisa', token)
         .select()
