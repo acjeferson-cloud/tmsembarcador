@@ -260,19 +260,17 @@ export const NPSConfiguration: React.FC = () => {
 
       console.log('📋 [NPSConfig] Gerando registro fantasma de teste de Pesquisa NPS com token para validação...');
 
-      const tokenGerado = 'TESTE-' + Array.from({ length: 26 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 26);
+      const tokenGerado = Array.from({ length: 32 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 32);
 
       try {
         await npsService.criarPesquisaCliente({
-          pedido_id: "PEDIDO-TESTE",
           cliente_nome: "Cliente Teste",
           cliente_email: testEmail,
           cliente_telefone: "11999999999",
           transportador_id: transportadoraData?.id || null,
           canal_envio: "email",
           token_pesquisa: tokenGerado,
-          status: "pendente",
-          establishment_id: estabId
+          status: "pendente"
         });
         console.log('✅ Pesquisa de Teste inserida no banco com sucesso!');
       } catch (err) {
