@@ -238,10 +238,12 @@ export const npsService = {
           transportador:carriers(razao_social)
         `)
         .or(`environment_id.eq.${estabelecimentoId},establishment_id.eq.${estabelecimentoId}`)
-        .eq('status', 'respondida')
-        .gte('data_resposta', dataInicio)
-        .lte('data_resposta', dataFim)
-        .order('data_resposta', { ascending: false });
+        // Permitir que mostre tanto as respondidas quanto os testes pendentes que o usuario enviou na tela de config
+        .in('status', ['respondida', 'pendente'])
+        // Se a data de resposta for nula (teste), filtrar pela data de envio
+        .or(`data_resposta.gte.${dataInicio},data_envio.gte.${dataInicio}`)
+        .or(`data_resposta.lte.${dataFim},data_envio.lte.${dataFim}`)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];

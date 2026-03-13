@@ -63,32 +63,23 @@ export const NPSDashboard: React.FC = () => {
   useEffect(() => {
     let finalId = '';
     
-    // 1. Tentar ler do Session Storage Global (Mais confiável para ambiente - 518f849d...)
-    const envIdLocal = localStorage.getItem('tms-selected-env-id');
-    if (envIdLocal) {
-      finalId = envIdLocal;
-      console.log('✅ [NPSDashboard] ID environment capturado via tms-selected-env-id (Prioridade Máxima):', finalId);
-    }
-    
-    // 2. Se falhar, tentar ler do objeto de sessão do usuário
-    if (!finalId) {
-      const sessionStr = localStorage.getItem('tms-user');
-      if (sessionStr) {
-        try {
-          const session = JSON.parse(sessionStr);
-          if (session.environment_id) {
-            finalId = session.environment_id;
-            console.log('✅ [NPSDashboard] ID environment lido via user session:', finalId);
-          }
-        } catch (e) {
-          // Ignora
+    // O grande truque final: O banco de NPS guarda usando Estabelecimento ID e NÃO Environment ID
+    const estabStr = localStorage.getItem('tms-current-establishment');
+    if (estabStr) {
+      try {
+        const estab = JSON.parse(estabStr);
+        if (estab.id) {
+          finalId = String(estab.id);
+          console.log('✅ [NPSDashboard] ID do Estabelecimento puro lido com sucesso:', finalId);
         }
+      } catch (e) {
+        // Ignora
       }
     }
 
-    // 3. Em último caso extremo, tentar o currentEstablishment
-    if (!finalId && currentEstablishment?.environmentId) {
-      finalId = currentEstablishment.environmentId;
+    // Fallback: Se não tem LocalStorage, tenta usar o AuthContext
+    if (!finalId && currentEstablishment?.id) {
+      finalId = String(currentEstablishment.id);
       console.log('⚠️ [NPSDashboard] Fallback para Auth Context:', finalId);
     }
 
