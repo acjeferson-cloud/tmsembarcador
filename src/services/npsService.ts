@@ -638,9 +638,9 @@ export const npsService = {
             transportador:carriers(razao_social)
           `)
           .or(`environment_id.eq.${estabelecimentoId},establishment_id.eq.${estabelecimentoId}`)
-          .eq('status', 'respondida')
-          .gte('data_resposta', periodoInicio)
-          .lte('data_resposta', periodoFim);
+          .in('status', ['respondida', 'pendente'])
+          .or(`data_resposta.gte.${periodoInicio},data_envio.gte.${periodoInicio}`)
+          .or(`data_resposta.lte.${periodoFim},data_envio.lte.${periodoFim}`);
 
         if (error) throw error;
 
@@ -649,7 +649,7 @@ export const npsService = {
           if (!acc[tid]) {
             acc[tid] = {
               transportador_id: tid,
-              razao_social: item.transportador?.razao_social || 'Desconhecido',
+              razao_social: item.transportador?.razao_social || (tid ? 'Desconhecido' : 'Geral (S/ Transportadora)'),
               promotores: 0,
               neutros: 0,
               detratores: 0,

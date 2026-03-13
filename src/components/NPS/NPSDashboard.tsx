@@ -105,6 +105,12 @@ export const NPSDashboard: React.FC = () => {
           }
         }
 
+        // Se a sessão local falhar, tenta o AuthContext atualizado da Memória do React
+        if (!finalId && currentEstablishment?.environmentId) {
+           finalId = currentEstablishment.environmentId;
+           console.log('✅ [NPSDashboard] Recuperado com sucesso via React Auth Context:', finalId);
+        }
+
         // Se a sessão também falhar tenta a prop isolada suja
         if (!finalId) {
           const envIdLocal = localStorage.getItem('tms-selected-env-id');
