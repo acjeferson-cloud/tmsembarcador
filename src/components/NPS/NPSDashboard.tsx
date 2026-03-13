@@ -90,12 +90,28 @@ export const NPSDashboard: React.FC = () => {
         }
       }
 
-      // Fallback extremo
+      // Fallback extremo: Cache quebrado ou array nulo
       if (!finalId) {
-        const envIdLocal = localStorage.getItem('tms-selected-env-id');
-        if (envIdLocal) {
-          finalId = envIdLocal;
-          console.log('⚠️ [NPSDashboard] Fallback para Environment ID:', finalId);
+        const sessionStr = localStorage.getItem('tms-user');
+        if (sessionStr) {
+          try {
+            const session = JSON.parse(sessionStr);
+            if (session.environment_id) {
+              finalId = session.environment_id;
+              console.log('✅ [NPSDashboard] Recuperado com sucesso final usando user session environment_id:', finalId);
+            }
+          } catch (e) {
+            // Ignora
+          }
+        }
+
+        // Se a sessão também falhar tenta a prop isolada suja
+        if (!finalId) {
+          const envIdLocal = localStorage.getItem('tms-selected-env-id');
+          if (envIdLocal) {
+            finalId = envIdLocal;
+            console.log('⚠️ [NPSDashboard] Fallback sujo para Environment ID:', finalId);
+          }
         }
       }
 
