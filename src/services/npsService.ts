@@ -230,7 +230,6 @@ export const npsService = {
     dataFim: string
   ): Promise<NPSPesquisaCliente[]> {
     try {
-      console.log('📡 [NPS Service] Buscando avaliações cliente', { estabelecimentoId, dataInicio, dataFim });
       const { data, error } = await supabase
         .from('nps_pesquisas_cliente')
         .select(`

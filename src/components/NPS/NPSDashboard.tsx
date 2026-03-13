@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
-
+import { TenantContextHelper } from '../../utils/tenantContext';
 const getDefaultDates = () => {
   const hoje = new Date();
   hoje.setHours(23, 59, 59, 999);
@@ -62,63 +62,39 @@ export const NPSDashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchEstabelecimento = async () => {
-      // O banco requer um UUID, mas o cache do sistema LogAxis salva um Número Inteiro (ex: 1).
-      // Devemos aguardar a autenticação para buscar a UUID primária no banco usando o 'codigo'.
       if (!user) return; 
 
       let finalId = '';
       
-      const estabStr = localStorage.getItem('tms-current-establishment');
-      if (estabStr) {
-        try {
-          const estab = JSON.parse(estabStr);
-          if (estab.codigo && supabase) {
-            const { data } = await supabase
-              .from('establishments')
-              .select('id')
-              .eq('codigo', estab.codigo)
-              .maybeSingle();
+      try {
+        const context = await TenantContextHelper.getCurrentContext();
+        if (context?.environmentId) {
+          finalId = context.environmentId;
+        }
+      } catch (e) {
+        console.error('Erro ao recuperar TenantContext:', e);
+      }
 
-            const rawData = data as any;
-            if (rawData?.id) {
-              finalId = rawData.id;
-              console.log('✅ [NPSDashboard] UUID real do Estabelecimento recuperado do banco:', finalId);
-            }
+      // 1. Fallback: Tentar buscar a UUID real do estabelecimento baseada no Código presente na Sessão Ativa do React
+      if (!finalId && currentEstablishment?.codigo && supabase) {
+        try {
+          const { data } = await supabase
+            .from('establishments')
+            .select('id')
+            .eq('codigo', currentEstablishment.codigo)
+            .maybeSingle();
+
+          if ((data as any)?.id) {
+            finalId = (data as any).id;
           }
         } catch (e) {
-          console.error('Erro ao ler estabelecimento cache:', e);
+          console.error('Erro ao ler estabelecimento Auth Context:', e);
         }
       }
 
-      // Fallback extremo: Cache quebrado ou array nulo
-      if (!finalId) {
-        const sessionStr = localStorage.getItem('tms-user');
-        if (sessionStr) {
-          try {
-            const session = JSON.parse(sessionStr);
-            if (session.environment_id) {
-              finalId = session.environment_id;
-              console.log('✅ [NPSDashboard] Recuperado com sucesso final usando user session environment_id:', finalId);
-            }
-          } catch (e) {
-            // Ignora
-          }
-        }
-
-        // Se a sessão local falhar, tenta o AuthContext atualizado da Memória do React
-        if (!finalId && currentEstablishment?.environmentId) {
-           finalId = currentEstablishment.environmentId;
-           console.log('✅ [NPSDashboard] Recuperado com sucesso via React Auth Context:', finalId);
-        }
-
-        // Se a sessão também falhar tenta a prop isolada suja
-        if (!finalId) {
-          const envIdLocal = localStorage.getItem('tms-selected-env-id');
-          if (envIdLocal) {
-            finalId = envIdLocal;
-            console.log('⚠️ [NPSDashboard] Fallback sujo para Environment ID:', finalId);
-          }
-        }
+      // 2. Fallback Seguro Secundário: Obter diretamente do usuário logado se a aba de estabelecimento cair
+      if (!finalId && user?.environment_id) {
+         finalId = user.environment_id;
       }
 
       if (finalId) {
