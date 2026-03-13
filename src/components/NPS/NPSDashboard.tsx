@@ -5,6 +5,7 @@ import { InlineMessage } from '../common/InlineMessage';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 
 const getDefaultDates = () => {
   const hoje = new Date();
@@ -60,14 +61,40 @@ export const NPSDashboard: React.FC = () => {
   }, [estabelecimentoId, periodoInicio, periodoFim, tipoNPS]);
 
   useEffect(() => {
-    if (currentEstablishment?.environmentId) {
-       setEstabelecimentoId(currentEstablishment.environmentId);
-    } else if (currentEstablishment?.id) {
-       setEstabelecimentoId(String(currentEstablishment.id));
-    } else {
-       const envIdLocal = localStorage.getItem('tms-selected-env-id');
-       if (envIdLocal) setEstabelecimentoId(envIdLocal);
-    }
+    const fetchEstabelecimento = async () => {
+      try {
+        const estabStr = localStorage.getItem('tms-current-establishment');
+        if (estabStr) {
+          const estab = JSON.parse(estabStr);
+          if (estab.codigo && supabase) {
+            const { data, error } = await supabase
+              .from('establishments')
+              .select('id, environment_id')
+              .eq('codigo', estab.codigo)
+              .maybeSingle();
+              
+            if (data && !error) {
+              setEstabelecimentoId((data as any).environment_id || (data as any).id);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao ler estabelecimento:', e);
+      }
+
+      // Fallback
+      if (currentEstablishment?.environmentId) {
+        setEstabelecimentoId(currentEstablishment.environmentId);
+      } else if (currentEstablishment?.id) {
+        setEstabelecimentoId(String(currentEstablishment.id));
+      } else {
+        const envIdLocal = localStorage.getItem('tms-selected-env-id');
+        if (envIdLocal) setEstabelecimentoId(envIdLocal);
+      }
+    };
+
+    fetchEstabelecimento();
   }, [currentEstablishment]);
 
   useEffect(() => {
