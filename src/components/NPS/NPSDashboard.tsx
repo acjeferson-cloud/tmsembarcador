@@ -20,7 +20,7 @@ const getDefaultDates = () => {
 
 export const NPSDashboard: React.FC = () => {
   const defaultDates = getDefaultDates();
-  const { user } = useAuth();
+  const { user, currentEstablishment } = useAuth();
   const { isActive: npsActive, isLoading: npsLoading } = useInnovation(
     INNOVATION_IDS.NPS,
     user?.id
@@ -60,18 +60,10 @@ export const NPSDashboard: React.FC = () => {
   }, [estabelecimentoId, periodoInicio, periodoFim, tipoNPS]);
 
   useEffect(() => {
-    const loadEstabelecimentoUUID = () => {
-      const estabelecimentoStr = localStorage.getItem('tms-current-establishment');
-      if (!estabelecimentoStr) return;
-
-      const estabelecimento = JSON.parse(estabelecimentoStr);
-      if (estabelecimento?.id) {
-        setEstabelecimentoId(estabelecimento.id);
-      }
-    };
-
-    loadEstabelecimentoUUID();
-  }, []);
+    if (currentEstablishment?.id) {
+       setEstabelecimentoId(String(currentEstablishment.id));
+    }
+  }, [currentEstablishment]);
 
   useEffect(() => {
     loadRanking();

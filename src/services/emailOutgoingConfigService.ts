@@ -218,85 +218,24 @@ const emailOutgoingConfigService = {
           secure: useSecure,
           auth: {
             user: config.smtp_user,
-            pass: config.smtp_password ? '***' : 'VAZIO'
+            pass: config.smtp_password
           }
         }
       };
 
-
-
-      const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-test-email`;
-
-
-
-
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          email: emailData,
-          smtp_config: {
-            host: config.smtp_host,
-            port: config.smtp_port,
-            secure: useSecure,
-            auth: {
-              user: config.smtp_user,
-              pass: config.smtp_password
-            }
-          }
-        })
+      const { data, error } = await supabase.functions.invoke('send-test-email', {
+        body: payload
       });
 
-
-
-
-
-
-      const responseText = await response.text();
-
-
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-
-      } catch (e) {
-
-
+      if (error) {
+        throw new Error(error.message || 'Falha ao enviar e-mail de teste via Edge Function');
       }
 
-      if (!response.ok) {
-
-
-
-
-        // Exibir logs mesmo em caso de erro
-        if (responseData?.logs && Array.isArray(responseData.logs)) {
-
-
-          responseData.logs.forEach((log: string) => { /*log_removed*/ });
-
-        }
-
-        const errorMsg = responseData?.message || responseData?.error || 'Falha ao enviar e-mail de teste';
-        throw new Error(errorMsg);
-      }
-
-
-
-
-      // Exibir logs da edge function
-      if (responseData?.logs && Array.isArray(responseData.logs)) {
-
-
-        responseData.logs.forEach((log: string) => { /*log_removed*/ });
-
+      if (!data?.success) {
+        throw new Error(data?.error || data?.message || 'Falha ao enviar e-mail de teste');
       }
 
       await this.updateTestStatus(request.config_id, true);
-
 
       return {
         success: true,

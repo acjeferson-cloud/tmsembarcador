@@ -286,11 +286,11 @@ export const npsService = {
 
   gerarDadosDemonstracao(dataInicio: string, dataFim: string): any[] {
     const transportadoras = [
-      { id: 'demo-1', razao_social: 'Transportadora Express Ltda' },
-      { id: 'demo-2', razao_social: 'LogTrans Transportes' },
-      { id: 'demo-3', razao_social: 'RodoLog Logística' },
-      { id: 'demo-4', razao_social: 'Fast Cargo Transportes' },
-      { id: 'demo-5', razao_social: 'TransNacional S.A.' },
+      { id: '11111111-1111-4111-a111-111111111111', razao_social: 'Transportadora Express Ltda' },
+      { id: '22222222-2222-4222-a222-222222222222', razao_social: 'LogTrans Transportes' },
+      { id: '33333333-3333-4333-a333-333333333333', razao_social: 'RodoLog Logística' },
+      { id: '44444444-4444-4444-a444-444444444444', razao_social: 'Fast Cargo Transportes' },
+      { id: '55555555-5555-4555-a555-555555555555', razao_social: 'TransNacional S.A.' },
     ];
 
     const cenarios = [
@@ -454,52 +454,27 @@ export const npsService = {
     html: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-
-
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/enviar-email-nps`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('enviar-email-nps', {
+        body: {
           estabelecimentoId,
           to,
           subject,
           html,
-        }),
+        }
       });
 
-
-
-      if (!response.ok) {
-        let errorMessage = 'Erro ao enviar email';
-        try {
-          const result = await response.json();
-          errorMessage = result.message || result.error || errorMessage;
-
-        } catch {
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
+      if (error) {
+        throw new Error(error.message || 'Erro ao invocar a função Edge enviar-email-nps');
       }
 
-      const result = await response.json();
+      if (!data?.success) {
+        throw new Error(data?.error || data?.message || 'Falha na resposta da função enviar-email-nps');
+      }
 
-
-      return result;
+      return data;
     } catch (error: any) {
-      console.warn('⚠️ [npsService] Fallback de envio de email. O servidor rejeitou a conexão com a função Edge. Simulando envio com sucesso.', error);
-      // Fallback para desenvolvimento/testes quando a Edge Function não está disponível
-      return { 
-        success: true, 
-        message: 'Email simulado (Servidor de email indisponível, mas a pesquisa foi registrada com sucesso).' 
-      };
+      console.warn('⚠️ [npsService] Erro ao disparar email de NPS:', error);
+      throw error;
     }
   },
 

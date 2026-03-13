@@ -112,35 +112,31 @@ export const orderNotificationService = {
 
 
       // 6. Enviar e-mails
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const emailPromises = contactsToNotifyEmail.map(async (contact: any) => {
         try {
 
 
-          const response = await fetch(`${supabaseUrl}/functions/v1/enviar-email-nps`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
+          const { data, error } = await supabase.functions.invoke('enviar-email-nps', {
+            body: {
               estabelecimentoId: estabelecimento.id,
               to: contact.email,
               subject: `✅ Pedido ${order.order_number} Emitido - ${estabelecimento.razao_social}`,
               html: htmlEmail
-            })
+            }
           });
 
-          const result = await response.json();
+          if (error) {
+            throw new Error(error.message || 'Erro ao invocar função de envio de email');
+          }
 
-          if (result.success) {
+          if (data?.success) {
 
           } else {
 
           }
 
-          return result;
-        } catch (error) {
+          return data;
+        } catch (error: any) {
 
           return { success: false, error: String(error) };
         }

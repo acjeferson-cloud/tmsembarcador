@@ -258,25 +258,9 @@ export const NPSConfiguration: React.FC = () => {
         accessToken: authCheck?.session?.access_token ? 'Presente' : 'Ausente'
       });
 
-      console.log('📋 [NPSConfig] Criando pesquisa NPS com dados:', {
-        establishment_id: estabId,
-        transportador_id: transportadoraData?.id || null,
-        transportador_nome: transportadoraData?.fantasia || transportadoraData?.razao_social,
-        cliente_email: testEmail
-      });
+      console.log('📋 [NPSConfig] Pulando a criação de registro fantasma de teste de Pesquisa NPS para apenas testar disparo SMTP...');
 
-      const tokenGerado = Array.from({ length: 32 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 32);
-
-      const pesquisa = await npsService.criarPesquisaCliente({
-        establishment_id: estabId,
-        transportador_id: transportadoraData?.id || null,
-        cliente_nome: 'Cliente Teste',
-        cliente_email: testEmail,
-        status: 'pendente',
-        canal_envio: 'email',
-        data_envio: new Date().toISOString(),
-        token_pesquisa: tokenGerado,
-      });
+      const tokenGerado = 'TESTE-' + Array.from({ length: 26 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 26);
 
       // Gerar HTML com o template profissional
       const emailHtml = npsEmailTemplateService.generateNPSEmail(
@@ -289,7 +273,7 @@ export const NPSConfiguration: React.FC = () => {
             month: '2-digit',
             year: 'numeric'
           }),
-          tokenPesquisa: pesquisa.token_pesquisa,
+          tokenPesquisa: tokenGerado,
           itensPedido: [
             {
               codigo: 'SKU-4380',

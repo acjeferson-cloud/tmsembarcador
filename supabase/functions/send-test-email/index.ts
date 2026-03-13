@@ -33,15 +33,19 @@ serve(async (req) => {
       },
     });
 
+    const sendFrom = email?.from?.name 
+      ? `"${email.from.name}" <${email?.from?.email || smtp_config?.auth?.user}>` 
+      : (email?.from?.email || smtp_config?.auth?.user);
+
     // Attempt to send the email
     const info = await transporter.sendMail({
-      from: smtp_config.auth.user, // Using the authenticated user as sender
-      to: email.to,
-      subject: email.subject,
-      html: email.html,
+      from: sendFrom,
+      to: email?.to,
+      subject: email?.subject,
+      html: email?.html,
     });
 
-    console.log(`Email successfully sent to ${email.to}. MessageId: ${info.messageId}`);
+    console.log(`Email successfully sent to ${email?.to}. MessageId: ${info.messageId}`);
 
     return new Response(
       JSON.stringify({
@@ -64,7 +68,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 200,
       }
     );
   }

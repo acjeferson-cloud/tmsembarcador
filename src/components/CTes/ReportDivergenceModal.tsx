@@ -118,25 +118,21 @@ export const ReportDivergenceModal: React.FC<ReportDivergenceModalProps> = ({
           <p>Atenciosamente,<br>${establishmentName}</p>
         `;
 
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enviar-email-nps`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
-              estabelecimentoId: establishmentId,
-              to: cteData.carrierEmail,
-              subject: emailSubject,
-              html: emailBody
-            })
+        const { data, error } = await supabase.functions.invoke('enviar-email-nps', {
+          body: {
+            estabelecimentoId: establishmentId,
+            to: cteData.carrierEmail,
+            subject: emailSubject,
+            html: emailBody
           }
-        );
+        });
 
-        if (!response.ok) {
-          throw new Error('Falha ao enviar email');
+        if (error) {
+          throw new Error(error.message || 'Falha ao invocar função de envio de email');
+        }
+
+        if (!data?.success) {
+          throw new Error(data?.error || data?.message || 'Falha na resposta do envio de email');
         }
 
         await cteDivergenceReportService.markAsSentByEmail(currentReportId, cteData.carrierEmail);

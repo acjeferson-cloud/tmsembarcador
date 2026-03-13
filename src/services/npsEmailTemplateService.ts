@@ -27,13 +27,14 @@ interface NPSEmailData {
 
 export const npsEmailTemplateService = {
   generateNPSEmail(data: NPSEmailData, baseUrl: string): string {
-    const linkPesquisa = `${baseUrl}/nps-responder/${data.tokenPesquisa}`;
-
+    // Forçar URL de Produção caso o base-url injetado seja localhost (Devido o teste ocorrer na máquila local do Admin)
+    const secureBaseUrl = baseUrl.includes('localhost') ? 'https://embarcador.logaxis.com.br' : baseUrl;
+    
     // Gerar links individuais para cada nota (0 a 10)
     const notasLinks = Array.from({ length: 11 }, (_, i) =>
-      `${baseUrl}/nps-responder/${data.tokenPesquisa}?nota=${i}`
+      `${secureBaseUrl}/nps-responder/${data.tokenPesquisa}?nota=${i}`
     );
-
+        
     // Formatar valores monetários
     const formatMoney = (value?: number) => {
       if (!value) return 'R$ 0,00';
@@ -57,188 +58,73 @@ export const npsEmailTemplateService = {
   </style>
   <![endif]-->
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      margin: 0;
-      padding: 0;
-      background-color: #e8edf2;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      margin: 0; padding: 0;
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
+    img { border: 0; height: auto; outline: none; text-decoration: none; max-width: 100%; display: block; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
 
-    img {
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-      -ms-interpolation-mode: bicubic;
-      max-width: 100%;
-      display: block;
-    }
+    .email-wrapper { width: 100%; background-color: #f4f6f9; padding: 40px 15px; }
+    .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
 
-    table {
-      border-collapse: collapse;
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
+    .logo-area { background: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 1px solid #edf2f7; }
 
-    .email-wrapper {
-      width: 100%;
-      background-color: #e8edf2;
-      padding: 30px 15px;
-    }
+    .header { background: #ffffff; padding: 40px 30px 20px; text-align: center; }
+    
+    .nps-hero { background: #ffffff; padding: 10px 30px 40px; text-align: center; }
+    .nps-question { color: #1e293b; font-size: 24px; font-weight: 700; line-height: 1.4; margin-bottom: 15px; }
+    .nps-subtitle { color: #64748b; font-size: 15px; font-weight: 400; margin-bottom: 30px; line-height: 1.5; }
 
-    .email-container {
-      max-width: 640px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-    }
-
-    /* Área branca do logo */
-    .logo-area {
-      background: #ffffff;
-      padding: 40px 25px;
-      text-align: center;
-      border-bottom: 3px solid #e2e8f0;
-    }
-
-    /* Cabeçalho com saudação */
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 30px 25px;
-      text-align: center;
-      position: relative;
-    }
-
-    /* Seção NPS - DESTAQUE PRINCIPAL */
-    .nps-hero {
-      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-      padding: 35px 25px;
-      text-align: center;
-      border-bottom: 3px solid #5568d3;
-    }
-
-    .nps-question {
-      color: #ffffff;
-      font-size: 22px;
-      font-weight: 700;
-      line-height: 1.3;
-      margin-bottom: 10px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .nps-subtitle {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 14px;
-      font-weight: 400;
-      margin-bottom: 25px;
-      line-height: 1.4;
-    }
-
-    /* Botões NPS - SEM SCROLL - COMPACTO */
+    /* NOVA ÁREA DE NPS APRIMORADA */
     .nps-buttons-container {
-      background: white;
-      padding: 20px 15px;
-      border-radius: 12px;
+      background: #f8fafc;
+      padding: 30px 20px;
+      border-radius: 16px;
       margin: 0 auto;
-      max-width: 550px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+      max-width: 100%;
+      border: 1px solid #e2e8f0;
     }
-
     .nps-buttons {
       display: flex;
-      justify-content: center;
-      flex-wrap: nowrap;
-      gap: 5px;
-      margin-bottom: 12px;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 15px;
     }
-
     .nps-button {
-      display: inline-block;
-      min-width: 40px;
-      width: 40px;
-      height: 40px;
-      line-height: 40px;
+      display: block;
+      width: 100%;
+      min-width: 38px;
+      height: 44px;
+      line-height: 44px;
       text-align: center;
-      border: 2px solid transparent;
       border-radius: 8px;
       color: #ffffff;
-      font-size: 16px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 600;
       text-decoration: none;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-      flex-shrink: 0;
     }
+    .nps-button:hover { opacity: 0.9; }
 
-    .nps-button:hover {
-      transform: translateY(-2px) scale(1.08);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-    }
-
-    .nps-button-low {
-      background: #FF5722;
-      border-color: #FF5722;
-    }
-
-    .nps-button-low:hover {
-      background: #E64A19;
-      border-color: #E64A19;
-    }
-
-    .nps-button-medium {
-      background: #FFEB3B;
-      border-color: #FFEB3B;
-      color: #333333;
-    }
-
-    .nps-button-medium:hover {
-      background: #FDD835;
-      border-color: #FDD835;
-      color: #333333;
-    }
-
-    .nps-button-high {
-      background: #4CAF50;
-      border-color: #4CAF50;
-    }
-
-    .nps-button-high:hover {
-      background: #388E3C;
-      border-color: #388E3C;
-    }
+    /* Cores das Notas do Net Promoter Score */
+    .bg-0, .bg-1, .bg-2, .bg-3, .bg-4, .bg-5, .bg-6 { background-color: #ef4444; } /* Detratores: Vermelho Vivo */
+    .bg-7, .bg-8 { background-color: #eab308; } /* Neutros: Amarelo Ouro */
+    .bg-9, .bg-10 { background-color: #22c55e; } /* Promotores: Verde Vivo */
 
     .nps-scale {
       display: flex;
       justify-content: space-between;
-      margin-top: 12px;
-      padding: 0 8px;
+      margin-top: 20px;
+      padding: 0 5px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 15px;
     }
-
-    .scale-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    .scale-left {
-      color: #e53e3e;
-    }
-
-    .scale-right {
-      color: #38a169;
-    }
+    .scale-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .scale-left { color: #ef4444; }
+    .scale-right { color: #22c55e; }
 
     /* Conteúdo - COMPACTO */
     .content {
@@ -625,18 +511,19 @@ export const npsEmailTemplateService = {
             <tr>
               <td style="background: #ffffff; padding: 25px 25px 30px; text-align: center;">
                 <div class="nps-buttons-container" style="background: white; padding: 0; box-shadow: none; max-width: 100%;">
-                  <div class="nps-buttons">
-                    ${notasLinks.map((link, index) => {
-                      let buttonClass = 'nps-button';
-                      if (index <= 6) buttonClass += ' nps-button-low';
-                      else if (index <= 8) buttonClass += ' nps-button-medium';
-                      else buttonClass += ' nps-button-high';
-                      return `<a href="${link}" class="${buttonClass}">${index}</a>`;
-                    }).join('')}
-                  </div>
-                  <div class="nps-scale" style="margin-top: 15px;">
-                    <span class="scale-label scale-left">🔴 NADA PROVÁVEL</span>
-                    <span class="scale-label scale-right">🟢 MUITO PROVÁVEL</span>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 20px;">
+                    <tr>
+                      ${notasLinks.map((link, i) => `
+                      <td align="center" width="9%" style="padding: 2px;">
+                        <a href="${link}" class="nps-button bg-${i}" style="color: #ffffff; text-decoration: none;" target="_blank">${i}</a>
+                      </td>
+                      `).join('')}
+                    </tr>
+                  </table>
+                  
+                  <div class="nps-scale" style="margin-top: 25px;">
+                    <span class="scale-label scale-left">● Nada Provável</span>
+                    <span class="scale-label scale-right">Muito Provável ●</span>
                   </div>
                 </div>
               </td>

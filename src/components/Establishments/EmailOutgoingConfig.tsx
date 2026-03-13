@@ -79,6 +79,21 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
     try {
       setIsSaving(true);
+      
+      const sessionStr = localStorage.getItem('tms-session');
+      if (sessionStr) {
+        try {
+          const sessionData = JSON.parse(sessionStr);
+          if (sessionData && sessionData.environment_id) {
+            formData.environment_id = sessionData.environment_id;
+          }
+          if (sessionData && sessionData.organization_id) {
+            formData.organization_id = sessionData.organization_id;
+          }
+        } catch (e) {
+          console.warn('Erro ao ler tms-session do localstorage', e);
+        }
+      }
 
       if (config) {
         await emailOutgoingConfigService.update(config.id, formData);
