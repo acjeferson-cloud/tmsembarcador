@@ -62,10 +62,13 @@ export const NPSDashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchEstabelecimento = async () => {
+      let finalId = '';
       try {
         const estabStr = localStorage.getItem('tms-current-establishment');
         if (estabStr) {
           const estab = JSON.parse(estabStr);
+          console.log('📦 [NPSDashboard] LocalStorage tms-current-establishment Lido:', estab);
+          
           if (estab.codigo && supabase) {
             const { data, error } = await supabase
               .from('establishments')
@@ -74,9 +77,12 @@ export const NPSDashboard: React.FC = () => {
               .maybeSingle();
               
             if (data && !error) {
-              setEstabelecimentoId((data as any).environment_id || (data as any).id);
-              return;
+              finalId = (data as any).environment_id || (data as any).id;
+              console.log('✅ [NPSDashboard] ID recuperada do banco via codigo:', finalId);
             }
+          } else if (estab.id) {
+            finalId = estab.environment_id || estab.id;
+            console.log('✅ [NPSDashboard] ID capturada diretamente do LocalStorage property:', finalId);
           }
         }
       } catch (e) {
@@ -84,14 +90,19 @@ export const NPSDashboard: React.FC = () => {
       }
 
       // Fallback
-      if (currentEstablishment?.environmentId) {
-        setEstabelecimentoId(currentEstablishment.environmentId);
-      } else if (currentEstablishment?.id) {
-        setEstabelecimentoId(String(currentEstablishment.id));
-      } else {
-        const envIdLocal = localStorage.getItem('tms-selected-env-id');
-        if (envIdLocal) setEstabelecimentoId(envIdLocal);
+      if (!finalId) {
+        if (currentEstablishment?.environmentId) {
+          finalId = currentEstablishment.environmentId;
+        } else if (currentEstablishment?.id) {
+          finalId = String(currentEstablishment.id);
+        } else {
+          const envIdLocal = localStorage.getItem('tms-selected-env-id');
+          if (envIdLocal) finalId = envIdLocal;
+        }
+        console.log('⚠️ [NPSDashboard] Usando mecanismo Fallback de ID:', finalId);
       }
+      
+      setEstabelecimentoId(finalId);
     };
 
     fetchEstabelecimento();
