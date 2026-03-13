@@ -26,6 +26,8 @@ export interface Establishment {
   tipo: 'matriz' | 'filial';
   trackingPrefix: string;
   emailConfig?: EmailConfig;
+  organizationId?: string;
+  environmentId?: string;
 }
 
 // Dados iniciais

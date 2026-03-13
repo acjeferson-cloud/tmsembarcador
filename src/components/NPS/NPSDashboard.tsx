@@ -60,8 +60,13 @@ export const NPSDashboard: React.FC = () => {
   }, [estabelecimentoId, periodoInicio, periodoFim, tipoNPS]);
 
   useEffect(() => {
-    if (currentEstablishment?.id) {
+    if (currentEstablishment?.environmentId) {
+       setEstabelecimentoId(currentEstablishment.environmentId);
+    } else if (currentEstablishment?.id) {
        setEstabelecimentoId(String(currentEstablishment.id));
+    } else {
+       const envIdLocal = localStorage.getItem('tms-selected-env-id');
+       if (envIdLocal) setEstabelecimentoId(envIdLocal);
     }
   }, [currentEstablishment]);
 

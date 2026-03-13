@@ -236,7 +236,7 @@ export const npsService = {
           *,
           transportador:carriers(razao_social)
         `)
-        .eq('establishment_id', estabelecimentoId)
+        .eq('environment_id', estabelecimentoId)
         .eq('status', 'respondida')
         .gte('data_resposta', dataInicio)
         .lte('data_resposta', dataFim)
@@ -265,7 +265,7 @@ export const npsService = {
           *,
           transportador:carriers(razao_social)
         `)
-        .eq('establishment_id', estabelecimentoId)
+        .eq('environment_id', estabelecimentoId)
         .gte('periodo_inicio', startDate)
         .lte('periodo_fim', endDate)
         .order('created_at', { ascending: false });
@@ -590,7 +590,7 @@ export const npsService = {
           *,
           transportador:carriers(razao_social)
         `)
-        .eq('establishment_id', estabelecimentoId)
+        .eq('environment_id', estabelecimentoId)
         .order('periodo_fim', { ascending: false });
 
       if (filtros?.transportadorId) {
@@ -635,7 +635,7 @@ export const npsService = {
             nota,
             transportador:carriers(razao_social)
           `)
-          .eq('establishment_id', estabelecimentoId)
+          .eq('environment_id', estabelecimentoId)
           .eq('status', 'respondida')
           .gte('data_resposta', periodoInicio)
           .lte('data_resposta', periodoFim);
@@ -678,7 +678,7 @@ export const npsService = {
             total_entregas,
             transportador:carriers(razao_social)
           `)
-          .eq('establishment_id', estabelecimentoId)
+          .eq('environment_id', estabelecimentoId)
           .lte('periodo_inicio', periodoFim)
           .gte('periodo_fim', periodoInicio);
 
