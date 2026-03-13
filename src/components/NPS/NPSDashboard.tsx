@@ -61,51 +61,42 @@ export const NPSDashboard: React.FC = () => {
   }, [estabelecimentoId, periodoInicio, periodoFim, tipoNPS]);
 
   useEffect(() => {
-    const fetchEstabelecimento = async () => {
-      let finalId = '';
-      try {
-        const estabStr = localStorage.getItem('tms-current-establishment');
-        if (estabStr) {
+    let finalId = '';
+    
+    // Tentar ler do currentEstablishment provido pelo useAuth context
+    if (currentEstablishment?.environmentId) {
+      finalId = currentEstablishment.environmentId;
+      console.log('✅ [NPSDashboard] ID environment capturada via global Auth Context:', finalId);
+    }
+
+    // Tentar ler do LocalStorage root caso o context atrase
+    if (!finalId) {
+      const estabStr = localStorage.getItem('tms-current-establishment');
+      if (estabStr) {
+        try {
           const estab = JSON.parse(estabStr);
-          console.log('📦 [NPSDashboard] LocalStorage tms-current-establishment Lido:', estab);
-          
-          if (estab.codigo && supabase) {
-            const { data, error } = await supabase
-              .from('establishments')
-              .select('id, environment_id')
-              .eq('codigo', estab.codigo)
-              .maybeSingle();
-              
-            if (data && !error) {
-              finalId = (data as any).environment_id || (data as any).id;
-              console.log('✅ [NPSDashboard] ID recuperada do banco via codigo:', finalId);
-            }
-          } else if (estab.id) {
-            finalId = estab.environment_id || estab.id;
-            console.log('✅ [NPSDashboard] ID capturada diretamente do LocalStorage property:', finalId);
+          if (estab.environmentId) {
+            finalId = estab.environmentId;
+            console.log('✅ [NPSDashboard] ID environment lido via String Cache:', finalId);
           }
+        } catch (e) {
+          // Ignora
         }
-      } catch (e) {
-        console.error('Erro ao ler estabelecimento:', e);
       }
+    }
+    
+    // Fallback absoluto via Session Storage Global
+    if (!finalId) {
+      const envIdLocal = localStorage.getItem('tms-selected-env-id');
+      if (envIdLocal) {
+        finalId = envIdLocal;
+        console.log('✅ [NPSDashboard] Fallback seguro para o ID Selected Env:', finalId);
+      }
+    }
 
-      // Fallback
-      if (!finalId) {
-        if (currentEstablishment?.environmentId) {
-          finalId = currentEstablishment.environmentId;
-        } else if (currentEstablishment?.id) {
-          finalId = String(currentEstablishment.id);
-        } else {
-          const envIdLocal = localStorage.getItem('tms-selected-env-id');
-          if (envIdLocal) finalId = envIdLocal;
-        }
-        console.log('⚠️ [NPSDashboard] Usando mecanismo Fallback de ID:', finalId);
-      }
-      
+    if (finalId) {
       setEstabelecimentoId(finalId);
-    };
-
-    fetchEstabelecimento();
+    }
   }, [currentEstablishment]);
 
   useEffect(() => {
