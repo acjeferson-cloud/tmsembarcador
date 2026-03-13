@@ -270,7 +270,8 @@ export const NPSConfiguration: React.FC = () => {
           transportador_id: transportadoraData?.id || null,
           canal_envio: "email",
           token_pesquisa: tokenGerado,
-          status: "pendente"
+          status: "pendente",
+          establishment_id: estabelecimentoId,
         });
         console.log('✅ Pesquisa de Teste inserida no banco com sucesso!');
       } catch (err) {
