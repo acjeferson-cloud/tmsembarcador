@@ -61,32 +61,51 @@ export const NPSDashboard: React.FC = () => {
   }, [estabelecimentoId, periodoInicio, periodoFim, tipoNPS]);
 
   useEffect(() => {
-    let finalId = '';
-    
-    // O grande truque final: O banco de NPS guarda usando Estabelecimento ID e NÃO Environment ID
-    const estabStr = localStorage.getItem('tms-current-establishment');
-    if (estabStr) {
-      try {
-        const estab = JSON.parse(estabStr);
-        if (estab.id) {
-          finalId = String(estab.id);
-          console.log('✅ [NPSDashboard] ID do Estabelecimento puro lido com sucesso:', finalId);
+    const fetchEstabelecimento = async () => {
+      // O banco requer um UUID, mas o cache do sistema LogAxis salva um Número Inteiro (ex: 1).
+      // Devemos aguardar a autenticação para buscar a UUID primária no banco usando o 'codigo'.
+      if (!user) return; 
+
+      let finalId = '';
+      
+      const estabStr = localStorage.getItem('tms-current-establishment');
+      if (estabStr) {
+        try {
+          const estab = JSON.parse(estabStr);
+          if (estab.codigo && supabase) {
+            const { data } = await supabase
+              .from('establishments')
+              .select('id')
+              .eq('codigo', estab.codigo)
+              .maybeSingle();
+
+            const rawData = data as any;
+            if (rawData?.id) {
+              finalId = rawData.id;
+              console.log('✅ [NPSDashboard] UUID real do Estabelecimento recuperado do banco:', finalId);
+            }
+          }
+        } catch (e) {
+          console.error('Erro ao ler estabelecimento cache:', e);
         }
-      } catch (e) {
-        // Ignora
       }
-    }
 
-    // Fallback: Se não tem LocalStorage, tenta usar o AuthContext
-    if (!finalId && currentEstablishment?.id) {
-      finalId = String(currentEstablishment.id);
-      console.log('⚠️ [NPSDashboard] Fallback para Auth Context:', finalId);
-    }
+      // Fallback extremo
+      if (!finalId) {
+        const envIdLocal = localStorage.getItem('tms-selected-env-id');
+        if (envIdLocal) {
+          finalId = envIdLocal;
+          console.log('⚠️ [NPSDashboard] Fallback para Environment ID:', finalId);
+        }
+      }
 
-    if (finalId) {
-      setEstabelecimentoId(finalId);
-    }
-  }, [currentEstablishment]);
+      if (finalId) {
+        setEstabelecimentoId(finalId);
+      }
+    };
+
+    fetchEstabelecimento();
+  }, [user, currentEstablishment]);
 
   useEffect(() => {
     loadRanking();
