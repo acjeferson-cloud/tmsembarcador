@@ -18,8 +18,10 @@ import {
   TransactionFilters,
   TransactionSummary
 } from '../../services/googleMapsTransactionsService';
+import { useTranslation } from 'react-i18next';
 
 export const GoogleMapsExtract: React.FC = () => {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState<GoogleMapsTransaction[]>([]);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -101,9 +103,9 @@ export const GoogleMapsExtract: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Extrato de Consumo Google Maps</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('googleMaps.extractConsumo.title')}</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Controle detalhado de requisições à API do Google Maps
+            {t('googleMaps.extractConsumo.subtitle')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -112,7 +114,7 @@ export const GoogleMapsExtract: React.FC = () => {
             className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 flex items-center gap-2"
           >
             <Filter className="w-4 h-4" />
-            Filtros
+            {t('googleMaps.extractConsumo.filtersBtn')}
           </button>
           <button
             onClick={handleExportCSV}
@@ -120,18 +122,18 @@ export const GoogleMapsExtract: React.FC = () => {
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Exportar CSV
+            {t('googleMaps.extractConsumo.exportCsv')}
           </button>
         </div>
       </div>
 
       {showFilters && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filtros</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('googleMaps.extractConsumo.filters.title')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Data Inicial
+                {t('googleMaps.extractConsumo.filters.startDate')}
               </label>
               <input
                 type="date"
@@ -142,7 +144,7 @@ export const GoogleMapsExtract: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Data Final
+                {t('googleMaps.extractConsumo.filters.endDate')}
               </label>
               <input
                 type="date"
@@ -153,39 +155,39 @@ export const GoogleMapsExtract: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Serviço
+                {t('googleMaps.extractConsumo.filters.serviceType')}
               </label>
               <select
                 value={filters.serviceType || ''}
                 onChange={(e) => handleFilterChange('serviceType', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Todos</option>
-                <option value="geocoding">Geocodificação</option>
-                <option value="distance_matrix">Matriz de Distância</option>
-                <option value="directions">Direções/Rotas</option>
-                <option value="autocomplete">Autocompletar</option>
-                <option value="places">Places API</option>
-                <option value="elevation">Elevação</option>
-                <option value="timezone">Fuso Horário</option>
-                <option value="static_map">Mapa Estático</option>
+                <option value="">{t('googleMaps.extractConsumo.filters.all')}</option>
+                <option value="geocoding">{t('googleMaps.extractConsumo.serviceTypes.geocoding')}</option>
+                <option value="distance_matrix">{t('googleMaps.extractConsumo.serviceTypes.distance_matrix')}</option>
+                <option value="directions">{t('googleMaps.extractConsumo.serviceTypes.directions')}</option>
+                <option value="autocomplete">{t('googleMaps.extractConsumo.serviceTypes.autocomplete')}</option>
+                <option value="places">{t('googleMaps.extractConsumo.serviceTypes.places')}</option>
+                <option value="elevation">{t('googleMaps.extractConsumo.serviceTypes.elevation')}</option>
+                <option value="timezone">{t('googleMaps.extractConsumo.serviceTypes.timezone')}</option>
+                <option value="static_map">{t('googleMaps.extractConsumo.serviceTypes.static_map')}</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
+                {t('googleMaps.extractConsumo.filters.status')}
               </label>
               <select
                 value={filters.status || ''}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Todos</option>
-                <option value="sucesso">Sucesso</option>
-                <option value="erro">Erro</option>
-                <option value="timeout">Timeout</option>
-                <option value="limite_excedido">Limite Excedido</option>
-                <option value="invalido">Inválido</option>
+                <option value="">{t('googleMaps.extractConsumo.filters.all')}</option>
+                <option value="sucesso">{t('googleMaps.extractConsumo.statuses.sucesso')}</option>
+                <option value="erro">{t('googleMaps.extractConsumo.statuses.erro')}</option>
+                <option value="timeout">{t('googleMaps.extractConsumo.statuses.timeout')}</option>
+                <option value="limite_excedido">{t('googleMaps.extractConsumo.statuses.limite_excedido')}</option>
+                <option value="invalido">{t('googleMaps.extractConsumo.statuses.invalido')}</option>
               </select>
             </div>
           </div>
@@ -194,13 +196,13 @@ export const GoogleMapsExtract: React.FC = () => {
               onClick={handleApplyFilters}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              Aplicar Filtros
+              {t('googleMaps.extractConsumo.filters.apply')}
             </button>
             <button
               onClick={handleClearFilters}
               className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300"
             >
-              Limpar
+              {t('googleMaps.extractConsumo.filters.clear')}
             </button>
           </div>
         </div>
@@ -211,7 +213,7 @@ export const GoogleMapsExtract: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total de Requisições</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('googleMaps.extractConsumo.summary.totalRequests')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {summary.totalTransactions}
                 </p>
@@ -223,7 +225,7 @@ export const GoogleMapsExtract: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Custo Total</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('googleMaps.extractConsumo.summary.totalCost')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   R$ {summary.totalCost.toFixed(2)}
                 </p>
@@ -235,7 +237,7 @@ export const GoogleMapsExtract: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Taxa de Sucesso</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('googleMaps.extractConsumo.summary.successRate')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {summary.successRate.toFixed(1)}%
                 </p>
@@ -247,7 +249,7 @@ export const GoogleMapsExtract: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Tempo Médio</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('googleMaps.extractConsumo.summary.avgTime')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {summary.avgResponseTime}ms
                 </p>
@@ -264,28 +266,28 @@ export const GoogleMapsExtract: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Data/Hora
+                  {t('googleMaps.extractConsumo.table.dateTime')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Serviço
+                  {t('googleMaps.extractConsumo.table.service')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Origem
+                  {t('googleMaps.extractConsumo.table.origin')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Destino
+                  {t('googleMaps.extractConsumo.table.destination')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Usuário
+                  {t('googleMaps.extractConsumo.table.user')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Valor
+                  {t('googleMaps.extractConsumo.table.value')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
+                  {t('googleMaps.extractConsumo.table.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tempo
+                  {t('googleMaps.extractConsumo.table.time')}
                 </th>
               </tr>
             </thead>
@@ -302,7 +304,7 @@ export const GoogleMapsExtract: React.FC = () => {
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center">
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Nenhuma transação encontrada</p>
+                    <p className="text-gray-600 dark:text-gray-400">{t('googleMaps.extractConsumo.table.noTransactions')}</p>
                   </td>
                 </tr>
               ) : (
@@ -311,12 +313,12 @@ export const GoogleMapsExtract: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                        {new Date(transaction.transaction_date).toLocaleString('pt-BR')}
+                        {new Date(transaction.transaction_date).toLocaleString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                        {googleMapsTransactionsService.getServiceLabel(transaction.service_type)}
+                        {t(`googleMaps.extractConsumo.serviceTypes.${transaction.service_type}`, googleMapsTransactionsService.getServiceLabel(transaction.service_type))}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">
@@ -339,7 +341,7 @@ export const GoogleMapsExtract: React.FC = () => {
                             transaction.status
                           )}`}
                         >
-                          {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                          {t(`googleMaps.extractConsumo.statuses.${transaction.status}`, transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1))}
                         </span>
                       </div>
                     </td>
@@ -357,9 +359,9 @@ export const GoogleMapsExtract: React.FC = () => {
       {transactions.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-            <span>Total de {transactions.length} transações exibidas</span>
+            <span>{t('googleMaps.extractConsumo.footer.totalDisplayed', { count: transactions.length })}</span>
             <span>
-              Custo total do período: <strong>R$ {summary?.totalCost.toFixed(2)}</strong>
+              {t('googleMaps.extractConsumo.footer.totalCostPeriod')} <strong>R$ {summary?.totalCost.toFixed(2)}</strong>
             </span>
           </div>
         </div>

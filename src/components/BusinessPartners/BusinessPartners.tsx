@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Eye, CreditCard as Edit, Trash2, ChevronLeft, ChevronRight, List, Map } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Search, Plus, ChevronLeft, ChevronRight, List, Map } from 'lucide-react';
 import { BusinessPartner } from '../../types';
 import { businessPartnersService } from '../../services/businessPartnersService';
 import BusinessPartnerCard from './BusinessPartnerCard';
@@ -12,6 +13,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 
 const BusinessPartners: React.FC = () => {
+  const { t } = useTranslation();
   const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,8 +42,8 @@ const BusinessPartners: React.FC = () => {
   };
 
   const breadcrumbItems = [
-    { label: 'Dashboard', href: '/' },
-    { label: 'Parceiros de Negócios', href: '/business-partners' }
+    { label: t('common.home', 'Início'), href: '/' },
+    { label: t('businessPartners.title', 'Parceiros de Negócios'), href: '/business-partners' }
   ];
 
   const handleCloseModal = () => {
@@ -123,14 +125,14 @@ const BusinessPartners: React.FC = () => {
             await logDelete('businessPartner', confirmDialog.partnerId, partner, 1, 'Administrador');
           }
           await loadPartners();
-          setToast({ message: 'Parceiro de negócios excluído com sucesso!', type: 'success' });
+          setToast({ message: t('businessPartners.messages.deleteSuccess', 'Parceiro de negócios excluído com sucesso!'), type: 'success' });
         } else {
           console.error('❌ [BusinessPartners] Erro na exclusão:', result.error);
-          setToast({ message: result.error || 'Erro ao excluir parceiro', type: 'error' });
+          setToast({ message: result.error || t('businessPartners.messages.deleteError', 'Erro ao excluir parceiro'), type: 'error' });
         }
       } catch (error) {
         console.error('❌ [BusinessPartners] Exceção ao excluir:', error);
-        setToast({ message: 'Erro inesperado ao excluir parceiro', type: 'error' });
+        setToast({ message: t('businessPartners.messages.deleteError', 'Erro inesperado ao excluir parceiro'), type: 'error' });
       }
     } else {
       console.error('❌ [BusinessPartners] partnerId não encontrado no confirmDialog');
@@ -213,9 +215,9 @@ const BusinessPartners: React.FC = () => {
             await logUpdate('businessPartner', editingPartner.id, editingPartner, updated, 1, 'Administrador');
           }
           await loadPartners();
-          setToast({ message: 'Parceiro de negócios atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('businessPartners.messages.updateSuccess', 'Parceiro de negócios atualizado com sucesso!'), type: 'success' });
         } else {
-          setToast({ message: result.error || 'Erro ao atualizar parceiro', type: 'error' });
+          setToast({ message: result.error || t('businessPartners.messages.updateError', 'Erro ao atualizar parceiro'), type: 'error' });
           return;
         }
       } else {
@@ -226,9 +228,9 @@ const BusinessPartners: React.FC = () => {
             await logCreate('businessPartner', result.id, newPartner, 1, 'Administrador');
           }
           await loadPartners();
-          setToast({ message: 'Parceiro de negócios criado com sucesso!', type: 'success' });
+          setToast({ message: t('businessPartners.messages.createSuccess', 'Parceiro de negócios criado com sucesso!'), type: 'success' });
         } else {
-          const errorMsg = result.error || 'Erro ao criar parceiro';
+          const errorMsg = result.error || t('businessPartners.messages.createError', 'Erro ao criar parceiro');
           console.error('❌ [BusinessPartners] Erro ao criar parceiro:', errorMsg);
           setToast({ message: errorMsg, type: 'error' });
           return;
@@ -238,7 +240,7 @@ const BusinessPartners: React.FC = () => {
       setEditingPartner(null);
     } catch (error: any) {
       console.error('❌ [BusinessPartners] Exceção ao salvar parceiro:', error);
-      const errorMessage = error?.message || 'Erro inesperado ao salvar parceiro de negócios';
+      const errorMessage = error?.message || t('businessPartners.messages.updateError', 'Erro inesperado ao salvar parceiro de negócios');
       setToast({ message: errorMessage, type: 'error' });
     }
   };
@@ -250,13 +252,13 @@ const BusinessPartners: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Parceiros de Negócios</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('businessPartners.title', 'Parceiros de Negócios')}</h1>
           <button
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Novo Parceiro
+            {t('businessPartners.addPartner', 'Novo Parceiro')}
           </button>
         </div>
 
@@ -265,7 +267,7 @@ const BusinessPartners: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('businessPartners.stats.total', 'Total')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
               </div>
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -277,7 +279,7 @@ const BusinessPartners: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Clientes</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('businessPartners.stats.clients', 'Clientes')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.clients}</p>
               </div>
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -289,7 +291,7 @@ const BusinessPartners: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Fornecedores</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('businessPartners.stats.suppliers', 'Fornecedores')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.suppliers}</p>
               </div>
               <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
@@ -301,7 +303,7 @@ const BusinessPartners: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ativos</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('businessPartners.stats.active', 'Ativos')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
               </div>
               <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -319,7 +321,7 @@ const BusinessPartners: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Buscar por nome, documento ou email..."
+                  placeholder={t('businessPartners.searchPlaceholder', 'Buscar por nome, documento ou email...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -333,10 +335,10 @@ const BusinessPartners: React.FC = () => {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">Todos os tipos</option>
-                <option value="customer">Cliente</option>
-                <option value="supplier">Fornecedor</option>
-                <option value="both">Ambos</option>
+                <option value="all">{t('businessPartners.allTypes', 'Todos os tipos')}</option>
+                <option value="customer">{t('businessPartners.typeCustomer', 'Cliente')}</option>
+                <option value="supplier">{t('businessPartners.typeSupplier', 'Fornecedor')}</option>
+                <option value="both">{t('businessPartners.typeBoth', 'Ambos')}</option>
               </select>
               
               <select
@@ -344,9 +346,9 @@ const BusinessPartners: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">Todos os status</option>
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
+                <option value="all">{t('businessPartners.allStatuses', 'Todos os status')}</option>
+                <option value="active">{t('businessPartners.statusActive', 'Ativo')}</option>
+                <option value="inactive">{t('businessPartners.statusInactive', 'Inativo')}</option>
               </select>
             </div>
           </div>
@@ -364,7 +366,7 @@ const BusinessPartners: React.FC = () => {
               }`}
             >
               <List className="w-4 h-4" />
-              Lista
+              {t('businessPartners.tabs.list', 'Lista')}
             </button>
             <button
               onClick={() => setActiveTab('map')}
@@ -375,7 +377,7 @@ const BusinessPartners: React.FC = () => {
               }`}
             >
               <Map className="w-4 h-4" />
-              Mapa
+              {t('businessPartners.tabs.map', 'Mapa')}
             </button>
           </div>
         </div>
@@ -386,7 +388,7 @@ const BusinessPartners: React.FC = () => {
             {loading ? (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Carregando parceiros...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('businessPartners.loading', 'Carregando parceiros...')}</p>
           </div>
         ) : filteredPartners.length > 0 ? (
           <>
@@ -406,9 +408,9 @@ const BusinessPartners: React.FC = () => {
             {totalPages > 1 && (
               <div className="mt-6 flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 px-6 py-4">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrando <span className="font-medium">{startIndex + 1}</span> até{' '}
-                  <span className="font-medium">{Math.min(endIndex, filteredPartners.length)}</span> de{' '}
-                  <span className="font-medium">{filteredPartners.length}</span> parceiros
+                  {t('businessPartners.pagination.showing', 'Mostrando')} <span className="font-medium">{startIndex + 1}</span> {t('businessPartners.pagination.to', 'até')}{' '}
+                  <span className="font-medium">{Math.min(endIndex, filteredPartners.length)}</span> {t('businessPartners.pagination.of', 'de')}{' '}
+                  <span className="font-medium">{filteredPartners.length}</span> {t('businessPartners.pagination.partners', 'parceiros')}
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -467,11 +469,11 @@ const BusinessPartners: React.FC = () => {
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum parceiro encontrado</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('businessPartners.noPartners', 'Nenhum parceiro encontrado')}</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
               {searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
-                ? 'Tente ajustar os filtros de busca.'
-                : 'Comece adicionando seu primeiro parceiro de negócios.'}
+                ? t('businessPartners.noPartnersDesc', 'Tente ajustar os filtros de busca.')
+                : t('businessPartners.noPartnersInitial', 'Comece adicionando seu primeiro parceiro de negócios.')}
             </p>
             {(!searchTerm && typeFilter === 'all' && statusFilter === 'all') && (
               <button
@@ -479,7 +481,7 @@ const BusinessPartners: React.FC = () => {
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 mx-auto"
               >
                 <Plus className="w-4 h-4" />
-                Adicionar Parceiro
+                {t('businessPartners.addFirstPartner', 'Adicionar Parceiro')}
               </button>
             )}
           </div>
@@ -535,10 +537,10 @@ const BusinessPartners: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message={`Tem certeza que deseja excluir ${confirmDialog.partnerName || 'este parceiro'}?\n\nEsta ação NÃO pode ser desfeita!`}
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          title={t('businessPartners.deleteConfirm.title', 'Confirmar Exclusão')}
+          message={t('businessPartners.deleteConfirm.message', 'Tem certeza que deseja excluir {{name}}?\\n\\nEsta ação NÃO pode ser desfeita!', { name: confirmDialog.partnerName || 'este parceiro' })}
+          confirmText={t('common.delete', 'Excluir')}
+          cancelText={t('common.cancel', 'Cancelar')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

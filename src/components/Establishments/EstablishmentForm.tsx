@@ -6,6 +6,7 @@ import { receitaFederalService } from '../../services/receitaFederalService';
 import GoogleMap from '../Maps/GoogleMap';
 import { ImageUpload } from '../common/ImageUpload';
 import { InlineMessage } from '../common/InlineMessage';
+import { normalizarCNPJ, formatarCNPJ } from '../../utils/cnpj';
 import { formatTitleCase } from '../../utils/formatters';
 import { EmailOutgoingConfigTab } from './EmailOutgoingConfig';
 
@@ -139,11 +140,11 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     return true;
   };
 
-  const formatCNPJ = (value: string) => {
-    // Remove non-numeric characters
-    const numeric = value.replace(/\D/g, '');
+  const formatCNPJLocal = (value: string) => {
+    // Remove caracteres não alfanuméricos
+    const numeric = normalizarCNPJ(value);
     
-    // Format as XX.XXX.XXX/XXXX-XX
+    // Format applying progressive mask
     if (numeric.length <= 2) {
       return numeric;
     } else if (numeric.length <= 5) {
@@ -187,7 +188,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
   };
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCNPJ(e.target.value);
+    const formatted = formatCNPJLocal(e.target.value);
     setFormData(prev => ({
       ...prev,
       cnpj: formatted
@@ -249,8 +250,8 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
   // CNPJ Search Function
   const searchCNPJ = async () => {
-    if (!formData.cnpj || formData.cnpj.replace(/\D/g, '').length !== 14) {
-      setCnpjMessage({ type: 'error', text: 'CNPJ deve ter 14 dígitos' });
+    if (!formData.cnpj || normalizarCNPJ(formData.cnpj).length !== 14) {
+      setCnpjMessage({ type: 'error', text: 'CNPJ deve ter 14 caracteres válidos' });
       return;
     }
 
@@ -371,8 +372,8 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     }
 
     // Validate CNPJ format
-    if (formData.cnpj.replace(/\D/g, '').length !== 14) {
-      alert('CNPJ deve ter 14 dígitos.');
+    if (normalizarCNPJ(formData.cnpj).length !== 14) {
+      alert('CNPJ deve ter 14 caracteres válidos.');
       return;
     }
 
@@ -589,7 +590,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   <button
                     type="button"
                     onClick={searchCNPJ}
-                    disabled={isSearchingCNPJ || formData.cnpj.replace(/\D/g, '').length !== 14}
+                    disabled={isSearchingCNPJ || normalizarCNPJ(formData.cnpj).length !== 14}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {isSearchingCNPJ ? (

@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { GoogleMapsExtract } from './GoogleMapsExtract';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 
 export const GoogleMapsConfig: React.FC = () => {
   const { t } = useTranslation();
@@ -273,23 +273,30 @@ export const GoogleMapsConfig: React.FC = () => {
             <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
-                Como obter as credenciais do Google Maps:
+                {t('googleMaps.instructions.title')}
               </h3>
               <ol className="text-sm text-green-800 dark:text-green-400 space-y-2 list-decimal list-inside">
-                <li>Acesse o <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Cloud Console</a></li>
-                <li>Crie ou selecione um Projeto</li>
-                <li>Vá em "APIs e Serviços" &gt; "Biblioteca" e habilite: <strong>Geocoding API</strong>, <strong>Maps JavaScript API</strong>, e <strong>Places API</strong></li>
-                <li>Vá em "APIs e Serviços" &gt; "Credenciais"</li>
-                <li>Clique em "Criar Credenciais" e escolha "Chave de API"</li>
+                <li>
+                  <Trans i18nKey="googleMaps.instructions.step1">
+                    Acesse o <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Cloud Console</a>
+                  </Trans>
+                </li>
+                <li>{t('googleMaps.instructions.step2')}</li>
+                <li>
+                  <Trans i18nKey="googleMaps.instructions.step3">
+                    Vá em "APIs e Serviços" &gt; "Biblioteca" e habilite: <strong>Geocoding API</strong>, <strong>Maps JavaScript API</strong>, e <strong>Places API</strong>
+                  </Trans>
+                </li>
+                <li>{t('googleMaps.instructions.step4')}</li>
+                <li>{t('googleMaps.instructions.step5')}</li>
               </ol>
               <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-300 dark:border-yellow-700">
-                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">Custos da Plataforma Google Maps:</p>
+                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">{t('googleMaps.instructions.costsTitle')}</p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  O Google Maps Platform não é gratuito para uso em produção contínua. As requisições (como extração de coordenadas, cálculo de distâncias ou autocompletar de endereços)
-                  geram custo em dólar conforme a tabela oficial da Google.
+                  {t('googleMaps.instructions.costs1')}
                 </p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  É <strong>obrigatório</strong> ter uma conta de faturamento (cartão de crédito) vinculada no Google Cloud, mesmo que o Google ofereça um crédito recorrente mensal de $200. Recomendamos configurar quotas/limites por API no Console para evitar gastos inesperados.
+                  {t('googleMaps.instructions.costs2')}
                 </p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
                   {t('googleMaps.organizationIsolation.description')}

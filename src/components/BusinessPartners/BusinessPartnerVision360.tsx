@@ -20,6 +20,7 @@ import {
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { Toast } from '../common/Toast';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessPartnerVision360Props {
   partnerId: string;
@@ -56,14 +57,15 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
   isLoading,
   insight
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'customer': return 'Cliente';
-      case 'supplier': return 'Fornecedor';
-      case 'both': return 'Cliente/Fornecedor';
-      default: return type;
+      case 'customer': return t('businessPartners.typeCustomer', 'Cliente');
+      case 'supplier': return t('businessPartners.typeSupplier', 'Fornecedor');
+      case 'both': return t('businessPartners.typeBoth', 'Cliente/Fornecedor');
+      default: return t('businessPartners.view.typeLabel.default', 'Desconhecido');
     }
   };
 
@@ -78,10 +80,10 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Insight IA
+                  {t('businessPartners.vision360.aiInsight.title', 'Insight IA')}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Análise inteligente para {partnerName} ({getTypeLabel(partnerType)})
+                  {t('businessPartners.vision360.aiInsight.subtitle', 'Análise inteligente para {{name}} ({{type}})', { name: partnerName, type: getTypeLabel(partnerType) })}
                 </p>
               </div>
             </div>
@@ -98,7 +100,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Gerando análise inteligente...</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.aiInsight.generating', 'Gerando análise inteligente...')}</p>
             </div>
           ) : insight ? (
             <div className="space-y-4">
@@ -107,7 +109,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
                   <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                      Análise Gerada por IA
+                      {t('businessPartners.vision360.aiInsight.aiAnalysisGenerated', 'Análise Gerada por IA')}
                     </h3>
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
@@ -122,8 +124,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-1" />
                   <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    Esta análise foi gerada por inteligência artificial e deve ser usada como referência.
-                    Sempre valide as informações com dados reais antes de tomar decisões.
+                    {t('businessPartners.vision360.aiInsight.warning', 'Esta análise foi gerada por inteligência artificial e deve ser usada como referência. Sempre valide as informações com dados reais antes de tomar decisões.')}
                   </p>
                 </div>
               </div>
@@ -132,7 +133,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
             <div className="text-center py-12">
               <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-400">
-                Não foi possível gerar a análise. Tente novamente.
+                {t('businessPartners.vision360.aiInsight.error', 'Não foi possível gerar a análise. Tente novamente.')}
               </p>
             </div>
           )}
@@ -143,7 +144,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
             onClick={onClose}
             className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Fechar
+            {t('businessPartners.vision360.aiInsight.close', 'Fechar')}
           </button>
         </div>
       </div>
@@ -156,6 +157,7 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
   partnerName,
   partnerType
 }) => {
+  const { t } = useTranslation();
   const { isActive: openaiActive } = useInnovation(INNOVATION_IDS.OPENAI);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -178,43 +180,43 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
   });
 
   const documentTypeData = [
-    { name: 'Pedidos', value: 342, color: '#3b82f6' },
-    { name: 'Notas Fiscais', value: 289, color: '#10b981' },
-    { name: 'CT-e', value: 276, color: '#8b5cf6' },
-    { name: 'Faturas', value: 145, color: '#f59e0b' },
+    { name: t('businessPartners.vision360.chartData.orders', 'Pedidos'), value: 342, color: '#3b82f6' },
+    { name: t('businessPartners.vision360.chartData.invoices', 'Notas Fiscais'), value: 289, color: '#10b981' },
+    { name: t('businessPartners.vision360.chartData.ctes', 'CT-e'), value: 276, color: '#8b5cf6' },
+    { name: t('businessPartners.vision360.chartData.bills', 'Faturas'), value: 145, color: '#f59e0b' },
   ];
 
   const deliveryStatusData = [
-    { name: 'Concluídas', value: 265, color: '#10b981' },
-    { name: 'Pendentes', value: 24, color: '#f59e0b' },
+    { name: t('businessPartners.vision360.chartData.completed', 'Concluídas'), value: 265, color: '#10b981' },
+    { name: t('businessPartners.vision360.chartData.pending', 'Pendentes'), value: 24, color: '#f59e0b' },
   ];
 
   const weeklyActivityData = [
-    { day: 'Seg', pedidos: 15, nfes: 12, entregas: 10 },
-    { day: 'Ter', pedidos: 18, nfes: 16, entregas: 14 },
-    { day: 'Qua', pedidos: 22, nfes: 19, entregas: 17 },
-    { day: 'Qui', pedidos: 25, nfes: 21, entregas: 19 },
-    { day: 'Sex', pedidos: 28, nfes: 24, entregas: 22 },
-    { day: 'Sáb', pedidos: 12, nfes: 10, entregas: 8 },
-    { day: 'Dom', pedidos: 8, nfes: 6, entregas: 5 },
+    { day: t('businessPartners.vision360.weekDays.mon', 'Seg'), pedidos: 15, nfes: 12, entregas: 10 },
+    { day: t('businessPartners.vision360.weekDays.tue', 'Ter'), pedidos: 18, nfes: 16, entregas: 14 },
+    { day: t('businessPartners.vision360.weekDays.wed', 'Qua'), pedidos: 22, nfes: 19, entregas: 17 },
+    { day: t('businessPartners.vision360.weekDays.thu', 'Qui'), pedidos: 25, nfes: 21, entregas: 19 },
+    { day: t('businessPartners.vision360.weekDays.fri', 'Sex'), pedidos: 28, nfes: 24, entregas: 22 },
+    { day: t('businessPartners.vision360.weekDays.sat', 'Sáb'), pedidos: 12, nfes: 10, entregas: 8 },
+    { day: t('businessPartners.vision360.weekDays.sun', 'Dom'), pedidos: 8, nfes: 6, entregas: 5 },
   ];
 
   const monthlyTrendData = [
-    { month: 'Jan', volume: 1200, valor: 450000 },
-    { month: 'Fev', volume: 1350, valor: 520000 },
-    { month: 'Mar', volume: 1580, valor: 610000 },
-    { month: 'Abr', volume: 1420, valor: 580000 },
-    { month: 'Mai', volume: 1680, valor: 680000 },
-    { month: 'Jun', volume: 1850, valor: 750000 },
+    { month: t('businessPartners.vision360.months.jan', 'Jan'), volume: 1200, valor: 450000 },
+    { month: t('businessPartners.vision360.months.feb', 'Fev'), volume: 1350, valor: 520000 },
+    { month: t('businessPartners.vision360.months.mar', 'Mar'), volume: 1580, valor: 610000 },
+    { month: t('businessPartners.vision360.months.apr', 'Abr'), volume: 1420, valor: 580000 },
+    { month: t('businessPartners.vision360.months.may', 'Mai'), volume: 1680, valor: 680000 },
+    { month: t('businessPartners.vision360.months.jun', 'Jun'), volume: 1850, valor: 750000 },
   ];
 
   const pickupTrendData = [
-    { month: 'Jan', coletas: 48 },
-    { month: 'Fev', coletas: 52 },
-    { month: 'Mar', coletas: 58 },
-    { month: 'Abr', coletas: 54 },
-    { month: 'Mai', coletas: 61 },
-    { month: 'Jun', coletas: 65 },
+    { month: t('businessPartners.vision360.months.jan', 'Jan'), coletas: 48 },
+    { month: t('businessPartners.vision360.months.feb', 'Fev'), coletas: 52 },
+    { month: t('businessPartners.vision360.months.mar', 'Mar'), coletas: 58 },
+    { month: t('businessPartners.vision360.months.apr', 'Abr'), coletas: 54 },
+    { month: t('businessPartners.vision360.months.may', 'Mai'), coletas: 61 },
+    { month: t('businessPartners.vision360.months.jun', 'Jun'), coletas: 65 },
   ];
 
   const handleRefresh = () => {
@@ -226,16 +228,16 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'customer': return 'Cliente';
-      case 'supplier': return 'Fornecedor';
-      case 'both': return 'Cliente/Fornecedor';
-      default: return type;
+      case 'customer': return t('businessPartners.typeCustomer', 'Cliente');
+      case 'supplier': return t('businessPartners.typeSupplier', 'Fornecedor');
+      case 'both': return t('businessPartners.typeBoth', 'Cliente/Fornecedor');
+      default: return t('businessPartners.view.typeLabel.default', 'Desconhecido');
     }
   };
 
   const generateAIInsight = async () => {
     if (!openaiActive) {
-      setToast({ message: 'Recurso não contratado. Ative em Inovações & Sugestões.', type: 'error' });
+      setToast({ message: t('businessPartners.vision360.aiInsight.notHiredToast', 'Recurso não contratado. Ative em Inovações & Sugestões.'), type: 'error' });
       return;
     }
 
@@ -296,9 +298,9 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
           <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-yellow-800">
-              <strong>Integração com OpenAI/ChatGPT não contratada:</strong> Para utilizar o botão de inteligência artificial "Insight IA", é necessário ativar o serviço em <strong>Inovações & Sugestões</strong>. Sem a ativação, o botão não terão efeito.
-            </p>
+            <p className="text-sm text-yellow-800" dangerouslySetInnerHTML={{
+                __html: `<strong>${t('businessPartners.vision360.aiInsight.notHired', 'Integração com OpenAI/ChatGPT não contratada')}:</strong> ${t('businessPartners.vision360.aiInsight.notHiredDesc', 'Para utilizar o botão de inteligência artificial "Insight IA", é necessário ativar o serviço em **Inovações & Sugestões**. Sem a ativação, o botão não terão efeito.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}`
+            }} />
           </div>
         </div>
       )}
@@ -309,7 +311,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-1">
             <div className="flex items-center space-x-2">
               <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Período:</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('businessPartners.vision360.filters.period', 'Período:')}</span>
             </div>
             <input
               type="date"
@@ -317,7 +319,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
             />
-            <span className="text-gray-500 dark:text-gray-400">até</span>
+            <span className="text-gray-500 dark:text-gray-400">{t('businessPartners.vision360.filters.until', 'até')}</span>
             <input
               type="date"
               value={dateRange.end}
@@ -333,7 +335,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Atualizar</span>
+              <span>{t('businessPartners.vision360.filters.refresh', 'Atualizar')}</span>
             </button>
 
             <button
@@ -347,7 +349,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
               title={!openaiActive ? 'Recurso não contratado. Ative em Inovações & Sugestões.' : ''}
             >
               <Sparkles className="w-4 h-4" />
-              <span>Insight IA</span>
+              <span>{t('businessPartners.vision360.filters.aiInsightBtn', 'Insight IA')}</span>
             </button>
           </div>
         </div>
@@ -357,65 +359,65 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Pedidos</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.orders', 'Pedidos')}</span>
             <ShoppingCart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalOrders}</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">+8% vs mês anterior</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('businessPartners.vision360.kpis.ordersSub', '+8% vs mês anterior')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Notas Fiscais</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.invoices', 'Notas Fiscais')}</span>
             <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalInvoices}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{((kpiData.totalInvoices / kpiData.totalOrders) * 100).toFixed(0)}% dos pedidos</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('businessPartners.vision360.kpis.invoicesSub', '{{percent}}% dos pedidos', { percent: ((kpiData.totalInvoices / kpiData.totalOrders) * 100).toFixed(0) })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Coletas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.pickups', 'Coletas')}</span>
             <Package className="w-5 h-5 text-orange-600 dark:text-orange-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalPickups}</p>
-          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Média: 52/mês</p>
+          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{t('businessPartners.vision360.kpis.pickupsSub', 'Média: 52/mês')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">CT-e</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.ctes', 'CT-e')}</span>
             <TruckIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalCtes}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{((kpiData.totalCtes / kpiData.totalInvoices) * 100).toFixed(0)}% das NF-e</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('businessPartners.vision360.kpis.ctesSub', '{{percent}}% das NF-e', { percent: ((kpiData.totalCtes / kpiData.totalInvoices) * 100).toFixed(0) })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Faturas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.bills', 'Faturas')}</span>
             <Receipt className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalBills}</p>
-          <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Média: R$ 5.172,00</p>
+          <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">{t('businessPartners.vision360.kpis.billsSub', 'Média: R$ 5.172,00')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Entregas Realizadas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.deliveriesCompleted', 'Entregas Realizadas')}</span>
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.deliveriesCompleted}</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{((kpiData.deliveriesCompleted / (kpiData.deliveriesCompleted + kpiData.deliveriesPending)) * 100).toFixed(1)}% do total</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('businessPartners.vision360.kpis.deliveriesCompletedSub', '{{percent}}% do total', { percent: ((kpiData.deliveriesCompleted / (kpiData.deliveriesCompleted + kpiData.deliveriesPending)) * 100).toFixed(1) })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Entregas Pendentes</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('businessPartners.vision360.kpis.deliveriesPending', 'Entregas Pendentes')}</span>
             <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.deliveriesPending}</p>
-          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Monitorar prazos</p>
+          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{t('businessPartners.vision360.kpis.deliveriesPendingSub', 'Monitorar prazos')}</p>
         </div>
       </div>
 
@@ -425,7 +427,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <BarChart3 className="w-5 h-5" />
-            <span>Distribuição de Documentos</span>
+            <span>{t('businessPartners.vision360.charts.documentDistribution', 'Distribuição de Documentos')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -452,7 +454,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <TruckIcon className="w-5 h-5" />
-            <span>Status de Entregas</span>
+            <span>{t('businessPartners.vision360.charts.deliveryStatus', 'Status de Entregas')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -479,7 +481,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <BarChart3 className="w-5 h-5" />
-            <span>Atividade Semanal</span>
+            <span>{t('businessPartners.vision360.charts.weeklyActivity', 'Atividade Semanal')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weeklyActivityData}>
@@ -488,9 +490,9 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="pedidos" fill="#3b82f6" name="Pedidos" />
-              <Bar dataKey="nfes" fill="#10b981" name="NF-e" />
-              <Bar dataKey="entregas" fill="#8b5cf6" name="Entregas" />
+              <Bar dataKey="pedidos" fill="#3b82f6" name={t('businessPartners.vision360.chartData.orders', 'Pedidos')} />
+              <Bar dataKey="nfes" fill="#10b981" name={t('businessPartners.vision360.chartData.invoices', 'NF-e')} />
+              <Bar dataKey="entregas" fill="#8b5cf6" name={t('businessPartners.vision360.chartData.deliveries', 'Entregas')} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -499,7 +501,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <Package className="w-5 h-5" />
-            <span>Tendência de Coletas</span>
+            <span>{t('businessPartners.vision360.charts.pickupTrend', 'Tendência de Coletas')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={pickupTrendData}>
@@ -514,7 +516,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
                 stroke="#f59e0b"
                 fill="#f59e0b"
                 fillOpacity={0.3}
-                name="Coletas"
+                name={t('businessPartners.vision360.chartData.pickups', 'Coletas')}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -524,7 +526,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <TrendingUp className="w-5 h-5" />
-            <span>Evolução Mensal - Volume e Valor</span>
+            <span>{t('businessPartners.vision360.charts.monthlyEvolution', 'Evolução Mensal - Volume e Valor')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyTrendData}>
@@ -534,7 +536,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
               <YAxis yAxisId="right" orientation="right" />
               <Tooltip
                 formatter={(value: any, name: string) => {
-                  if (name === 'Valor (R$)') {
+                  if (name === t('businessPartners.vision360.chartData.value', 'Valor (R$)')) {
                     return [`R$ ${value.toLocaleString('pt-BR')}`, name];
                   }
                   return [value, name];
@@ -547,7 +549,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
                 dataKey="volume"
                 stroke="#3b82f6"
                 strokeWidth={3}
-                name="Volume de Operações"
+                name={t('businessPartners.vision360.chartData.volume', 'Volume de Operações')}
                 dot={{ fill: '#3b82f6', r: 6 }}
               />
               <Line
@@ -556,7 +558,7 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
                 dataKey="valor"
                 stroke="#10b981"
                 strokeWidth={3}
-                name="Valor (R$)"
+                name={t('businessPartners.vision360.chartData.value', 'Valor (R$)')}
                 dot={{ fill: '#10b981', r: 6 }}
               />
             </LineChart>

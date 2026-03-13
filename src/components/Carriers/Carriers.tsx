@@ -136,7 +136,7 @@ export const Carriers: React.FC = () => {
           if (carrier) {
             await logDelete('carrier', confirmDialog.carrierId, carrier, 1, 'Administrador');
           }
-          setToast({ message: 'Transportador excluído com sucesso!', type: 'success' });
+          setToast({ message: t('carriers.messages.deleteSuccess'), type: 'success' });
           await loadCarriers();
         } else {
           setToast({ message: t('carriers.messages.deleteError'), type: 'error' });
@@ -204,9 +204,9 @@ export const Carriers: React.FC = () => {
         });
         if (updated) {
           await logUpdate('carrier', editingCarrier.id, editingCarrier, updated, 1, 'Administrador');
-          setToast({ message: 'Transportador atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('carriers.messages.saveSuccess'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao atualizar transportador.', type: 'error' });
+          setToast({ message: t('carriers.messages.saveError'), type: 'error' });
           return;
         }
       } else {
@@ -225,9 +225,9 @@ export const Carriers: React.FC = () => {
       await loadCarriers();
     } catch (error: any) {
       // Mensagem de erro mais detalhada
-      const errorMessage = error?.message || t('carriers.messages.saveError');
+      const errorMessage = error?.message || '';
       setToast({
-        message: `Erro ao salvar transportador: ${errorMessage}`,
+        message: errorMessage ? `${t('carriers.messages.saveError')} ${errorMessage}` : t('carriers.messages.saveError'),
         type: 'error'
       });
     }
@@ -274,10 +274,10 @@ export const Carriers: React.FC = () => {
             className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
           >
             <ArrowLeft size={20} />
-            <span>Voltar para Transportadores</span>
+            <span>{t('carriers.backToCarriers')}</span>
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tabelas de Frete - {viewingCarrier.name}</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie as tabelas de frete deste transportador</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.freightRates.title')} - {viewingCarrier.name}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('carriers.freightRates.manageTables')}</p>
         </div>
         
         <FreightRateTablesList 
@@ -294,15 +294,15 @@ export const Carriers: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transportadores</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie sua rede de transportadores</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.pageTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('carriers.subtitle')}</p>
         </div>
         <button 
           onClick={handleNewCarrier}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
           <Plus size={20} />
-          <span>Novo Transportador</span>
+          <span>{t('carriers.newCarrier')}</span>
         </button>
       </div>
 
@@ -312,7 +312,7 @@ export const Carriers: React.FC = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Buscar por código, nome, CNPJ ou email..."
+            placeholder={t('carriers.searchPlaceholderExtended')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -380,21 +380,21 @@ export const Carriers: React.FC = () => {
                 <button 
                   onClick={() => handleViewCarrier(carrier)}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-                  title="Visualizar"
+                  title={t('carriers.viewAction')}
                 >
                   <Eye size={16} />
                 </button>
                 <button 
                   onClick={() => handleEditCarrier(carrier)}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-                  title="Editar"
+                  title={t('carriers.editAction')}
                 >
                   <Edit size={16} />
                 </button>
                 <button 
                   onClick={() => handleDeleteCarrier(carrier.id)}
                   className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                  title="Excluir"
+                  title={t('carriers.deleteAction')}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -419,30 +419,30 @@ export const Carriers: React.FC = () => {
             {/* Transport Modals */}
             {(carrier.modal_rodoviario || carrier.modal_aereo || carrier.modal_aquaviario || carrier.modal_ferroviario) && (
               <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase">Modais Atendidos</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase">{t('carriers.modals.attended')}</p>
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   {carrier.modal_rodoviario && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200" title="Rodoviário">
+                    <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200" title={t('carriers.modals.rodoviario')}>
                       <span className="mr-1">🚛</span>
-                      Rodoviário
+                      {t('carriers.modals.rodoviario')}
                     </div>
                   )}
                   {carrier.modal_aereo && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-xs font-medium border border-sky-200" title="Aéreo">
+                    <div className="inline-flex items-center px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-xs font-medium border border-sky-200" title={t('carriers.modals.aereo')}>
                       <span className="mr-1">✈️</span>
-                      Aéreo
+                      {t('carriers.modals.aereo')}
                     </div>
                   )}
                   {carrier.modal_aquaviario && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-full text-xs font-medium border border-cyan-200" title="Aquaviário">
+                    <div className="inline-flex items-center px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-full text-xs font-medium border border-cyan-200" title={t('carriers.modals.aquaviario')}>
                       <span className="mr-1">🚢</span>
-                      Aquaviário
+                      {t('carriers.modals.aquaviario')}
                     </div>
                   )}
                   {carrier.modal_ferroviario && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-200" title="Ferroviário">
+                    <div className="inline-flex items-center px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-200" title={t('carriers.modals.ferroviario')}>
                       <span className="mr-1">🚂</span>
-                      Ferroviário
+                      {t('carriers.modals.ferroviario')}
                     </div>
                   )}
                 </div>
@@ -452,23 +452,23 @@ export const Carriers: React.FC = () => {
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center space-x-2">
                 <Hash size={14} />
-                <span>Código: {carrier.codigo}</span>
+                <span>{t('carriers.form.code')}: {carrier.codigo}</span>
               </div>
               <p><strong>CNPJ:</strong> {carrier.cnpj}</p>
               <div className="flex items-center space-x-2">
                 <Phone size={14} />
-                <span>{carrier.phone || 'Não informado'}</span>
+                <span>{carrier.phone || t('carriers.form.notInformed')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail size={14} />
-                <span>{carrier.email || 'Não informado'}</span>
+                <span>{carrier.email || t('carriers.form.notInformed')}</span>
               </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Entregas Ativas:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('carriers.form.activeShipments')}:</span>
                   <span className="font-semibold text-gray-900 dark:text-white ml-1">{carrier.active_shipments || 0}</span>
                 </div>
                 <div className="text-right">
@@ -476,7 +476,7 @@ export const Carriers: React.FC = () => {
                     inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                     ${carrier.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                   `}>
-                    {carrier.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                    {carrier.status === 'ativo' ? t('carriers.status.active') : t('carriers.status.inactive')}
                   </div>
                 </div>
               </div>
@@ -486,7 +486,7 @@ export const Carriers: React.FC = () => {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center space-x-1 text-sm"
               >
                 <DollarSign size={16} />
-                <span>Tabelas de Frete</span>
+                <span>{t('carriers.freightRates.title')}</span>
               </button>
             </div>
           </div>
@@ -502,8 +502,8 @@ export const Carriers: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum transportador encontrado</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou cadastrar um novo transportador.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('carriers.emptyState.title')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('carriers.emptyState.subtitle')}</p>
         </div>
       )}
 
@@ -512,7 +512,11 @@ export const Carriers: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredCarriers.length)} de {filteredCarriers.length} transportadores
+              {t('carriers.pagination.showing', {
+                start: startIndex + 1,
+                end: Math.min(startIndex + itemsPerPage, filteredCarriers.length),
+                total: filteredCarriers.length
+              })}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -520,7 +524,7 @@ export const Carriers: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                {t('carriers.pagination.previous')}
               </button>
 
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -547,7 +551,7 @@ export const Carriers: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                {t('carriers.pagination.next')}
               </button>
             </div>
           </div>
@@ -567,10 +571,10 @@ export const Carriers: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir este transportador? Esta ação não pode ser desfeita."
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          title={t('carriers.confirmDelete.title')}
+          message={t('carriers.confirmDelete.message')}
+          confirmText={t('carriers.confirmDelete.confirm')}
+          cancelText={t('carriers.confirmDelete.cancel')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

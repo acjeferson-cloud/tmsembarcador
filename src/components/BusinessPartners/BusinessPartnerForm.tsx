@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Save, User, Users, MapPin, FileText, Plus, Trash2, Map, Phone, Mail, Search, Loader, Info } from 'lucide-react';
 import { BusinessPartner, BusinessPartnerContact, BusinessPartnerAddress } from '../../types';
 import GoogleMap from '../Maps/GoogleMap';
@@ -20,6 +21,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
   onClose
 }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { isActive: receitaFederalActive, isLoading: receitaFederalLoading } = useInnovation(
     INNOVATION_IDS.RECEITA_FEDERAL,
     user?.id
@@ -97,7 +99,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
   const handleConsultarCNPJ = async () => {
     if (!formData.document || formData.documentType !== 'cnpj') {
-      setCnpjMessage({ type: 'error', text: 'Informe um CNPJ válido.' });
+      setCnpjMessage({ type: 'error', text: t('businessPartners.form.validation.invalidCNPJ', 'Informe um CNPJ válido.') });
       return;
     }
 
@@ -205,7 +207,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
     // Validar se existe pelo menos um endereço
     if (addresses.length === 0) {
-      alert('É obrigatório cadastrar pelo menos um endereço para o parceiro de negócios.');
+      alert(t('businessPartners.form.validation.minOneAddress', 'É obrigatório cadastrar pelo menos um endereço para o parceiro de negócios.'));
       setActiveTab('addresses');
       return;
     }
@@ -252,7 +254,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     if (addresses.length > 0 && addresses[0].street && addresses[0].city && addresses[0].state) {
       setShowMap(true);
     } else {
-      alert('Por favor, preencha o endereço, cidade e estado antes de visualizar no mapa.');
+      alert(t('businessPartners.form.validation.fillAddressFirst', 'Por favor, preencha o endereço, cidade e estado antes de visualizar no mapa.'));
     }
   };
 
@@ -407,10 +409,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
   };
 
   const tabs = [
-    { id: 'basic', label: 'Dados Básicos', icon: User },
-    { id: 'contacts', label: 'Pessoas de Contato', icon: Users },
-    { id: 'addresses', label: 'Endereços', icon: MapPin },
-    { id: 'observations', label: 'Observações', icon: FileText }
+    { id: 'basic', label: t('businessPartners.form.tabs.basicData', 'Dados Básicos'), icon: User },
+    { id: 'contacts', label: t('businessPartners.form.tabs.contacts', 'Pessoas de Contato'), icon: Users },
+    { id: 'addresses', label: t('businessPartners.form.tabs.addresses', 'Endereços'), icon: MapPin },
+    { id: 'observations', label: t('businessPartners.form.tabs.observations', 'Observações'), icon: FileText }
   ];
 
   return (
@@ -419,7 +421,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {partner ? 'Editar Parceiro' : 'Novo Parceiro'}
+            {partner ? t('businessPartners.form.editTitle', 'Editar Parceiro') : t('businessPartners.form.title', 'Novo Parceiro')}
           </h2>
           <button
             onClick={onClose}
@@ -460,7 +462,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nome/Razão Social *
+                      {t('businessPartners.form.name', 'Nome/Razão Social *')}
                     </label>
                     <input
                       type="text"
@@ -472,7 +474,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Tipo de Documento
+                      {t('businessPartners.form.documentType', 'Tipo de Documento')}
                     </label>
                     <select
                       value={formData.documentType}
@@ -485,7 +487,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Cód. CNPJ ou CPF *
+                      {t('businessPartners.form.document', 'Cód. CNPJ ou CPF *')}
                     </label>
                     <div className="flex space-x-2">
                       <input
@@ -497,7 +499,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           setCnpjMessage(null);
                         }}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder={formData.documentType === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00'}
+                        placeholder={formData.documentType === 'cnpj' ? t('businessPartners.form.documentPlaceholder', '00.000.000/0000-00') : t('businessPartners.form.documentPlaceholderCpf', '000.000.000-00')}
                       />
                       {formData.documentType === 'cnpj' && (
                         <button
@@ -510,12 +512,12 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           {isLoadingCNPJ ? (
                             <>
                               <Loader size={16} className="animate-spin" />
-                              <span>Consultando...</span>
+                              <span>{t('businessPartners.form.searching', 'Consultando...')}</span>
                             </>
                           ) : (
                             <>
                               <Search size={16} />
-                              <span>Buscar</span>
+                              <span>{t('businessPartners.form.searchAction', 'Buscar')}</span>
                             </>
                           )}
                         </button>
@@ -533,37 +535,36 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                       <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start space-x-2">
                         <Info className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                         <p className="text-xs text-yellow-800">
-                          <strong>Integração com a Receita Federal não contratada:</strong> O botão "Buscar" está desabilitado.
-                          Para habilitar a consulta automática de CNPJ, ative o serviço em <strong>Inovações & Sugestões</strong>.
+                          {t('businessPartners.form.receitaFederalWarnings.notActiveDesc')}
                         </p>
                       </div>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Tipo de Parceiro *
+                      {t('businessPartners.form.partnerType', 'Tipo de Parceiro *')}
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="customer">Cliente</option>
-                      <option value="supplier">Fornecedor</option>
-                      <option value="both">Cliente/Fornecedor</option>
+                      <option value="customer">{t('businessPartners.typeCustomer', 'Cliente')}</option>
+                      <option value="supplier">{t('businessPartners.typeSupplier', 'Fornecedor')}</option>
+                      <option value="both">{t('businessPartners.typeBoth', 'Ambos')}</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Status
+                      {t('businessPartners.form.status', 'Status')}
                     </label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="active">Ativo</option>
-                      <option value="inactive">Inativo</option>
+                      <option value="active">{t('businessPartners.statusActive', 'Ativo')}</option>
+                      <option value="inactive">{t('businessPartners.statusInactive', 'Inativo')}</option>
                     </select>
                   </div>
                 </div>
@@ -573,7 +574,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       <Mail className="w-4 h-4 inline mr-1" />
-                      E-mail Principal
+                      {t('businessPartners.form.email', 'E-mail Principal')}
                     </label>
                     <input
                       type="email"
@@ -586,7 +587,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       <Phone className="w-4 h-4 inline mr-1" />
-                      Telefone Principal
+                      {t('businessPartners.form.phone', 'Telefone Principal')}
                     </label>
                     <input
                       type="tel"
@@ -601,7 +602,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Website
+                    {t('businessPartners.form.website', 'Website')}
                   </label>
                   <input
                     type="url"
@@ -616,22 +617,22 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Regime Tributário
+                      {t('businessPartners.form.taxRegime', 'Regime Tributário')}
                     </label>
                     <select
                       value={formData.taxRegime}
                       onChange={(e) => setFormData({ ...formData, taxRegime: e.target.value as any })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="simples">Simples Nacional</option>
-                      <option value="presumido">Lucro Presumido</option>
-                      <option value="real">Lucro Real</option>
-                      <option value="mei">MEI</option>
+                      <option value="simples">{t('businessPartners.form.taxRegimes.simples', 'Simples Nacional')}</option>
+                      <option value="presumido">{t('businessPartners.form.taxRegimes.presumido', 'Lucro Presumido')}</option>
+                      <option value="real">{t('businessPartners.form.taxRegimes.real', 'Lucro Real')}</option>
+                      <option value="mei">{t('businessPartners.form.taxRegimes.mei', 'MEI')}</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Limite de Crédito (R$)
+                      {t('businessPartners.form.creditLimit', 'Limite de Crédito (R$)')}
                     </label>
                     <input
                       type="number"
@@ -645,7 +646,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Prazo de Pagamento (dias)
+                      {t('businessPartners.form.paymentTerms', 'Prazo de Pagamento (dias)')}
                     </label>
                     <input
                       type="number"
@@ -664,14 +665,14 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
             {activeTab === 'contacts' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pessoas de Contato</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('businessPartners.form.tabs.contacts', 'Pessoas de Contato')}</h3>
                   <button
                     type="button"
                     onClick={addContact}
                     className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Adicionar Contato</span>
+                    <span>{t('businessPartners.form.addContact', 'Adicionar Contato')}</span>
                   </button>
                 </div>
 
@@ -679,10 +680,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   <div key={contact.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-900">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">Contato #{index + 1}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{t('businessPartners.form.contactItem', 'Contato')} #{index + 1}</h4>
                         {contact.is_primary && (
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                            Principal
+                            {t('businessPartners.form.primaryContactLabel', 'Principal')}
                           </span>
                         )}
                       </div>
@@ -690,7 +691,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                         type="button"
                         onClick={() => removeContact(index)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remover contato"
+                        title={t('businessPartners.form.removeContact', 'Remover contato')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -699,7 +700,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Nome Completo *
+                          {t('businessPartners.form.contactName', 'Nome Completo *')}
                         </label>
                         <input
                           type="text"
@@ -713,7 +714,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          E-mail *
+                          {t('businessPartners.form.contactEmail', 'E-mail *')}
                         </label>
                         <input
                           type="email"
@@ -727,7 +728,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Telefone *
+                          {t('businessPartners.form.contactPhone', 'Telefone *')}
                         </label>
                         <input
                           type="tel"
@@ -742,7 +743,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Cargo
+                          {t('businessPartners.form.contactPosition', 'Cargo')}
                         </label>
                         <input
                           type="text"
@@ -755,7 +756,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Departamento
+                          {t('businessPartners.form.contactDepartment', 'Departamento')}
                         </label>
                         <input
                           type="text"
@@ -776,7 +777,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Definir como contato principal
+                          {t('businessPartners.form.setAsPrimaryContact', 'Definir como contato principal')}
                         </span>
                       </label>
 
@@ -790,10 +791,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           />
                           <div>
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Receber notificações via WhatsApp
+                              {t('businessPartners.form.receiveWhatsappNotifications', 'Receber notificações via WhatsApp')}
                             </span>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Este contato receberá atualizações sobre pedidos via WhatsApp
+                              {t('businessPartners.form.whatsappNotifyDesc', 'Este contato receberá atualizações sobre pedidos via WhatsApp')}
                             </p>
                           </div>
                         </label>
@@ -877,10 +878,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           />
                           <div>
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Receber notificações via E-mail
+                              {t('businessPartners.form.receiveEmailNotifications', 'Receber notificações via E-mail')}
                             </span>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Este contato receberá atualizações sobre pedidos via e-mail
+                              {t('businessPartners.form.emailNotifyDesc', 'Este contato receberá atualizações sobre pedidos via e-mail')}
                             </p>
                           </div>
                         </label>
@@ -960,8 +961,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                 {contacts.length === 0 && (
                   <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium">Nenhum contato cadastrado</p>
-                    <p className="text-sm mt-2">Clique em "Adicionar Contato" para incluir pessoas de contato</p>
+                    <p className="text-lg font-medium">{t('businessPartners.form.noContactsTitle', 'Nenhum contato cadastrado')}</p>
+                    <p className="text-sm mt-2">{t('businessPartners.form.noContactsDesc', 'Clique em "Adicionar Contato" para incluir pessoas de contato')}</p>
                   </div>
                 )}
               </div>
@@ -971,14 +972,14 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
             {activeTab === 'addresses' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Endereços</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('businessPartners.form.tabs.addresses', 'Endereços')}</h3>
                   <button
                     type="button"
                     onClick={addAddress}
                     className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Adicionar Endereço</span>
+                    <span>{t('businessPartners.form.addAddress', 'Adicionar Endereço')}</span>
                   </button>
                 </div>
 
@@ -986,10 +987,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   <div key={address.id || index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-900">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">Endereço #{index + 1}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{t('businessPartners.form.addressItem', 'Endereço')} #{index + 1}</h4>
                         {address.is_primary && (
                           <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                            Principal
+                            {t('businessPartners.form.primaryAddressLabel', 'Principal')}
                           </span>
                         )}
                         <select
@@ -997,19 +998,19 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           onChange={(e) => updateAddress(index, 'type', e.target.value)}
                           className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="commercial">Comercial</option>
-                          <option value="billing">Cobrança</option>
-                          <option value="shipping">Expedição</option>
-                          <option value="delivery">Entrega</option>
-                          <option value="correspondence">Correspondência</option>
-                          <option value="both">Cobrança e Entrega</option>
+                          <option value="commercial">{t('businessPartners.form.addressTypes.commercial', 'Comercial')}</option>
+                          <option value="billing">{t('businessPartners.form.addressTypes.billing', 'Cobrança')}</option>
+                          <option value="shipping">{t('businessPartners.form.addressTypes.shipping', 'Expedição')}</option>
+                          <option value="delivery">{t('businessPartners.form.addressTypes.delivery', 'Entrega')}</option>
+                          <option value="correspondence">{t('businessPartners.form.addressTypes.correspondence', 'Correspondência')}</option>
+                          <option value="both">{t('businessPartners.form.addressTypes.both', 'Cobrança e Entrega')}</option>
                         </select>
                       </div>
                       <button
                         type="button"
                         onClick={() => removeAddress(index)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remover endereço"
+                        title={t('businessPartners.form.removeAddress', 'Remover endereço')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -1019,7 +1020,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                       {/* CEP Field with Search Button */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CEP *</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.cep', 'CEP *')}</label>
                           <div className="flex gap-2">
                             <input
                               type="text"
@@ -1044,7 +1045,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                               onClick={() => handleCEPSearch(index, address.zip_code || '')}
                               disabled={loadingCEP[index]}
                               className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                              title="Buscar CEP"
+                              title={t('businessPartners.form.searchLabel', 'Buscar CEP')}
                             >
                               {loadingCEP[index] ? (
                                 <Loader className="w-4 h-4 animate-spin" />
@@ -1065,7 +1066,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                       {/* Address Fields Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="md:col-span-3">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Logradouro *</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.street', 'Logradouro *')}</label>
                           <input
                             type="text"
                             required
@@ -1076,7 +1077,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Número *</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.number', 'Número *')}</label>
                           <input
                             type="text"
                             required
@@ -1090,7 +1091,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Complemento</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.complement', 'Complemento')}</label>
                           <input
                             type="text"
                             value={address.complement || ''}
@@ -1100,7 +1101,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           />
                         </div>
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bairro *</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.neighborhood', 'Bairro *')}</label>
                           <input
                             type="text"
                             required
@@ -1114,7 +1115,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cidade *</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.city', 'Cidade *')}</label>
                           <input
                             type="text"
                             required
@@ -1125,7 +1126,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado *</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.state', 'Estado *')}</label>
                           <input
                             type="text"
                             required
@@ -1137,7 +1138,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">País</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('businessPartners.form.country', 'País')}</label>
                           <input
                             type="text"
                             value={address.country || 'Brasil'}
@@ -1157,7 +1158,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Definir como endereço principal
+                            {t('businessPartners.form.setAsPrimaryAddress', 'Definir como endereço principal')}
                           </span>
                         </label>
                       </div>
@@ -1168,8 +1169,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                 {addresses.length === 0 && (
                   <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium">Nenhum endereço cadastrado</p>
-                    <p className="text-sm mt-2">Clique em "Adicionar Endereço" para incluir endereços</p>
+                    <p className="text-lg font-medium">{t('businessPartners.form.noAddressesTitle', 'Nenhum endereço cadastrado')}</p>
+                    <p className="text-sm mt-2">{t('businessPartners.form.noAddressesDesc', 'Clique em "Adicionar Endereço" para incluir endereços')}</p>
                   </div>
                 )}
 
@@ -1181,7 +1182,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <Map className="w-4 h-4" />
-                      Visualizar no Mapa
+                      {t('businessPartners.form.viewOnMap', 'Visualizar no Mapa')}
                     </button>
                   </div>
                 )}
@@ -1193,28 +1194,28 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Observações
+                    {t('businessPartners.form.observationsLabel', 'Observações')}
                   </label>
                   <textarea
                     value={formData.observations}
                     onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
                     rows={8}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Digite aqui observações importantes sobre este parceiro de negócios..."
+                    placeholder={t('businessPartners.form.observationsPlaceholder', 'Digite aqui observações importantes sobre este parceiro de negócios...')}
                   />
                 </div>
 
                 {/* Observações */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Observações
+                    {t('businessPartners.form.notesLabel', 'Notas Adicionais')}
                   </label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Informações adicionais sobre o parceiro de negócios..."
+                    placeholder={t('businessPartners.form.notesPlaceholder', 'Informações adicionais sobre o parceiro de negócios...')}
                   />
                 </div>
               </div>
@@ -1228,14 +1229,14 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
-              Cancelar
+              {t('businessPartners.form.cancel', 'Cancelar')}
             </button>
             <button
               type="submit"
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Save className="w-4 h-4" />
-              <span>Salvar</span>
+              <span>{t('businessPartners.form.save', 'Salvar')}</span>
             </button>
           </div>
         </form>
@@ -1246,7 +1247,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Localização no Mapa</h3>
+              <h3 className="text-lg font-semibold">{t('businessPartners.form.mapTitle', 'Localização no Mapa')}</h3>
               <button
                 onClick={() => setShowMap(false)}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"

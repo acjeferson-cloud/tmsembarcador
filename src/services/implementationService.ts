@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { normalizarCNPJ } from '../utils/cnpj';
 
 interface ERPIntegrationConfig {
   id?: string;
@@ -316,7 +317,7 @@ export const implementationService = {
           }
 
           // Verificar se o CNPJ já existe
-          const existingByCNPJ = await carriersService.getByCnpj(row.cnpj.replace(/\D/g, ''));
+          const existingByCNPJ = await carriersService.getByCnpj(normalizarCNPJ(row.cnpj));
           if (existingByCNPJ) {
             throw new Error(`Transportadora com CNPJ ${row.cnpj} já existe`);
           }
@@ -355,7 +356,7 @@ export const implementationService = {
             codigo: row.codigo,
             razao_social: row.razao_social,
             fantasia: row.fantasia || null,
-            cnpj: row.cnpj.replace(/\D/g, ''),
+            cnpj: normalizarCNPJ(row.cnpj),
             inscricao_estadual: row.inscricao_estadual || null,
             pais_id: paisId,
             estado_id: estadoId,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit, Eye, Trash2, Mail, Phone, MapPin, Building2, User } from 'lucide-react';
 import { BusinessPartner } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessPartnerCardProps {
   partner: BusinessPartner;
@@ -15,6 +16,7 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
   onView,
   onDelete
 }) => {
+  const { t } = useTranslation();
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'customer':
@@ -31,13 +33,13 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'customer':
-        return 'Cliente';
+        return t('businessPartners.typeCustomer', 'Cliente');
       case 'supplier':
-        return 'Fornecedor';
+        return t('businessPartners.typeSupplier', 'Fornecedor');
       case 'both':
-        return 'Cliente/Fornecedor';
+        return t('businessPartners.typeBoth', 'Cliente/Fornecedor');
       default:
-        return type;
+        return t('businessPartners.view.typeLabel.default', 'Desconhecido');
     }
   };
 
@@ -48,7 +50,7 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
   };
 
   const primaryContact = partner.contacts.find(c => c.isPrimary) || partner.contacts[0];
-  const primaryAddress = partner.addresses.find(a => a.isPrimary) || partner.addresses[0];
+  const primaryAddress = partner.addresses.find(a => a.is_primary) || partner.addresses[0];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
@@ -72,14 +74,14 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
             <button
               onClick={() => onView(partner)}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Visualizar"
+              title={t('businessPartners.card.actions.view', 'Visualizar')}
             >
               <Eye className="w-4 h-4" />
             </button>
             <button
               onClick={() => onEdit(partner)}
               className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-              title="Editar"
+              title={t('businessPartners.card.actions.edit', 'Editar')}
             >
               <Edit className="w-4 h-4" />
             </button>
@@ -91,13 +93,13 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
                 console.log('🗑️ [BusinessPartnerCard] Tipo do ID:', typeof partner.id);
                 if (!partner.id) {
                   console.error('❌ [BusinessPartnerCard] ID do parceiro está undefined!');
-                  alert('Erro: ID do parceiro não encontrado');
+                  alert(t('businessPartners.card.errors.idNotFound', 'Erro: ID do parceiro não encontrado'));
                   return;
                 }
                 onDelete(partner.id);
               }}
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Excluir"
+              title={t('businessPartners.card.actions.delete', 'Excluir')}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -110,7 +112,7 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
             {getTypeLabel(partner.type)}
           </span>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(partner.status)}`}>
-            {partner.status === 'active' ? 'Ativo' : 'Inativo'}
+            {partner.status === 'active' ? t('businessPartners.view.statusLabel.active', 'Ativo') : t('businessPartners.view.statusLabel.inactive', 'Inativo')}
           </span>
         </div>
 
@@ -135,7 +137,7 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
         {/* Primary Contact */}
         {primaryContact && (
           <div className="border-t pt-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Contato Principal</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('businessPartners.card.labels.primaryContact', 'Contato Principal')}</p>
             <p className="text-sm font-medium text-gray-900 dark:text-white">{primaryContact.name}</p>
             <p className="text-xs text-gray-600 dark:text-gray-400">{primaryContact.position}</p>
           </div>
@@ -144,8 +146,8 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
         {/* Stats */}
         <div className="border-t pt-3 mt-3">
           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>{partner.contacts.length} contato(s)</span>
-            <span>{partner.addresses.length} endereço(s)</span>
+            <span>{t('businessPartners.card.labels.contactsCount', '{{count}} contato(s)', { count: partner.contacts.length })}</span>
+            <span>{t('businessPartners.card.labels.addressesCount', '{{count}} endereço(s)', { count: partner.addresses.length })}</span>
           </div>
         </div>
       </div>

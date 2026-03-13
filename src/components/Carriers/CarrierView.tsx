@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Hash, Globe, Eye, CheckCircle, Circle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle } from 'lucide-react';
 import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
-import { getFreightRateTablesByCarrier } from '../../data/freightRatesData';
 import { CarrierVision360 } from './CarrierVision360';
 
 interface CarrierViewProps {
@@ -11,6 +11,7 @@ interface CarrierViewProps {
 }
 
 export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrier }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'vision360' | 'details' | 'freight-rates'>('vision360');
   
   const renderStars = (rating: number) => {
@@ -24,7 +25,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
   };
 
   const formatCurrency = (value: string) => {
-    if (!value) return 'Não informado';
+    if (!value) return t('carriers.view.notInformed');
     const numericValue = parseInt(value);
     return (numericValue / 100).toLocaleString('pt-BR', {
       style: 'currency',
@@ -33,7 +34,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
   };
 
   const formatPercentage = (value: string) => {
-    if (!value) return 'Não informado';
+    if (!value) return t('carriers.view.notInformed');
     return `${value}%`;
   };
 
@@ -68,7 +69,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
       }
     };
 
-    return locations[type][id as keyof typeof locations[typeof type]] || 'Não informado';
+    return locations[type][id as keyof typeof locations[typeof type]] || t('carriers.view.notInformed');
   };
 
   return (
@@ -79,19 +80,19 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Transportadores</span>
+          <span>{t('carriers.backToCarriers')}</span>
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Transportador</h1>
-            <p className="text-gray-600 dark:text-gray-400">Detalhes completos do transportador</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.view.pageTitle')}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{t('carriers.view.pageSubtitle')}</p>
           </div>
           <button
             onClick={onEdit}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Edit size={20} />
-            <span>Editar</span>
+            <span>{t('carriers.editAction')}</span>
           </button>
         </div>
       </div>
@@ -110,7 +111,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
             >
               <div className="flex items-center space-x-2">
                 <Eye size={16} />
-                <span>Visão 360</span>
+                <span>{t('carriers.view.vision360Tab')}</span>
               </div>
             </button>
             <button
@@ -123,7 +124,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
             >
               <div className="flex items-center space-x-2">
                 <Truck size={16} />
-                <span>Dados do Transportador</span>
+                <span>{t('carriers.view.carrierData')}</span>
               </div>
             </button>
             <button
@@ -136,7 +137,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
             >
               <div className="flex items-center space-x-2">
                 <Clock size={16} />
-                <span>Tabelas de Frete</span>
+                <span>{t('carriers.freightRates.title')}</span>
               </div>
             </button>
           </nav>
@@ -144,7 +145,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
       </div>
 
       {activeTab === 'vision360' ? (
-        <CarrierVision360 carrierId={carrier.id} carrierName={carrier.razao_social} />
+        <CarrierVision360 carrierName={carrier.razao_social} />
       ) : activeTab === 'details' ? (
         <div className="space-y-6">
           {/* Header Card */}
@@ -160,7 +161,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                   />
                 ) : (
                   <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Logo</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('carriers.form.logoLabel')}</span>
                   </div>
                 )}
               </div>
@@ -180,24 +181,24 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Razão Social</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.razaoSocial || 'Não informado'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.companyNameLabel')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.razaoSocial || t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Nome Fantasia</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.fantasia || 'Não informado'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.fantasyName')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.fantasia || t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ</p>
                     <p className="font-medium text-gray-900 dark:text-white">{carrier.cnpj}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.status')}</p>
                     <span className={`
                       inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                       ${carrier.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                     `}>
-                      {carrier.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                      {carrier.status === 'ativo' ? t('carriers.status.active') : t('carriers.status.inactive')}
                     </span>
                   </div>
                 </div>
@@ -207,7 +208,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               <div className="text-center">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-2xl font-bold text-blue-600">{carrier.activeShipments}</p>
-                  <p className="text-sm text-blue-700">Entregas Ativas</p>
+                  <p className="text-sm text-blue-700">{t('carriers.view.activeDeliveries')}</p>
                 </div>
               </div>
             </div>
@@ -215,13 +216,13 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
           {/* Contact Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Contato</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.view.contactInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="text-blue-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">E-mail</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.email')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{carrier.email}</p>
                   </div>
                 </div>
@@ -229,8 +230,8 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <div className="flex items-center space-x-3">
                   <Phone className="text-green-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Telefone</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.phone || 'Não informado'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.phone')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.phone || t('carriers.view.notInformed')}</p>
                   </div>
                 </div>
               </div>
@@ -239,12 +240,12 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
           {/* Location Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Localização</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.view.locationInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center space-x-3">
                 <Globe className="text-purple-500" size={20} />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">País</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.country')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{getLocationName('pais', carrier.pais)}</p>
                 </div>
               </div>
@@ -252,7 +253,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               <div className="flex items-center space-x-3">
                 <Building className="text-blue-500" size={20} />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Estado</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.state')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{getLocationName('estado', carrier.estado)}</p>
                 </div>
               </div>
@@ -260,7 +261,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               <div className="flex items-center space-x-3">
                 <MapPin className="text-red-500" size={20} />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Cidade</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.city')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{getLocationName('cidade', carrier.cidade)}</p>
                 </div>
               </div>
@@ -269,18 +270,18 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
           {/* Tolerance Settings */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configurações de Tolerância</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.view.toleranceSettings')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* CT-e Tolerances */}
               <div>
-                <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">CT-e</h4>
+                <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">{t('carriers.view.cte')}</h4>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tolerância de Valor</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.valueTolerance')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(carrier.toleranciaValorCte)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tolerância de Percentual</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.percentTolerance')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formatPercentage(carrier.toleranciaPercentualCte)}</p>
                   </div>
                 </div>
@@ -288,14 +289,14 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
               {/* Invoice Tolerances */}
               <div>
-                <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">Fatura</h4>
+                <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">{t('carriers.view.invoice')}</h4>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tolerância de Valor</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.valueTolerance')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(carrier.toleranciaValorFatura)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tolerância de Percentual</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.percentTolerance')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formatPercentage(carrier.toleranciaPercentualFatura)}</p>
                   </div>
                 </div>
@@ -305,7 +306,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
           {/* Transport Modals */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Modais de Transporte</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.form.transportModalsTitle')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className={`p-4 rounded-lg border-2 ${carrier.modal_rodoviario ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center space-x-3">
@@ -315,9 +316,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Rodoviário</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.rodoviario')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_rodoviario ? 'Ativo' : 'Inativo'}
+                      {carrier.modal_rodoviario ? t('carriers.status.active') : t('carriers.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -331,9 +332,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Aéreo</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.aereo')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_aereo ? 'Ativo' : 'Inativo'}
+                      {carrier.modal_aereo ? t('carriers.status.active') : t('carriers.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -347,9 +348,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Aquaviário</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.aquaviario')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_aquaviario ? 'Ativo' : 'Inativo'}
+                      {carrier.modal_aquaviario ? t('carriers.status.active') : t('carriers.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -363,9 +364,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Ferroviário</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.ferroviario')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_ferroviario ? 'Ativo' : 'Inativo'}
+                      {carrier.modal_ferroviario ? t('carriers.status.active') : t('carriers.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -375,19 +376,19 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
           {/* Performance Metrics */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Métricas de Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.view.performanceMetrics')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">{carrier.rating}</p>
-                <p className="text-sm text-blue-700">Avaliação Média</p>
+                <p className="text-sm text-blue-700">{t('carriers.view.averageRating')}</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <p className="text-2xl font-bold text-green-600">{carrier.activeShipments}</p>
-                <p className="text-sm text-green-700">Entregas Ativas</p>
+                <p className="text-sm text-green-700">{t('carriers.view.activeDeliveries')}</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
                 <p className="text-2xl font-bold text-purple-600">98.5%</p>
-                <p className="text-sm text-purple-700">Taxa de Entrega</p>
+                <p className="text-sm text-purple-700">{t('carriers.view.deliveryRate')}</p>
               </div>
             </div>
           </div>

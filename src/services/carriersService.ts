@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { normalizarCNPJ } from '../utils/cnpj';
 
 export interface Carrier {
   id: string;
@@ -448,7 +449,7 @@ export const carriersService = {
 
   async getByCnpj(cnpj: string): Promise<Carrier | null> {
     try {
-      const cleanCnpj = cnpj.replace(/\D/g, '');
+      const cleanCnpj = normalizarCNPJ(cnpj);
       if (cleanCnpj.length < 8) {
         return null;
       }

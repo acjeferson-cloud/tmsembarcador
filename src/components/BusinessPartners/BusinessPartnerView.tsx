@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Edit, Mail, Phone, MapPin, Building2, User, Calendar, Eye, FileText } from 'lucide-react';
 import { BusinessPartner } from '../../types';
 import { BusinessPartnerVision360 } from './BusinessPartnerVision360';
@@ -14,6 +15,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
   onEdit,
   onClose
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'vision360' | 'details'>('vision360');
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -31,13 +33,13 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'customer':
-        return 'Cliente';
+        return t('businessPartners.typeCustomer', 'Cliente');
       case 'supplier':
-        return 'Fornecedor';
+        return t('businessPartners.typeSupplier', 'Fornecedor');
       case 'both':
-        return 'Cliente/Fornecedor';
+        return t('businessPartners.typeBoth', 'Cliente/Fornecedor');
       default:
-        return type;
+        return t('businessPartners.view.typeLabel.default', 'Desconhecido');
     }
   };
 
@@ -50,13 +52,19 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
   const getAddressTypeLabel = (type: string) => {
     switch (type) {
       case 'billing':
-        return 'Cobrança';
+        return t('businessPartners.view.addressTypeLabel.billing', 'Cobrança');
       case 'delivery':
-        return 'Entrega';
+        return t('businessPartners.view.addressTypeLabel.delivery', 'Entrega');
       case 'correspondence':
-        return 'Correspondência';
+        return t('businessPartners.view.addressTypeLabel.correspondence', 'Correspondência');
+      case 'commercial':
+        return t('businessPartners.view.addressTypeLabel.commercial', 'Comercial');
+      case 'shipping':
+        return t('businessPartners.view.addressTypeLabel.shipping', 'Expedição');
+      case 'both':
+        return t('businessPartners.view.addressTypeLabel.both', 'Cobrança e Entrega');
       default:
-        return type;
+        return t('businessPartners.view.addressTypeLabel.default', 'Outro');
     }
   };
 
@@ -94,11 +102,12 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
               className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Edit className="w-4 h-4" />
-              <span>Editar</span>
+              <span>{t('businessPartners.view.actions.edit', 'Editar')}</span>
             </button>
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-700 rounded-lg transition-colors"
+              title={t('businessPartners.view.actions.close', 'Fechar')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -118,7 +127,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <Eye size={16} />
-                <span>Visão 360</span>
+                <span>{t('businessPartners.view.tabs.vision360', 'Visão 360')}</span>
               </div>
             </button>
             <button
@@ -131,7 +140,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <FileText size={16} />
-                <span>Dados Básicos</span>
+                <span>{t('businessPartners.view.tabs.basicData', 'Dados Básicos')}</span>
               </div>
             </button>
           </nav>
@@ -148,30 +157,30 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
             <div>
           {/* Basic Info */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('businessPartners.view.sections.basicInfo', 'Informações Básicas')}</h3>
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tipo</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t('businessPartners.view.labels.type', 'Tipo')}</label>
                   <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(partner.type)}`}>
                     {getTypeLabel(partner.type)}
                   </span>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t('businessPartners.view.labels.status', 'Status')}</label>
                   <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(partner.status)}`}>
-                    {partner.status === 'active' ? 'Ativo' : 'Inativo'}
+                    {partner.status === 'active' ? t('businessPartners.view.statusLabel.active', 'Ativo') : t('businessPartners.view.statusLabel.inactive', 'Inativo')}
                   </span>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t('businessPartners.view.labels.email', 'Email')}</label>
                   <div className="flex items-center space-x-2">
                     <Mail className="w-4 h-4 text-gray-400" />
                     <span className="text-gray-900 dark:text-white">{partner.email}</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Telefone</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{t('businessPartners.view.labels.phone', 'Telefone')}</label>
                   <div className="flex items-center space-x-2">
                     <Phone className="w-4 h-4 text-gray-400" />
                     <span className="text-gray-900 dark:text-white">{partner.phone}</span>
@@ -184,7 +193,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
           {/* Contacts */}
           {partner.contacts && partner.contacts.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pessoas de Contato</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('businessPartners.view.sections.contacts', 'Pessoas de Contato')}</h3>
               <div className="space-y-4">
                 {partner.contacts.map((contact) => (
                   <div key={contact.id} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -198,7 +207,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
                       </div>
                       {contact.isPrimary && (
                         <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                          Principal
+                          {t('businessPartners.view.labels.primaryContact', 'Principal')}
                         </span>
                       )}
                     </div>
@@ -221,7 +230,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
           {/* Addresses */}
           {partner.addresses && partner.addresses.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Endereços</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('businessPartners.view.sections.addresses', 'Endereços')}</h3>
               <div className="space-y-4">
                 {partner.addresses.map((address) => (
                   <div key={address.id} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -232,9 +241,9 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
                           {getAddressTypeLabel(address.type)}
                         </span>
                       </div>
-                      {address.isPrimary && (
+                      {address.is_primary && (
                         <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                          Principal
+                          {t('businessPartners.view.labels.primaryAddress', 'Principal')}
                         </span>
                       )}
                     </div>
@@ -242,7 +251,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
                       <p>{address.street}, {address.number}</p>
                       {address.complement && <p>{address.complement}</p>}
                       <p>{address.neighborhood}</p>
-                      <p>{address.city}, {address.state} - {address.zipCode}</p>
+                      <p>{address.city}, {address.state} - {address.zip_code}</p>
                       <p>{address.country}</p>
                     </div>
                   </div>
@@ -254,7 +263,7 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
           {/* Observations */}
           {partner.observations && (
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Observações</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('businessPartners.view.sections.observations', 'Observações')}</h3>
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                 <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{partner.observations}</p>
               </div>
@@ -263,20 +272,20 @@ const BusinessPartnerView: React.FC<BusinessPartnerViewProps> = ({
 
           {/* Timestamps */}
           <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações do Sistema</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('businessPartners.view.sections.systemInfo', 'Informações do Sistema')}</h3>
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Criado em</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('businessPartners.view.labels.createdAt', 'Criado em')}</p>
                     <p className="text-sm text-gray-900 dark:text-white">{formatDate(partner.createdAt)}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Última atualização</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('businessPartners.view.labels.updatedAt', 'Última atualização')}</p>
                     <p className="text-sm text-gray-900 dark:text-white">{formatDate(partner.updatedAt)}</p>
                   </div>
                 </div>

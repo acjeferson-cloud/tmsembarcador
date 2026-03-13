@@ -3,6 +3,7 @@ import { ArrowLeft, Info, DollarSign, Users, FileText, Package, Upload, CheckCir
 import { parseNFeXml, importNFeToDatabase, NFeXmlData } from '../../services/nfeXmlService';
 import { carriersService } from '../../services/carriersService';
 import { TenantContextHelper } from '../../utils/tenantContext';
+import { normalizarCNPJ } from '../../utils/cnpj';
 
 interface InvoiceFormProps {
   onBack: () => void;
@@ -93,8 +94,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (xmlData) {
       let matchedCarrierId = '';
       if (xmlData.carrier?.cnpj && carriers.length > 0) {
-        const cnpjClean = xmlData.carrier.cnpj.replace(/\D/g, '');
-        const matched = carriers.find((c: any) => c.cnpj && c.cnpj.replace(/\D/g, '') === cnpjClean);
+        const cnpjClean = normalizarCNPJ(xmlData.carrier.cnpj);
+        const matched = carriers.find((c: any) => c.cnpj && normalizarCNPJ(c.cnpj) === cnpjClean);
         if (matched) {
           matchedCarrierId = matched.id;
         }

@@ -1,20 +1,9 @@
 // Formatadores para uso em toda a aplicação
+import { normalizarCNPJ, formatarCNPJ as formatarCNPJCentral } from './cnpj/formatter';
 
-// Formata CNPJ: 00.000.000/0000-00
+// Formata CNPJ: 00.000.000/0000-00 (e Alfanumérico)
 export const formatCNPJ = (cnpj: string): string => {
-  if (!cnpj) return '';
-  
-  // Remove caracteres não numéricos
-  const numericCNPJ = cnpj.replace(/\D/g, '');
-  
-  // Verifica se tem 14 dígitos
-  if (numericCNPJ.length !== 14) return cnpj;
-  
-  // Formata como 00.000.000/0000-00
-  return numericCNPJ.replace(
-    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
-    '$1.$2.$3/$4-$5'
-  );
+  return formatarCNPJCentral(cnpj);
 };
 
 // Formata CPF: 000.000.000-00
@@ -247,10 +236,10 @@ export const formatCompanyName = (text: string): string => {
 export const formatCNPJInput = (value: string): string => {
   if (!value) return '';
 
-  // Remove caracteres não numéricos
-  const numericValue = value.replace(/\D/g, '');
+  // Remove caracteres não alfanuméricos
+  const numericValue = normalizarCNPJ(value);
 
-  // Limita a 14 dígitos
+  // Limita a 14 caracteres
   const limited = numericValue.slice(0, 14);
 
   // Aplica formatação progressiva
@@ -270,10 +259,9 @@ export const formatCNPJInput = (value: string): string => {
   return `${limited.slice(0, 2)}.${limited.slice(2, 5)}.${limited.slice(5, 8)}/${limited.slice(8, 12)}-${limited.slice(12, 14)}`;
 };
 
-// Remove formatação de CNPJ (retorna apenas números)
+// Remove formatação de CNPJ (retorna apenas números e letras permitidas)
 export const unformatCNPJ = (cnpj: string): string => {
-  if (!cnpj) return '';
-  return cnpj.replace(/\D/g, '');
+  return normalizarCNPJ(cnpj);
 };
 
 // Remove formatação de telefone (retorna apenas números)

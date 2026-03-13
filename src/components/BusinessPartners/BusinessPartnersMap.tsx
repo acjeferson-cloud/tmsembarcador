@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BusinessPartner } from '../../types';
 import { MapPin, Loader } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+import { useTranslation } from 'react-i18next';
 
 interface BusinessPartnersMapProps {
   partners: BusinessPartner[];
@@ -14,6 +15,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadAndInitializeMap = async () => {
@@ -36,7 +38,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         initializeMap();
       } catch (err: any) {
         console.error('Erro ao carregar Google Maps:', err);
-        setError(err.message || 'Erro ao carregar o Google Maps. Configure a chave de API nas configurações.');
+        setError(err.message || t('businessPartners.map.errors.loadError', 'Erro ao carregar o Google Maps. Configure a chave de API nas configurações.'));
         setIsLoading(false);
       }
     };
@@ -49,7 +51,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
 
       if (!window.google || !window.google.maps) {
         console.error('Google Maps API não está disponível');
-        setError('Google Maps API não está disponível');
+        setError(t('businessPartners.map.errors.apiNotAvailable', 'Google Maps API não está disponível'));
         setIsLoading(false);
         return;
       }
@@ -71,7 +73,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         setIsLoading(false);
       } catch (err) {
         console.error('Erro ao inicializar mapa:', err);
-        setError('Erro ao inicializar o mapa');
+        setError(t('businessPartners.map.errors.initError', 'Erro ao inicializar o mapa'));
         setIsLoading(false);
       }
     };
@@ -153,9 +155,9 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
               </h3>
               <div style="margin-bottom: 4px; font-size: 13px; color: #6B7280;">
                 <strong>Tipo:</strong> ${
-                  partner.type === 'customer' ? 'Cliente' :
-                  partner.type === 'supplier' ? 'Fornecedor' :
-                  'Cliente/Fornecedor'
+                  partner.type === 'customer' ? t('businessPartners.typeCustomer', 'Cliente') :
+                  partner.type === 'supplier' ? t('businessPartners.typeSupplier', 'Fornecedor') :
+                  t('businessPartners.typeBoth', 'Cliente/Fornecedor')
                 }
               </div>
               ${partner.email ? `
@@ -235,7 +237,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-600 dark:text-gray-400 mb-2">{error}</p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Configure sua chave de API do Google Maps nas configurações do sistema.
+          {t('businessPartners.map.errors.configKey', 'Configure sua chave de API do Google Maps nas configurações do sistema.')}
         </p>
       </div>
     );
@@ -247,7 +249,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         <div className="absolute inset-0 bg-white dark:bg-gray-800 bg-opacity-90 z-10 flex items-center justify-center rounded-lg">
           <div className="text-center">
             <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
-            <p className="text-gray-600 dark:text-gray-400">Carregando mapa...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('businessPartners.map.loading', 'Carregando mapa...')}</p>
           </div>
         </div>
       )}
@@ -260,19 +262,19 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
 
       {/* Legenda */}
       <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Legenda</h4>
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('businessPartners.map.legend.title', 'Legenda')}</h4>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Cliente</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeCustomer', 'Cliente')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Fornecedor</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeSupplier', 'Fornecedor')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-purple-500 border-2 border-white"></div>
-            <span className="text-xs text-gray-600 dark:text-gray-400">Cliente/Fornecedor</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeBoth', 'Cliente/Fornecedor')}</span>
           </div>
         </div>
       </div>
@@ -280,7 +282,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
       {/* Contador de parceiros no mapa */}
       <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg px-4 py-2 border border-gray-200 dark:border-gray-700">
         <p className="text-sm font-medium text-gray-900 dark:text-white">
-          {markers.length} parceiros no mapa
+          {t('businessPartners.map.partnersCount', '{{count}} parceiros no mapa', { count: markers.length })}
         </p>
       </div>
     </div>

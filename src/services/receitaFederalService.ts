@@ -1,3 +1,5 @@
+import { validarCNPJ, normalizarCNPJ, formatarCNPJ } from '../utils/cnpj';
+
 interface ReceitaFederalResponse {
   cnpj: string;
   razao_social: string;
@@ -68,13 +70,13 @@ const STATUS_CADASTRAL: Record<SituacaoCadastral, StatusInfo> = {
 
 export const receitaFederalService = {
   async consultarCNPJ(cnpj: string): Promise<ReceitaFederalResponse> {
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    const cnpjLimpo = normalizarCNPJ(cnpj);
 
     if (cnpjLimpo.length !== 14) {
-      throw new Error('CNPJ inválido. Deve conter 14 dígitos.');
+      throw new Error('CNPJ inválido. Deve conter 14 caracteres.');
     }
 
-    if (!this.validarCNPJ(cnpjLimpo)) {
+    if (!validarCNPJ(cnpjLimpo)) {
       throw new Error('CNPJ inválido. Dígitos verificadores incorretos.');
     }
 
@@ -91,7 +93,7 @@ export const receitaFederalService = {
       const data = await response.json();
 
       return {
-        cnpj: this.formatarCNPJ(data.cnpj),
+        cnpj: formatarCNPJ(data.cnpj),
         razao_social: data.razao_social || data.nome_empresarial || '',
         nome_fantasia: data.nome_fantasia || data.razao_social || '',
         situacao_cadastral: data.descricao_situacao_cadastral || data.situacao_cadastral || '',
@@ -117,47 +119,7 @@ export const receitaFederalService = {
     }
   },
 
-  validarCNPJ(cnpj: string): boolean {
-    cnpj = cnpj.replace(/\D/g, '');
 
-    if (cnpj.length !== 14) return false;
-
-    if (/^(\d)\1{13}$/.test(cnpj)) return false;
-
-    let tamanho = cnpj.length - 2;
-    let numeros = cnpj.substring(0, tamanho);
-    const digitos = cnpj.substring(tamanho);
-    let soma = 0;
-    let pos = tamanho - 7;
-
-    for (let i = tamanho; i >= 1; i--) {
-      soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
-      if (pos < 2) pos = 9;
-    }
-
-    let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-    if (resultado !== parseInt(digitos.charAt(0))) return false;
-
-    tamanho = tamanho + 1;
-    numeros = cnpj.substring(0, tamanho);
-    soma = 0;
-    pos = tamanho - 7;
-
-    for (let i = tamanho; i >= 1; i--) {
-      soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
-      if (pos < 2) pos = 9;
-    }
-
-    resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
-    if (resultado !== parseInt(digitos.charAt(1))) return false;
-
-    return true;
-  },
-
-  formatarCNPJ(cnpj: string): string {
-    cnpj = cnpj.replace(/\D/g, '');
-    return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  },
 
   formatarCEP(cep: string): string {
     cep = cep.replace(/\D/g, '');

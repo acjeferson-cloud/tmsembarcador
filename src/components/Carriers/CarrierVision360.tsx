@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Package,
   TrendingUp,
@@ -18,7 +19,6 @@ import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { Toast } from '../common/Toast';
 
 interface CarrierVision360Props {
-  carrierId: string;
   carrierName: string;
 }
 
@@ -35,7 +35,6 @@ interface AIInsightModalProps {
   isOpen: boolean;
   onClose: () => void;
   carrierName: string;
-  kpiData: KPIData;
   isLoading: boolean;
   insight: string;
 }
@@ -44,10 +43,11 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
   isOpen,
   onClose,
   carrierName,
-  kpiData,
   isLoading,
   insight
 }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
 
   return (
@@ -61,10 +61,10 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Insight IA
+                  {t('carriers.vision360.aiInsight.title')}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Análise inteligente para {carrierName}
+                  {t('carriers.vision360.aiInsight.subtitle', { carrierName })}
                 </p>
               </div>
             </div>
@@ -81,7 +81,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Gerando análise inteligente...</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('carriers.vision360.aiInsight.generating')}</p>
             </div>
           ) : insight ? (
             <div className="space-y-4">
@@ -90,7 +90,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
                   <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                      Análise Gerada por IA
+                      {t('carriers.vision360.aiInsight.generatedTitle')}
                     </h3>
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
@@ -105,8 +105,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-1" />
                   <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    Esta análise foi gerada por inteligência artificial e deve ser usada como referência.
-                    Sempre valide as informações com dados reais antes de tomar decisões.
+                    {t('carriers.vision360.aiInsight.warning')}
                   </p>
                 </div>
               </div>
@@ -115,7 +114,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
             <div className="text-center py-12">
               <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-400">
-                Não foi possível gerar a análise. Tente novamente.
+                {t('carriers.vision360.aiInsight.errorTitle')}
               </p>
             </div>
           )}
@@ -126,7 +125,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
             onClick={onClose}
             className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Fechar
+            {t('carriers.vision360.aiInsight.close')}
           </button>
         </div>
       </div>
@@ -134,7 +133,8 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
   );
 };
 
-export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, carrierName }) => {
+export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierName }) => {
+  const { t } = useTranslation();
   const { isActive: openaiActive } = useInnovation(INNOVATION_IDS.OPENAI);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -146,7 +146,7 @@ export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, c
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const [kpiData, setKpiData] = useState<KPIData>({
+  const [kpiData] = useState<KPIData>({
     totalDeliveries: 1250,
     inTransit: 89,
     deliveredToday: 47,
@@ -156,29 +156,29 @@ export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, c
   });
 
   const deliveryStatusData = [
-    { name: 'Entregue', value: 1050, color: '#10b981' },
-    { name: 'Em Trânsito', value: 89, color: '#3b82f6' },
-    { name: 'Atrasado', value: 12, color: '#ef4444' },
-    { name: 'Aguardando', value: 34, color: '#f59e0b' },
+    { name: t('carriers.vision360.status.delivered'), value: 1050, color: '#10b981' },
+    { name: t('carriers.vision360.status.inTransit'), value: 89, color: '#3b82f6' },
+    { name: t('carriers.vision360.status.delayed'), value: 12, color: '#ef4444' },
+    { name: t('carriers.vision360.status.awaiting'), value: 34, color: '#f59e0b' },
   ];
 
   const weeklyPerformanceData = [
-    { day: 'Seg', entregas: 45, pontualidade: 95 },
-    { day: 'Ter', entregas: 52, pontualidade: 93 },
-    { day: 'Qua', entregas: 48, pontualidade: 96 },
-    { day: 'Qui', entregas: 58, pontualidade: 92 },
-    { day: 'Sex', entregas: 61, pontualidade: 94 },
-    { day: 'Sáb', entregas: 38, pontualidade: 97 },
-    { day: 'Dom', entregas: 25, pontualidade: 98 },
+    { day: t('carriers.vision360.days.mon'), entregas: 45, pontualidade: 95 },
+    { day: t('carriers.vision360.days.tue'), entregas: 52, pontualidade: 93 },
+    { day: t('carriers.vision360.days.wed'), entregas: 48, pontualidade: 96 },
+    { day: t('carriers.vision360.days.thu'), entregas: 58, pontualidade: 92 },
+    { day: t('carriers.vision360.days.fri'), entregas: 61, pontualidade: 94 },
+    { day: t('carriers.vision360.days.sat'), entregas: 38, pontualidade: 97 },
+    { day: t('carriers.vision360.days.sun'), entregas: 25, pontualidade: 98 },
   ];
 
   const monthlyTrendData = [
-    { month: 'Jan', entregas: 890 },
-    { month: 'Fev', entregas: 950 },
-    { month: 'Mar', entregas: 1120 },
-    { month: 'Abr', entregas: 1050 },
-    { month: 'Mai', entregas: 1180 },
-    { month: 'Jun', entregas: 1250 },
+    { month: t('carriers.vision360.months.jan'), entregas: 890 },
+    { month: t('carriers.vision360.months.feb'), entregas: 950 },
+    { month: t('carriers.vision360.months.mar'), entregas: 1120 },
+    { month: t('carriers.vision360.months.apr'), entregas: 1050 },
+    { month: t('carriers.vision360.months.may'), entregas: 1180 },
+    { month: t('carriers.vision360.months.jun'), entregas: 1250 },
   ];
 
   const handleRefresh = () => {
@@ -190,7 +190,7 @@ export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, c
 
   const generateAIInsight = async () => {
     if (!openaiActive) {
-      setToast({ message: 'Recurso não contratado. Ative em Inovações & Sugestões.', type: 'error' });
+      setToast({ message: t('carriers.vision360.aiInsight.notContractedError'), type: 'error' });
       return;
     }
 
@@ -239,7 +239,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
           <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-yellow-800">
-              <strong>Integração com OpenAI/ChatGPT não contratada:</strong> Para utilizar o botão de inteligência artificial "Insight IA", é necessário ativar o serviço em <strong>Inovações & Sugestões</strong>. Sem a ativação, o botão não terão efeito.
+              <strong>{t('carriers.vision360.aiInsight.notContractedNotice')}</strong> {t('carriers.vision360.aiInsight.notContractedDesc1')} <strong>{t('carriers.vision360.aiInsight.notContractedDesc2')}</strong>{t('carriers.vision360.aiInsight.notContractedDesc3')}
             </p>
           </div>
         </div>
@@ -251,7 +251,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-1">
             <div className="flex items-center space-x-2">
               <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Período:</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('carriers.vision360.filters.period')}</span>
             </div>
             <input
               type="date"
@@ -259,7 +259,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
             />
-            <span className="text-gray-500 dark:text-gray-400">até</span>
+            <span className="text-gray-500 dark:text-gray-400">{t('carriers.vision360.filters.to')}</span>
             <input
               type="date"
               value={dateRange.end}
@@ -275,7 +275,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Atualizar</span>
+              <span>{t('carriers.vision360.filters.refresh')}</span>
             </button>
 
             <button
@@ -286,10 +286,10 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
                   ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
-              title={!openaiActive ? 'Recurso não contratado. Ative em Inovações & Sugestões.' : ''}
+              title={!openaiActive ? t('carriers.vision360.aiInsight.notContractedError') : ''}
             >
               <Sparkles className="w-4 h-4" />
-              <span>Insight IA</span>
+              <span>{t('carriers.vision360.filters.aiInsightBtn')}</span>
             </button>
           </div>
         </div>
@@ -299,56 +299,56 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Total de Entregas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.vision360.kpi.totalDeliveries')}</span>
             <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalDeliveries}</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">+12% vs mês anterior</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('carriers.vision360.kpi.vsLastMonth')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Em Trânsito</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.vision360.kpi.inTransit')}</span>
             <TruckIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.inTransit}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{((kpiData.inTransit / kpiData.totalDeliveries) * 100).toFixed(1)}% do total</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.vision360.kpi.percentOfTotal', { percent: ((kpiData.inTransit / kpiData.totalDeliveries) * 100).toFixed(1) })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Entregue Hoje</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.vision360.kpi.deliveredToday')}</span>
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.deliveredToday}</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">Meta: 45/dia</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('carriers.vision360.kpi.goalPerDay')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Atrasadas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.vision360.kpi.delayed')}</span>
             <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.delayed}</p>
-          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{((kpiData.delayed / kpiData.totalDeliveries) * 100).toFixed(1)}% do total</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('carriers.vision360.kpi.percentOfTotal', { percent: ((kpiData.delayed / kpiData.totalDeliveries) * 100).toFixed(1) })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Aguardando Coleta</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.vision360.kpi.awaitingPickup')}</span>
             <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.awaitingPickup}</p>
-          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Priorizar coletas</p>
+          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{t('carriers.vision360.kpi.prioritizePickups')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Taxa de Pontualidade</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.vision360.kpi.punctualityRate')}</span>
             <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.punctualityRate}%</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">Acima da meta (90%)</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('carriers.vision360.kpi.aboveGoal')}</p>
         </div>
       </div>
 
@@ -358,7 +358,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <BarChart3 className="w-5 h-5" />
-            <span>Status das Entregas</span>
+            <span>{t('carriers.vision360.charts.deliveryStatus')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -385,7 +385,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <BarChart3 className="w-5 h-5" />
-            <span>Desempenho Semanal</span>
+            <span>{t('carriers.vision360.charts.weeklyPerformance')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weeklyPerformanceData}>
@@ -395,8 +395,8 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
               <YAxis yAxisId="right" orientation="right" />
               <Tooltip />
               <Legend />
-              <Bar yAxisId="left" dataKey="entregas" fill="#3b82f6" name="Entregas" />
-              <Bar yAxisId="right" dataKey="pontualidade" fill="#10b981" name="Pontualidade %" />
+              <Bar yAxisId="left" dataKey="entregas" fill="#3b82f6" name={t('carriers.vision360.charts.deliveries')} />
+              <Bar yAxisId="right" dataKey="pontualidade" fill="#10b981" name={t('carriers.vision360.charts.punctualityPercent')} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -405,7 +405,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <TrendingUp className="w-5 h-5" />
-            <span>Tendência de Entregas (Últimos 6 Meses)</span>
+            <span>{t('carriers.vision360.charts.monthlyTrend')}</span>
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyTrendData}>
@@ -419,7 +419,7 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
                 dataKey="entregas"
                 stroke="#3b82f6"
                 strokeWidth={3}
-                name="Total de Entregas"
+                name={t('carriers.vision360.charts.totalDeliveries')}
                 dot={{ fill: '#3b82f6', r: 6 }}
               />
             </LineChart>
@@ -432,7 +432,6 @@ Com base nos dados, o transportador demonstra capacidade de crescimento sustent�
         isOpen={showAIModal}
         onClose={() => setShowAIModal(false)}
         carrierName={carrierName}
-        kpiData={kpiData}
         isLoading={isGeneratingInsight}
         insight={aiInsight}
       />

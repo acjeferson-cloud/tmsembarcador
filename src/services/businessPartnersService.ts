@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { BusinessPartnerAddress } from '../types';
 
-interface BusinessPartner {
+export interface BusinessPartner {
   id?: string;
   name: string;
   document: string;

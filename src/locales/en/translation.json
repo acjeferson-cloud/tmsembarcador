@@ -63,6 +63,130 @@
     "send": "Send",
     "sending": "Sending..."
   },
+  "freightQuote": {
+    "title": "Freight Quote",
+    "subtitle": "Simulate and compare freight rates among carriers",
+    "tabs": {
+      "newQuote": "New Quote",
+      "history": "History"
+    },
+    "form": {
+      "title": "Quote Data",
+      "origin": "Origin",
+      "destination": "Destination",
+      "modeCity": "State+City",
+      "modeCep": "ZIP Code",
+      "stateLabel": "State",
+      "stateLabelReq": "State *",
+      "stateAuto": "State (Auto)",
+      "cityLabel": "City",
+      "cityLabelReq": "City *",
+      "cityAuto": "City (Auto)",
+      "cepLabel": "ZIP Code",
+      "cepLabelReq": "ZIP Code *",
+      "cepPlaceholder": "00000000",
+      "select": "Select...",
+      "selectCity": "Select city...",
+      "loading": "Loading...",
+      "partner": "Business Partner",
+      "partnerOptional": "Optional...",
+      "cargoValue": "Cargo Value *",
+      "cargoValuePlaceholder": "0.00",
+      "weight": "Actual Weight (kg) *",
+      "weightPlaceholder": "0.000",
+      "volumes": "Volumes (Qty) *",
+      "cubicMeters": "M³ (Cubature)",
+      "cubicMetersPlaceholder": "0.0000",
+      "modalsConsidered": "Considered Transport Modals *",
+      "calculateBtn": "Simulate Quotes",
+      "calculating": "Calculating..."
+    },
+    "modals": {
+      "road": "🚛 Road",
+      "air": "✈️ Air",
+      "sea": "🚢 Sea",
+      "rail": "🚂 Rail",
+      "all": "All modals"
+    },
+    "emptyState": {
+      "readyToQuote": "Ready to Quote",
+      "description": "Fill in the origin, destination, and cargo characteristics data above to search for the best carriers."
+    },
+    "messages": {
+      "selectDestination": "Select destination city",
+      "weightGreaterThanZero": "Weight must be greater than zero",
+      "valueGreaterThanZero": "Cargo value must be greater than zero",
+      "selectAtLeastOneModal": "Select at least one transport modal",
+      "noCarriersFound": "No carriers found for the specified destination",
+      "quotesFound": "{{count}} quotes found",
+      "errorCalculating": "Error calculating quote",
+      "reloadingHistory": "🔄 Reloading quote history...",
+      "historyReloaded": "✅ History reloaded!"
+    },
+    "results": {
+      "title": "Quote Results ({{count}})",
+      "subtitle": "Sorted by lowest price",
+      "columns": {
+        "carrier": "Carrier",
+        "modal": "Modal",
+        "totalValue": "Total Value",
+        "percentLowest": "% over lowest",
+        "percentInvoice": "% over Invoice",
+        "deliveryDeadline": "Delivery Time",
+        "internalNps": "Internal NPS",
+        "freightWeight": "Freight Weight",
+        "freightValue": "Freight Value",
+        "gris": "GRIS",
+        "toll": "Toll",
+        "tas": "TAS",
+        "seccat": "SECCAT",
+        "dispatch": "Dispatch",
+        "itr": "ITR",
+        "pickupDelivery": "Pickup/Delivery",
+        "otherValues": "Other Values",
+        "icms": "ICMS"
+      },
+      "nominated": "Nominated",
+      "lowestPrice": "Lowest price",
+      "notInformed": "Not informed",
+      "noRating": "No rating",
+      "na": "N/A",
+      "days": "{{count}} day",
+      "days_plural": "{{count}} days"
+    },
+    "history": {
+      "title": "Quote History",
+      "subtitle": "{{count}} simulations performed",
+      "refresh": "Refresh",
+      "emptyState": "No quotes found",
+      "columns": {
+        "number": "No.",
+        "date": "Date",
+        "user": "User",
+        "partner": "Partner",
+        "origin": "Origin",
+        "destination": "Destination",
+        "modals": "Modals",
+        "weightVolume": "Weight/Vol",
+        "cargoValue": "Cargo Value",
+        "bestOffer": "Best Offer",
+        "deliveryDeadline": "Delivery Deadline",
+        "actions": "Actions"
+      },
+      "pagination": {
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "results": "results"
+      },
+      "modal": {
+        "title": "Quote Details",
+        "results": "Results",
+        "percentLowest": "% lowest:",
+        "percentInvoice": "% Invoice:"
+      }
+    }
+  },
   "login": {
     "title": "TMS Shipper Log Axis",
     "subtitle": "One system. All your shipments!",
@@ -601,7 +725,7 @@
       "tradeName": "Trade Name",
       "document": "Tax ID",
       "stateRegistration": "State Registration",
-      "email": "Email",
+      "email": "E-mail",
       "phone": "Phone",
       "website": "Website",
       "street": "Street",
@@ -630,10 +754,73 @@
       "observations": "Observations",
       "cancel": "Cancel",
       "save": "Save",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "code": "Code",
+      "codeSequential": "Sequential Code",
+      "codeSequentialHelp1": "Codes are automatically generated in numerical sequence starting from 0001.",
+      "codeSequentialHelpNew": "Click the # icon to generate the next available code.",
+      "codeSequentialHelpEdit": "The code cannot be changed after registration.",
+      "generateNextCode": "Generate next code",
+      "codeRequired": "Code is required",
+      "codeInUse": "This code is already in use by another carrier",
+      "cnpjRequired": "CNPJ is required",
+      "companyNameRequired": "Company Name is required",
+      "searchRFB": "Search Federal Revenue data",
+      "importNotAllowed": "Import not allowed. {{status}}\\n\\nOnly companies with ACTIVE status can be registered.",
+      "dataImportedSuccess": "✓ Data imported successfully! {{status}}",
+      "cnpjError": "Error consulting CNPJ. Try again.",
+      "invalidCnpj": "Enter a valid CNPJ.",
+      "cepNeeds8Digits": "ZIP code must contain 8 digits",
+      "searchingCep": "Searching ZIP code...",
+      "stateNotFound": "State not found in the system",
+      "cepNotFound": "ZIP code not found",
+      "cepError": "Error searching ZIP code. Try again.",
+      "fillCarrierData": "Fill in the carrier details",
+      "logoText": "Carrier Logo",
+      "tolerances": "Tolerances",
+      "toleranceCteLabel": "CT-e Value Tolerance",
+      "toleranceCtePercentLabel": "CT-e Percent Tolerance",
+      "toleranceInvoiceLabel": "Invoice Value Tolerance",
+      "toleranceInvoicePercentLabel": "Invoice Percent Tolerance",
+      "uploadLogo": "Upload Logo",
+      "removeLogo": "Remove",
+      "logoHelp": "PNG, JPG or GIF up to 2MB",
+      "notInformed": "Not informed",
+      "companyNameLabel": "Company Name",
+      "fantasyName": "Fantasy Name",
+      "statusLabel": "Status *",
+      "activeText": "Active",
+      "inactiveText": "Inactive",
+      "logoLabel": "Logo",
+      "logoHelpDrop": "Click to upload logo",
+      "transportModalsTitle": "Transport Modals",
+      "transportModalsHelp": "Select the transport modals met by this carrier:",
+      "workingDaysConfig": "Working Days Configuration",
+      "workingDaysHelp": "Define how the carrier considers working days for calculating delivery times:",
+      "saturdayWorkingDay": "Considers Saturday as a working day",
+      "saturdayWorkingDayHelp": "When checked, Saturdays will be counted in the delivery time",
+      "sundayWorkingDay": "Considers Sunday as a working day",
+      "sundayWorkingDayHelp": "When checked, Sundays will be counted in the delivery time",
+      "holidaysWorkingDay": "Considers holidays in calculating deadlines",
+      "holidaysWorkingDayHelp": "When checked, holidays (national, state and municipal) will not be counted as working days",
+      "addressTitle": "Address",
+      "searchZipCode": "Search ZIP Code",
+      "countryLabel": "Country",
+      "selectCountry": "Select country",
+      "stateLabel": "State",
+      "selectState": "Select state",
+      "cityLabel": "City",
+      "selectCity": "Select city",
+      "neighborhoodLabel": "Neighborhood",
+      "complementLabel": "Complement",
+      "streetLabel": "Street",
+      "numberLabel": "Number",
+      "update": "Update",
+      "carrierTerm": "Carrier",
+      "errorInCode": "Error in code:"
     },
     "view": {
-      "title": "Carrier Details",
+      "title": "View Carrier",
       "edit": "Edit",
       "delete": "Delete",
       "vision360": "360° View",
@@ -647,7 +834,31 @@
       "completedShipments": "Completed Shipments",
       "avgDeliveryTime": "Avg Delivery Time",
       "onTimeRate": "On-Time Rate",
-      "relationshipMap": "Relationship Map"
+      "relationshipMap": "Relationship Map",
+      "details": "Complete carrier details",
+      "carrierData": "Carrier Data",
+      "freightRates": "Freight Rates",
+      "locationInfo": "Location Information",
+      "country": "Country",
+      "state": "State",
+      "city": "City",
+      "toleranceSettings": "Tolerance Settings",
+      "cte": "CT-e (Bill of Lading)",
+      "invoice": "Invoice",
+      "valueTolerance": "Value Tolerance",
+      "percentTolerance": "Percentage Tolerance",
+      "transportModals": "Transport Modals",
+      "avgRating": "Average Rating",
+      "deliveryRate": "Delivery Rate",
+      "notInformed": "Not informed",
+      "pageTitle": "View Carrier",
+      "pageSubtitle": "Complete carrier details",
+      "vision360Tab": "360° Vision",
+      "status": "Status",
+      "activeDeliveries": "Active Deliveries",
+      "contactInfo": "Contact Information",
+      "performanceMetrics": "Performance Metrics",
+      "averageRating": "Average Rating"
     },
     "vision360": {
       "title": "360° View - {{name}}",
@@ -656,7 +867,71 @@
       "financialData": "Financial Data",
       "recentOperations": "Recent Operations",
       "documentos": "Documents",
-      "history": "History"
+      "history": "History",
+      "aiInsight": {
+        "title": "AI Insight",
+        "subtitle": "Intelligent analysis for {{carrierName}}",
+        "generating": "Generating intelligent analysis...",
+        "generatedTitle": "AI-Generated Analysis",
+        "warning": "This analysis was generated by artificial intelligence and should be used as a reference. Always validate information with real data before making decisions.",
+        "errorTitle": "Could not generate analysis. Please try again.",
+        "close": "Close",
+        "notContractedError": "Feature not contracted. Activate in Innovations & Suggestions.",
+        "notContractedNotice": "OpenAI/ChatGPT integration not contracted:",
+        "notContractedDesc1": "To use the \"AI Insight\" button, you must activate the service in",
+        "notContractedDesc2": "Innovations & Suggestions",
+        "notContractedDesc3": ". Without activation, the button will have no effect."
+      },
+      "kpi": {
+        "totalDeliveries": "Total Deliveries",
+        "vsLastMonth": "+12% vs last month",
+        "inTransit": "In Transit",
+        "percentOfTotal": "{{percent}}% of total",
+        "deliveredToday": "Delivered Today",
+        "goalPerDay": "Goal: 45/day",
+        "delayed": "Delayed",
+        "awaitingPickup": "Awaiting Pickup",
+        "prioritizePickups": "Prioritize pickups",
+        "punctualityRate": "Punctuality Rate",
+        "aboveGoal": "Above goal (90%)"
+      },
+      "charts": {
+        "deliveryStatus": "Delivery Status",
+        "weeklyPerformance": "Weekly Performance",
+        "monthlyTrend": "Delivery Trend (Last 6 Months)",
+        "deliveries": "Deliveries",
+        "punctualityPercent": "Punctuality %",
+        "totalDeliveries": "Total Deliveries"
+      },
+      "filters": {
+        "period": "Period:",
+        "to": "to",
+        "refresh": "Refresh",
+        "aiInsightBtn": "AI Insight"
+      },
+      "status": {
+        "delivered": "Delivered",
+        "inTransit": "In Transit",
+        "delayed": "Delayed",
+        "awaiting": "Awaiting"
+      },
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "months": {
+        "jan": "Jan",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Apr",
+        "may": "May",
+        "jun": "Jun"
+      }
     },
     "delete": {
       "title": "Delete Carrier",
@@ -671,6 +946,36 @@
       "saveError": "Error saving carrier. Please try again.",
       "deleteError": "Error deleting carrier. Please try again.",
       "loadError": "Error loading carriers."
+    },
+    "searchPlaceholderExtended": "Search by code, name, CNPJ or email...",
+    "newCarrier": "New Carrier",
+    "backToCarriers": "Back to Carriers",
+    "viewAction": "View",
+    "editAction": "Edit",
+    "deleteAction": "Delete",
+    "emptyState": {
+      "title": "No carriers found",
+      "subtitle": "Try adjusting your filters or registering a new carrier."
+    },
+    "pagination": {
+      "showing": "Showing {{start}} to {{end}} of {{total}} carriers",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "freightRates": {
+      "title": "Freight Rates",
+      "manageTables": "Manage freight rates for this carrier"
+    },
+    "modals": {
+      "attended": "Attended Modals",
+      "rodoviario": "Road",
+      "aereo": "Air",
+      "aquaviario": "Waterway",
+      "ferroviario": "Railway"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
     }
   },
   "environmentSelector": {
@@ -779,6 +1084,71 @@
       "currentOrg": "Current Organization",
       "currentEnv": "Current Environment",
       "warning": "When switching environments, you will need to configure a new API Key for Google Maps."
+    },
+    "instructions": {
+      "title": "How to get Google Maps credentials:",
+      "step1": "Go to <1>Google Cloud Console</1>",
+      "step2": "Create or select a Project",
+      "step3": "Go to \"APIs and Services\" > \"Library\" and enable: <1>Geocoding API</1>, <3>Maps JavaScript API</3>, and <5>Places API</5>",
+      "step4": "Go to \"APIs and Services\" > \"Credentials\"",
+      "step5": "Click \"Create Credentials\" and choose \"API key\"",
+      "costsTitle": "Google Maps Platform Costs:",
+      "costs1": "Google Maps Platform is not free for continuous production use. Requests (such as coordinate extraction, distance calculation, or address autocomplete) generate costs in dollars according to the official Google table.",
+      "costs2": "It is mandatory to have a billing account (credit card) linked to Google Cloud, even if Google offers a recurring monthly credit of $200. We recommend setting up quotas/limits per API in the Console to avoid unexpected charges."
+    },
+    "extractConsumo": {
+      "title": "Google Maps Request Statement",
+      "subtitle": "Detailed control of requests to the Google Maps API",
+      "filtersBtn": "Filters",
+      "exportCsv": "Export CSV",
+      "filters": {
+        "title": "Filters",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "serviceType": "Service Type",
+        "status": "Status",
+        "all": "All",
+        "apply": "Apply Filters",
+        "clear": "Clear"
+      },
+      "serviceTypes": {
+        "geocoding": "Geocoding",
+        "distance_matrix": "Distance Matrix",
+        "directions": "Directions/Routes",
+        "autocomplete": "Autocomplete",
+        "places": "Places API",
+        "elevation": "Elevation",
+        "timezone": "Time Zone",
+        "static_map": "Static Map"
+      },
+      "statuses": {
+        "sucesso": "Success",
+        "erro": "Error",
+        "timeout": "Timeout",
+        "limite_excedido": "Limit Exceeded",
+        "invalido": "Invalid"
+      },
+      "summary": {
+        "totalRequests": "Total Requests",
+        "totalCost": "Total Cost",
+        "successRate": "Success Rate",
+        "avgTime": "Avg Time"
+      },
+      "table": {
+        "dateTime": "Date/Time",
+        "service": "Service",
+        "origin": "Origin",
+        "destination": "Destination",
+        "user": "User",
+        "value": "Value",
+        "status": "Status",
+        "time": "Time",
+        "noTransactions": "No transactions found"
+      },
+      "footer": {
+        "totalDisplayed": "Total of {{count}} transactions displayed",
+        "totalCostPeriod": "Total cost for the period:"
+      }
     }
   },
   "openai": {
@@ -949,7 +1319,7 @@
   },
   "businessPartners": {
     "pageTitle": "Business Partners",
-    "subtitle": "Manage your customers and suppliers",
+    "subtitle": "Complete management of business partners",
     "newPartner": "New Partner",
     "editPartner": "Edit Partner",
     "viewPartner": "View Partner",
@@ -959,7 +1329,7 @@
     "showingResults": "Showing {{from}} to {{to}} of {{total}} partners",
     "stats": {
       "total": "Total",
-      "customers": "Customers",
+      "clients": "Clients",
       "suppliers": "Suppliers",
       "active": "Active"
     },
@@ -969,13 +1339,7 @@
     },
     "tabs": {
       "list": "List",
-      "map": "Map",
-      "basic": "Basic Data",
-      "contacts": "Contact Persons",
-      "addresses": "Addresses",
-      "observations": "Notes",
-      "vision360": "360 Vision",
-      "details": "Basic Data"
+      "map": "Map"
     },
     "types": {
       "customer": "Customer",
@@ -987,34 +1351,12 @@
       "inactive": "Inactive"
     },
     "form": {
-      "basicInfo": {
-        "title": "Basic Information",
-        "name": "Name/Company Name",
-        "documentType": "Document Type",
-        "document": "Tax ID",
-        "documentPlaceholder": "00.000.000/0000-00",
-        "cpfPlaceholder": "000.000.000-00",
-        "partnerType": "Partner Type",
-        "status": "Status",
-        "email": "Primary Email",
-        "emailPlaceholder": "email@company.com",
-        "phone": "Primary Phone",
-        "phonePlaceholder": "(11) 99999-9999",
-        "website": "Website",
-        "websitePlaceholder": "https://www.company.com",
-        "taxRegime": "Tax Regime",
-        "creditLimit": "Credit Limit ($)",
-        "creditLimitPlaceholder": "0.00",
-        "paymentTerms": "Payment Terms (days)",
-        "paymentTermsPlaceholder": "30",
-        "searchCnpj": "Search",
-        "searching": "Searching..."
-      },
+      "basicInfo": "Basic Information",
       "taxRegimes": {
-        "simples": "Simplified Tax",
+        "simples": "Simples Nacional",
         "presumido": "Presumed Profit",
         "real": "Real Profit",
-        "mei": "Micro-Entrepreneur"
+        "mei": "MEI"
       },
       "contact": {
         "title": "Contact Persons",
@@ -1092,6 +1434,90 @@
         "placeholder": "Enter important notes about this business partner...",
         "additionalNotes": "Notes",
         "additionalNotesPlaceholder": "Additional information about the business partner..."
+      },
+      "title": "Business Partner Registration",
+      "editTitle": "Edit Business Partner",
+      "tabs": {
+        "basicData": "Basic Data",
+        "contacts": "Contact Persons",
+        "addresses": "Addresses",
+        "observations": "Observations"
+      },
+      "name": "Name/Company Name *",
+      "documentType": "Document Type",
+      "document": "CNPJ/CPF Code *",
+      "documentPlaceholder": "00.000.000/0000-00",
+      "documentPlaceholderCpf": "000.000.000-00",
+      "searchAction": "Search",
+      "searching": "Searching...",
+      "partnerType": "Partner Type *",
+      "status": "Status",
+      "contactInfo": "Contact Information",
+      "email": "Primary E-mail",
+      "phone": "Primary Phone",
+      "website": "Website",
+      "fiscalInfo": "Tax and Commercial Info",
+      "taxRegime": "Tax Regime",
+      "creditLimit": "Credit Limit ($)",
+      "paymentTerms": "Payment Terms (days)",
+      "addContact": "Add Contact",
+      "contactItem": "Contact",
+      "primaryContactLabel": "Primary",
+      "removeContact": "Remove contact",
+      "contactName": "Full Name *",
+      "contactEmail": "E-mail *",
+      "contactPhone": "Phone *",
+      "contactPosition": "Position",
+      "contactDepartment": "Department",
+      "setAsPrimaryContact": "Set as primary contact",
+      "receiveWhatsappNotifications": "Receive notifications via WhatsApp",
+      "whatsappNotifyDesc": "This contact will receive order updates via WhatsApp",
+      "receiveEmailNotifications": "Receive notifications via E-mail",
+      "emailNotifyDesc": "This contact will receive order updates via e-mail",
+      "notifyEvents": {
+        "orderCreated": "Order Placed",
+        "orderInvoiced": "Order Invoiced",
+        "awaitingPickup": "Awaiting Pickup",
+        "pickedUp": "Picked Up by Carrier",
+        "inTransit": "In Transit",
+        "outForDelivery": "Out for Delivery",
+        "delivered": "Delivered"
+      },
+      "noContactsTitle": "No contacts registered",
+      "noContactsDesc": "Click 'Add Contact' to include contact persons",
+      "addAddress": "Add Address",
+      "addressItem": "Address",
+      "primaryAddressLabel": "Primary",
+      "removeAddress": "Remove address",
+      "cep": "Zip Code *",
+      "searchLabel": "Search Zip",
+      "finding": "Searching...",
+      "street": "Street address *",
+      "number": "Number *",
+      "complement": "Complement",
+      "neighborhood": "Neighborhood *",
+      "city": "City *",
+      "state": "State *",
+      "country": "Country",
+      "setAsPrimaryAddress": "Set as primary address",
+      "noAddressesTitle": "No addresses registered",
+      "noAddressesDesc": "Click 'Add Address' to include addresses",
+      "viewOnMap": "View on Map",
+      "observationsLabel": "Observations",
+      "observationsPlaceholder": "Enter important observations about this business partner here...",
+      "notesLabel": "Additional Notes",
+      "notesPlaceholder": "Additional information about the business partner...",
+      "cancel": "Cancel",
+      "save": "Save",
+      "mapTitle": "Location on Map",
+      "validation": {
+        "minOneAddress": "Registering at least one address for the business partner is mandatory.",
+        "fillAddressFirst": "Please fill in the address, city, and state before viewing on the map.",
+        "fixErrors": "Please fix the following address errors:"
+      },
+      "receitaFederalWarnings": {
+        "notActive": "Receita Federal integration not contracted",
+        "notActiveDesc": "Receita Federal integration not contracted: The 'Search' button is disabled. To enable automatic CNPJ lookup, activate the service in Innovations & Suggestions."
       }
     },
     "buttons": {
@@ -1105,27 +1531,12 @@
       "refresh": "Refresh"
     },
     "messages": {
-      "created": "Partner created successfully",
-      "updated": "Partner updated successfully",
-      "deleted": "Partner deleted successfully",
-      "errorCreate": "Error creating partner",
-      "errorUpdate": "Error updating partner",
-      "errorDelete": "Error deleting partner",
-      "errorLoad": "Error loading partners",
-      "confirmDelete": "Are you sure you want to delete this partner?",
-      "addressRequired": "At least one address is required for the business partner.",
-      "addressErrors": "Please correct the following address errors:",
-      "fillAddressForMap": "Please fill in the address, city, and state before viewing on map.",
-      "cnpjValid": "Enter a valid Tax ID.",
-      "cnpjImportNotAllowed": "Import not allowed. {{status}}\n\nOnly companies with ACTIVE status can be registered.",
-      "cnpjSuccess": "Data loaded successfully! {{message}}",
-      "cnpjSuccessWithCity": "Data loaded successfully! City \"{{city}}\" validated in registry. {{message}}",
-      "cnpjError": "Error searching Tax ID.",
-      "cepMust8Digits": "ZIP code must contain 8 digits",
-      "cepNotFound": "ZIP code not found",
-      "cepFound": "ZIP code found: {{city}}/{{state}}",
-      "cepError": "Error searching ZIP code. Please try again.",
-      "receitaFederalNotActive": "Tax Authority integration not contracted: The \"Search\" button is disabled. To enable automatic Tax ID lookup, activate the service in Innovations & Suggestions."
+      "deleteSuccess": "Business partner successfully deleted!",
+      "deleteError": "Error deleting partner",
+      "updateSuccess": "Business partner successfully updated!",
+      "updateError": "Error updating partner",
+      "createSuccess": "Business partner successfully created!",
+      "createError": "Error creating partner"
     },
     "validation": {
       "required": "Required field",
@@ -1141,27 +1552,106 @@
     "card": {
       "contacts": "{{count}} contact(s)",
       "addresses": "{{count}} address(es)",
-      "primaryContact": "Primary Contact"
+      "primaryContact": "Primary Contact",
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "labels": {
+        "primaryContact": "Primary Contact",
+        "contactsCount": "{{count}} contact(s)",
+        "addressesCount": "{{count}} address(es)"
+      },
+      "errors": {
+        "idNotFound": "Error: Partner ID not found"
+      }
     },
     "view": {
       "systemInfo": "System Information",
       "createdAt": "Created at",
-      "updatedAt": "Last updated"
+      "updatedAt": "Last updated",
+      "typeLabel": {
+        "customer": "Customer",
+        "supplier": "Supplier",
+        "both": "Customer/Supplier",
+        "default": "Unknown"
+      },
+      "statusLabel": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "addressTypeLabel": {
+        "billing": "Billing",
+        "delivery": "Delivery",
+        "correspondence": "Correspondence",
+        "commercial": "Commercial",
+        "shipping": "Shipping",
+        "both": "Billing and Delivery",
+        "default": "Other"
+      },
+      "tabs": {
+        "vision360": "Vision 360",
+        "basicData": "Basic Data"
+      },
+      "actions": {
+        "edit": "Edit",
+        "close": "Close"
+      },
+      "sections": {
+        "basicInfo": "Basic Information",
+        "contacts": "Contact Persons",
+        "addresses": "Addresses",
+        "observations": "Observations",
+        "systemInfo": "System Information"
+      },
+      "labels": {
+        "type": "Type",
+        "status": "Status",
+        "email": "Email",
+        "phone": "Phone",
+        "primaryContact": "Primary",
+        "primaryAddress": "Primary",
+        "createdAt": "Created at",
+        "updatedAt": "Last updated"
+      }
     },
     "map": {
       "title": "Partners Map",
       "loading": "Loading map...",
       "error": "Error loading Google Maps. Configure API key in settings.",
       "configureKey": "Configure your Google Maps API key in system settings.",
-      "legend": "Legend",
-      "partnersOnMap": "{{count}} partners on map"
+      "legend": {
+        "title": "Legend"
+      },
+      "partnersOnMap": "{{count}} partners on map",
+      "errors": {
+        "loadError": "Error loading Google Maps. Configure the API key in settings.",
+        "apiNotAvailable": "Google Maps API is not available",
+        "initError": "Error initializing the map",
+        "configKey": "Configure your Google Maps API key in system settings."
+      },
+      "partnersCount": "{{count}} partners on map",
+      "partnerCount_one": "{{count}} partner on map",
+      "partnerCount_other": "{{count}} partners on map"
     },
     "vision360": {
       "title": "360 Vision",
       "period": "Period:",
       "until": "to",
       "update": "Refresh",
-      "aiInsight": "AI Insight",
+      "aiInsight": {
+        "title": "AI Insight",
+        "subtitle": "Intelligent analysis for {{name}} ({{type}})",
+        "generating": "Generating intelligent analysis...",
+        "aiAnalysisGenerated": "AI Generated Analysis",
+        "warning": "This analysis was generated by artificial intelligence and should be used as a reference. Always validate information with real data before making decisions.",
+        "error": "Could not generate analysis. Please try again.",
+        "close": "Close",
+        "notHired": "OpenAI/ChatGPT integration not hired",
+        "notHiredDesc": "To use the artificial intelligence button \"AI Insight\", you must activate the service in **Innovations & Suggestions**. Without activation, the button will have no effect.",
+        "notHiredToast": "Feature not hired. Activate in Innovations & Suggestions."
+      },
       "aiNotActive": "OpenAI/ChatGPT integration not contracted: To use the artificial intelligence \"AI Insight\" button, you need to activate the service in Innovations & Suggestions. Without activation, the button will have no effect.",
       "aiNotActiveShort": "Feature not contracted. Activate in Innovations & Suggestions.",
       "aiModalTitle": "AI Insight",
@@ -1172,35 +1662,88 @@
       "aiError": "Could not generate analysis. Please try again.",
       "kpis": {
         "orders": "Orders",
+        "ordersSub": "+8% vs previous month",
         "invoices": "Invoices",
+        "invoicesSub": "{{percent}}% of orders",
         "pickups": "Pickups",
+        "pickupsSub": "Average: 52/month",
         "ctes": "CT-e",
+        "ctesSub": "{{percent}}% of invoices",
         "bills": "Bills",
+        "billsSub": "Average: $ 5,172.00",
         "deliveriesCompleted": "Completed Deliveries",
+        "deliveriesCompletedSub": "{{percent}}% of total",
         "deliveriesPending": "Pending Deliveries",
-        "vsLastMonth": "+{{percent}}% vs last month",
-        "ofOrders": "{{percent}}% of orders",
-        "avgPerMonth": "Avg: {{value}}/month",
-        "ofInvoices": "{{percent}}% of invoices",
-        "avgValue": "Avg: $ {{value}}",
-        "ofTotal": "{{percent}}% of total",
-        "monitorDeadlines": "Monitor deadlines"
+        "deliveriesPendingSub": "Monitor deadlines"
       },
       "charts": {
         "documentDistribution": "Document Distribution",
         "deliveryStatus": "Delivery Status",
         "weeklyActivity": "Weekly Activity",
         "pickupTrend": "Pickup Trend",
-        "monthlyEvolution": "Monthly Evolution - Volume and Value",
+        "monthlyEvolution": "Monthly Evolution - Volume and Value"
+      },
+      "filters": {
+        "period": "Period:",
+        "until": "until",
+        "refresh": "Refresh",
+        "aiInsightBtn": "AI Insight"
+      },
+      "chartData": {
+        "orders": "Orders",
+        "invoices": "Invoices",
+        "ctes": "CT-e",
+        "bills": "Bills",
         "completed": "Completed",
         "pending": "Pending",
-        "orders": "Orders",
-        "nfe": "Invoices",
         "deliveries": "Deliveries",
         "pickups": "Pickups",
-        "volumeOperations": "Operation Volume",
-        "valueLabel": "Value ($)"
+        "volume": "Operation Volume",
+        "value": "Value ($)"
+      },
+      "weekDays": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      },
+      "months": {
+        "jan": "Jan",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Apr",
+        "may": "May",
+        "jun": "Jun"
       }
+    },
+    "title": "Business Partners",
+    "addPartner": "New Partner",
+    "filterByType": "Filter by Type",
+    "filterByStatus": "Filter by Status",
+    "allTypes": "All types",
+    "allStatuses": "All statuses",
+    "typeCustomer": "Customer",
+    "typeSupplier": "Supplier",
+    "typeBoth": "Both",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "loading": "Loading partners...",
+    "noPartners": "No partners found",
+    "noPartnersDesc": "Try adjusting the search filters.",
+    "noPartnersInitial": "Start by adding your first business partner.",
+    "addFirstPartner": "Add Partner",
+    "pagination": {
+      "showing": "Showing",
+      "to": "to",
+      "of": "of",
+      "partners": "partners"
+    },
+    "deleteConfirm": {
+      "title": "Confirm Deletion",
+      "message": "Are you sure you want to delete {{name}}?\\n\\nThis action CANNOT be undone!"
     }
   }
 }

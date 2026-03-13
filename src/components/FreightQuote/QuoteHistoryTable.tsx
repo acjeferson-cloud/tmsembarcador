@@ -1,7 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, MapPin, Package, DollarSign, RefreshCw, Eye, Users, ChevronLeft, ChevronRight } from 'lucide-react';
-import { FreightQuoteHistory } from '../../services/freightQuoteService';
+import { FreightQuoteHistory, QuoteResult } from '../../services/freightQuoteService';
 import { formatCurrency } from '../../utils/formatters';
+import { useTranslation } from 'react-i18next';
+
+type ExtendedHistory = FreightQuoteHistory & {
+  quote_number?: number;
+  user_display_name?: string;
+  users?: { nome: string };
+  business_partners?: { nome_fantasia: string };
+  origin_city?: { nome: string; states?: { sigla: string } };
+  destination_city?: { nome: string; states?: { sigla: string } };
+};
 
 interface QuoteHistoryTableProps {
   history: FreightQuoteHistory[];
@@ -9,6 +19,7 @@ interface QuoteHistoryTableProps {
 }
 
 export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, onRefresh }) => {
+  const { t } = useTranslation();
   const [selectedQuote, setSelectedQuote] = useState<FreightQuoteHistory | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -16,8 +27,8 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
   // Sort history by quote_number descending
   const sortedHistory = useMemo(() => {
     return [...history].sort((a, b) => {
-      const numA = (a as any).quote_number || 0;
-      const numB = (b as any).quote_number || 0;
+      const numA = (a as ExtendedHistory).quote_number || 0;
+      const numB = (b as ExtendedHistory).quote_number || 0;
       return numB - numA;
     });
   }, [history]);
@@ -37,15 +48,15 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Histórico de Cotações</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{sortedHistory.length} simulações realizadas</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('freightQuote.history.title')}</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('freightQuote.history.subtitle', { count: sortedHistory.length })}</p>
         </div>
         <button
           onClick={onRefresh}
           className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
         >
           <RefreshCw className="w-4 h-4 inline mr-2" />
-          Atualizar
+          {t('freightQuote.history.refresh')}
         </button>
       </div>
 
@@ -54,40 +65,40 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
           <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Nº
+                {t('freightQuote.history.columns.number')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Data
+                {t('freightQuote.history.columns.date')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Usuário
+                {t('freightQuote.history.columns.user')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Parceiro
+                {t('freightQuote.history.columns.partner')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Origem
+                {t('freightQuote.history.columns.origin')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Destino
+                {t('freightQuote.history.columns.destination')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Modais
+                {t('freightQuote.history.columns.modals')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Peso/Vol
+                {t('freightQuote.history.columns.weightVolume')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Valor Mercadoria
+                {t('freightQuote.history.columns.cargoValue')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Melhor Oferta
+                {t('freightQuote.history.columns.bestOffer')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Prazo de Entrega
+                {t('freightQuote.history.columns.deliveryDeadline')}
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Ações
+                {t('freightQuote.history.columns.actions')}
               </th>
             </tr>
           </thead>
@@ -96,7 +107,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
               <tr>
                 <td colSpan={12} className="px-6 py-12 text-center">
                   <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">Nenhuma cotação encontrada</p>
+                  <p className="text-gray-600 dark:text-gray-400">{t('freightQuote.history.emptyState')}</p>
                 </td>
               </tr>
             ) : (
@@ -104,7 +115,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                 <tr key={quote.id} className="hover:bg-gray-50 dark:bg-gray-900">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-                      {(quote as any).quote_number || '-'}
+                      {(quote as ExtendedHistory).quote_number || '-'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -116,25 +127,25 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 mr-2 text-gray-400" />
-                      {(quote as any).user_display_name || (quote as any).users?.nome || '-'}
+                      {(quote as ExtendedHistory).user_display_name || (quote as ExtendedHistory).users?.nome || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 mr-2 text-gray-400" />
-                      {(quote as any).business_partners?.nome_fantasia || '-'}
+                      {(quote as ExtendedHistory).business_partners?.nome_fantasia || '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                      {(quote as any).origin_city ? `${(quote as any).origin_city.nome}/${(quote as any).origin_city.states?.sigla}` : (quote.origin_zip_code || '-')}
+                      {(quote as ExtendedHistory).origin_city ? `${(quote as ExtendedHistory).origin_city?.nome}/${(quote as ExtendedHistory).origin_city?.states?.sigla}` : (quote.origin_zip_code || '-')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                      {(quote as any).destination_city ? `${(quote as any).destination_city.nome}/${(quote as any).destination_city.states?.sigla}` : (quote.destination_zip_code || '-')}
+                      {(quote as ExtendedHistory).destination_city ? `${(quote as ExtendedHistory).destination_city?.nome}/${(quote as ExtendedHistory).destination_city?.states?.sigla}` : (quote.destination_zip_code || '-')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -157,7 +168,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                           </span>
                         ))
                       ) : (
-                        <span className="text-xs text-gray-400">Todos</span>
+                        <span className="text-xs text-gray-400">{t('freightQuote.modals.all')}</span>
                       )}
                     </div>
                   </td>
@@ -184,7 +195,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                     {quote.delivery_days !== undefined && quote.delivery_deadline ? (
                       <div className="text-sm">
                         <div className="font-medium text-gray-900 dark:text-white">
-                          {quote.delivery_days} {quote.delivery_days === 1 ? 'dia' : 'dias'}
+                          {t('freightQuote.results.days', { count: quote.delivery_days })}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           {new Date(quote.delivery_deadline).toLocaleDateString('pt-BR')}
@@ -213,7 +224,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
       {totalPages > 1 && (
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div className="text-sm text-gray-700 dark:text-gray-300">
-            Mostrando <span className="font-medium">{startIndex + 1}</span> a <span className="font-medium">{Math.min(endIndex, sortedHistory.length)}</span> de <span className="font-medium">{sortedHistory.length}</span> resultados
+            {t('freightQuote.history.pagination.showing')} <span className="font-medium">{startIndex + 1}</span> {t('freightQuote.history.pagination.to')} <span className="font-medium">{Math.min(endIndex, sortedHistory.length)}</span> {t('freightQuote.history.pagination.of')} <span className="font-medium">{sortedHistory.length}</span> {t('freightQuote.history.pagination.results')}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -222,7 +233,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
-              Anterior
+              {t('common.previous')}
             </button>
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -244,7 +255,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
               disabled={currentPage === totalPages}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
             >
-              Próxima
+              {t('common.next')}
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -257,9 +268,9 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
             <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700 text-base font-bold">
-                  {(selectedQuote as any).quote_number || '-'}
+                  {(selectedQuote as ExtendedHistory).quote_number || '-'}
                 </span>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Detalhes da Cotação</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('freightQuote.history.modal.title')}</h3>
               </div>
               <button
                 onClick={() => setSelectedQuote(null)}
@@ -272,43 +283,43 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Data</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.date')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">{new Date(selectedQuote.created_at).toLocaleString('pt-BR')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Usuário</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.user')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {(selectedQuote as any).user_display_name || (selectedQuote as any).users?.nome || '-'}
+                    {(selectedQuote as ExtendedHistory).user_display_name || (selectedQuote as ExtendedHistory).users?.nome || '-'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Parceiro de Negócios</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.partner')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {(selectedQuote as any).business_partners?.nome_fantasia || '-'}
+                    {(selectedQuote as ExtendedHistory).business_partners?.nome_fantasia || '-'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Peso / Volumes</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.weightVolume')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">{selectedQuote.weight}kg / {selectedQuote.volume_qty} vol</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Valor da Mercadoria</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.cargoValue')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">{formatCurrency(selectedQuote.cargo_value)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Origem</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.origin')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {(selectedQuote as any).origin_city ? `${(selectedQuote as any).origin_city.nome}/${(selectedQuote as any).origin_city.states?.sigla}` : (selectedQuote.origin_zip_code || '-')}
+                    {(selectedQuote as ExtendedHistory).origin_city ? `${(selectedQuote as ExtendedHistory).origin_city?.nome}/${(selectedQuote as ExtendedHistory).origin_city?.states?.sigla}` : (selectedQuote.origin_zip_code || '-')}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Destino</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.destination')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {(selectedQuote as any).destination_city ? `${(selectedQuote as any).destination_city.nome}/${(selectedQuote as any).destination_city.states?.sigla}` : (selectedQuote.destination_zip_code || '-')}
+                    {(selectedQuote as ExtendedHistory).destination_city ? `${(selectedQuote as ExtendedHistory).destination_city?.nome}/${(selectedQuote as ExtendedHistory).destination_city?.states?.sigla}` : (selectedQuote.destination_zip_code || '-')}
                   </p>
                 </div>
                 <div className="col-span-2">
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Modais Selecionados</label>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.modals')}</label>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {selectedQuote.selected_modals && selectedQuote.selected_modals.length > 0 ? (
                       selectedQuote.selected_modals.map((modal: string) => (
@@ -321,30 +332,30 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                             'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {modal === 'rodoviario' && '🚛 Rodoviário'}
-                          {modal === 'aereo' && '✈️ Aéreo'}
-                          {modal === 'aquaviario' && '🚢 Aquaviário'}
-                          {modal === 'ferroviario' && '🚂 Ferroviário'}
+                          {modal === 'rodoviario' && t('freightQuote.modals.road')}
+                          {modal === 'aereo' && t('freightQuote.modals.air')}
+                          {modal === 'aquaviario' && t('freightQuote.modals.sea')}
+                          {modal === 'ferroviario' && t('freightQuote.modals.rail')}
                         </span>
                       ))
                     ) : (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Todos os modais</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">{t('freightQuote.modals.all')}</span>
                     )}
                   </div>
                 </div>
                 {selectedQuote.delivery_days !== undefined && selectedQuote.delivery_deadline && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Prazo de Entrega</label>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.deliveryDeadline')}</label>
                     <p className="text-sm text-gray-900 dark:text-white">
-                      {selectedQuote.delivery_days} {selectedQuote.delivery_days === 1 ? 'dia' : 'dias'} - {new Date(selectedQuote.delivery_deadline).toLocaleDateString('pt-BR')}
+                      {t('freightQuote.results.days', { count: selectedQuote.delivery_days })} - {new Date(selectedQuote.delivery_deadline).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                 )}
               </div>
 
-              <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Resultados</h4>
+              <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('freightQuote.history.modal.results')}</h4>
               <div className="space-y-2">
-                {selectedQuote.quote_results?.map((result: any, index: number) => (
+                {selectedQuote.quote_results?.map((result: QuoteResult, index: number) => (
                   <div
                     key={index}
                     className={`p-4 rounded-lg border ${
@@ -368,13 +379,13 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                           </span>
                         )}
                         {result.isNominated && (
-                          <span className="ml-2 text-xs text-green-600 font-medium">NOMEADO</span>
+                          <span className="ml-2 text-xs text-green-600 font-medium">{t('freightQuote.results.nominated').toUpperCase()}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col items-end gap-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">% menor:</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.history.modal.percentLowest')}</span>
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                               (result.percentageAboveLowest || 0) === 0
                                 ? 'bg-green-100 text-green-800'
@@ -390,7 +401,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                           </div>
                           {selectedQuote.cargo_value && selectedQuote.cargo_value > 0 && (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">% NF-e:</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.history.modal.percentInvoice')}</span>
                               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                                 ((result.totalValue * 100) / selectedQuote.cargo_value) <= 5
                                   ? 'bg-green-100 text-green-800'

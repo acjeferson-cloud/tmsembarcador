@@ -63,6 +63,130 @@
     "send": "Enviar",
     "sending": "Enviando..."
   },
+  "freightQuote": {
+    "title": "Cotización de Fletes",
+    "subtitle": "Simule y compare fletes entre transportistas",
+    "tabs": {
+      "newQuote": "Nueva Cotización",
+      "history": "Historial"
+    },
+    "form": {
+      "title": "Datos de Cotización",
+      "origin": "Origen",
+      "destination": "Destino",
+      "modeCity": "Estado+Ciudad",
+      "modeCep": "C.Postal",
+      "stateLabel": "Estado",
+      "stateLabelReq": "Estado *",
+      "stateAuto": "Estado (Auto)",
+      "cityLabel": "Ciudad",
+      "cityLabelReq": "Ciudad *",
+      "cityAuto": "Ciudad (Auto)",
+      "cepLabel": "Código Postal",
+      "cepLabelReq": "Código Postal *",
+      "cepPlaceholder": "00000000",
+      "select": "Seleccione...",
+      "selectCity": "Seleccione la ciudad...",
+      "loading": "Cargando...",
+      "partner": "Socio Comercial",
+      "partnerOptional": "Opcional...",
+      "cargoValue": "Valor Mercancía *",
+      "cargoValuePlaceholder": "0,00",
+      "weight": "Peso Real (kg) *",
+      "weightPlaceholder": "0,000",
+      "volumes": "Volúmenes (Cant) *",
+      "cubicMeters": "M³ (Cubicación)",
+      "cubicMetersPlaceholder": "0,0000",
+      "modalsConsidered": "Modales de Transporte Considerados *",
+      "calculateBtn": "Simular Cotizaciones",
+      "calculating": "Calculando..."
+    },
+    "modals": {
+      "road": "🚛 Carretera",
+      "air": "✈️ Aéreo",
+      "sea": "🚢 Marítimo",
+      "rail": "🚂 Ferroviario",
+      "all": "Todos los modales"
+    },
+    "emptyState": {
+      "readyToQuote": "Listo para Cotizar",
+      "description": "Complete los datos de origen, destino y características de la carga arriba para buscar los mejores transportistas."
+    },
+    "messages": {
+      "selectDestination": "Seleccione la ciudad de destino",
+      "weightGreaterThanZero": "El peso debe ser mayor que cero",
+      "valueGreaterThanZero": "El valor de la mercancía debe ser mayor que cero",
+      "selectAtLeastOneModal": "Seleccione al menos un modal de transporte",
+      "noCarriersFound": "No se encontraron transportistas para el destino informado",
+      "quotesFound": "{{count}} cotizaciones encontradas",
+      "errorCalculating": "Error al calcular cotización",
+      "reloadingHistory": "🔄 Recargando historial de cotizaciones...",
+      "historyReloaded": "✅ ¡Historial recargado!"
+    },
+    "results": {
+      "title": "Resultados de Cotización ({{count}})",
+      "subtitle": "Ordenado por menor valor",
+      "columns": {
+        "carrier": "Transportista",
+        "modal": "Modal",
+        "totalValue": "Valor Total",
+        "percentLowest": "% sobre menor",
+        "percentInvoice": "% Sobre Factura",
+        "deliveryDeadline": "Plazo Entrega",
+        "internalNps": "NPS Interno",
+        "freightWeight": "Flete Peso",
+        "freightValue": "Flete Valor",
+        "gris": "GRIS",
+        "toll": "Peaje",
+        "tas": "TAS",
+        "seccat": "SECCAT",
+        "dispatch": "Despacho",
+        "itr": "ITR",
+        "pickupDelivery": "Recogida/Entrega",
+        "otherValues": "Otros Valores",
+        "icms": "ICMS"
+      },
+      "nominated": "Nominado",
+      "lowestPrice": "Menor precio",
+      "notInformed": "No informado",
+      "noRating": "Sin evaluación",
+      "na": "N/A",
+      "days": "{{count}} día",
+      "days_plural": "{{count}} días"
+    },
+    "history": {
+      "title": "Historial de Cotizaciones",
+      "subtitle": "{{count}} simulaciones realizadas",
+      "refresh": "Actualizar",
+      "emptyState": "No se encontraron cotizaciones",
+      "columns": {
+        "number": "Nº",
+        "date": "Fecha",
+        "user": "Usuario",
+        "partner": "Socio",
+        "origin": "Origen",
+        "destination": "Destino",
+        "modals": "Modales",
+        "weightVolume": "Peso/Vol",
+        "cargoValue": "Valor Mercancía",
+        "bestOffer": "Mejor Oferta",
+        "deliveryDeadline": "Plazo Entrega",
+        "actions": "Acciones"
+      },
+      "pagination": {
+        "showing": "Mostrando",
+        "to": "a",
+        "of": "de",
+        "results": "resultados"
+      },
+      "modal": {
+        "title": "Detalles de la Cotización",
+        "results": "Resultados",
+        "percentLowest": "% menor:",
+        "percentInvoice": "% Factura:"
+      }
+    }
+  },
   "login": {
     "title": "TMS Embarcador Log Axis",
     "subtitle": "¡Un solo sistema. Todos tus envíos!",
@@ -600,7 +724,7 @@
       "companyName": "Razón Social",
       "tradeName": "Nombre Comercial",
       "document": "Identificación Fiscal",
-      "stateRegistration": "Registro Estatal",
+      "stateRegistration": "Inscripción Estatal",
       "email": "Correo electrónico",
       "phone": "Teléfono",
       "website": "Sitio web",
@@ -630,10 +754,73 @@
       "observations": "Observaciones",
       "cancel": "Cancelar",
       "save": "Guardar",
-      "saving": "Guardando..."
+      "saving": "Guardando...",
+      "code": "Código",
+      "codeSequential": "Código Secuencial",
+      "codeSequentialHelp1": "Los códigos se generan automáticamente en secuencia numérica a partir del 0001.",
+      "codeSequentialHelpNew": "Haga clic en el ícono # para generar el próximo código disponible.",
+      "codeSequentialHelpEdit": "El código no se puede cambiar después del registro.",
+      "generateNextCode": "Generar próximo código",
+      "codeRequired": "El código es obligatorio",
+      "codeInUse": "Este código ya está en uso por otro transportista",
+      "cnpjRequired": "CNPJ es obligatorio",
+      "companyNameRequired": "La Razón Social es obligatoria",
+      "searchRFB": "Buscar datos de Ingresos Federales",
+      "importNotAllowed": "Importación no permitida. {{status}}\\n\\nSolo las empresas con estado ACTIVO pueden ser registradas.",
+      "dataImportedSuccess": "✓ ¡Datos importados con éxito! {{status}}",
+      "cnpjError": "Error al consultar CNPJ. Intente de nuevo.",
+      "invalidCnpj": "Ingrese un CNPJ válido.",
+      "cepNeeds8Digits": "El código postal debe contener 8 dígitos",
+      "searchingCep": "Buscando código postal...",
+      "stateNotFound": "Estado no encontrado en el sistema",
+      "cepNotFound": "Código postal no encontrado",
+      "cepError": "Error al buscar el código postal. Intente de nuevo.",
+      "fillCarrierData": "Complete los datos del transportista",
+      "logoText": "Logotipo del Transportista",
+      "tolerances": "Tolerancias",
+      "toleranceCteLabel": "Tolerancia de Valor CT-e",
+      "toleranceCtePercentLabel": "Tolerancia Porcentual CT-e",
+      "toleranceInvoiceLabel": "Tolerancia de Valor Factura",
+      "toleranceInvoicePercentLabel": "Tolerancia Porcentual Factura",
+      "uploadLogo": "Subir Logotipo",
+      "removeLogo": "Eliminar",
+      "logoHelp": "PNG, JPG o GIF hasta 2MB",
+      "notInformed": "No informado",
+      "companyNameLabel": "Razón Social",
+      "fantasyName": "Nombre Comercial",
+      "statusLabel": "Estado *",
+      "activeText": "Activo",
+      "inactiveText": "Inactivo",
+      "logoLabel": "Logotipo",
+      "logoHelpDrop": "Haga clic para subir el logotipo",
+      "transportModalsTitle": "Modalidades de Transporte",
+      "transportModalsHelp": "Seleccione las modalidades atendidas por este transportista:",
+      "workingDaysConfig": "Configuración de Días Hábiles",
+      "workingDaysHelp": "Defina cómo el transportista considera los días hábiles para el cálculo de los plazos de entrega:",
+      "saturdayWorkingDay": "Considera el sábado como día hábil",
+      "saturdayWorkingDayHelp": "Cuando esté marcado, los sábados se contarán en el plazo de entrega",
+      "sundayWorkingDay": "Considera el domingo como día hábil",
+      "sundayWorkingDayHelp": "Cuando esté marcado, los domingos se contarán en el plazo de entrega",
+      "holidaysWorkingDay": "Considera feriados en el cálculo de plazos",
+      "holidaysWorkingDayHelp": "Cuando esté marcado, los feriados (nacionales, estatales y municipales) no se contarán como días hábiles",
+      "addressTitle": "Dirección",
+      "searchZipCode": "Buscar Código Postal",
+      "countryLabel": "País",
+      "selectCountry": "Seleccione el país",
+      "stateLabel": "Estado",
+      "selectState": "Seleccione el estado",
+      "cityLabel": "Ciudad",
+      "selectCity": "Seleccione la ciudad",
+      "neighborhoodLabel": "Barrio",
+      "complementLabel": "Complemento",
+      "streetLabel": "Calle",
+      "numberLabel": "Número",
+      "update": "Actualizar",
+      "carrierTerm": "Transportista",
+      "errorInCode": "Error en el código:"
     },
     "view": {
-      "title": "Detalles del Transportista",
+      "title": "Ver Transportista",
       "edit": "Editar",
       "delete": "Eliminar",
       "vision360": "Vista 360°",
@@ -647,7 +834,31 @@
       "completedShipments": "Envíos Completados",
       "avgDeliveryTime": "Tiempo Promedio de Entrega",
       "onTimeRate": "Tasa de Puntualidad",
-      "relationshipMap": "Mapa de Relaciones"
+      "relationshipMap": "Mapa de Relaciones",
+      "details": "Detalles completos del transportista",
+      "carrierData": "Datos del Transportista",
+      "freightRates": "Tarifas de Flete",
+      "locationInfo": "Información de Ubicación",
+      "country": "País",
+      "state": "Estado",
+      "city": "Ciudad",
+      "toleranceSettings": "Configuraciones de Tolerancia",
+      "cte": "CT-e (Conocimiento de Embarque)",
+      "invoice": "Factura",
+      "valueTolerance": "Tolerancia de Valor",
+      "percentTolerance": "Tolerancia de Porcentaje",
+      "transportModals": "Modalidades de Transporte",
+      "avgRating": "Calificación Promedio",
+      "deliveryRate": "Tasa de Entrega",
+      "notInformed": "No informado",
+      "pageTitle": "Ver Transportista",
+      "pageSubtitle": "Detalles completos del transportista",
+      "vision360Tab": "Visión 360",
+      "status": "Estado",
+      "activeDeliveries": "Entregas Activas",
+      "contactInfo": "Información de Contacto",
+      "performanceMetrics": "Métricas de Rendimiento",
+      "averageRating": "Calificación Promedio"
     },
     "vision360": {
       "title": "Vista 360° - {{name}}",
@@ -656,7 +867,71 @@
       "financialData": "Datos Financieros",
       "recentOperations": "Operaciones Recientes",
       "documentos": "Documentos",
-      "history": "Historial"
+      "history": "Historial",
+      "aiInsight": {
+        "title": "Insight de IA",
+        "subtitle": "Análisis inteligente para {{carrierName}}",
+        "generating": "Generando análisis inteligente...",
+        "generatedTitle": "Análisis Generado por IA",
+        "warning": "Este análisis fue generado por inteligencia artificial y debe usarse como referencia. Siempre valide la información con datos reales antes de tomar decisiones.",
+        "errorTitle": "No se pudo generar el análisis. Inténtelo de nuevo.",
+        "close": "Cerrar",
+        "notContractedError": "Característica no contratada. Actívela en Innovaciones y Sugerencias.",
+        "notContractedNotice": "Integración de OpenAI/ChatGPT no contratada:",
+        "notContractedDesc1": "Para usar el botón \"Insight de IA\", debe activar el servicio en",
+        "notContractedDesc2": "Innovaciones y Sugerencias",
+        "notContractedDesc3": ". Sin activación, el botón no tendrá efecto."
+      },
+      "kpi": {
+        "totalDeliveries": "Total de Entregas",
+        "vsLastMonth": "+12% vs mes anterior",
+        "inTransit": "En Tránsito",
+        "percentOfTotal": "{{percent}}% del total",
+        "deliveredToday": "Entregadas Hoy",
+        "goalPerDay": "Meta: 45/día",
+        "delayed": "Retrasadas",
+        "awaitingPickup": "Esperando Recogida",
+        "prioritizePickups": "Priorizar recogidas",
+        "punctualityRate": "Tasa de Puntualidad",
+        "aboveGoal": "Por encima de la meta (90%)"
+      },
+      "charts": {
+        "deliveryStatus": "Estado de las Entregas",
+        "weeklyPerformance": "Rendimiento Semanal",
+        "monthlyTrend": "Tendencia de Entregas (Últimos 6 Meses)",
+        "deliveries": "Entregas",
+        "punctualityPercent": "Puntualidad %",
+        "totalDeliveries": "Total de Entregas"
+      },
+      "filters": {
+        "period": "Período:",
+        "to": "hasta",
+        "refresh": "Actualizar",
+        "aiInsightBtn": "Insight de IA"
+      },
+      "status": {
+        "delivered": "Entregada",
+        "inTransit": "En Tránsito",
+        "delayed": "Retrasada",
+        "awaiting": "Esperando"
+      },
+      "days": {
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mié",
+        "thu": "Jue",
+        "fri": "Vie",
+        "sat": "Sáb",
+        "sun": "Dom"
+      },
+      "months": {
+        "jan": "Ene",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Abr",
+        "may": "May",
+        "jun": "Jun"
+      }
     },
     "delete": {
       "title": "Eliminar Transportista",
@@ -671,6 +946,36 @@
       "saveError": "Error al guardar transportista. Inténtelo de nuevo.",
       "deleteError": "Error al eliminar transportista. Inténtelo de nuevo.",
       "loadError": "Error al cargar transportistas."
+    },
+    "searchPlaceholderExtended": "Buscar por código, nombre, CNPJ o correo electrónico...",
+    "newCarrier": "Nuevo Transportista",
+    "backToCarriers": "Volver a Transportistas",
+    "viewAction": "Ver",
+    "editAction": "Editar",
+    "deleteAction": "Eliminar",
+    "emptyState": {
+      "title": "No se encontraron transportistas",
+      "subtitle": "Intente ajustar los filtros o registrar un nuevo transportista."
+    },
+    "pagination": {
+      "showing": "Mostrando {{start}} a {{end}} de {{total}} transportistas",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "freightRates": {
+      "title": "Tarifas de Flete",
+      "manageTables": "Administrar tablas de flete para este transportista"
+    },
+    "modals": {
+      "attended": "Modalidades Atendidas",
+      "rodoviario": "Carretera",
+      "aereo": "Aéreo",
+      "aquaviario": "Vía fluvial",
+      "ferroviario": "Ferrocarril"
+    },
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo"
     }
   },
   "environmentSelector": {
@@ -779,6 +1084,71 @@
       "currentOrg": "Organización Actual",
       "currentEnv": "Entorno Actual",
       "warning": "Al cambiar de entorno, deberá configurar una nueva clave API para Google Maps."
+    },
+    "instructions": {
+      "title": "Cómo obtener las credenciales de Google Maps:",
+      "step1": "Acceda a la <1>Google Cloud Console</1>",
+      "step2": "Cree o seleccione un Proyecto",
+      "step3": "Vaya a \"API y Servicios\" > \"Biblioteca\" y habilite: <1>Geocoding API</1>, <3>Maps JavaScript API</3>, y <5>Places API</5>",
+      "step4": "Vaya a \"API y Servicios\" > \"Credenciales\"",
+      "step5": "Haga clic en \"Crear Credenciales\" y elija \"Clave de API\"",
+      "costsTitle": "Costos de la Plataforma Google Maps:",
+      "costs1": "La Google Maps Platform no es gratuita para el uso en producción continua. Las solicitudes (como la extracción de coordenadas, cálculo de distancias o autocompletar direcciones) generan costos en dólares de acuerdo con la tabla oficial de Google.",
+      "costs2": "Es obligatorio tener una cuenta de facturación (tarjeta de crédito) vinculada a Google Cloud, incluso si Google ofrece un crédito recurrente mensual de $200. Recomendamos configurar cuotas/límites por API en la Consola para evitar cargos inesperados."
+    },
+    "extractConsumo": {
+      "title": "Extracto de Consumo Google Maps",
+      "subtitle": "Control detallado de solicitudes a la API de Google Maps",
+      "filtersBtn": "Filtros",
+      "exportCsv": "Exportar CSV",
+      "filters": {
+        "title": "Filtros",
+        "startDate": "Fecha Inicial",
+        "endDate": "Fecha Final",
+        "serviceType": "Tipo de Servicio",
+        "status": "Estado",
+        "all": "Todos",
+        "apply": "Aplicar Filtros",
+        "clear": "Limpiar"
+      },
+      "serviceTypes": {
+        "geocoding": "Geocodificación",
+        "distance_matrix": "Matriz de Distancia",
+        "directions": "Direcciones/Rutas",
+        "autocomplete": "Autocompletar",
+        "places": "Places API",
+        "elevation": "Elevación",
+        "timezone": "Zona Horaria",
+        "static_map": "Mapa Estático"
+      },
+      "statuses": {
+        "sucesso": "Éxito",
+        "erro": "Error",
+        "timeout": "Tiempo de Espera",
+        "limite_excedido": "Límite Excedido",
+        "invalido": "Inválido"
+      },
+      "summary": {
+        "totalRequests": "Total de Solicitudes",
+        "totalCost": "Costo Total",
+        "successRate": "Tasa de Éxito",
+        "avgTime": "Tiempo Promedio"
+      },
+      "table": {
+        "dateTime": "Fecha/Hora",
+        "service": "Servicio",
+        "origin": "Origen",
+        "destination": "Destino",
+        "user": "Usuario",
+        "value": "Valor",
+        "status": "Estado",
+        "time": "Tiempo",
+        "noTransactions": "No se encontraron transacciones"
+      },
+      "footer": {
+        "totalDisplayed": "Total de {{count}} transacciones mostradas",
+        "totalCostPeriod": "Costo total del período:"
+      }
     }
   },
   "openai": {
@@ -949,17 +1319,17 @@
   },
   "businessPartners": {
     "pageTitle": "Socios Comerciales",
-    "subtitle": "Gestione sus clientes y proveedores",
+    "subtitle": "Gestión completa de socios de negocios",
     "newPartner": "Nuevo Socio",
     "editPartner": "Editar Socio",
     "viewPartner": "Ver Socio",
     "deletePartner": "Eliminar Socio",
-    "searchPlaceholder": "Buscar por nombre, documento o correo...",
+    "searchPlaceholder": "Buscar por nombre, documento o email...",
     "noPartnersFound": "No se encontraron socios",
     "showingResults": "Mostrando {{from}} hasta {{to}} de {{total}} socios",
     "stats": {
       "total": "Total",
-      "customers": "Clientes",
+      "clients": "Clientes",
       "suppliers": "Proveedores",
       "active": "Activos"
     },
@@ -969,13 +1339,7 @@
     },
     "tabs": {
       "list": "Lista",
-      "map": "Mapa",
-      "basic": "Datos Básicos",
-      "contacts": "Personas de Contacto",
-      "addresses": "Direcciones",
-      "observations": "Observaciones",
-      "vision360": "Visión 360",
-      "details": "Datos Básicos"
+      "map": "Mapa"
     },
     "types": {
       "customer": "Cliente",
@@ -987,34 +1351,12 @@
       "inactive": "Inactivo"
     },
     "form": {
-      "basicInfo": {
-        "title": "Información Básica",
-        "name": "Nombre/Razón Social",
-        "documentType": "Tipo de Documento",
-        "document": "CIF/NIF",
-        "documentPlaceholder": "00.000.000/0000-00",
-        "cpfPlaceholder": "000.000.000-00",
-        "partnerType": "Tipo de Socio",
-        "status": "Estado",
-        "email": "Correo Principal",
-        "emailPlaceholder": "correo@empresa.com",
-        "phone": "Teléfono Principal",
-        "phonePlaceholder": "(11) 99999-9999",
-        "website": "Sitio Web",
-        "websitePlaceholder": "https://www.empresa.com",
-        "taxRegime": "Régimen Fiscal",
-        "creditLimit": "Límite de Crédito ($)",
-        "creditLimitPlaceholder": "0,00",
-        "paymentTerms": "Plazo de Pago (días)",
-        "paymentTermsPlaceholder": "30",
-        "searchCnpj": "Buscar",
-        "searching": "Consultando..."
-      },
+      "basicInfo": "Información Básica",
       "taxRegimes": {
-        "simples": "Régimen Simplificado",
-        "presumido": "Beneficio Presunto",
-        "real": "Beneficio Real",
-        "mei": "Microempresario"
+        "simples": "Simples Nacional",
+        "presumido": "Lucro Presumido",
+        "real": "Lucro Real",
+        "mei": "MEI"
       },
       "contact": {
         "title": "Personas de Contacto",
@@ -1082,7 +1424,7 @@
       "addressTypes": {
         "commercial": "Comercial",
         "billing": "Facturación",
-        "shipping": "Envío",
+        "shipping": "Expedición",
         "delivery": "Entrega",
         "correspondence": "Correspondencia",
         "both": "Facturación y Entrega"
@@ -1092,6 +1434,90 @@
         "placeholder": "Ingrese observaciones importantes sobre este socio comercial...",
         "additionalNotes": "Observaciones",
         "additionalNotesPlaceholder": "Información adicional sobre el socio comercial..."
+      },
+      "title": "Registro de Socio",
+      "editTitle": "Editar Socio",
+      "tabs": {
+        "basicData": "Datos Básicos",
+        "contacts": "Personas de Contacto",
+        "addresses": "Direcciones",
+        "observations": "Observaciones"
+      },
+      "name": "Nombre/Razón Social *",
+      "documentType": "Tipo de Documento",
+      "document": "Cód. CNPJ o CPF *",
+      "documentPlaceholder": "00.000.000/0000-00",
+      "documentPlaceholderCpf": "000.000.000-00",
+      "searchAction": "Buscar",
+      "searching": "Consultando...",
+      "partnerType": "Tipo de Socio *",
+      "status": "Estado",
+      "contactInfo": "Información de Contacto",
+      "email": "E-mail Principal",
+      "phone": "Teléfono Principal",
+      "website": "Sitio Web",
+      "fiscalInfo": "Información Fiscal y Comercial",
+      "taxRegime": "Régimen Tributario",
+      "creditLimit": "Límite de Crédito ($)",
+      "paymentTerms": "Plazo de Pago (días)",
+      "addContact": "Agregar Contacto",
+      "contactItem": "Contacto",
+      "primaryContactLabel": "Principal",
+      "removeContact": "Eliminar contacto",
+      "contactName": "Nombre Completo *",
+      "contactEmail": "E-mail *",
+      "contactPhone": "Teléfono *",
+      "contactPosition": "Cargo",
+      "contactDepartment": "Departamento",
+      "setAsPrimaryContact": "Definir como contacto principal",
+      "receiveWhatsappNotifications": "Recibir notificaciones vía WhatsApp",
+      "whatsappNotifyDesc": "Este contacto recibirá actualizaciones de pedidos vía WhatsApp",
+      "receiveEmailNotifications": "Recibir notificaciones vía E-mail",
+      "emailNotifyDesc": "Este contacto recibirá actualizaciones de pedidos vía e-mail",
+      "notifyEvents": {
+        "orderCreated": "Pedido Realizado",
+        "orderInvoiced": "Pedido Facturado",
+        "awaitingPickup": "Esperando Recogida",
+        "pickedUp": "Recogido por Transportista",
+        "inTransit": "En Tránsito",
+        "outForDelivery": "Salió para Entrega",
+        "delivered": "Entrega Realizada"
+      },
+      "noContactsTitle": "No hay contactos registrados",
+      "noContactsDesc": "Haz clic en 'Agregar Contacto' para incluir personas de contacto",
+      "addAddress": "Agregar Dirección",
+      "addressItem": "Dirección",
+      "primaryAddressLabel": "Principal",
+      "removeAddress": "Eliminar dirección",
+      "cep": "Código Postal *",
+      "searchLabel": "Buscar CP",
+      "finding": "Buscando...",
+      "street": "Dirección *",
+      "number": "Número *",
+      "complement": "Complemento",
+      "neighborhood": "Barrio *",
+      "city": "Ciudad *",
+      "state": "Estado *",
+      "country": "País",
+      "setAsPrimaryAddress": "Definir como dirección principal",
+      "noAddressesTitle": "Ninguna dirección registrada",
+      "noAddressesDesc": "Haz clic en 'Agregar Dirección' para incluir direcciones",
+      "viewOnMap": "Ver en Mapa",
+      "observationsLabel": "Observaciones",
+      "observationsPlaceholder": "Ingresa observaciones importantes sobre este socio aquí...",
+      "notesLabel": "Notas Adicionales",
+      "notesPlaceholder": "Información adicional sobre el socio comercial...",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "mapTitle": "Ubicación en el Mapa",
+      "validation": {
+        "minOneAddress": "Es obligatorio registrar al menos una dirección para el socio comercial.",
+        "fillAddressFirst": "Por favor, completa la dirección, ciudad y estado antes de ver en el mapa.",
+        "fixErrors": "Por favor, corrige los siguientes errores en las direcciones:"
+      },
+      "receitaFederalWarnings": {
+        "notActive": "Integración de Receita Federal no contratada",
+        "notActiveDesc": "Integración de Receita Federal no contratada: El botón 'Buscar' está desactivado. Para habilitar la consulta automática de CNPJ, activa el servicio en Innovaciones y Sugerencias."
       }
     },
     "buttons": {
@@ -1105,27 +1531,12 @@
       "refresh": "Actualizar"
     },
     "messages": {
-      "created": "Socio creado con éxito",
-      "updated": "Socio actualizado con éxito",
-      "deleted": "Socio eliminado con éxito",
-      "errorCreate": "Error al crear socio",
-      "errorUpdate": "Error al actualizar socio",
-      "errorDelete": "Error al eliminar socio",
-      "errorLoad": "Error al cargar socios",
-      "confirmDelete": "¿Está seguro de que desea eliminar este socio?",
-      "addressRequired": "Es obligatorio registrar al menos una dirección para el socio comercial.",
-      "addressErrors": "Por favor, corrija los siguientes errores en las direcciones:",
-      "fillAddressForMap": "Por favor, complete la dirección, ciudad y estado antes de ver en el mapa.",
-      "cnpjValid": "Ingrese un documento válido.",
-      "cnpjImportNotAllowed": "Importación no permitida. {{status}}\n\nSolo empresas con estado ACTIVO pueden registrarse.",
-      "cnpjSuccess": "¡Datos cargados con éxito! {{message}}",
-      "cnpjSuccessWithCity": "¡Datos cargados con éxito! Ciudad \"{{city}}\" validada en el registro. {{message}}",
-      "cnpjError": "Error al consultar documento.",
-      "cepMust8Digits": "El código postal debe contener 8 dígitos",
-      "cepNotFound": "Código postal no encontrado",
-      "cepFound": "Código postal encontrado: {{city}}/{{state}}",
-      "cepError": "Error al buscar código postal. Intente nuevamente.",
-      "receitaFederalNotActive": "Integración con la Autoridad Fiscal no contratada: El botón \"Buscar\" está deshabilitado. Para habilitar la consulta automática de documentos, active el servicio en Innovaciones y Sugerencias."
+      "deleteSuccess": "¡Socio de negocios eliminado con éxito!",
+      "deleteError": "Error al eliminar socio",
+      "updateSuccess": "¡Socio de negocios actualizado con éxito!",
+      "updateError": "Error al actualizar socio",
+      "createSuccess": "¡Socio de negocios creado con éxito!",
+      "createError": "Error al crear socio"
     },
     "validation": {
       "required": "Campo obligatorio",
@@ -1141,27 +1552,106 @@
     "card": {
       "contacts": "{{count}} contacto(s)",
       "addresses": "{{count}} dirección(es)",
-      "primaryContact": "Contacto Principal"
+      "primaryContact": "Contacto Principal",
+      "actions": {
+        "view": "Ver",
+        "edit": "Editar",
+        "delete": "Eliminar"
+      },
+      "labels": {
+        "primaryContact": "Contacto Principal",
+        "contactsCount": "{{count}} contacto(s)",
+        "addressesCount": "{{count}} direccion(es)"
+      },
+      "errors": {
+        "idNotFound": "Error: ID de socio no encontrado"
+      }
     },
     "view": {
       "systemInfo": "Información del Sistema",
       "createdAt": "Creado en",
-      "updatedAt": "Última actualización"
+      "updatedAt": "Última actualización",
+      "typeLabel": {
+        "customer": "Cliente",
+        "supplier": "Proveedor",
+        "both": "Cliente/Proveedor",
+        "default": "Desconocido"
+      },
+      "statusLabel": {
+        "active": "Activo",
+        "inactive": "Inactivo"
+      },
+      "addressTypeLabel": {
+        "billing": "Facturación",
+        "delivery": "Entrega",
+        "correspondence": "Correspondencia",
+        "commercial": "Comercial",
+        "shipping": "Expedición",
+        "both": "Facturación y Entrega",
+        "default": "Otro"
+      },
+      "tabs": {
+        "vision360": "Visión 360",
+        "basicData": "Datos Básicos"
+      },
+      "actions": {
+        "edit": "Editar",
+        "close": "Cerrar"
+      },
+      "sections": {
+        "basicInfo": "Información Básica",
+        "contacts": "Personas de Contacto",
+        "addresses": "Direcciones",
+        "observations": "Observaciones",
+        "systemInfo": "Información del Sistema"
+      },
+      "labels": {
+        "type": "Tipo",
+        "status": "Estado",
+        "email": "Email",
+        "phone": "Teléfono",
+        "primaryContact": "Principal",
+        "primaryAddress": "Principal",
+        "createdAt": "Creado en",
+        "updatedAt": "Última actualización"
+      }
     },
     "map": {
       "title": "Mapa de Socios",
       "loading": "Cargando mapa...",
       "error": "Error al cargar Google Maps. Configure la clave de API en la configuración.",
       "configureKey": "Configure su clave de API de Google Maps en la configuración del sistema.",
-      "legend": "Leyenda",
-      "partnersOnMap": "{{count}} socios en el mapa"
+      "legend": {
+        "title": "Leyenda"
+      },
+      "partnersOnMap": "{{count}} socios en el mapa",
+      "errors": {
+        "loadError": "Error al cargar Google Maps. Configure la clave API en la configuración.",
+        "apiNotAvailable": "La API de Google Maps no está disponible",
+        "initError": "Error al inicializar el mapa",
+        "configKey": "Configure su clave API de Google Maps en la configuración del sistema."
+      },
+      "partnersCount": "{{count}} socios en el mapa",
+      "partnerCount_one": "{{count}} socio en el mapa",
+      "partnerCount_other": "{{count}} socios en el mapa"
     },
     "vision360": {
       "title": "Visión 360",
       "period": "Período:",
       "until": "hasta",
       "update": "Actualizar",
-      "aiInsight": "Insight IA",
+      "aiInsight": {
+        "title": "Insight IA",
+        "subtitle": "Análisis inteligente para {{name}} ({{type}})",
+        "generating": "Generando análisis inteligente...",
+        "aiAnalysisGenerated": "Análisis Generado por IA",
+        "warning": "Este análisis fue generado por inteligencia artificial y debe usarse como referencia. Siempre valide la información con datos reales antes de tomar decisiones.",
+        "error": "No se pudo generar el análisis. Inténtelo de nuevo.",
+        "close": "Cerrar",
+        "notHired": "Integración con OpenAI/ChatGPT no contratada",
+        "notHiredDesc": "Para utilizar el botón de inteligencia artificial \"Insight IA\", debe activar el servicio en **Innovaciones y Sugerencias**. Sin activación, el botón no tendrá efecto.",
+        "notHiredToast": "Función no contratada. Active en Innovaciones y Sugerencias."
+      },
       "aiNotActive": "Integración con OpenAI/ChatGPT no contratada: Para utilizar el botón de inteligencia artificial \"Insight IA\", es necesario activar el servicio en Innovaciones y Sugerencias. Sin la activación, el botón no tendrá efecto.",
       "aiNotActiveShort": "Función no contratada. Active en Innovaciones y Sugerencias.",
       "aiModalTitle": "Insight IA",
@@ -1172,35 +1662,88 @@
       "aiError": "No se pudo generar el análisis. Intente nuevamente.",
       "kpis": {
         "orders": "Pedidos",
+        "ordersSub": "+8% vs mes anterior",
         "invoices": "Facturas",
+        "invoicesSub": "{{percent}}% de pedidos",
         "pickups": "Recogidas",
+        "pickupsSub": "Promedio: 52/mes",
         "ctes": "CT-e",
-        "bills": "Facturas",
-        "deliveriesCompleted": "Entregas Realizadas",
+        "ctesSub": "{{percent}}% de facturas",
+        "bills": "Pagos",
+        "billsSub": "Promedio: € 5.172,00",
+        "deliveriesCompleted": "Entregas Completadas",
+        "deliveriesCompletedSub": "{{percent}}% del total",
         "deliveriesPending": "Entregas Pendientes",
-        "vsLastMonth": "+{{percent}}% vs mes anterior",
-        "ofOrders": "{{percent}}% de pedidos",
-        "avgPerMonth": "Promedio: {{value}}/mes",
-        "ofInvoices": "{{percent}}% de facturas",
-        "avgValue": "Promedio: $ {{value}}",
-        "ofTotal": "{{percent}}% del total",
-        "monitorDeadlines": "Monitorear plazos"
+        "deliveriesPendingSub": "Monitorear plazos"
       },
       "charts": {
         "documentDistribution": "Distribución de Documentos",
         "deliveryStatus": "Estado de Entregas",
         "weeklyActivity": "Actividad Semanal",
         "pickupTrend": "Tendencia de Recogidas",
-        "monthlyEvolution": "Evolución Mensual - Volumen y Valor",
+        "monthlyEvolution": "Evolución Mensual - Volumen y Valor"
+      },
+      "filters": {
+        "period": "Periodo:",
+        "until": "hasta",
+        "refresh": "Actualizar",
+        "aiInsightBtn": "Insight IA"
+      },
+      "chartData": {
+        "orders": "Pedidos",
+        "invoices": "Facturas",
+        "ctes": "CT-e",
+        "bills": "Pagos",
         "completed": "Completadas",
         "pending": "Pendientes",
-        "orders": "Pedidos",
-        "nfe": "Facturas",
         "deliveries": "Entregas",
         "pickups": "Recogidas",
-        "volumeOperations": "Volumen de Operaciones",
-        "valueLabel": "Valor ($)"
+        "volume": "Volumen de Operaciones",
+        "value": "Valor (€)"
+      },
+      "weekDays": {
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mié",
+        "thu": "Jue",
+        "fri": "Vie",
+        "sat": "Sáb",
+        "sun": "Dom"
+      },
+      "months": {
+        "jan": "Ene",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Abr",
+        "may": "May",
+        "jun": "Jun"
       }
+    },
+    "title": "Socios de Negocios",
+    "addPartner": "Nuevo Socio",
+    "filterByType": "Filtrar por Tipo",
+    "filterByStatus": "Filtrar por Estado",
+    "allTypes": "Todos los tipos",
+    "allStatuses": "Todos los estados",
+    "typeCustomer": "Cliente",
+    "typeSupplier": "Proveedor",
+    "typeBoth": "Ambos",
+    "statusActive": "Activo",
+    "statusInactive": "Inactivo",
+    "loading": "Cargando socios...",
+    "noPartners": "No se encontraron socios",
+    "noPartnersDesc": "Intenta ajustar los filtros de búsqueda.",
+    "noPartnersInitial": "Comienza agregando tu primer socio de negocios.",
+    "addFirstPartner": "Añadir Socio",
+    "pagination": {
+      "showing": "Mostrando",
+      "to": "a",
+      "of": "de",
+      "partners": "socios"
+    },
+    "deleteConfirm": {
+      "title": "Confirmar Eliminación",
+      "message": "¿Estás seguro de que quieres eliminar a {{name}}?\\n\\n¡Esta acción NO se puede deshacer!"
     }
   }
 }
