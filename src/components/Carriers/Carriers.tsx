@@ -294,7 +294,7 @@ export const Carriers: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.pageTitle')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.title')}</h1>
           <p className="text-gray-600 dark:text-gray-400">{t('carriers.subtitle')}</p>
         </div>
         <button 
@@ -452,23 +452,23 @@ export const Carriers: React.FC = () => {
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center space-x-2">
                 <Hash size={14} />
-                <span>{t('carriers.form.code')}: {carrier.codigo}</span>
+                <span># {carrier.codigo}</span>
               </div>
               <p><strong>CNPJ:</strong> {carrier.cnpj}</p>
               <div className="flex items-center space-x-2">
                 <Phone size={14} />
-                <span>{carrier.phone || t('carriers.form.notInformed')}</span>
+                <span>{carrier.phone || t('carriers.notInformed')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail size={14} />
-                <span>{carrier.email || t('carriers.form.notInformed')}</span>
+                <span>{carrier.email || t('carriers.notInformed')}</span>
               </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">{t('carriers.form.activeShipments')}:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('carriers.view.activeShipments')}:</span>
                   <span className="font-semibold text-gray-900 dark:text-white ml-1">{carrier.active_shipments || 0}</span>
                 </div>
                 <div className="text-right">
@@ -571,10 +571,10 @@ export const Carriers: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title={t('carriers.confirmDelete.title')}
-          message={t('carriers.confirmDelete.message')}
-          confirmText={t('carriers.confirmDelete.confirm')}
-          cancelText={t('carriers.confirmDelete.cancel')}
+          title={t('carriers.delete.title')}
+          message={t('carriers.delete.message', { name: carriersList.find(c => c.id === confirmDialog.carrierId)?.fantasia || carriersList.find(c => c.id === confirmDialog.carrierId)?.razao_social || 'este transportador' })}
+          confirmText={t('carriers.delete.confirm')}
+          cancelText={t('carriers.delete.cancel')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}
