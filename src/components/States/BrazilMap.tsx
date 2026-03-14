@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+import { useTranslation } from 'react-i18next';
 
 interface BrazilMapProps {
+  states?: any[];
   onStateClick?: (state: any) => void;
 }
 
-export const BrazilMap: React.FC<BrazilMapProps> = ({ onStateClick }) => {
+export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) => {
+  const { t } = useTranslation();
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [, setMapInstance] = useState<google.maps.Map | null>(null);
 
   const initializeMap = async () => {
     if (!mapRef.current) return;
@@ -68,8 +71,8 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ onStateClick }) => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mapa do Brasil</h3>
-            <p className="text-gray-600 dark:text-gray-400">Visualize os estados brasileiros no mapa interativo</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('states.map.title')}</h3>
+            <p className="text-gray-600 dark:text-gray-400">{t('states.map.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -86,11 +89,11 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ onStateClick }) => {
         <div className="flex items-start space-x-2">
           <MapPin size={16} className="text-blue-600 mt-0.5" />
           <div>
-            <p className="text-sm text-blue-800 font-medium">Mapa Interativo:</p>
+            <p className="text-sm text-blue-800 font-medium">{t('states.map.interactive_map')}</p>
             <ul className="text-xs text-blue-700 mt-1 space-y-1">
-              <li>• Clique em qualquer local do mapa para obter informações</li>
-              <li>• Use os controles de zoom para navegar</li>
-              <li>• O mapa mostra as divisões estaduais do Brasil</li>
+              <li>{t('states.map.tip_1')}</li>
+              <li>{t('states.map.tip_2')}</li>
+              <li>{t('states.map.tip_3')}</li>
             </ul>
           </div>
         </div>

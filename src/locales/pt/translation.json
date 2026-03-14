@@ -1747,5 +1747,106 @@
       "title": "Confirmar Exclusão",
       "message": "Tem certeza que deseja excluir {{name}}?\\n\\nEsta ação NÃO pode ser desfeita!"
     }
+  },
+  "states": {
+    "title": "Estados do Brasil",
+    "subtitle": "Gerencie o cadastro de estados brasileiros",
+    "new_state": "Novo Estado",
+    "tabs": {
+      "list": "Lista",
+      "map": "Mapa"
+    },
+    "filters": {
+      "search_placeholder": "Buscar por nome, sigla, capital ou código IBGE...",
+      "export": "Exportar",
+      "all_regions": "Todos"
+    },
+    "regions": {
+      "norte": "Norte",
+      "nordeste": "Nordeste",
+      "centro_oeste": "Centro-Oeste",
+      "sudeste": "Sudeste",
+      "sul": "Sul"
+    },
+    "list": {
+      "total": "Total: {{count}} estados",
+      "page_info": "Página {{current}} de {{total}}",
+      "loading": "Carregando estados...",
+      "showing": "Mostrando {{start}} a {{end}} de {{total}} estados",
+      "previous": "Anterior",
+      "next": "Próximo",
+      "empty_title": "Nenhum estado encontrado",
+      "empty_subtitle": "Tente ajustar os filtros ou cadastrar um novo estado.",
+      "not_informed": "Não informado",
+      "na": "N/A"
+    },
+    "messages": {
+      "load_error": "Erro ao carregar estados.",
+      "delete_success": "Estado excluído com sucesso!",
+      "delete_error": "Erro ao excluir estado (Verifique chaves estrangeiras).",
+      "update_success": "Estado atualizado com sucesso!",
+      "update_error": "Erro ao atualizar estado.",
+      "create_success": "Estado criado com sucesso!",
+      "create_error": "Erro ao salvar estado. Tente novamente.",
+      "upload_error": "Erro ao fazer upload da imagem."
+    },
+    "dialogs": {
+      "delete_title": "Confirmar Exclusão",
+      "delete_message": "Tem certeza que deseja excluir este estado? Esta ação não pode ser desfeita.",
+      "delete_confirm": "Excluir",
+      "delete_cancel": "Cancelar"
+    },
+    "fields": {
+      "name": "Nome do Estado",
+      "abbreviation": "Sigla",
+      "ibge_code": "Código IBGE",
+      "capital": "Capital",
+      "region": "Região"
+    },
+    "form": {
+      "back": "Voltar para Estados",
+      "title_new": "Novo Estado",
+      "title_edit": "Editar Estado",
+      "subtitle": "Preencha os dados do estado",
+      "basic_info": "Informações Básicas",
+      "name_label": "Nome do Estado *",
+      "name_placeholder": "Acre",
+      "abbreviation_label": "Sigla *",
+      "abbreviation_placeholder": "AC",
+      "ibge_label": "Código IBGE *",
+      "ibge_placeholder": "12",
+      "capital_label": "Capital *",
+      "capital_placeholder": "Rio Branco",
+      "region_label": "Região *",
+      "region_placeholder": "Selecione a região",
+      "flag_label": "Bandeira Oficial (Imagem)",
+      "no_flag": "Sem bandeira",
+      "uploading": "Enviando...",
+      "upload_text": "Fazer upload de um arquivo",
+      "upload_hint": "PNG, JPG, SVG ou WEBP até 2MB",
+      "cancel": "Cancelar",
+      "save": "Salvar Estado",
+      "update": "Atualizar Estado"
+    },
+    "tooltips": {
+      "view": "Visualizar",
+      "edit": "Editar",
+      "delete": "Excluir"
+    },
+    "view": {
+      "title": "Visualizar Estado",
+      "subtitle": "Detalhes completos do estado",
+      "edit_button": "Editar",
+      "location_info": "Informações de Localização",
+      "general_info": "Informações Gerais"
+    },
+    "map": {
+      "title": "Mapa do Brasil",
+      "subtitle": "Visualize os estados brasileiros no mapa interativo",
+      "interactive_map": "Mapa Interativo:",
+      "tip_1": "• Clique em qualquer local do mapa para obter informações",
+      "tip_2": "• Use os controles de zoom para navegar",
+      "tip_3": "• O mapa mostra as divisões estaduais do Brasil"
+    }
   }
 }

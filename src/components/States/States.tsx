@@ -10,13 +10,15 @@ import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 export const States: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Estados', current: true }
+    { label: t('menu.settings', 'Configurações') },
+    { label: t('states.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,12 +37,12 @@ export const States: React.FC = () => {
   const itemsPerPage = 12;
 
   const regions = [
-    'Todos',
-    'Norte',
-    'Nordeste',
-    'Centro-Oeste',
-    'Sudeste',
-    'Sul'
+    { value: 'Todos', label: t('states.filters.all_regions') },
+    { value: 'Norte', label: t('states.regions.norte') },
+    { value: 'Nordeste', label: t('states.regions.nordeste') },
+    { value: 'Centro-Oeste', label: t('states.regions.centro_oeste') },
+    { value: 'Sudeste', label: t('states.regions.sudeste') },
+    { value: 'Sul', label: t('states.regions.sul') }
   ];
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export const States: React.FC = () => {
       const data = await statesService.getAll();
       setStatesList(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar estados.', type: 'error' });
+      setToast({ message: t('states.messages.load_error'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -99,10 +101,10 @@ export const States: React.FC = () => {
         if (state) {
           await logDelete('state', confirmDialog.stateId, state, 1, 'Administrador');
         }
-        setToast({ message: 'Estado excluído com sucesso!', type: 'success' });
+        setToast({ message: t('states.messages.delete_success'), type: 'success' });
         await loadStates();
       } else {
-        setToast({ message: 'Erro ao excluir estado (Verifique chaves estrangeiras).', type: 'error' });
+        setToast({ message: t('states.messages.delete_error'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -126,9 +128,9 @@ export const States: React.FC = () => {
         });
         if (updated) {
           await logUpdate('state', editingState.id, editingState, updated, 1, 'Administrador');
-          setToast({ message: 'Estado atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('states.messages.update_success'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao atualizar estado.', type: 'error' });
+          setToast({ message: t('states.messages.update_error'), type: 'error' });
           return;
         }
       } else {
@@ -139,14 +141,14 @@ export const States: React.FC = () => {
         if (created) {
           await logCreate('state', created.id, created, 1, 'Administrador');
         }
-        setToast({ message: 'Estado criado com sucesso!', type: 'success' });
+        setToast({ message: t('states.messages.create_success'), type: 'success' });
       }
 
       setShowForm(false);
       setEditingState(null);
       await loadStates();
     } catch (error) {
-      setToast({ message: 'Erro ao salvar estado. Tente novamente.', type: 'error' });
+      setToast({ message: t('states.messages.create_error'), type: 'error' });
     }
   };
 
@@ -159,7 +161,7 @@ export const States: React.FC = () => {
 
   const handleExport = () => {
     const csvContent = [
-      ['Nome', 'Sigla', 'Código IBGE', 'Capital', 'Região'].join(','),
+      [t('states.fields.name'), t('states.fields.abbreviation'), t('states.fields.ibge_code'), t('states.fields.capital'), t('states.fields.region')].join(','),
       ...filteredStates.map(state => [
         state.name,
         state.abbreviation,
@@ -207,8 +209,8 @@ export const States: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Estados do Brasil</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie o cadastro de estados brasileiros</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('states.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('states.subtitle')}</p>
         </div>
         {isAdmin && (
           <button
@@ -216,7 +218,7 @@ export const States: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Novo Estado</span>
+            <span>{t('states.new_state')}</span>
           </button>
         )}
       </div>
@@ -234,7 +236,7 @@ export const States: React.FC = () => {
           >
             <div className="flex items-center justify-center space-x-2">
               <Filter size={18} />
-              <span>Lista</span>
+              <span>{t('states.tabs.list')}</span>
             </div>
           </button>
           <button
@@ -247,7 +249,7 @@ export const States: React.FC = () => {
           >
             <div className="flex items-center justify-center space-x-2">
               <Map size={18} />
-              <span>Mapa</span>
+              <span>{t('states.tabs.map')}</span>
             </div>
           </button>
         </div>
@@ -262,7 +264,7 @@ export const States: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Buscar por nome, sigla, capital ou código IBGE..."
+                  placeholder={t('states.filters.search_placeholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -275,8 +277,8 @@ export const States: React.FC = () => {
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {regions.map(region => (
-                  <option key={region} value={region}>
-                    {region}
+                  <option key={region.value} value={region.value}>
+                    {region.label}
                   </option>
                 ))}
               </select>
@@ -286,14 +288,14 @@ export const States: React.FC = () => {
                 className="border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
               >
                 <Download size={18} />
-                <span>Exportar</span>
+                <span>{t('states.filters.export')}</span>
               </button>
             </div>
 
             {/* Stats */}
             <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-              <span>Total: {filteredStates.length} estados</span>
-              <span>Página {currentPage} de {totalPages}</span>
+              <span>{t('states.list.total', { count: filteredStates.length })}</span>
+              <span>{t('states.list.page_info', { current: currentPage, total: totalPages })}</span>
             </div>
           </div>
 
@@ -301,7 +303,7 @@ export const States: React.FC = () => {
           {isLoading ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Carregando estados...</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('states.list.loading')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -323,7 +325,7 @@ export const States: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredStates.length)} de {filteredStates.length} estados
+                  {t('states.list.showing', { start: startIndex + 1, end: Math.min(startIndex + itemsPerPage, filteredStates.length), total: filteredStates.length })}
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -331,7 +333,7 @@ export const States: React.FC = () => {
                     disabled={currentPage === 1}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Anterior
+                    {t('states.list.previous')}
                   </button>
 
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -358,7 +360,7 @@ export const States: React.FC = () => {
                     disabled={currentPage === totalPages}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Próximo
+                    {t('states.list.next')}
                   </button>
                 </div>
               </div>
@@ -372,8 +374,8 @@ export const States: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum estado encontrado</h3>
-              <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou cadastrar um novo estado.</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('states.list.empty_title')}</h3>
+              <p className="text-gray-600 dark:text-gray-400">{t('states.list.empty_subtitle')}</p>
             </div>
           )}
         </>
@@ -399,10 +401,10 @@ export const States: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir este estado? Esta ação não pode ser desfeita."
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          title={t('states.dialogs.delete_title')}
+          message={t('states.dialogs.delete_message')}
+          confirmText={t('states.dialogs.delete_confirm')}
+          cancelText={t('states.dialogs.delete_cancel')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Edit, Trash2, Eye, MapPin, Hash, Globe } from 'lucide-react';
+import { Trash2, Edit, Eye, MapPin, Hash, Globe } from 'lucide-react';
 import { State } from '../../services/statesService';
+import { useTranslation } from 'react-i18next';
 
 interface StateCardProps {
   state: State;
@@ -17,6 +18,7 @@ export const StateCard: React.FC<StateCardProps> = ({
   onDelete,
   isAdmin
 }) => {
+  const { t } = useTranslation();
   const getRegionColor = (region: string) => {
     switch (region) {
       case 'Norte': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
@@ -42,17 +44,17 @@ export const StateCard: React.FC<StateCardProps> = ({
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {state.name}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Sigla* : {state.abbreviation}</p>
-          </div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {state.name}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('states.fields.abbreviation')}* : {state.abbreviation}</p>
+            </div>
         </div>
         <div className="flex items-center space-x-2">
           <button 
             onClick={() => onView(state)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Visualizar"
+            title={t('states.tooltips.view')}
           >
             <Eye size={16} />
           </button>
@@ -61,14 +63,14 @@ export const StateCard: React.FC<StateCardProps> = ({
               <button 
                 onClick={() => onEdit(state)}
                 className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-                title="Editar"
+                title={t('states.tooltips.edit')}
               >
                 <Edit size={16} />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(state.id!); }}
                 className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                title="Excluir"
+                title={t('states.tooltips.delete')}
               >
                 <Trash2 size={16} />
               </button>
@@ -80,28 +82,28 @@ export const StateCard: React.FC<StateCardProps> = ({
       <div className="space-y-3 text-sm flex-grow mb-6">
         <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
           <Globe size={16} className="text-gray-400" />
-          <span>{state.region || 'Não informado'}</span>
+          <span>{state.region || t('states.list.not_informed')}</span>
         </div>
         
         <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
           <MapPin size={16} className="text-gray-400" />
-          <span>{state.capital || 'Não informado'}</span>
+          <span>{state.capital || t('states.list.not_informed')}</span>
         </div>
         
         <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-400">
           <Hash size={16} className="text-gray-400" />
-          <span>Código IBGE: {state.ibge_code || 'Não informado'}</span>
+          <span>{t('states.fields.ibge_code')}: {state.ibge_code || t('states.list.not_informed')}</span>
         </div>
       </div>
       
       <div className="pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
         <div className="text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Sigla* : </span>
+          <span className="text-gray-500 dark:text-gray-400">{t('states.fields.abbreviation')}* : </span>
           <span className="font-bold text-gray-900 dark:text-white ml-0.5">{state.abbreviation}</span>
         </div>
         <div>
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getRegionColor(state.region || '')}`}>
-            {state.region || 'N/A'}
+            {state.region || t('states.list.na')}
           </span>
         </div>
       </div>
