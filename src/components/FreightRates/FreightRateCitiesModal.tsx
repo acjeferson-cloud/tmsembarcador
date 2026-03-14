@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Upload, Search, AlertCircle, CheckCircle, Edit2, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { freightRateCitiesService, FreightRateCity, CityAvailability } from '../../services/freightRateCitiesService';
 import { FreightRate } from '../../services/freightRatesService';
 
@@ -16,6 +17,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
   onClose,
   onUpdate
 }) => {
+  const { t } = useTranslation();
   const [linkedCities, setLinkedCities] = useState<FreightRateCity[]>([]);
   const [availableCities, setAvailableCities] = useState<CityAvailability[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,8 +52,8 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       if (showAddMode) {
         await loadAvailableCities(searchTerm);
       }
-    } catch (error) {
-      showToast('error', 'Erro ao carregar cidades');
+    } catch (_error) {
+      showToast('error', t('carriers.freightRates.cities.errorLoad'));
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +68,8 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
         search
       );
       setAvailableCities(available);
-    } catch (error) {
-      showToast('error', 'Erro ao buscar cidades disponíveis');
+    } catch (_error) {
+      showToast('error', t('carriers.freightRates.cities.errorLoad'));
     } finally {
       setIsSearching(false);
     }
@@ -78,15 +80,15 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleAddCity = async (cityId: string) => {
+  const _handleAddCity = async (cityId: string) => {
     try {
       setIsSaving(true);
       await freightRateCitiesService.addCityToRate(rate.id, tableId, cityId);
-      showToast('success', 'Cidade vinculada com sucesso');
+      showToast('success', t('carriers.freightRates.cities.successLinkSingle'));
       await loadData();
       onUpdate();
     } catch (error) {
-      showToast('error', error instanceof Error ? error.message : 'Erro ao vincular cidade');
+      showToast('error', error instanceof Error ? error.message : t('carriers.freightRates.cities.errorLink'));
     } finally {
       setIsSaving(false);
     }
@@ -94,7 +96,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
 
   const handleAddMultipleCities = async () => {
     if (selectedCities.size === 0) {
-      showToast('error', 'Selecione pelo menos uma cidade');
+      showToast('error', t('carriers.freightRates.cities.selectAtLeastOne'));
       return;
     }
 
@@ -108,12 +110,12 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       );
 
       if (result.success.length > 0) {
-        showToast('success', `${result.success.length} cidade(s) vinculada(s) com sucesso`);
+        showToast('success', t('carriers.freightRates.cities.successLinkMultiple', { count: result.success.length }));
       }
 
       if (result.errors.length > 0) {
         const firstError = result.errors[0];
-        showToast('error', `${result.errors.length} cidade(s) não puderam ser vinculadas: ${firstError.error}`);
+        showToast('error', t('carriers.freightRates.cities.errorLinkMultiple', { count: result.errors.length, error: firstError.error }));
       }
 
       setSelectedCities(new Set());
@@ -124,26 +126,27 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       try {
         await loadData();
         onUpdate();
-      } catch (loadError) {
+      } catch (_loadError) {
+        // ignore
       }
-    } catch (error) {
-      showToast('error', 'Erro ao vincular cidades');
+    } catch (_error) {
+      showToast('error', t('carriers.freightRates.cities.errorLink'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleRemoveCity = async (id: string) => {
-    if (!confirm('Deseja realmente desvincular esta cidade da tarifa?')) return;
+    if (!confirm(t('carriers.freightRates.cities.confirmUnlinkMessage'))) return;
 
     try {
       setIsSaving(true);
       await freightRateCitiesService.removeCityFromRate(id);
-      showToast('success', 'Cidade desvinculada com sucesso');
+      showToast('success', t('carriers.freightRates.cities.successUnlink'));
       await loadData();
       onUpdate();
-    } catch (error) {
-      showToast('error', 'Erro ao desvincular cidade');
+    } catch (_error) {
+      showToast('error', t('carriers.freightRates.cities.errorUnlink'));
     } finally {
       setIsSaving(false);
     }
@@ -158,13 +161,13 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     try {
       setIsSaving(true);
       await freightRateCitiesService.updateDeliveryDays(cityId, editingDeliveryDays);
-      showToast('success', 'Prazo de entrega atualizado com sucesso');
+      showToast('success', t('carriers.freightRates.cities.successUpdateDays'));
       await loadData();
       setEditingCityId(null);
       setEditingDeliveryDays(null);
       onUpdate();
-    } catch (error) {
-      showToast('error', 'Erro ao atualizar prazo de entrega');
+    } catch (_error) {
+      showToast('error', t('carriers.freightRates.cities.errorUpdateDays'));
     } finally {
       setIsSaving(false);
     }
@@ -213,7 +216,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cidades da Tarifa</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('carriers.freightRates.cities.title')}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {rate.codigo} - {rate.descricao}
             </p>
@@ -244,7 +247,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Adicionar Cidades ({selectedCities.size} selecionadas)
+                  {t('carriers.freightRates.cities.uploadCities')} ({selectedCities.size})
                 </h3>
                 <button
                   onClick={() => {
@@ -254,7 +257,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                   }}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
                 >
-                  Cancelar
+                  {t('carriers.freightRates.cities.cancel')}
                 </button>
               </div>
 
@@ -264,7 +267,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar cidade..."
+                  placeholder={t('carriers.freightRates.cities.searchCity')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -292,9 +295,9 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                             className="rounded border-gray-300"
                           />
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">Cidade</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">UF</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">Código IBGE</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.city')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.uf')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.ibgeCode')}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
@@ -302,8 +305,8 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                         <tr>
                           <td colSpan={4} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                             {searchTerm.trim() === ''
-                              ? 'Digite o nome da cidade ou UF para buscar...'
-                              : 'Nenhuma cidade disponível com este filtro'}
+                              ? t('carriers.freightRates.cities.searchPrompt')
+                              : t('carriers.freightRates.cities.noCityAvailable')}
                           </td>
                         </tr>
                       ) : (
@@ -338,7 +341,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                   disabled={selectedCities.size === 0 || isSaving}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isSaving ? 'Vinculando...' : `Vincular ${selectedCities.size} cidade(s)`}
+                  {isSaving ? t('carriers.freightRates.cities.linking') : t('carriers.freightRates.cities.linkSelected', { count: selectedCities.size })}
                 </button>
               </div>
             </div>
@@ -346,14 +349,14 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Cidades Vinculadas ({linkedCities.length})
+                  {t('carriers.freightRates.cities.linkedCities')} ({linkedCities.length})
                 </h3>
                 <button
                   onClick={() => setShowAddMode(true)}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   <Upload size={18} />
-                  <span>Adicionar Cidades</span>
+                  <span>{t('carriers.freightRates.cities.uploadCities')}</span>
                 </button>
               </div>
 
@@ -364,7 +367,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar cidade vinculada..."
+                    placeholder={t('carriers.freightRates.cities.searchLinkedCity')}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -374,11 +377,11 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">Cidade</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">UF</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">Código IBGE</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">Prazo de Entrega (dias)</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300">Ações</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.city')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.uf')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.ibgeCode')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.deliveryDays')}</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
@@ -386,8 +389,8 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                       <tr>
                         <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                           {linkedCities.length === 0
-                            ? 'Nenhuma cidade vinculada. Clique em "Adicionar Cidades" para começar.'
-                            : 'Nenhuma cidade encontrada com este filtro.'
+                            ? t('carriers.freightRates.cities.noLinkedCitiesClickAdd')
+                            : t('carriers.freightRates.cities.noLinkedCitiesFound')
                           }
                         </td>
                       </tr>
@@ -410,34 +413,34 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                                   className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   autoFocus
                                 />
-                                <button
-                                  onClick={() => handleSaveDeliveryDays(city.id)}
-                                  disabled={isSaving}
-                                  className="text-green-600 hover:text-green-800 disabled:text-gray-400"
-                                  title="Salvar"
-                                >
-                                  <Check size={18} />
-                                </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
-                                  title="Cancelar"
-                                >
-                                  <X size={18} />
-                                </button>
+                                  <button
+                                    onClick={() => handleSaveDeliveryDays(city.id)}
+                                    disabled={isSaving}
+                                    className="text-green-600 hover:text-green-800 disabled:text-gray-400"
+                                    title={t('carriers.freightRates.cities.saveTitle')}
+                                  >
+                                    <Check size={18} />
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
+                                    title={t('carriers.freightRates.cities.cancelTitle')}
+                                  >
+                                    <X size={18} />
+                                  </button>
                               </div>
                             ) : (
                               <div className="flex items-center space-x-2">
                                 <span className="text-sm text-gray-900 dark:text-white">
                                   {city.delivery_days !== null && city.delivery_days !== undefined
                                     ? `${city.delivery_days} dias`
-                                    : 'Padrão da tarifa'}
+                                    : t('carriers.freightRates.cities.defaultDeliveryDays')}
                                 </span>
                                 <button
                                   onClick={() => handleEditDeliveryDays(city)}
                                   disabled={isSaving}
                                   className="text-blue-600 hover:text-blue-800 disabled:text-gray-400"
-                                  title="Editar prazo"
+                                  title={t('carriers.freightRates.cities.editDeliveryDaysTitle')}
                                 >
                                   <Edit2 size={16} />
                                 </button>
@@ -449,7 +452,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                               onClick={() => handleRemoveCity(city.id)}
                               disabled={isSaving}
                               className="text-red-600 hover:text-red-800 disabled:text-gray-400 transition-colors"
-                              title="Desvincular cidade"
+                              title={t('carriers.freightRates.cities.unlinkCityTitle')}
                             >
                               <Trash2 size={18} />
                             </button>
@@ -469,7 +472,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
           >
-            Fechar
+            {t('carriers.freightRates.cities.close')}
           </button>
         </div>
       </div>

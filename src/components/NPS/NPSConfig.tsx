@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Settings, TrendingUp, Users, MessageSquare, Mail, Send, TestTube, Info } from 'lucide-react';
 import { npsService, NPSConfig } from '../../services/npsService';
 import { npsEmailTemplateService } from '../../services/npsEmailTemplateService';
@@ -9,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getBaseUrl } from '../../utils/urlHelpers';
 
 export const NPSConfiguration: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { isActive: npsActive, isLoading: npsLoading } = useInnovation(
     INNOVATION_IDS.NPS,
@@ -138,7 +140,7 @@ export const NPSConfiguration: React.FC = () => {
         config.pesos_criterios!.pod;
 
       if (Math.abs(totalPesos - 1) > 0.01) {
-        setValidationError('A soma dos pesos dos critérios deve ser igual a 100%');
+        setValidationError(t('nps.config.messages.weightsMustBe100'));
         return;
       }
 
@@ -148,13 +150,13 @@ export const NPSConfiguration: React.FC = () => {
       });
 
       setToast({
-        message: 'Configurações salvas com sucesso',
+        message: t('nps.config.messages.configSavedSuccess'),
         type: 'success',
       });
     } catch (error) {
       console.error('Erro ao salvar configuração:', error);
       setToast({
-        message: 'Erro ao salvar configurações. Tente novamente',
+        message: t('nps.config.messages.configSaveError'),
         type: 'error',
       });
     } finally {
@@ -184,7 +186,7 @@ export const NPSConfiguration: React.FC = () => {
 
     if (!testEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
       setToast({
-        message: 'Por favor, insira um email válido',
+        message: t('nps.config.messages.enterValidEmail'),
         type: 'error',
       });
       return;
@@ -204,7 +206,7 @@ export const NPSConfiguration: React.FC = () => {
       // Verificar se conseguimos obter o ID
       if (!estabId) {
         setToast({
-          message: 'Estabelecimento não identificado. Verifique se você selecionou um estabelecimento válido.',
+          message: t('nps.config.messages.establishmentNotFound'),
           type: 'error',
         });
         return;
@@ -344,7 +346,7 @@ export const NPSConfiguration: React.FC = () => {
 
       console.log('Resultado do envio:', resultado);
 
-      let mensagem = resultado.message || `Email de teste enviado com sucesso para ${testEmail}!`;
+      let mensagem = resultado.message || `${t('nps.config.messages.testEmailSuccess')}${testEmail}!`;
 
       if (resultado.note) {
         mensagem += `\n\n${resultado.note}`;
@@ -363,7 +365,7 @@ export const NPSConfiguration: React.FC = () => {
       setTestEmail('');
     } catch (error: any) {
       console.error('Erro completo ao enviar teste:', error);
-      const errorMessage = error?.message || 'Erro ao enviar email de teste. Verifique as configurações de email do estabelecimento.';
+      const errorMessage = error?.message || t('nps.config.messages.testEmailError');
       setToast({
         message: errorMessage,
         type: 'error',
@@ -383,10 +385,10 @@ export const NPSConfiguration: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <TrendingUp className="w-7 h-7 text-blue-600" />
-            Configuração NPS
+            {t('nps.config.title')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Configure o sistema de avaliação Net Promoter Score
+            {t('nps.config.subtitle')}
           </p>
         </div>
       </div>
@@ -397,8 +399,7 @@ export const NPSConfiguration: React.FC = () => {
           <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-yellow-800">
-              <strong>Integração de Serviço de NPS não contratada:</strong> Para utilizar o sistema de pesquisa de satisfação NPS,
-              é necessário ativar o serviço em <strong>Inovações & Sugestões</strong>. Sem a ativação, as configurações não terão efeito.
+              <strong>{t('nps.dashboard.notActiveWarningTitle')}</strong> {t('nps.config.notActiveWarningDesc')}
             </p>
           </div>
         </div>
@@ -409,7 +410,7 @@ export const NPSConfiguration: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Settings className="w-5 h-5 text-blue-600" />
-              Configurações Gerais
+              {t('nps.config.generalConfigs')}
             </h3>
 
             <div className="space-y-4">
@@ -418,10 +419,10 @@ export const NPSConfiguration: React.FC = () => {
                   <Users className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      NPS Cliente Final
+                      {t('nps.config.npsClientFinal')}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Pesquisa de satisfação enviada após entregas
+                      {t('nps.config.npsClientDesc')}
                     </p>
                   </div>
                 </div>
@@ -442,10 +443,10 @@ export const NPSConfiguration: React.FC = () => {
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      NPS Interno Automático
+                      {t('nps.config.npsInternalAuto')}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Avaliação automática baseada em métricas operacionais
+                      {t('nps.config.npsInternalAutoDesc')}
                     </p>
                   </div>
                 </div>
@@ -466,14 +467,14 @@ export const NPSConfiguration: React.FC = () => {
           {config.nps_cliente_ativo && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Canais de Envio
+                {t('nps.config.sendChannels')}
               </h3>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <MessageSquare className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-gray-900 dark:text-white">WhatsApp</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('nps.config.whatsapp')}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -498,7 +499,7 @@ export const NPSConfiguration: React.FC = () => {
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-gray-900 dark:text-white">E-mail</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{t('nps.config.email')}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -523,7 +524,7 @@ export const NPSConfiguration: React.FC = () => {
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Dias para expirar pesquisa pendente
+                  {t('nps.config.daysToExpireLabel')}
                 </label>
                 <input
                   type="number"
@@ -535,7 +536,7 @@ export const NPSConfiguration: React.FC = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <div className="mt-2">
-                  <InlineMessage type="info" message="Pesquisas não respondidas expiram automaticamente após este período" />
+                  <InlineMessage type="info" message={t('nps.config.daysToExpireInfo')} />
                 </div>
               </div>
             </div>
@@ -544,12 +545,12 @@ export const NPSConfiguration: React.FC = () => {
           {config.nps_interno_ativo && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                NPS Interno - Configurações
+                {t('nps.config.npsInternalConfigs')}
               </h3>
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Periodicidade de Cálculo
+                  {t('nps.config.calculationPeriodicity')}
                 </label>
                 <select
                   value={config.periodicidade_calculo}
@@ -562,26 +563,26 @@ export const NPSConfiguration: React.FC = () => {
                   disabled={!npsActive}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="semanal">Semanal</option>
-                  <option value="quinzenal">Quinzenal</option>
-                  <option value="mensal">Mensal</option>
+                  <option value="semanal">{t('nps.config.weekly')}</option>
+                  <option value="quinzenal">{t('nps.config.biweekly')}</option>
+                  <option value="mensal">{t('nps.config.monthly')}</option>
                 </select>
               </div>
 
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                  Pesos dos Critérios de Avaliação
+                  {t('nps.config.evaluationWeights')}
                 </h4>
                 <div className="mb-3">
                   {totalPesos === 1 ? (
                     <InlineMessage
                       type="success"
-                      message={`Total: ${(totalPesos * 100).toFixed(0)}% - Configuração válida`}
+                      message={`Total: ${(totalPesos * 100).toFixed(0)}% - ${t('nps.config.validConfig')}`}
                     />
                   ) : (
                     <InlineMessage
                       type="warning"
-                      message={`Total: ${(totalPesos * 100).toFixed(0)}% - Deve somar exatamente 100%`}
+                      message={`Total: ${(totalPesos * 100).toFixed(0)}% - ${t('nps.config.totalMustBe100')}`}
                     />
                   )}
                 </div>
@@ -589,7 +590,7 @@ export const NPSConfiguration: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Pontualidade nas entregas: {(config.pesos_criterios!.pontualidade * 100).toFixed(0)}%
+                      {t('nps.config.punctuality')}{(config.pesos_criterios!.pontualidade * 100).toFixed(0)}%
                     </label>
                     <input
                       type="range"
@@ -605,7 +606,7 @@ export const NPSConfiguration: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Ocorrências/Avarias: {(config.pesos_criterios!.ocorrencias * 100).toFixed(0)}%
+                      {t('nps.config.occurrences')}{(config.pesos_criterios!.ocorrencias * 100).toFixed(0)}%
                     </label>
                     <input
                       type="range"
@@ -621,7 +622,7 @@ export const NPSConfiguration: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Comunicação e status: {(config.pesos_criterios!.comunicacao * 100).toFixed(0)}%
+                      {t('nps.config.communication')}{(config.pesos_criterios!.comunicacao * 100).toFixed(0)}%
                     </label>
                     <input
                       type="range"
@@ -637,7 +638,7 @@ export const NPSConfiguration: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Confirmação de entrega (POD): {(config.pesos_criterios!.pod * 100).toFixed(0)}%
+                      {t('nps.config.podConfirmation')}{(config.pesos_criterios!.pod * 100).toFixed(0)}%
                     </label>
                     <input
                       type="range"
@@ -668,7 +669,7 @@ export const NPSConfiguration: React.FC = () => {
               className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <TestTube className="w-5 h-5" />
-              Testar Envio NPS
+              {t('nps.config.testNpsSend')}
             </button>
             <button
               onClick={handleSave}
@@ -676,7 +677,7 @@ export const NPSConfiguration: React.FC = () => {
               className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save className="w-5 h-5" />
-              {isLoading ? 'Salvando...' : 'Salvar Configurações'}
+              {isLoading ? t('nps.config.saving') : t('nps.config.saveConfigs')}
             </button>
           </div>
         </div>
@@ -688,20 +689,20 @@ export const NPSConfiguration: React.FC = () => {
             <div className="flex items-center gap-3 mb-4">
               <TestTube className="w-6 h-6 text-green-600" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Testar Envio de Pesquisa NPS
+                {t('nps.config.modalTest.title')}
               </h3>
             </div>
 
             <div className="mb-4">
               <InlineMessage
                 type="info"
-                message="Será criada uma pesquisa de teste. Você receberá um link para simular a resposta do cliente."
+                message={t('nps.config.modalTest.infoMsg')}
               />
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email de teste
+                {t('nps.config.modalTest.testEmailLabel')}
               </label>
               <input
                 type="email"
@@ -721,7 +722,7 @@ export const NPSConfiguration: React.FC = () => {
                 disabled={isSendingTest}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
               >
-                Cancelar
+                {t('nps.config.modalTest.cancel')}
               </button>
               <button
                 onClick={handleSendTest}
@@ -729,7 +730,7 @@ export const NPSConfiguration: React.FC = () => {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-5 h-5" />
-                {isSendingTest ? 'Criando...' : 'Criar Teste'}
+                {isSendingTest ? t('nps.config.modalTest.creating') : t('nps.config.modalTest.createTest')}
               </button>
             </div>
           </div>

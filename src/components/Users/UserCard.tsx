@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit, Trash2, Eye, User, Mail, Phone, Building, Shield, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { User as UserType } from '../../services/usersService';
+import { useTranslation } from 'react-i18next';
 
 interface UserCardProps {
   user: UserType;
@@ -15,6 +16,8 @@ export const UserCard: React.FC<UserCardProps> = ({
   onEdit, 
   onDelete 
 }) => {
+  const { t } = useTranslation();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ativo': return 'bg-green-100 text-green-800';
@@ -56,19 +59,39 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   const formatLastLogin = (lastLogin?: string) => {
-    if (!lastLogin) return 'Nunca';
+    if (!lastLogin) return t('users.view.emptyDept') || 'Nunca';
     
     const date = new Date(lastLogin);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return 'Agora';
-    if (diffInHours < 24) return `${diffInHours}h atrás`;
-    if (diffInHours < 48) return 'Ontem';
+    if (diffInHours < 1) return t('users.view.now') || 'Agora';
+    if (diffInHours < 24) return `${diffInHours} ${t('users.view.hoursAgo') || 'h atrás'}`;
+    if (diffInHours < 48) return t('users.view.yesterday') || 'Ontem';
     return date.toLocaleDateString('pt-BR');
   };
 
-  const isProtectedUser = user.id === 1; // Admin user protection
+  const getStatusTranslation = (status: string) => {
+    switch (status) {
+      case 'ativo': return t('users.filters.active') || 'Ativo';
+      case 'inativo': return t('users.filters.inactive') || 'Inativo';
+      case 'bloqueado': return t('users.filters.blocked') || 'Bloqueado';
+      default: return status;
+    }
+  };
+
+  const getRoleTranslation = (perfil: string) => {
+    switch (perfil) {
+      case 'administrador': return t('users.form.roles.admin') || 'Administrador';
+      case 'gerente': return t('users.form.roles.manager') || 'Gerente';
+      case 'operador': return t('users.form.roles.operator') || 'Operador';
+      case 'visualizador': return t('users.form.roles.viewer') || 'Visualizador';
+      case 'personalizado': return t('users.form.roles.custom') || 'Personalizado';
+      default: return perfil;
+    }
+  };
+
+  const isProtectedUser = user.id === '1';
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
@@ -86,14 +109,14 @@ export const UserCard: React.FC<UserCardProps> = ({
           <button 
             onClick={() => onView(user)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Visualizar"
+            title={t('users.buttons.view') || 'Visualizar'}
           >
             <Eye size={16} />
           </button>
           <button 
             onClick={() => onEdit(user)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Editar"
+            title={t('users.buttons.edit') || 'Editar'}
           >
             <Edit size={16} />
           </button>
@@ -101,13 +124,13 @@ export const UserCard: React.FC<UserCardProps> = ({
             <button 
               onClick={() => onDelete(user.id)}
               className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-              title="Excluir"
+              title={t('users.buttons.delete') || 'Excluir'}
             >
               <Trash2 size={16} />
             </button>
           )}
           {isProtectedUser && (
-            <div className="p-1 text-yellow-500" title="Usuário protegido">
+            <div className="p-1 text-yellow-500" title={t('users.stats.adminProtectUser') || 'Usuário protegido'}>
               <Shield size={16} />
             </div>
           )}
@@ -122,17 +145,17 @@ export const UserCard: React.FC<UserCardProps> = ({
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Phone size={14} />
-          <span>{user.celular || user.telefone || 'Não informado'}</span>
+          <span>{user.celular || user.telefone || t('users.view.emptyPhone') || 'Não informado'}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Building size={14} />
-          <span className="truncate">{user.departamento}</span>
+          <span className="truncate">{user.departamento || t('users.view.emptyDept')}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <User size={14} />
-          <span className="truncate">{user.estabelecimento_nome || 'Não vinculado'}</span>
+          <span className="truncate">{user.estabelecimento_nome || t('establishments.view.notConfigured') || 'Não vinculado'}</span>
         </div>
 
         {/* Login attempts warning */}
@@ -140,7 +163,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-2 py-1 rounded">
             <AlertTriangle size={14} />
             <span className="text-xs font-medium">
-              {user.tentativas_login} tentativa{(user.tentativas_login || 0) > 1 ? 's' : ''} de login
+              {user.tentativas_login} {t('users.view.loginAttempts', { count: user.tentativas_login }) || 'tentativa(s) de login'}
             </span>
           </div>
         )}
@@ -150,7 +173,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           <div className="flex items-center space-x-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
             <Shield size={14} />
             <span className="text-xs font-medium">
-              {user.permissoes?.length || 0} permissão(ões) configurada(s)
+              {user.permissoes?.length || 0} {t('users.view.permissionsConfigured', { count: user.permissoes?.length || 0 }) || 'permissão(ões) configurada(s)'}
             </span>
           </div>
         )}
@@ -159,19 +182,19 @@ export const UserCard: React.FC<UserCardProps> = ({
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
         {/* Status and Profile */}
         <div className="flex items-center justify-between">
-          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
-            {getStatusIcon(user.status)}
-            <span className="ml-1 capitalize">{user.status}</span>
+          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status || '')}`}>
+            {getStatusIcon(user.status || '')}
+            <span className="ml-1 capitalize">{getStatusTranslation(user.status || '')}</span>
           </div>
-          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPerfilColor(user.perfil)}`}>
-            {getPerfilIcon(user.perfil)}
-            <span className="ml-1 capitalize">{user.perfil}</span>
+          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPerfilColor(user.perfil || '')}`}>
+            {getPerfilIcon(user.perfil || '')}
+            <span className="ml-1 capitalize">{getRoleTranslation(user.perfil || '')}</span>
           </div>
         </div>
 
         {/* Last Login */}
         <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          Último login: {formatLastLogin(user.ultimo_login)}
+          {t('users.view.lastLogin') || 'Último login'}: {formatLastLogin(user.ultimo_login)}
         </div>
       </div>
     </div>

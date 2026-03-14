@@ -161,7 +161,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                   />
                 ) : (
                   <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('carriers.logoLabel')}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t('carriers.form.logoLabel')}</span>
                   </div>
                 )}
               </div>
@@ -181,11 +181,11 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.companyNameLabel')}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.companyNameLabel')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{carrier.razaoSocial || t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.fantasyName')}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.fantasyName')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{carrier.fantasia || t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
@@ -198,7 +198,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                       inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                       ${carrier.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                     `}>
-                      {carrier.status === 'ativo' ? t('carriers.status.active') : t('carriers.status.inactive')}
+                      {carrier.status === 'ativo' ? t('carriers.form.status.active') : t('carriers.form.status.inactive')}
                     </span>
                   </div>
                 </div>
@@ -222,7 +222,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <div className="flex items-center space-x-3">
                   <Mail className="text-blue-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.email')}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.email')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{carrier.email}</p>
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <div className="flex items-center space-x-3">
                   <Phone className="text-green-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.phone')}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.phone')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{carrier.phone || t('carriers.view.notInformed')}</p>
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
 
           {/* Transport Modals */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.transportModalsTitle')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.form.transportModalsTitle')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className={`p-4 rounded-lg border-2 ${carrier.modal_rodoviario ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                 <div className="flex items-center space-x-3">
@@ -316,9 +316,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.rodoviario')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.rodoviario')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_rodoviario ? t('carriers.status.active') : t('carriers.status.inactive')}
+                      {carrier.modal_rodoviario ? t('carriers.form.status.active') : t('carriers.form.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -332,9 +332,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.aereo')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.aereo')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_aereo ? t('carriers.status.active') : t('carriers.status.inactive')}
+                      {carrier.modal_aereo ? t('carriers.form.status.active') : t('carriers.form.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -348,9 +348,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.aquaviario')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.aquaviario')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_aquaviario ? t('carriers.status.active') : t('carriers.status.inactive')}
+                      {carrier.modal_aquaviario ? t('carriers.form.status.active') : t('carriers.form.status.inactive')}
                     </p>
                   </div>
                 </div>
@@ -364,9 +364,9 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     <Circle className="text-gray-400" size={24} />
                   )}
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.modals.ferroviario')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.ferroviario')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {carrier.modal_ferroviario ? t('carriers.status.active') : t('carriers.status.inactive')}
+                      {carrier.modal_ferroviario ? t('carriers.form.status.active') : t('carriers.form.status.inactive')}
                     </p>
                   </div>
                 </div>

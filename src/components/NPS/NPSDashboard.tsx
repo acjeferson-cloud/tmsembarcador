@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TrendingUp, Users, Star, Award, Calendar, Filter, Eye, MessageSquare, X, Info, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { npsService } from '../../services/npsService';
 import { InlineMessage } from '../common/InlineMessage';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +21,7 @@ const getDefaultDates = () => {
 };
 
 export const NPSDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const defaultDates = getDefaultDates();
   const { user, currentEstablishment } = useAuth();
   const { isActive: npsActive, isLoading: npsLoading } = useInnovation(
@@ -117,10 +119,10 @@ export const NPSDashboard: React.FC = () => {
   };
 
   const getNPSLabel = (nps: number) => {
-    if (nps >= 75) return 'Excelente';
-    if (nps >= 50) return 'Bom';
-    if (nps >= 0) return 'Regular';
-    return 'Ruim';
+    if (nps >= 75) return t('nps.dashboard.classifications.excellent');
+    if (nps >= 50) return t('nps.dashboard.classifications.good');
+    if (nps >= 0) return t('nps.dashboard.classifications.regular');
+    return t('nps.dashboard.classifications.bad');
   };
 
   const loadAvaliacoes = async () => {
@@ -173,9 +175,9 @@ export const NPSDashboard: React.FC = () => {
   };
 
   const getCategoriaCliente = (nota: number) => {
-    if (nota >= 9) return 'Promotor';
-    if (nota >= 7) return 'Neutro';
-    return 'Detrator';
+    if (nota >= 9) return t('nps.dashboard.categories.promoter');
+    if (nota >= 7) return t('nps.dashboard.categories.neutral');
+    return t('nps.dashboard.categories.detractor');
   };
 
   return (
@@ -184,10 +186,10 @@ export const NPSDashboard: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <TrendingUp className="w-7 h-7 text-blue-600" />
-            Dashboard NPS
+            {t('nps.dashboard.title')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Avaliação de performance das transportadoras
+            {t('nps.dashboard.subtitle')}
           </p>
         </div>
       </div>
@@ -198,8 +200,7 @@ export const NPSDashboard: React.FC = () => {
           <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-yellow-800">
-              <strong>Integração de Serviço de NPS não contratada:</strong> Para visualizar e gerenciar dados do NPS,
-              é necessário ativar o serviço em <strong>Inovações & Sugestões</strong>. Sem a ativação, não há dados para exibir.
+              <strong>{t('nps.dashboard.notActiveWarningTitle')}</strong> {t('nps.dashboard.notActiveWarningDesc')}
             </p>
           </div>
         </div>
@@ -219,7 +220,7 @@ export const NPSDashboard: React.FC = () => {
                 }`}
               >
                 <Users className="w-4 h-4 inline mr-2" />
-                NPS Cliente Final
+                {t('nps.dashboard.npsClientTitle')}
               </button>
               <button
                 onClick={loadAvaliacoes}
@@ -229,7 +230,7 @@ export const NPSDashboard: React.FC = () => {
                     ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
-                title="Ver avaliações recebidas"
+                title={t('nps.dashboard.viewReceivedReviews')}
               >
                 <Eye className="w-4 h-4" />
               </button>
@@ -244,7 +245,7 @@ export const NPSDashboard: React.FC = () => {
                 }`}
               >
                 <Award className="w-4 h-4 inline mr-2" />
-                NPS Interno
+                {t('nps.dashboard.npsInternalTitle')}
               </button>
               <button
                 onClick={loadAvaliacoes}
@@ -254,7 +255,7 @@ export const NPSDashboard: React.FC = () => {
                     ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border-gray-300 dark:border-gray-600'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
-                title="Ver avaliações internas"
+                title={t('nps.dashboard.viewInternalReviews')}
               >
                 <Eye className="w-4 h-4" />
               </button>
@@ -264,10 +265,10 @@ export const NPSDashboard: React.FC = () => {
           <button
             onClick={() => setShowCalculoModal(true)}
             className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
-            title="Como é calculado o NPS?"
+            title={t('nps.dashboard.howCalculatedTooltip')}
           >
             <Info className="w-4 h-4" />
-            <span className="text-sm font-medium">Como é calculado?</span>
+            <span className="text-sm font-medium">{t('nps.dashboard.howCalculated')}</span>
           </button>
 
           <div className="flex gap-2 ml-auto">
@@ -284,7 +285,7 @@ export const NPSDashboard: React.FC = () => {
                 }}
                 className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-gray-600 dark:text-gray-400">até</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('nps.dashboard.until')}</span>
               <input
                 type="date"
                 value={periodoFim ? periodoFim.split('T')[0] : ''}
@@ -309,22 +310,22 @@ export const NPSDashboard: React.FC = () => {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-400 mt-4">Carregando dados...</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-4">{t('nps.dashboard.loading')}</p>
           </div>
         ) : ranking.length === 0 ? (
           <div className="text-center py-12">
             <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 dark:text-gray-400 mb-2">
-              Nenhuma avaliação encontrada para o período selecionado
+              {t('nps.dashboard.noReviews')}
             </p>
-            <InlineMessage type="info" message="Ajuste os filtros de data ou tipo de NPS para visualizar os dados" />
+            <InlineMessage type="info" message={t('nps.dashboard.adjustFilters')} />
           </div>
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Ranking de Transportadoras
+                  {t('nps.dashboard.rankingTitle')}
                 </h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={ranking.slice(0, 5)}>
@@ -339,7 +340,7 @@ export const NPSDashboard: React.FC = () => {
 
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Top 5 Transportadoras
+                  {t('nps.dashboard.top5Title')}
                 </h3>
                 <div className="space-y-3">
                   {ranking.slice(0, 5).map((item, index) => (
@@ -361,7 +362,7 @@ export const NPSDashboard: React.FC = () => {
                           </p>
                           {item.total_respostas && (
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {item.total_respostas} {tipoNPS === 'cliente' ? 'respostas' : 'entregas'}
+                              {item.total_respostas} {tipoNPS === 'cliente' ? t('nps.dashboard.answersWord') : t('nps.dashboard.deliveriesWord')}
                             </p>
                           )}
                         </div>
@@ -382,26 +383,26 @@ export const NPSDashboard: React.FC = () => {
 
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Todas as Transportadoras
+                {t('nps.dashboard.allCarriersTitle')}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-700">
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">
-                        Posição
+                        {t('nps.dashboard.tableHeaders.position')}
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">
-                        Transportadora
+                        {t('nps.dashboard.tableHeaders.carrier')}
                       </th>
                       <th className="text-center py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">
-                        NPS
+                        {t('nps.dashboard.tableHeaders.nps')}
                       </th>
                       <th className="text-center py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">
-                        Classificação
+                        {t('nps.dashboard.tableHeaders.classification')}
                       </th>
                       <th className="text-center py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">
-                        {tipoNPS === 'cliente' ? 'Respostas' : 'Entregas'}
+                        {tipoNPS === 'cliente' ? t('nps.dashboard.tableHeaders.answers') : t('nps.dashboard.tableHeaders.deliveries')}
                       </th>
                     </tr>
                   </thead>
@@ -452,7 +453,7 @@ export const NPSDashboard: React.FC = () => {
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <MessageSquare className="w-6 h-6 text-blue-600" />
-                {tipoNPS === 'cliente' ? 'Avaliações Recebidas dos Clientes' : 'Avaliações Internas'}
+                {tipoNPS === 'cliente' ? t('nps.dashboard.modalReviews.clientTitle') : t('nps.dashboard.modalReviews.internalTitle')}
               </h3>
               <button
                 onClick={() => setShowAvaliacoesModal(false)}
@@ -466,13 +467,13 @@ export const NPSDashboard: React.FC = () => {
               {loadingAvaliacoes ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-600 dark:text-gray-400 mt-4">Carregando avaliações...</p>
+                  <p className="text-gray-600 dark:text-gray-400 mt-4">{t('nps.dashboard.modalReviews.loading')}</p>
                 </div>
               ) : avaliacoes.length === 0 ? (
                 <div className="text-center py-12">
                   <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">
-                    Nenhuma avaliação encontrada para o período selecionado
+                    {t('nps.dashboard.modalReviews.empty')}
                   </p>
                 </div>
               ) : (
@@ -486,7 +487,7 @@ export const NPSDashboard: React.FC = () => {
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cliente</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.client')}</p>
                               <p className="font-semibold text-gray-900 dark:text-white">
                                 {avaliacao.cliente_nome}
                               </p>
@@ -498,14 +499,14 @@ export const NPSDashboard: React.FC = () => {
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Transportador</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.carrier')}</p>
                               <p className="font-semibold text-gray-900 dark:text-white">
                                 {avaliacao.transportador?.razao_social || '-'}
                               </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Nota</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.note')}</p>
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`inline-flex items-center justify-center w-12 h-12 rounded-lg font-bold text-xl border-2 ${getNotaColor(
@@ -537,21 +538,21 @@ export const NPSDashboard: React.FC = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm">
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Data de Envio</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.sendDate')}</p>
                               <p className="text-gray-900 dark:text-white">
                                 {formatDate(avaliacao.data_envio)}
                               </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Data de Resposta</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.replyDate')}</p>
                               <p className="text-gray-900 dark:text-white">
                                 {formatDate(avaliacao.data_resposta)}
                               </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.status')}</p>
                               <span
                                 className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                                   avaliacao.status === 'respondida'
@@ -561,14 +562,14 @@ export const NPSDashboard: React.FC = () => {
                                     : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                                 }`}
                               >
-                                {avaliacao.status === 'respondida' ? 'Respondida' : avaliacao.status === 'pendente' ? 'Pendente' : 'Expirada'}
+                                {avaliacao.status === 'respondida' ? t('nps.dashboard.modalReviews.statusReplied') : avaliacao.status === 'pendente' ? t('nps.dashboard.modalReviews.statusPending') : t('nps.dashboard.modalReviews.statusExpired')}
                               </span>
                             </div>
                           </div>
 
                           {avaliacao.opinioes && Object.keys(avaliacao.opinioes).length > 0 && (
                             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 font-semibold">Opiniões por Critério</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 font-semibold">{t('nps.dashboard.modalReviews.opinionsByCriteria')}</p>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {avaliacao.opinioes.velocidade_processamento && (
                                   <div className="flex items-center gap-2">
@@ -578,7 +579,7 @@ export const NPSDashboard: React.FC = () => {
                                       <ThumbsDown className="w-5 h-5 text-red-600" />
                                     )}
                                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                                      Velocidade no processamento
+                                      {t('nps.dashboard.criterias.processingSpeed')}
                                     </span>
                                   </div>
                                 )}
@@ -590,7 +591,7 @@ export const NPSDashboard: React.FC = () => {
                                       <ThumbsDown className="w-5 h-5 text-red-600" />
                                     )}
                                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                                      Clareza nas informações
+                                      {t('nps.dashboard.criterias.infoClarity')}
                                     </span>
                                   </div>
                                 )}
@@ -602,7 +603,7 @@ export const NPSDashboard: React.FC = () => {
                                       <ThumbsDown className="w-5 h-5 text-red-600" />
                                     )}
                                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                                      Pontualidade na entrega
+                                      {t('nps.dashboard.criterias.deliveryPunctuality')}
                                     </span>
                                   </div>
                                 )}
@@ -614,7 +615,7 @@ export const NPSDashboard: React.FC = () => {
                                       <ThumbsDown className="w-5 h-5 text-red-600" />
                                     )}
                                     <span className="text-sm text-gray-700 dark:text-gray-300">
-                                      Condições da mercadoria
+                                      {t('nps.dashboard.criterias.merchandiseConditions')}
                                     </span>
                                   </div>
                                 )}
@@ -624,7 +625,7 @@ export const NPSDashboard: React.FC = () => {
 
                           {avaliacao.comentario && (
                             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Comentário do Cliente</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('nps.dashboard.modalReviews.clientComment')}</p>
                               <p className="text-gray-700 dark:text-gray-300 italic">"{avaliacao.comentario}"</p>
                             </div>
                           )}
@@ -632,10 +633,10 @@ export const NPSDashboard: React.FC = () => {
                           {avaliacao.pedido_id && (
                             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Pedido: <span className="font-mono">{avaliacao.pedido_id}</span>
+                                {t('nps.dashboard.modalReviews.order')}: <span className="font-mono">{avaliacao.pedido_id}</span>
                                 {avaliacao.avaliar_anonimo && (
                                   <span className="ml-3 text-xs bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
-                                    Anônimo
+                                    {t('nps.dashboard.modalReviews.anonymous')}
                                   </span>
                                 )}
                               </p>
@@ -646,22 +647,22 @@ export const NPSDashboard: React.FC = () => {
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Transportador</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.carrier')}</p>
                               <p className="font-semibold text-gray-900 dark:text-white">
                                 {avaliacao.transportador?.razao_social || '-'}
                               </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Período Avaliado</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.evaluatedPeriod')}</p>
                               <p className="text-sm text-gray-900 dark:text-white">
-                                {new Date(avaliacao.periodo_inicio).toLocaleDateString('pt-BR')} até{' '}
-                                {new Date(avaliacao.periodo_fim).toLocaleDateString('pt-BR')}
+                                {new Date(avaliacao.periodo_inicio).toLocaleDateString(t('nps.dashboard.locale'))} {t('nps.dashboard.until')} {' '}
+                                {new Date(avaliacao.periodo_fim).toLocaleDateString(t('nps.dashboard.locale'))}
                               </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Nota Final</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.finalNote')}</p>
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`inline-flex items-center justify-center w-12 h-12 rounded-lg font-bold text-xl border-2 ${getNotaColor(
@@ -674,7 +675,7 @@ export const NPSDashboard: React.FC = () => {
                             </div>
 
                             <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total de Entregas</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.totalDeliveries')}</p>
                               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                                 {avaliacao.total_entregas || 0}
                               </p>
@@ -683,7 +684,7 @@ export const NPSDashboard: React.FC = () => {
 
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
                             <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Entregas no Prazo</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.onTimeDeliveries')}</p>
                               <p className="text-lg font-bold text-green-600 dark:text-green-400">
                                 {avaliacao.entregas_no_prazo || 0}
                               </p>
@@ -695,7 +696,7 @@ export const NPSDashboard: React.FC = () => {
                             </div>
 
                             <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Com Ocorrência</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.withOccurrences')}</p>
                               <p className="text-lg font-bold text-red-600 dark:text-red-400">
                                 {avaliacao.entregas_com_ocorrencia || 0}
                               </p>
@@ -707,14 +708,14 @@ export const NPSDashboard: React.FC = () => {
                             </div>
 
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tempo Médio Atualização</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.avgUpdate')}</p>
                               <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                                 {avaliacao.tempo_medio_atualizacao ? `${Number(avaliacao.tempo_medio_atualizacao).toFixed(1)}h` : '-'}
                               </p>
                             </div>
 
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tempo Médio POD</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nps.dashboard.modalReviews.avgPod')}</p>
                               <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                                 {avaliacao.tempo_medio_pod ? `${Number(avaliacao.tempo_medio_pod).toFixed(1)}h` : '-'}
                               </p>
@@ -723,7 +724,7 @@ export const NPSDashboard: React.FC = () => {
 
                           {avaliacao.metricas && (
                             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Métricas Detalhadas</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{t('nps.dashboard.modalReviews.detailedMetrics')}</p>
                               <pre className="text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto">
                                 {JSON.stringify(avaliacao.metricas, null, 2)}
                               </pre>
@@ -731,7 +732,7 @@ export const NPSDashboard: React.FC = () => {
                           )}
 
                           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-                            Avaliação criada em: {formatDate(avaliacao.created_at)}
+                            {t('nps.dashboard.modalReviews.createdAt')}: {formatDate(avaliacao.created_at)}
                           </div>
                         </>
                       )}
@@ -744,13 +745,13 @@ export const NPSDashboard: React.FC = () => {
             <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total de {avaliacoes.length} avaliação(ões) encontrada(s)
+                  {t('nps.dashboard.modalReviews.totalReviews', { count: avaliacoes.length })}
                 </p>
                 <button
                   onClick={() => setShowAvaliacoesModal(false)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Fechar
+                  {t('nps.dashboard.modalHowCalc.close')}
                 </button>
               </div>
             </div>
@@ -765,7 +766,7 @@ export const NPSDashboard: React.FC = () => {
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Info className="w-6 h-6 text-blue-600" />
-                Como é Calculado o NPS?
+                {t('nps.dashboard.modalHowCalc.title')}
               </h3>
               <button
                 onClick={() => setShowCalculoModal(false)}
@@ -782,25 +783,23 @@ export const NPSDashboard: React.FC = () => {
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                      NPS Cliente Final
+                      {t('nps.dashboard.modalHowCalc.clientTitle')}
                     </h4>
                   </div>
 
                   <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                    <p className="text-sm leading-relaxed">
-                      O <strong>NPS Cliente Final</strong> mede a satisfação dos clientes finais com o serviço de entrega
-                      prestado pelas transportadoras. O cliente avalia numa escala de 0 a 10.
+                    <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.clientDesc')}}>
                     </p>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
-                      <h5 className="font-semibold text-gray-900 dark:text-white">Categorização dos Clientes:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white">{t('nps.dashboard.modalHowCalc.clientCategory')}:</h5>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-start gap-2">
                           <div className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded font-semibold min-w-[80px] text-center">
                             9-10
                           </div>
                           <div>
-                            <strong>Promotores:</strong> Clientes extremamente satisfeitos que recomendam ativamente o serviço.
+                            <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.clientPromoters')}}></span>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
@@ -808,7 +807,7 @@ export const NPSDashboard: React.FC = () => {
                             7-8
                           </div>
                           <div>
-                            <strong>Neutros:</strong> Clientes satisfeitos mas não entusiasmados, podem mudar para concorrentes.
+                            <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.clientNeutrals')}}></span>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
@@ -816,32 +815,31 @@ export const NPSDashboard: React.FC = () => {
                             0-6
                           </div>
                           <div>
-                            <strong>Detratores:</strong> Clientes insatisfeitos que podem prejudicar a reputação do serviço.
+                            <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.clientDetractors')}}></span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">Fórmula de Cálculo:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">{t('nps.dashboard.modalHowCalc.formula')}:</h5>
                       <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded font-mono text-sm text-center">
                         NPS = % Promotores - % Detratores
                       </div>
                       <p className="text-sm mt-3 text-gray-600 dark:text-gray-400">
-                        O resultado varia de -100 (todos são detratores) até +100 (todos são promotores).
-                        Os clientes neutros não entram no cálculo direto.
+                        {t('nps.dashboard.modalHowCalc.formulaDesc')}
                       </p>
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">Exemplo Prático:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">{t('nps.dashboard.modalHowCalc.practicalEx')}:</h5>
                       <p className="text-sm">
-                        De 100 avaliações recebidas:
+                        {t('nps.dashboard.modalHowCalc.practicalExSub')}
                       </p>
                       <ul className="text-sm space-y-1 ml-4 mt-2">
-                        <li>• 60 clientes deram nota 9-10 (Promotores) = 60%</li>
-                        <li>• 20 clientes deram nota 7-8 (Neutros) = 20%</li>
-                        <li>• 20 clientes deram nota 0-6 (Detratores) = 20%</li>
+                        <li>• {t('nps.dashboard.modalHowCalc.ex1')}</li>
+                        <li>• {t('nps.dashboard.modalHowCalc.ex2')}</li>
+                        <li>• {t('nps.dashboard.modalHowCalc.ex3')}</li>
                       </ul>
                       <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded mt-3 font-mono text-sm">
                         NPS = 60% - 20% = <strong className="text-green-600">+40</strong>
@@ -849,23 +847,23 @@ export const NPSDashboard: React.FC = () => {
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">Interpretação:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">{t('nps.dashboard.modalHowCalc.interpretation')}:</h5>
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded"></div>
-                          <span><strong>-100 a 0:</strong> Zona Crítica</span>
+                          <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.inter1')}}></span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-2 bg-gradient-to-r from-orange-500 to-yellow-500 rounded"></div>
-                          <span><strong>0 a 50:</strong> Zona de Aperfeiçoamento</span>
+                          <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.inter2')}}></span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-2 bg-gradient-to-r from-yellow-500 to-green-500 rounded"></div>
-                          <span><strong>50 a 75:</strong> Zona de Qualidade</span>
+                          <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.inter3')}}></span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded"></div>
-                          <span><strong>75 a 100:</strong> Zona de Excelência</span>
+                          <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.inter4')}}></span>
                         </div>
                       </div>
                     </div>
@@ -877,85 +875,79 @@ export const NPSDashboard: React.FC = () => {
                   <div className="flex items-center gap-2 mb-4">
                     <Award className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-                      NPS Interno
+                      {t('nps.dashboard.modalHowCalc.internalTitle')}
                     </h4>
                   </div>
 
                   <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                    <p className="text-sm leading-relaxed">
-                      O <strong>NPS Interno</strong> é calculado automaticamente pelo sistema com base em métricas
-                      objetivas de performance das transportadoras durante um período específico.
-                    </p>
+                    <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.internalDesc')}}></p>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 dark:text-white mb-3">Métricas Consideradas:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white mb-3">{t('nps.dashboard.modalHowCalc.metricsConsidered')}:</h5>
                       <div className="space-y-3 text-sm">
                         <div className="border-l-4 border-green-500 pl-3">
-                          <strong>Taxa de Entregas no Prazo</strong>
+                          <strong>{t('nps.dashboard.modalHowCalc.mat1_title')}</strong>
                           <p className="text-gray-600 dark:text-gray-400">
-                            Percentual de entregas realizadas dentro do prazo estabelecido.
-                            Maior peso no cálculo final.
+                            {t('nps.dashboard.modalHowCalc.mat1_desc')}
                           </p>
                         </div>
                         <div className="border-l-4 border-red-500 pl-3">
-                          <strong>Taxa de Ocorrências</strong>
+                          <strong>{t('nps.dashboard.modalHowCalc.mat2_title')}</strong>
                           <p className="text-gray-600 dark:text-gray-400">
-                            Percentual de entregas com problemas, avarias, extravios ou outras ocorrências negativas.
-                            Impacta negativamente a nota.
+                            {t('nps.dashboard.modalHowCalc.mat2_desc')}
                           </p>
                         </div>
                         <div className="border-l-4 border-blue-500 pl-3">
-                          <strong>Tempo de Atualização de Status</strong>
+                          <strong>{t('nps.dashboard.modalHowCalc.mat3_title')}</strong>
                           <p className="text-gray-600 dark:text-gray-400">
-                            Tempo médio para atualização do rastreamento. Quanto menor, melhor a nota.
+                            {t('nps.dashboard.modalHowCalc.mat3_desc')}
                           </p>
                         </div>
                         <div className="border-l-4 border-blue-500 pl-3">
-                          <strong>Tempo de Envio do POD</strong>
+                          <strong>{t('nps.dashboard.modalHowCalc.mat4_title')}</strong>
                           <p className="text-gray-600 dark:text-gray-400">
-                            Tempo médio para envio do comprovante de entrega (Proof of Delivery).
-                            Agilidade é valorizada.
+                            {t('nps.dashboard.modalHowCalc.mat4_desc')}
                           </p>
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">Fórmula de Cálculo:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">{t('nps.dashboard.modalHowCalc.formula')}:</h5>
                       <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm space-y-2">
                         <div className="font-mono">
-                          <strong>Nota Base:</strong> (% Entregas no Prazo) × 10
+                          <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.intFormTitle1')}}></span>
                         </div>
                         <div className="font-mono">
-                          <strong>Penalizações:</strong>
+                          <span dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.intFormTitle2')}}></span>
                           <ul className="ml-4 mt-2 space-y-1">
-                            <li>- (% Ocorrências) × 5</li>
-                            <li>- (Atraso Atualização / 24h) × 0.5</li>
-                            <li>- (Atraso POD / 48h) × 0.3</li>
+                            <li>- {t('nps.dashboard.modalHowCalc.intForm1')}</li>
+                            <li>- {t('nps.dashboard.modalHowCalc.intForm2')}</li>
+                            <li>- {t('nps.dashboard.modalHowCalc.intForm3')}</li>
                           </ul>
                         </div>
                       </div>
                       <p className="text-sm mt-3 text-gray-600 dark:text-gray-400">
-                        A nota final é normalizada para ficar entre 0 e 10, depois convertida para escala NPS (-100 a +100).
+                        {t('nps.dashboard.modalHowCalc.intFormDesc')}
                       </p>
                     </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">Exemplo Prático:</h5>
+                      <h5 className="font-semibold text-gray-900 dark:text-white mb-2">{t('nps.dashboard.modalHowCalc.practicalEx')}:</h5>
                       <div className="text-sm space-y-2">
-                        <p className="font-semibold">Transportadora com:</p>
+                        <p className="font-semibold">{t('nps.dashboard.modalHowCalc.intEx1')}</p>
                         <ul className="ml-4 space-y-1">
-                          <li>• 85% de entregas no prazo</li>
-                          <li>• 5% de ocorrências</li>
-                          <li>• Tempo médio de atualização: 12 horas</li>
-                          <li>• Tempo médio de POD: 36 horas</li>
+                          <li>• {t('nps.dashboard.modalHowCalc.intEx2')}</li>
+                          <li>• {t('nps.dashboard.modalHowCalc.intEx3')}</li>
+                          <li>• {t('nps.dashboard.modalHowCalc.intEx4')}</li>
+                          <li>• {t('nps.dashboard.modalHowCalc.intEx5')}</li>
                         </ul>
                         <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded mt-2 font-mono text-xs">
-                          Nota Base: 0.85 × 10 = 8.5<br/>
-                          - Ocorrências: 0.05 × 5 = -0.25<br/>
-                          - Atraso Atualização: (12/24) × 0.5 = -0.25<br/>
-                          - Atraso POD: (36/48) × 0.3 = -0.23<br/>
-                          <strong className="text-green-600">= Nota Final: 7.77 → NPS: +55</strong>
+                          {t('nps.dashboard.modalHowCalc.intCalc1')}<br/>
+                          {t('nps.dashboard.modalHowCalc.intCalc2')}<br/>
+                          {t('nps.dashboard.modalHowCalc.intCalc3')}<br/>
+                          {t('nps.dashboard.modalHowCalc.intCalc4')}<br/>
+                          <strong className="text-green-600">{t('nps.dashboard.modalHowCalc.intCalcFinal')}</strong>
                         </div>
                       </div>
                     </div>
@@ -964,10 +956,9 @@ export const NPSDashboard: React.FC = () => {
                       <div className="flex items-start gap-2">
                         <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                         <div className="text-sm">
-                          <strong className="text-gray-900 dark:text-white">Avaliação Automática:</strong>
+                          <strong className="text-gray-900 dark:text-white" dangerouslySetInnerHTML={{__html: t('nps.dashboard.modalHowCalc.intAutoRating')}}></strong>
                           <p className="text-gray-600 dark:text-gray-400 mt-1">
-                            O NPS Interno é calculado automaticamente pelo sistema ao final de cada período
-                            de avaliação, garantindo objetividade e consistência na análise de performance.
+                            {t('nps.dashboard.modalHowCalc.intAutoRatingDesc')}
                           </p>
                         </div>
                       </div>
@@ -983,7 +974,7 @@ export const NPSDashboard: React.FC = () => {
                   onClick={() => setShowCalculoModal(false)}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  Entendi
+                  {t('nps.dashboard.modalHowCalc.understood')}
                 </button>
               </div>
             </div>

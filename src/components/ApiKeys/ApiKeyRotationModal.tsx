@@ -31,7 +31,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
     if (!newApiKey.trim()) {
       setTestResult({
         valid: false,
-        message: 'Por favor, insira uma chave para testar'
+        message: t('apiKeys.rotationModal.messages.insertKeyTest')
       });
       return;
     }
@@ -45,7 +45,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
     } catch (error) {
       setTestResult({
         valid: false,
-        message: 'Erro ao testar a chave'
+        message: t('apiKeys.rotationModal.messages.testError')
       });
     } finally {
       setIsTesting(false);
@@ -55,7 +55,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
   const handleRotate = async () => {
     if (!newApiKey.trim()) {
       setToast({
-        message: 'Por favor, insira a nova chave de API',
+        message: t('apiKeys.rotationModal.messages.insertNewKey'),
         type: 'warning'
       });
       return;
@@ -63,7 +63,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
 
     if (!rotationReason.trim()) {
       setToast({
-        message: 'Por favor, informe o motivo da rotação',
+        message: t('apiKeys.rotationModal.messages.insertReason'),
         type: 'warning'
       });
       return;
@@ -78,7 +78,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
       }
 
       setToast({
-        message: 'Chave rotacionada com sucesso!',
+        message: t('apiKeys.rotationModal.messages.rotateSuccess'),
         type: 'success'
       });
 
@@ -88,7 +88,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
       }, 1000);
     } catch (error) {
       setToast({
-        message: 'Erro ao rotacionar a chave. Tente novamente.',
+        message: t('apiKeys.rotationModal.messages.rotateError'),
         type: 'error'
       });
     } finally {
@@ -106,7 +106,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Rotacionar Chave de API
+                {t('apiKeys.rotationModal.title')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {apiKey.key_name}
@@ -126,11 +126,9 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
             <div className="flex gap-3">
               <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-800">
-                <p className="font-medium mb-1">Atenção</p>
+                <p className="font-medium mb-1">{t('apiKeys.rotationModal.warningTitle')}</p>
                 <p>
-                  A rotação da chave substituirá a chave atual por uma nova.
-                  Certifique-se de que a nova chave está correta antes de confirmar.
-                  Esta ação ficará registrada no histórico de auditoria.
+                  {t('apiKeys.rotationModal.warningText')}
                 </p>
               </div>
             </div>
@@ -139,7 +137,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Chave Atual
+                {t('apiKeys.rotationModal.currentKey')}
               </label>
               <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <code className="text-sm font-mono text-gray-600 dark:text-gray-400">
@@ -150,14 +148,14 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nova Chave de API *
+                {t('apiKeys.rotationModal.newKey')}
               </label>
               <textarea
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                 rows={3}
-                placeholder="Cole aqui a nova chave de API..."
+                placeholder={t('apiKeys.rotationModal.newKeyPlaceholder')}
               />
             </div>
 
@@ -187,12 +185,12 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
                 {isTesting ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
-                    Testando...
+                    {t('apiKeys.rotationModal.testing')}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    Testar Chave
+                    {t('apiKeys.rotationModal.testKey')}
                   </>
                 )}
               </button>
@@ -200,70 +198,70 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Rotação *
+                {t('apiKeys.rotationModal.rotationType')}
               </label>
               <select
                 value={rotationType}
                 onChange={(e) => setRotationType(e.target.value as any)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="manual">Manual</option>
-                <option value="scheduled">Programada</option>
-                <option value="emergency">Emergência</option>
+                <option value="manual">{t('apiKeys.status.manual')}</option>
+                <option value="scheduled">{t('apiKeys.status.scheduled')}</option>
+                <option value="emergency">{t('apiKeys.status.emergency')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Motivo da Rotação *
+                {t('apiKeys.rotationModal.rotationReason')}
               </label>
               <select
                 value={rotationReason}
                 onChange={(e) => setRotationReason(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Selecione um motivo...</option>
-                <option value="Rotação preventiva de segurança">Rotação preventiva de segurança</option>
-                <option value="Chave comprometida">Chave comprometida</option>
-                <option value="Rotação programada">Rotação programada</option>
-                <option value="Expiração da chave">Expiração da chave</option>
-                <option value="Melhoria de segurança">Melhoria de segurança</option>
-                <option value="Troca de fornecedor">Troca de fornecedor</option>
-                <option value="Outro">Outro</option>
+                <option value="">{t('apiKeys.rotationModal.reasonPlaceholder')}</option>
+                <option value="Rotação preventiva de segurança">{t('apiKeys.rotationModal.reasons.preventive')}</option>
+                <option value="Chave comprometida">{t('apiKeys.rotationModal.reasons.compromised')}</option>
+                <option value="Rotação programada">{t('apiKeys.rotationModal.reasons.scheduled')}</option>
+                <option value="Expiração da chave">{t('apiKeys.rotationModal.reasons.expired')}</option>
+                <option value="Melhoria de segurança">{t('apiKeys.rotationModal.reasons.security')}</option>
+                <option value="Troca de fornecedor">{t('apiKeys.rotationModal.reasons.vendorChange')}</option>
+                <option value="Outro">{t('apiKeys.rotationModal.reasons.other')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notas Adicionais
+                {t('apiKeys.rotationModal.additionalNotes')}
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
-                placeholder="Informações adicionais sobre a rotação..."
+                placeholder={t('apiKeys.rotationModal.notesPlaceholder')}
               />
             </div>
           </div>
 
           <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Informações da Chave Atual
+              {t('apiKeys.rotationModal.currentInfo')}
             </h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Última rotação:</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('apiKeys.card.lastRotation')}</span>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {new Date(apiKey.rotated_at).toLocaleDateString('pt-BR')}
                 </p>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Uso mensal:</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('apiKeys.rotationModal.monthlyUsage')}</span>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {apiKey.monthly_limit
                     ? `${apiKey.current_usage} / ${apiKey.monthly_limit}`
-                    : 'Ilimitado'
+                    : t('apiKeys.rotationModal.unlimited')
                   }
                 </p>
               </div>
@@ -277,7 +275,7 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
             disabled={isLoading}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-50"
           >
-            Cancelar
+            {t('apiKeys.rotationModal.cancel')}
           </button>
           <button
             onClick={handleRotate}
@@ -287,12 +285,12 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
             {isLoading ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
-                Rotacionando...
+                {t('apiKeys.rotationModal.rotating')}
               </>
             ) : (
               <>
                 <RotateCw className="w-4 h-4" />
-                Rotacionar Chave
+                {t('apiKeys.rotationModal.rotate')}
               </>
             )}
           </button>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Sparkles } from 'lucide-react';
 import { InnovationCrud } from '../../services/innovationsCrudService';
+import { useTranslation } from 'react-i18next';
 
 interface InnovationFormProps {
   innovation: InnovationCrud | null;
@@ -22,6 +23,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
   onSave,
   onClose
 }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -54,15 +56,15 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
+      newErrors.name = t('innovations.form.errors.nameRequired');
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Descrição é obrigatória';
+      newErrors.description = t('innovations.form.errors.descRequired');
     }
 
     if (formData.monthly_price < 0) {
-      newErrors.monthly_price = 'Preço não pode ser negativo';
+      newErrors.monthly_price = t('innovations.form.errors.priceNegative');
     }
 
     setErrors(newErrors);
@@ -96,10 +98,10 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {innovation ? 'Editar Inovação' : 'Nova Inovação'}
+                {innovation ? t('innovations.form.editTitle') : t('innovations.form.newTitle')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Preencha os dados da inovação
+                {t('innovations.form.subtitle')}
               </p>
             </div>
           </div>
@@ -115,7 +117,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nome da Inovação *
+                {t('innovations.form.name')}
               </label>
               <input
                 type="text"
@@ -124,7 +126,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                   errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
-                placeholder="Ex: Integração com OpenAI/ChatGPT"
+                placeholder={t('innovations.form.namePlaceholder')}
               />
               {errors.name && (
                 <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -133,7 +135,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Descrição Curta *
+                {t('innovations.form.desc')}
               </label>
               <input
                 type="text"
@@ -142,7 +144,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                   errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
-                placeholder="Ex: Inteligência artificial para análise de dados"
+                placeholder={t('innovations.form.descPlaceholder')}
               />
               {errors.description && (
                 <p className="text-red-500 text-sm mt-1">{errors.description}</p>
@@ -151,20 +153,20 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Descrição Detalhada
+                {t('innovations.form.detailedDesc')}
               </label>
               <textarea
                 value={formData.detailed_description}
                 onChange={(e) => handleChange('detailed_description', e.target.value)}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Descreva os benefícios e funcionalidades da inovação..."
+                placeholder={t('innovations.form.detailedDescPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Preço Mensal (R$) *
+                {t('innovations.form.price')}
               </label>
               <input
                 type="number"
@@ -174,7 +176,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
                   errors.monthly_price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
-                placeholder="0.00"
+                placeholder={t('innovations.form.pricePlaceholder')}
               />
               {errors.monthly_price && (
                 <p className="text-red-500 text-sm mt-1">{errors.monthly_price}</p>
@@ -183,20 +185,20 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ordem de Exibição
+                {t('innovations.form.order')}
               </label>
               <input
                 type="number"
                 value={formData.display_order}
                 onChange={(e) => handleChange('display_order', parseInt(e.target.value) || 0)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="0"
+                placeholder={t('innovations.form.orderPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ícone
+                {t('innovations.form.icon')}
               </label>
               <select
                 value={formData.icon}
@@ -213,7 +215,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Categoria
+                {t('innovations.form.category')}
               </label>
               <select
                 value={formData.category}
@@ -222,7 +224,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
               >
                 {CATEGORY_OPTIONS.map((category) => (
                   <option key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    {t(`innovations.categories.${category}`) || category.charAt(0).toUpperCase() + category.slice(1)}
                   </option>
                 ))}
               </select>
@@ -237,7 +239,7 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Inovação ativa
+                  {t('innovations.form.activeCheck')}
                 </span>
               </label>
             </div>
@@ -249,14 +251,14 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              Cancelar
+              {t('innovations.buttons.cancel')}
             </button>
             <button
               type="submit"
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Save className="w-4 h-4" />
-              <span>{innovation ? 'Atualizar' : 'Salvar'}</span>
+              <span>{innovation ? t('innovations.buttons.update') : t('innovations.buttons.save')}</span>
             </button>
           </div>
         </form>

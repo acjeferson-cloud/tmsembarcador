@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Search, Plus, Filter, Download, RefreshCw, MapPin, Building, Globe, AlertCircle, Upload, Info } from 'lucide-react';
 import { cityTypes, regions } from '../../types/cities';
@@ -22,9 +23,10 @@ import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
 
 export const Cities: React.FC = () => {
+  const { t } = useTranslation();
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Cidades', current: true }
+    { label: t('cities.settings', { defaultValue: 'Configurações' }) },
+    { label: t('cities.title', { defaultValue: 'Cidades' }), current: true }
   ];
 
   const { user } = useAuth();
@@ -99,7 +101,7 @@ export const Cities: React.FC = () => {
       setCitiesList(result.cities);
       setTotalCount(result.totalCount);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar cidades. Tente novamente.', type: 'error' });
+      setToast({ message: t('cities.messages.loadError', { defaultValue: 'Erro ao carregar cidades. Tente novamente.' }), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -140,20 +142,20 @@ export const Cities: React.FC = () => {
         const city = citiesList.find(c => c.id === confirmDialog.cityId);
         await deleteCity(confirmDialog.cityId);
         if (city) {
-          await logDelete('city', confirmDialog.cityId, city, 1, 'Administrador');
+          await logDelete('city', String(confirmDialog.cityId), city, 1, 'Administrador');
         }
-        setToast({ message: 'Cidade excluída com sucesso!', type: 'success' });
+        setToast({ message: t('cities.messages.deleteSuccess', { defaultValue: 'Cidade excluída com sucesso!' }), type: 'success' });
         await loadCities();
         await loadStats();
       } catch (error) {
-        setToast({ message: 'Erro ao excluir cidade. Tente novamente.', type: 'error' });
+        setToast({ message: t('cities.messages.deleteError', { defaultValue: 'Erro ao excluir cidade. Tente novamente.' }), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
   };
 
   const handleSaveCity = async () => {
-    setToast({ message: 'Cidade salva com sucesso!', type: 'success' });
+    setToast({ message: t('cities.messages.saveSuccess', { defaultValue: 'Cidade salva com sucesso!' }), type: 'success' });
     setShowForm(false);
     setEditingCity(null);
     await loadCities();
@@ -170,10 +172,10 @@ export const Cities: React.FC = () => {
   const handleSyncCities = async () => {
     setIsSyncing(true);
     try {
-      setToast({ message: 'Sincronização com API dos Correios iniciada com sucesso! Este processo pode levar alguns minutos para ser concluído.', type: 'info' });
+      setToast({ message: t('cities.messages.syncStart', { defaultValue: 'Sincronização com API dos Correios iniciada com sucesso! Este processo pode levar alguns minutos para ser concluído.' }), type: 'info' });
       await loadStats();
     } catch (error) {
-      setToast({ message: 'Erro ao sincronizar com API dos Correios. Tente novamente.', type: 'error' });
+      setToast({ message: t('cities.messages.syncError', { defaultValue: 'Erro ao sincronizar com API dos Correios. Tente novamente.' }), type: 'error' });
     } finally {
       setIsSyncing(false);
     }
@@ -188,11 +190,11 @@ export const Cities: React.FC = () => {
     setIsImporting(true);
     try {
       const result = await importCitiesFromAlagoas(alagoasCities);
-      setToast({ message: `Importação concluída! ${result.length} cidades de Alagoas foram importadas com sucesso.`, type: 'success' });
+      setToast({ message: t('cities.messages.importSuccess', { count: result.length, defaultValue: `Importação concluída! ${result.length} cidades de Alagoas foram importadas com sucesso.` }), type: 'success' });
       await loadCities();
       await loadStats();
     } catch (error) {
-      setToast({ message: 'Erro ao importar cidades de Alagoas. Tente novamente.', type: 'error' });
+      setToast({ message: t('cities.messages.importError', { defaultValue: 'Erro ao importar cidades de Alagoas. Tente novamente.' }), type: 'error' });
     } finally {
       setIsImporting(false);
     }
@@ -252,8 +254,8 @@ export const Cities: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cidades</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie o cadastro completo de cidades, distritos e povoados do Brasil</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('cities.title', { defaultValue: 'Cidades' })}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('cities.description', { defaultValue: 'Gerencie o cadastro completo de cidades, distritos e povoados do Brasil' })}</p>
         </div>
         <div className="flex items-center space-x-3">
           {stats.total === 0 && isAdmin && (
@@ -263,17 +265,17 @@ export const Cities: React.FC = () => {
               className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               <Upload size={20} className={isImporting ? 'animate-pulse' : ''} />
-              <span>{isImporting ? 'Importando...' : 'Importar Dados'}</span>
+              <span>{isImporting ? t('cities.actions.importing', { defaultValue: 'Importando...' }) : t('cities.actions.importData', { defaultValue: 'Importar Dados' })}</span>
             </button>
           )}
           <button
             onClick={handleSyncCities}
             disabled={isSyncing || !correiosActive || correiosLoading}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            title={!correiosActive ? 'Integração Correios (CEPs) não está ativa' : ''}
+            title={!correiosActive ? t('cities.messages.correiosInactive', { defaultValue: 'Integração Correios (CEPs) não está ativa' }) : ''}
           >
             <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
-            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar API'}</span>
+            <span>{isSyncing ? t('cities.actions.syncing', { defaultValue: 'Sincronizando...' }) : t('cities.actions.syncApi', { defaultValue: 'Sincronizar API' })}</span>
           </button>
           {isAdmin && (
             <button
@@ -281,7 +283,7 @@ export const Cities: React.FC = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               <Plus size={20} />
-              <span>Nova Cidade</span>
+              <span>{t('cities.actions.new', { defaultValue: 'Nova Cidade' })}</span>
             </button>
           )}
         </div>
@@ -293,9 +295,8 @@ export const Cities: React.FC = () => {
           <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-yellow-800">
-              <strong>Integração Correios (CEPs) não contratada:</strong> O botão "Sincronizar API" está desabilitado.
-              Para habilitar a sincronização automática com a API dos Correios, ative o serviço em{' '}
-              <strong>Inovações & Sugestões</strong>.
+              <strong>{t('cities.integration.inactiveTitle', { defaultValue: 'Integração Correios (CEPs) não contratada:' })}</strong> {t('cities.integration.inactiveDesc', { defaultValue: 'O botão "Sincronizar API" está desabilitado. Para habilitar a sincronização automática com a API dos Correios, ative o serviço em ' })}
+              <strong>{t('cities.integration.innovationsMenu', { defaultValue: 'Inovações & Sugestões' })}</strong>.
             </p>
           </div>
         </div>
@@ -305,9 +306,9 @@ export const Cities: React.FC = () => {
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div className="w-full">
-            <h3 className="text-lg font-semibold text-purple-900 mb-2">Base Completa do Brasil - Todas as Regiões</h3>
+            <h3 className="text-lg font-semibold text-purple-900 mb-2">{t('cities.database.title', { defaultValue: 'Base Completa do Brasil - Todas as Regiões' })}</h3>
             <p className="text-purple-800 mb-4">
-              Base completa com {stats.total} localidades de todas as regiões do Brasil: Norte, Nordeste, Centro-Oeste, Sudeste e Sul.
+              {t('cities.database.description', { defaultValue: 'Base completa com {{total}} localidades de todas as regiões do Brasil: Norte, Nordeste, Centro-Oeste, Sudeste e Sul.', total: stats.total })}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200">
@@ -367,7 +368,7 @@ export const Cities: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por nome, código IBGE ou CEP..."
+              placeholder={t('cities.form.searchPlaceholder', { defaultValue: 'Buscar por nome, código IBGE ou CEP...' })}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -385,7 +386,7 @@ export const Cities: React.FC = () => {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="Todos">Todas as Regiões</option>
+            <option value="Todos">{t('cities.filters.allRegions', { defaultValue: 'Todas as Regiões' })}</option>
             {regions.filter(region => region !== 'Todos').map(region => (
               <option key={region} value={region}>
                 {region}
@@ -401,7 +402,7 @@ export const Cities: React.FC = () => {
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="Todos">Todos os Estados</option>
+            <option value="Todos">{t('cities.filters.allStates', { defaultValue: 'Todos os Estados' })}</option>
             {brazilianStates.map(state => (
               <option key={state.id} value={state.abbreviation}>
                 {state.name} ({state.abbreviation})
@@ -419,7 +420,7 @@ export const Cities: React.FC = () => {
           >
             {cityTypes.map(type => (
               <option key={type} value={type}>
-                {type === 'Todos' ? 'Todos os Tipos' : type.charAt(0).toUpperCase() + type.slice(1)}
+                {type === 'Todos' ? t('cities.filters.allTypes', { defaultValue: 'Todos os Tipos' }) : type.charAt(0).toUpperCase() + type.slice(1)}
               </option>
             ))}
           </select>
@@ -429,26 +430,26 @@ export const Cities: React.FC = () => {
             className="border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Download size={18} />
-            <span>Exportar</span>
+            <span>{t('cities.actions.export', { defaultValue: 'Exportar' })}</span>
           </button>
         </div>
 
         {/* Stats */}
         <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-          <span>Total: {totalCount} localidades</span>
-          <span>Página {currentPage} de {totalPages || 1}</span>
+          <span>{t('cities.stats.total', { defaultValue: 'Total:' })} {totalCount} {t('cities.stats.locations', { defaultValue: 'localidades' })}</span>
+          <span>{t('cities.stats.page', { defaultValue: 'Página' })} {currentPage} {t('cities.stats.of', { defaultValue: 'de' })} {totalPages || 1}</span>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Building size={14} className="text-blue-600" />
-              <span>{stats.byType?.cidade || 0} cidades</span>
+              <span>{stats.byType?.cidade || 0} {t('cities.stats.cities', { defaultValue: 'cidades' })}</span>
             </div>
             <div className="flex items-center space-x-1">
               <MapPin size={14} className="text-green-600" />
-              <span>{stats.byType?.distrito || 0} distritos</span>
+              <span>{stats.byType?.distrito || 0} {t('cities.stats.districts', { defaultValue: 'distritos' })}</span>
             </div>
             <div className="flex items-center space-x-1">
               <MapPin size={14} className="text-orange-600" />
-              <span>{stats.byType?.povoado || 0} povoados</span>
+              <span>{stats.byType?.povoado || 0} {t('cities.stats.villages', { defaultValue: 'povoados' })}</span>
             </div>
           </div>
         </div>
@@ -458,7 +459,7 @@ export const Cities: React.FC = () => {
       {isLoading && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Carregando cidades...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('cities.messages.loading', { defaultValue: 'Carregando cidades...' })}</p>
         </div>
       )}
 
@@ -483,7 +484,12 @@ export const Cities: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, totalCount)} de {totalCount} localidades
+              {t('cities.stats.showing', { 
+                defaultValue: 'Mostrando {{start}} a {{end}} de {{total}} localidades',
+                start: (currentPage - 1) * itemsPerPage + 1,
+                end: Math.min(currentPage * itemsPerPage, totalCount),
+                total: totalCount
+              })}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -491,7 +497,7 @@ export const Cities: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                {t('cities.actions.previous', { defaultValue: 'Anterior' })}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -518,7 +524,7 @@ export const Cities: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                {t('cities.actions.next', { defaultValue: 'Próximo' })}
               </button>
             </div>
           </div>
@@ -532,34 +538,33 @@ export const Cities: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhuma cidade encontrada</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou sincronizar com a API dos Correios.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('cities.messages.emptyTitle', { defaultValue: 'Nenhuma cidade encontrada' })}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('cities.messages.emptySubtitle', { defaultValue: 'Tente ajustar os filtros ou sincronizar com a API dos Correios.' })}</p>
         </div>
       )}
 
       {/* API Integration Info */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Base Nacional Completa</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('cities.nationalBase.title', { defaultValue: 'Base Nacional Completa' })}</h3>
         <p className="text-blue-800 mb-4">
-          Este sistema utiliza uma base completa de cidades, distritos e povoados do Brasil, 
-          incluindo faixas de CEP e códigos IBGE de todas as 5 regiões brasileiras.
+          {t('cities.nationalBase.description', { defaultValue: 'Este sistema utiliza uma base completa de cidades, distritos e povoados do Brasil, incluindo faixas de CEP e códigos IBGE de todas as 5 regiões brasileiras.' })}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Cobertura Nacional</p>
-            <p className="text-blue-700">Todas as 5 regiões do Brasil</p>
+            <p className="font-semibold text-blue-900">{t('cities.nationalBase.coverageTitle', { defaultValue: 'Cobertura Nacional' })}</p>
+            <p className="text-blue-700">{t('cities.nationalBase.coverageDesc', { defaultValue: 'Todas as 5 regiões do Brasil' })}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Dados Oficiais</p>
-            <p className="text-blue-700">Informações do IBGE</p>
+            <p className="font-semibold text-blue-900">{t('cities.nationalBase.dataTitle', { defaultValue: 'Dados Oficiais' })}</p>
+            <p className="text-blue-700">{t('cities.nationalBase.dataDesc', { defaultValue: 'Informações do IBGE' })}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Faixas de CEP</p>
-            <p className="text-blue-700">Detalhamento por bairros</p>
+            <p className="font-semibold text-blue-900">{t('cities.nationalBase.cepTitle', { defaultValue: 'Faixas de CEP' })}</p>
+            <p className="text-blue-700">{t('cities.nationalBase.cepDesc', { defaultValue: 'Detalhamento por bairros' })}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Base Completa</p>
-            <p className="text-blue-700">{stats.total} localidades cadastradas</p>
+            <p className="font-semibold text-blue-900">{t('cities.nationalBase.completeTitle', { defaultValue: 'Base Completa' })}</p>
+            <p className="text-blue-700">{t('cities.nationalBase.completeDesc', { defaultValue: '{{total}} localidades cadastradas', total: stats.total })}</p>
           </div>
         </div>
       </div>
@@ -577,14 +582,14 @@ export const Cities: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title={confirmDialog.cityId === -1 ? "Confirmar Importação" : "Confirmar Exclusão"}
+          title={confirmDialog.cityId === -1 ? t('cities.actions.confirmImport', { defaultValue: "Confirmar Importação" }) : t('cities.deleteConfirm.title', { defaultValue: "Confirmar Exclusão" })}
           message={
             confirmDialog.cityId === -1
-              ? `Deseja importar ${alagoasCities.length} cidades de Alagoas para o sistema?`
-              : "Tem certeza que deseja excluir esta cidade? Esta ação não pode ser desfeita."
+              ? t('cities.messages.confirmImportMsg', { count: alagoasCities.length, defaultValue: `Deseja importar ${alagoasCities.length} cidades de Alagoas para o sistema?` })
+              : t('cities.deleteConfirm.message', { defaultValue: "Tem certeza que deseja excluir esta cidade? Esta ação não pode ser desfeita." })
           }
-          confirmText={confirmDialog.cityId === -1 ? "Importar" : "Excluir"}
-          cancelText="Cancelar"
+          confirmText={confirmDialog.cityId === -1 ? t('cities.actions.import', { defaultValue: "Importar" }) : t('cities.actions.delete', { defaultValue: "Excluir" })}
+          cancelText={t('cities.actions.cancel', { defaultValue: "Cancelar" })}
           type={confirmDialog.cityId === -1 ? "info" : "danger"}
           onConfirm={confirmDialog.cityId === -1 ? confirmImportAlagoas : confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

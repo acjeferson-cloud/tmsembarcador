@@ -294,7 +294,7 @@ export const Carriers: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.title')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.form.title')}</h1>
           <p className="text-gray-600 dark:text-gray-400">{t('carriers.subtitle')}</p>
         </div>
         <button 
@@ -419,30 +419,30 @@ export const Carriers: React.FC = () => {
             {/* Transport Modals */}
             {(carrier.modal_rodoviario || carrier.modal_aereo || carrier.modal_aquaviario || carrier.modal_ferroviario) && (
               <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase">{t('carriers.modals.attended')}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase">{t('carriers.form.modals.attended')}</p>
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   {carrier.modal_rodoviario && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200" title={t('carriers.modals.rodoviario')}>
+                    <div className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200" title={t('carriers.form.modals.rodoviario')}>
                       <span className="mr-1">🚛</span>
-                      {t('carriers.modals.rodoviario')}
+                      {t('carriers.form.modals.rodoviario')}
                     </div>
                   )}
                   {carrier.modal_aereo && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-xs font-medium border border-sky-200" title={t('carriers.modals.aereo')}>
+                    <div className="inline-flex items-center px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-xs font-medium border border-sky-200" title={t('carriers.form.modals.aereo')}>
                       <span className="mr-1">✈️</span>
-                      {t('carriers.modals.aereo')}
+                      {t('carriers.form.modals.aereo')}
                     </div>
                   )}
                   {carrier.modal_aquaviario && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-full text-xs font-medium border border-cyan-200" title={t('carriers.modals.aquaviario')}>
+                    <div className="inline-flex items-center px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-full text-xs font-medium border border-cyan-200" title={t('carriers.form.modals.aquaviario')}>
                       <span className="mr-1">🚢</span>
-                      {t('carriers.modals.aquaviario')}
+                      {t('carriers.form.modals.aquaviario')}
                     </div>
                   )}
                   {carrier.modal_ferroviario && (
-                    <div className="inline-flex items-center px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-200" title={t('carriers.modals.ferroviario')}>
+                    <div className="inline-flex items-center px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-medium border border-amber-200" title={t('carriers.form.modals.ferroviario')}>
                       <span className="mr-1">🚂</span>
-                      {t('carriers.modals.ferroviario')}
+                      {t('carriers.form.modals.ferroviario')}
                     </div>
                   )}
                 </div>
@@ -457,11 +457,11 @@ export const Carriers: React.FC = () => {
               <p><strong>CNPJ:</strong> {carrier.cnpj}</p>
               <div className="flex items-center space-x-2">
                 <Phone size={14} />
-                <span>{carrier.phone || t('carriers.notInformed')}</span>
+                <span>{carrier.phone || t('carriers.form.notInformed')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail size={14} />
-                <span>{carrier.email || t('carriers.notInformed')}</span>
+                <span>{carrier.email || t('carriers.form.notInformed')}</span>
               </div>
             </div>
 
@@ -476,7 +476,7 @@ export const Carriers: React.FC = () => {
                     inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                     ${carrier.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                   `}>
-                    {carrier.status === 'ativo' ? t('carriers.status.active') : t('carriers.status.inactive')}
+                    {carrier.status === 'ativo' ? t('carriers.form.status.active') : t('carriers.form.status.inactive')}
                   </div>
                 </div>
               </div>
@@ -502,8 +502,8 @@ export const Carriers: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('carriers.emptyState.title')}</h3>
-          <p className="text-gray-600 dark:text-gray-400">{t('carriers.emptyState.subtitle')}</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('carriers.form.emptyState.title')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('carriers.form.emptyState.subtitle')}</p>
         </div>
       )}
 
@@ -524,7 +524,7 @@ export const Carriers: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('carriers.pagination.previous')}
+                {t('carriers.form.pagination.previous')}
               </button>
 
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -551,7 +551,7 @@ export const Carriers: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('carriers.pagination.next')}
+                {t('carriers.form.pagination.next')}
               </button>
             </div>
           </div>

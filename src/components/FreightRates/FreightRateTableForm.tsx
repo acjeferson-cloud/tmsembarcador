@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Calendar, DollarSign, Clock, Info, Hash, MapPin, User, Package, Edit, Settings, Map, Receipt, AlertTriangle, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, Plus, Trash2, DollarSign, Info, MapPin, User, Package, Edit, Settings, Map, Receipt, AlertTriangle, Copy } from 'lucide-react';
 import { freightRatesService, FreightRateTable, FreightRate } from '../../services/freightRatesService';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { FreightRateValuesForm } from './FreightRateValuesForm';
@@ -18,27 +19,29 @@ interface FreightRateTableFormProps {
 }
 
 export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
+
   onBack,
   onSave,
   table,
   carrierId,
-  carrierName,
   readOnly = false
 }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     nome: table?.nome || '',
     transportador_id: table?.transportador_id || carrierId || '',
     data_inicio: table?.data_inicio || new Date().toISOString().split('T')[0],
     data_fim: table?.data_fim || '',
     status: table?.status || 'ativo' as 'ativo' | 'inativo',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table_type: (table as any)?.table_type || 'Saída' as 'Entrada' | 'Saída',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     modal: (table as any)?.modal || ''
   });
 
   const [tarifas, setTarifas] = useState<FreightRate[]>([]);
   const [carriersList, setCarriersList] = useState<Carrier[]>([]);
   const [availableModals, setAvailableModals] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [showValuesForm, setShowValuesForm] = useState(false);
   const [editingRateValues, setEditingRateValues] = useState<FreightRate | null>(null);
@@ -78,9 +81,13 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     if (!carrier) return;
 
     const modals: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((carrier as any).modal_rodoviario) modals.push('rodoviario');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((carrier as any).modal_aereo) modals.push('aereo');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((carrier as any).modal_aquaviario) modals.push('aquaviario');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((carrier as any).modal_ferroviario) modals.push('ferroviario');
 
     setAvailableModals(modals);
@@ -153,6 +160,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         {
           id: `temp-${Date.now()}`,
           freight_rate_table_id: table?.id || '',
+          data_inicio: formData.data_inicio,
           codigo: newCode,
           ...rateFormData
         }
@@ -190,11 +198,10 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   };
 
   const handleDuplicateRate = async (rate: FreightRate) => {
-    if (window.confirm(`Tem certeza que deseja duplicar a tarifa "${rate.descricao}"?\n\nSerão copiados:\n- Todos os valores e parâmetros\n- Faixas de valores\n- Taxas adicionais\n- Itens restritos\n\nNÃO serão copiadas as cidades vinculadas.`)) {
+    if (window.confirm(`\n${t('carriers.freightRates.form.duplicateConfirm')} "${rate.descricao}"?`)) {
       try {
-        setIsLoading(true);
         await freightRatesService.duplicateRate(rate.id);
-        setToast({ message: 'Tarifa duplicada com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.form.duplicateSuccess'), type: 'success' });
 
         // Recarregar as tarifas
         if (table?.id) {
@@ -205,9 +212,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         }
       } catch (error) {
         console.error('Erro ao duplicar tarifa:', error);
-        setToast({ message: 'Erro ao duplicar tarifa. Tente novamente.', type: 'error' });
-      } finally {
-        setIsLoading(false);
+        setToast({ message: t('carriers.freightRates.form.duplicateError'), type: 'error' });
       }
     }
   };
@@ -291,7 +296,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     }
 
     if (!formData.table_type) {
-      newErrors.table_type = 'Tipo de tabela é obrigatório';
+      newErrors.table_type = t('carriers.freightRates.validation.tableTypeRequired', 'Tipo de tabela é obrigatório');
     }
 
     setErrors(newErrors);
@@ -307,19 +312,17 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     e.preventDefault();
 
     if (!validateForm()) {
-      setToast({ message: 'Por favor, preencha todos os campos obrigatórios.', type: 'error' });
+      setToast({ message: t('carriers.freightRates.form.fillRequired'), type: 'error' });
       return;
     }
 
     if (tarifas.length === 0) {
-      if (!window.confirm('Esta tabela não possui tarifas. Deseja continuar mesmo assim?')) {
+      if (!window.confirm(t('carriers.freightRates.form.confirmNoRates'))) {
         return;
       }
     }
 
     try {
-      setIsLoading(true);
-
       const tableData = {
         nome: formData.nome,
         transportador_id: formData.transportador_id,
@@ -342,7 +345,9 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         console.log('➕ Novas tarifas a adicionar:', novasTarifas.length);
 
         for (const tarifa of novasTarifas) {
-          const { id, detalhes, ...tarifaData } = tarifa;
+          // Extrai campos para não duplicar no objeto passado para createRate
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+          const { id, detalhes, freight_rate_table_id, data_inicio, ...tarifaData } = tarifa as any;
 
           console.log(`➕ Criando nova tarifa: ${tarifa.descricao}`);
           const novaTarifa = await freightRatesService.createRate({
@@ -368,7 +373,8 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
             console.log(`   - Possui ${tarifa.detalhes?.length || 0} detalhes`);
 
             // Remover campos que não devem ser atualizados
-            const { id, freight_rate_table_id, codigo, created_at, updated_at, ...tarifaData } = tarifa;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+            const { id, freight_rate_table_id, codigo, created_at, updated_at, ...tarifaData } = tarifa as any;
 
             // Incluir os detalhes no update
             await freightRatesService.updateRate(id, {
@@ -384,30 +390,29 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         }
 
         console.log('✅ Todas as tarifas foram atualizadas com sucesso!');
-        setToast({ message: 'Tabela de frete atualizada com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.form.saveSuccess'), type: 'success' });
       } else {
         console.log('➕ Criando nova tabela');
         await freightRatesService.createTable(tableData);
-        setToast({ message: 'Tabela de frete criada com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.form.createSuccess'), type: 'success' });
       }
 
       setTimeout(() => {
         onSave();
       }, 1500);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('❌ Erro ao salvar tabela de frete:', error);
       const errorMessage = error?.message || 'Erro desconhecido';
       setToast({ message: `Erro ao salvar tabela de frete: ${errorMessage}`, type: 'error' });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const getTipoAplicacaoLabel = (tipo: string) => {
     switch (tipo) {
-      case 'cidade': return 'Por Cidade';
-      case 'cliente': return 'Por Cliente';
-      case 'produto': return 'Por Produto';
+      case 'cidade': return t('carriers.freightRates.form.byCity');
+      case 'cliente': return t('carriers.freightRates.form.byClient');
+      case 'produto': return t('carriers.freightRates.form.byProduct');
       default: return tipo;
     }
   };
@@ -429,15 +434,15 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Tabelas de Frete</span>
+          <span>{t('carriers.freightRates.form.backToTables')}</span>
         </button>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {readOnly ? 'Visualizar Tabela de Frete' : table ? 'Editar Tabela de Frete' : 'Nova Tabela de Frete'}
+              {readOnly ? t('carriers.freightRates.form.titleView') : table ? t('carriers.freightRates.form.titleEdit') : t('carriers.freightRates.form.titleNew')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              {readOnly ? 'Detalhes completos da tabela e suas tarifas' : 'Preencha os dados da tabela de frete e adicione as tarifas'}
+              {readOnly ? t('carriers.freightRates.form.subtitleView') : t('carriers.freightRates.form.subtitleNew')}
             </p>
           </div>
           {table && (
@@ -448,7 +453,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                 className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
               >
                 <Receipt size={20} />
-                <span>Taxas Adicionais</span>
+                <span>{t('carriers.freightRates.form.additionalFees')}</span>
               </button>
               <button
                 type="button"
@@ -456,7 +461,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
               >
                 <AlertTriangle size={20} />
-                <span>Itens Restritos</span>
+                <span>{t('carriers.freightRates.form.restrictedItems')}</span>
               </button>
             </div>
           )}
@@ -466,12 +471,12 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.freightRates.form.basicInfo')}</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nome da Tabela *
+                {t('carriers.freightRates.form.tableName')}
               </label>
               <input
                 type="text"
@@ -483,7 +488,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.nome ? 'border-red-300' : 'border-gray-300'
                 } ${readOnly ? 'bg-gray-100' : ''}`}
-                placeholder="Ex: Tabela Padrão 2025"
+                placeholder={t('carriers.freightRates.form.tableNamePlaceholder')}
               />
               {errors.nome && (
                 <p className="mt-1 text-sm text-red-600">{errors.nome}</p>
@@ -492,7 +497,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Transportador *
+                {t('carriers.freightRates.form.carrier')}
               </label>
               <select
                 name="transportador_id"
@@ -504,7 +509,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   errors.transportador_id ? 'border-red-300' : 'border-gray-300'
                 } ${(carrierId || readOnly) ? 'bg-gray-100' : ''}`}
               >
-                <option value="">Selecione o transportador</option>
+                <option value="">{t('carriers.freightRates.form.selectCarrier')}</option>
                 {carriersList.map(carrier => (
                   <option key={carrier.id} value={carrier.id}>
                     {carrier.codigo} - {carrier.razao_social}
@@ -518,7 +523,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Data de Início *
+                {t('carriers.freightRates.form.startDate')}
               </label>
               <input
                 type="date"
@@ -538,7 +543,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Data de Fim *
+                {t('carriers.freightRates.form.endDate')}
               </label>
               <input
                 type="date"
@@ -558,7 +563,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Status *
+                {t('carriers.freightRates.form.status')}
               </label>
               <select
                 name="status"
@@ -568,14 +573,14 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                 disabled={readOnly}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${readOnly ? 'bg-gray-100' : ''}`}
               >
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
+                <option value="ativo">{t('carriers.freightRates.form.active')}</option>
+                <option value="inativo">{t('carriers.freightRates.form.inactive')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Tabela *
+                {t('carriers.freightRates.form.tableType')}
               </label>
               <select
                 name="table_type"
@@ -587,8 +592,8 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   errors.table_type ? 'border-red-300' : 'border-gray-300'
                 } ${readOnly ? 'bg-gray-100' : ''}`}
               >
-                <option value="Entrada">Entrada (Frete de Compra)</option>
-                <option value="Saída">Saída (Frete de Venda)</option>
+                <option value="Entrada">{t('carriers.freightRates.form.inbound')}</option>
+                <option value="Saída">{t('carriers.freightRates.form.outbound')}</option>
               </select>
               {errors.table_type && (
                 <p className="mt-1 text-sm text-red-600">{errors.table_type}</p>
@@ -597,7 +602,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Modal de Transporte *
+                {t('carriers.freightRates.form.transportModal')}
               </label>
               <select
                 name="modal"
@@ -611,22 +616,22 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
               >
                 <option value="">
                   {!formData.transportador_id
-                    ? 'Selecione um transportador primeiro'
+                    ? t('carriers.freightRates.form.selectCarrierFirst')
                     : availableModals.length === 0
-                      ? 'Transportador sem modais configurados'
-                      : 'Selecione o modal'}
+                      ? t('carriers.freightRates.form.noModalsConfigured')
+                      : t('carriers.freightRates.form.selectModal')}
                 </option>
-                {availableModals.includes('rodoviario') && <option value="rodoviario">Rodoviário</option>}
-                {availableModals.includes('aereo') && <option value="aereo">Aéreo</option>}
-                {availableModals.includes('aquaviario') && <option value="aquaviario">Aquaviário</option>}
-                {availableModals.includes('ferroviario') && <option value="ferroviario">Ferroviário</option>}
+                {availableModals.includes('rodoviario') && <option value="rodoviario">{t('carriers.freightRates.form.road')}</option>}
+                {availableModals.includes('aereo') && <option value="aereo">{t('carriers.freightRates.form.air')}</option>}
+                {availableModals.includes('aquaviario') && <option value="aquaviario">{t('carriers.freightRates.form.water')}</option>}
+                {availableModals.includes('ferroviario') && <option value="ferroviario">{t('carriers.freightRates.form.rail')}</option>}
               </select>
               {errors.modal && (
                 <p className="mt-1 text-sm text-red-600">{errors.modal}</p>
               )}
               {formData.transportador_id && availableModals.length === 0 && (
                 <p className="mt-1 text-sm text-amber-600">
-                  ⚠️ O transportador selecionado não possui modais configurados. Configure os modais no cadastro do transportador.
+                  {t('carriers.freightRates.form.modalWarning')}
                 </p>
               )}
             </div>
@@ -636,7 +641,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         {/* Rates Section */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Tarifas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.form.rates')}</h2>
             {!readOnly && (
               <button
                 type="button"
@@ -644,7 +649,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors"
               >
                 <Plus size={16} />
-                <span>Adicionar Tarifa</span>
+                <span>{t('carriers.freightRates.form.addRate')}</span>
               </button>
             )}
           </div>
@@ -654,7 +659,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
             <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-md font-medium text-gray-900 dark:text-white">
-                  {editingRateId !== null ? 'Editar Tarifa' : 'Nova Tarifa'}
+                  {editingRateId !== null ? t('carriers.freightRates.form.editRate') : t('carriers.freightRates.form.newRate')}
                 </h3>
                 <button
                   type="button"
@@ -678,7 +683,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Descrição da Tarifa *
+                    {t('carriers.freightRates.form.rateDescription')}
                   </label>
                   <input
                     type="text"
@@ -687,13 +692,13 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                     onChange={handleRateInputChange}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ex: Frete São Paulo → Rio de Janeiro"
+                    placeholder={t('carriers.freightRates.form.rateDescriptionPlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tipo de Aplicação *
+                    {t('carriers.freightRates.form.applicationType')}
                   </label>
                   <select
                     name="tipo_aplicacao"
@@ -702,15 +707,15 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="cidade">Por Cidade</option>
-                    <option value="cliente">Por Cliente</option>
-                    <option value="produto">Por Produto</option>
+                    <option value="cidade">{t('carriers.freightRates.form.byCity')}</option>
+                    <option value="cidade">{t('carriers.freightRates.form.byClient')}</option>
+                    <option value="cidade">{t('carriers.freightRates.form.byProduct')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Prazo de Entrega (dias) *
+                    {t('carriers.freightRates.form.deliveryTime')}
                   </label>
                   <input
                     type="number"
@@ -725,7 +730,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Valor (R$) *
+                    {t('carriers.freightRates.form.value')}
                   </label>
                   <input
                     type="number"
@@ -742,7 +747,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Observações
+                    {t('carriers.freightRates.form.observations')}
                   </label>
                   <textarea
                     name="observacoes"
@@ -750,7 +755,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                     onChange={handleRateInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Informações adicionais sobre a tarifa..."
+                    placeholder={t('carriers.freightRates.form.observationsPlaceholder')}
                   />
                 </div>
               </div>
@@ -761,7 +766,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   onClick={handleAddRate}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
-                  {editingRateId !== null ? 'Atualizar Tarifa' : 'Adicionar Tarifa'}
+                  {editingRateId !== null ? t('carriers.freightRates.form.updateRate') : t('carriers.freightRates.form.addRate')}
                 </button>
               </div>
             </div>
@@ -774,22 +779,22 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Código
+                      {t('carriers.freightRates.form.code')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Descrição
+                      {t('carriers.freightRates.form.description')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Tipo
+                      {t('carriers.freightRates.form.type')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Prazo
+                      {t('carriers.freightRates.form.deadline')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Valor
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Ações
+                      {t('carriers.freightRates.form.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -820,7 +825,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                             type="button"
                             onClick={() => handleOpenRateValues(rate)}
                             className="text-green-600 hover:text-green-900"
-                            title="Valores"
+                            title={t('carriers.freightRates.form.values')}
                           >
                             <Settings size={16} />
                           </button>
@@ -828,7 +833,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                             type="button"
                             onClick={() => handleOpenCitiesModal(rate)}
                             className="text-purple-600 hover:text-purple-900"
-                            title="Cidades"
+                            title={t('carriers.freightRates.form.cities')}
                           >
                             <Map size={16} />
                           </button>
@@ -838,7 +843,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                                 type="button"
                                 onClick={() => handleEditRate(rate)}
                                 className="text-blue-600 hover:text-blue-900"
-                                title="Editar"
+                                title={t('carriers.freightRates.form.editRate')}
                               >
                                 <Edit size={16} />
                               </button>
@@ -870,7 +875,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           ) : (
             <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <DollarSign size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhuma tarifa cadastrada nesta tabela</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">{t('carriers.freightRates.form.noRates')}</p>
               {!readOnly && (
                 <button
                   type="button"
@@ -878,7 +883,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center space-x-2 transition-colors"
                 >
                   <Plus size={16} />
-                  <span>Adicionar Tarifa</span>
+                  <span>{t('carriers.freightRates.form.addRate')}</span>
                 </button>
               )}
             </div>
@@ -889,10 +894,9 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
             <div className="flex items-start space-x-2">
               <Info size={16} className="text-blue-600 mt-0.5" />
               <div>
-                <p className="text-sm text-blue-800 font-medium">Sobre as Tarifas</p>
+                <p className="text-sm text-blue-800 font-medium">{t('carriers.freightRates.form.aboutRatesTitle')}</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  As tarifas podem ser aplicadas por cidade, cliente ou produto. Cada tarifa possui um prazo de entrega estimado e um valor específico.
-                  Você pode adicionar quantas tarifas forem necessárias para compor sua tabela de frete.
+                  {t('carriers.freightRates.form.aboutRatesDesc')}
                 </p>
               </div>
             </div>
@@ -906,14 +910,14 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
             onClick={onBack}
             className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
           >
-            {readOnly ? 'Voltar' : 'Cancelar'}
+            {readOnly ? t('carriers.freightRates.form.back') : t('carriers.freightRates.form.cancel')}
           </button>
           {!readOnly && (
             <button
               type="submit"
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              {table ? 'Atualizar' : 'Salvar'} Tabela
+              {table ? t('carriers.freightRates.form.updateTable') : t('carriers.freightRates.form.saveTable')}
             </button>
           )}
         </div>

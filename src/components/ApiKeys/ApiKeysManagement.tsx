@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Key, Plus, RefreshCw, Search, Filter, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Key, Plus, RefreshCw, Search, TrendingUp, AlertTriangle } from 'lucide-react';
 import { ApiKeyConfig, apiKeysService, ApiKeyUsageStats } from '../../services/apiKeysService';
 import { ApiKeyCard } from './ApiKeyCard';
 import { ApiKeyRotationModal } from './ApiKeyRotationModal';
@@ -14,8 +14,8 @@ export const ApiKeysManagement: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Chaves de API', current: true }
+    { label: t('common.settings', { defaultValue: 'Configurações' }) },
+    { label: t('apiKeys.title'), current: true }
   ];
   const [apiKeys, setApiKeys] = useState<ApiKeyConfig[]>([]);
   const [filteredKeys, setFilteredKeys] = useState<ApiKeyConfig[]>([]);
@@ -44,7 +44,7 @@ export const ApiKeysManagement: React.FC = () => {
   const loadApiKeys = async () => {
     setIsLoading(true);
     try {
-      const data = await apiKeysService.getAllKeys(user?.estabelecimento_id);
+      const data = await apiKeysService.getAllKeys(user?.establishment_id ? String(user.establishment_id) : '');
       setApiKeys(data);
     } catch (error) {
     } finally {
@@ -54,7 +54,7 @@ export const ApiKeysManagement: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const statsData = await apiKeysService.getUsageStats(user?.estabelecimento_id);
+      const statsData = await apiKeysService.getUsageStats(user?.establishment_id ? String(user.establishment_id) : '');
       setStats(statsData);
     } catch (error) {
     }
@@ -62,7 +62,7 @@ export const ApiKeysManagement: React.FC = () => {
 
   const loadAlerts = async () => {
     try {
-      const alertsData = await apiKeysService.checkAlerts(user?.estabelecimento_id);
+      const alertsData = await apiKeysService.checkAlerts(user?.establishment_id ? String(user.establishment_id) : '');
       setAlerts(alertsData);
     } catch (error) {
     }
@@ -103,7 +103,7 @@ export const ApiKeysManagement: React.FC = () => {
   };
 
   const handleDelete = async (key: ApiKeyConfig) => {
-    if (!confirm(`Tem certeza que deseja excluir a chave "${key.key_name}"?`)) {
+    if (!confirm(t('apiKeys.messages.deleteConfirm', { name: key.key_name }))) {
       return;
     }
 
@@ -112,12 +112,12 @@ export const ApiKeysManagement: React.FC = () => {
       await loadApiKeys();
       await loadStats();
       setToast({
-        message: 'Chave de API excluída com sucesso!',
+        message: t('apiKeys.messages.deleteSuccess'),
         type: 'success'
       });
     } catch (error) {
       setToast({
-        message: 'Erro ao excluir a chave. Tente novamente.',
+        message: t('apiKeys.messages.deleteError'),
         type: 'error'
       });
     }
@@ -138,10 +138,10 @@ export const ApiKeysManagement: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Gerenciamento de Chaves de API
+            {t('apiKeys.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Gerencie, rotacione e monitore todas as chaves de API do sistema
+            {t('apiKeys.subtitle')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -150,14 +150,14 @@ export const ApiKeysManagement: React.FC = () => {
             className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <RefreshCw size={20} />
-            <span>Atualizar</span>
+            <span>{t('apiKeys.actions.refresh')}</span>
           </button>
           <button
             onClick={() => setShowFormModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Nova Chave</span>
+            <span>{t('apiKeys.actions.newKey')}</span>
           </button>
         </div>
       </div>
@@ -167,7 +167,7 @@ export const ApiKeysManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Chaves</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('apiKeys.stats.total')}</p>
                 <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.total_keys}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -179,7 +179,7 @@ export const ApiKeysManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ativas</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('apiKeys.stats.active')}</p>
                 <p className="text-2xl font-semibold text-green-600 mt-1">{stats.active_keys}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -191,7 +191,7 @@ export const ApiKeysManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inativas</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('apiKeys.stats.inactive')}</p>
                 <p className="text-2xl font-semibold text-gray-600 dark:text-gray-400 mt-1">{stats.inactive_keys}</p>
               </div>
               <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -203,7 +203,7 @@ export const ApiKeysManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Expirando</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('apiKeys.stats.expiring')}</p>
                 <p className="text-2xl font-semibold text-yellow-600 mt-1">{stats.expiring_soon}</p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -215,7 +215,7 @@ export const ApiKeysManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Acima do Limite</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('apiKeys.stats.overLimit')}</p>
                 <p className="text-2xl font-semibold text-red-600 mt-1">{stats.over_usage_limit}</p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -232,7 +232,7 @@ export const ApiKeysManagement: React.FC = () => {
             <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h3 className="text-sm font-medium text-yellow-800 mb-2">
-                Alertas Ativos ({alerts.length})
+                {t('apiKeys.alerts.activeAlerts', { count: alerts.length })}
               </h3>
               <ul className="space-y-1">
                 {alerts.slice(0, 3).map((alert, index) => (
@@ -242,7 +242,7 @@ export const ApiKeysManagement: React.FC = () => {
                 ))}
                 {alerts.length > 3 && (
                   <li className="text-sm text-yellow-600 font-medium">
-                    +{alerts.length - 3} mais alertas
+                    {t('apiKeys.alerts.moreAlerts', { count: alerts.length - 3 })}
                   </li>
                 )}
               </ul>
@@ -260,7 +260,7 @@ export const ApiKeysManagement: React.FC = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar chaves..."
+                placeholder={t('apiKeys.filters.search')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -272,7 +272,7 @@ export const ApiKeysManagement: React.FC = () => {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">Todos os Tipos</option>
+              <option value="all">{t('apiKeys.filters.allTypes')}</option>
               {uniqueKeyTypes.map(type => (
                 <option key={type} value={type}>
                   {apiKeysService.getKeyTypeLabel(type)}
@@ -285,9 +285,9 @@ export const ApiKeysManagement: React.FC = () => {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">Todos os Status</option>
-              <option value="active">Ativas</option>
-              <option value="inactive">Inativas</option>
+              <option value="all">{t('apiKeys.filters.allStatus')}</option>
+              <option value="active">{t('apiKeys.filters.statusActive')}</option>
+              <option value="inactive">{t('apiKeys.filters.statusInactive')}</option>
             </select>
           </div>
         </div>
@@ -302,8 +302,8 @@ export const ApiKeysManagement: React.FC = () => {
           <Key className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400 mb-2">
             {searchTerm || filterType !== 'all' || filterStatus !== 'all'
-              ? 'Nenhuma chave encontrada com os filtros aplicados'
-              : 'Nenhuma chave de API cadastrada'
+              ? t('apiKeys.empty.filtered')
+              : t('apiKeys.empty.noKeys')
             }
           </p>
           {!searchTerm && filterType === 'all' && filterStatus === 'all' && (
@@ -311,7 +311,7 @@ export const ApiKeysManagement: React.FC = () => {
               onClick={() => setShowFormModal(true)}
               className="mt-4 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Cadastrar Primeira Chave
+              {t('apiKeys.actions.firstKey')}
             </button>
           )}
         </div>
@@ -324,7 +324,6 @@ export const ApiKeysManagement: React.FC = () => {
               onRotate={handleRotate}
               onDelete={handleDelete}
               onViewHistory={handleViewHistory}
-              onRefresh={handleRefresh}
             />
           ))}
         </div>
@@ -333,7 +332,7 @@ export const ApiKeysManagement: React.FC = () => {
       {showRotationModal && selectedKey && (
         <ApiKeyRotationModal
           apiKey={selectedKey}
-          currentUserId={user?.id || null}
+          currentUserId={user?.id ? String(user.id) : null}
           onClose={() => {
             setShowRotationModal(false);
             setSelectedKey(null);
@@ -356,8 +355,8 @@ export const ApiKeysManagement: React.FC = () => {
 
       {showFormModal && (
         <ApiKeyFormModal
-          estabelecimentoId={user?.estabelecimento_id || null}
-          currentUserId={user?.id || null}
+          estabelecimentoId={user?.establishment_id ? String(user.establishment_id) : null}
+          currentUserId={user?.id ? String(user.id) : null}
           onClose={() => setShowFormModal(false)}
           onSuccess={() => {
             handleRefresh();

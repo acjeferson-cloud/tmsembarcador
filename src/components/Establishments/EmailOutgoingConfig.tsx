@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Send, CheckCircle, AlertCircle, Eye, EyeOff, Server, Lock, User, Shield } from 'lucide-react';
 import emailOutgoingConfigService, { EmailOutgoingConfig, EmailOutgoingConfigInput } from '../../services/emailOutgoingConfigService';
 import { Toast, ToastType } from '../common/Toast';
+import { useTranslation } from 'react-i18next';
 
 interface EmailOutgoingConfigProps {
   establishmentId: string;
 }
 
 export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ establishmentId }) => {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<EmailOutgoingConfig | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +59,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
         setIsEditing(true);
       }
     } catch (error: any) {
-      setToast({ message: 'Erro ao carregar configuração', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -68,12 +70,12 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
     // mas o formulário (e o tipo final service) usa sender_email/sender_name
     if (!formData.smtp_host || !formData.smtp_user || !formData.smtp_password ||
         !formData.from_email || !formData.from_name) {
-      setToast({ message: 'Preencha todos os campos obrigatórios', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.fillRequired'), type: 'error' });
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.from_email)) {
-      setToast({ message: 'E-mail remetente inválido', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.invalidSenderEmail'), type: 'error' });
       return;
     }
 
@@ -97,15 +99,15 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
       if (config) {
         await emailOutgoingConfigService.update(config.id, formData);
-        setToast({ message: 'Configuração atualizada com sucesso!', type: 'success' });
+        setToast({ message: t('establishments.form.emailOutgoing.messages.updateSuccess'), type: 'success' });
       } else {
         await emailOutgoingConfigService.create(formData);
-        setToast({ message: 'Configuração criada com sucesso!', type: 'success' });
+        setToast({ message: t('establishments.form.emailOutgoing.messages.createSuccess'), type: 'success' });
       }
 
       await loadConfig();
     } catch (error: any) {
-      setToast({ message: error.message || 'Erro ao salvar configuração', type: 'error' });
+      setToast({ message: error.message || t('establishments.form.emailOutgoing.messages.saveError'), type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -113,17 +115,17 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
   const handleTestEmail = async () => {
     if (!testEmail) {
-      setToast({ message: 'Digite um e-mail para teste', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.typeTestEmail'), type: 'error' });
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
-      setToast({ message: 'E-mail inválido', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.invalidTestEmail'), type: 'error' });
       return;
     }
 
     if (!config) {
-      setToast({ message: 'Salve a configuração antes de testar', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.saveBeforeTest'), type: 'error' });
       return;
     }
 
@@ -146,7 +148,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
         });
       }
     } catch (error: any) {
-      setToast({ message: 'Erro ao testar envio de e-mail', type: 'error' });
+      setToast({ message: t('establishments.form.emailOutgoing.messages.testError'), type: 'error' });
     } finally {
       setIsTesting(false);
     }
@@ -165,28 +167,28 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
           <Mail className="w-8 h-8" />
-          <h3 className="text-2xl font-bold">Configuração de E-mail de Saída</h3>
+          <h3 className="text-2xl font-bold">{t('establishments.form.emailOutgoing.title')}</h3>
         </div>
         <p className="text-blue-100">
-          Configure as credenciais SMTP para envio de e-mails do sistema (notificações, NPS, alertas, etc.)
+          {t('establishments.form.emailOutgoing.subtitle')}
         </p>
       </div>
 
       {config && !isEditing && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Configuração Atual</h4>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{t('establishments.form.emailOutgoing.currentConfig')}</h4>
             <div className="flex items-center gap-2">
               {config.ativo && (
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center gap-1">
                   <CheckCircle className="w-4 h-4" />
-                  Ativa
+                  {t('establishments.form.emailOutgoing.active')}
                 </span>
               )}
               {config.test_email_sent && (
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
                   <CheckCircle className="w-4 h-4" />
-                  Testada
+                  {t('establishments.form.emailOutgoing.tested')}
                 </span>
               )}
             </div>
@@ -196,7 +198,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-start gap-3">
               <Server className="w-5 h-5 text-gray-400 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Servidor SMTP</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.emailOutgoing.smtpServer')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">{config.smtp_host}:{config.smtp_port}</p>
               </div>
             </div>
@@ -204,7 +206,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-gray-400 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Segurança</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.emailOutgoing.security')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">{config.smtp_secure}</p>
               </div>
             </div>
@@ -212,7 +214,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-start gap-3">
               <User className="w-5 h-5 text-gray-400 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Usuário SMTP</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.emailOutgoing.smtpUser')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">{config.smtp_user}</p>
               </div>
             </div>
@@ -220,7 +222,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-gray-400 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Tipo de Autenticação</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.emailOutgoing.authType')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {config.auth_type === 'OAuth2' ? 'OAuth 2.0' : 'LOGIN (Usuário/Senha)'}
                 </p>
@@ -230,7 +232,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-start gap-3">
               <Mail className="w-5 h-5 text-gray-400 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">E-mail Remetente</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.emailOutgoing.senderEmail')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">{config.from_email}</p>
               </div>
             </div>
@@ -238,7 +240,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             <div className="flex items-start gap-3 md:col-span-2">
               <User className="w-5 h-5 text-gray-400 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Nome do Remetente</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.emailOutgoing.senderName')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">{config.from_name}</p>
               </div>
             </div>
@@ -287,14 +289,14 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
       {(isEditing || !config) && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {config ? 'Editar Configuração' : 'Nova Configuração'}
+            {config ? t('establishments.form.emailOutgoing.editConfig') : t('establishments.buttons.new')}
           </h4>
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Servidor SMTP *
+                  {t('establishments.form.emailOutgoing.smtpServer')} *
                 </label>
                 <input
                   type="text"
@@ -307,7 +309,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Porta *
+                  {t('establishments.form.emailOutgoing.portLabel')} *
                 </label>
                 <input
                   type="number"
@@ -320,38 +322,38 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Segurança *
+                {t('establishments.form.emailOutgoing.securityType')} *
               </label>
               <select
                 value={formData.smtp_secure}
                 onChange={(e) => setFormData({ ...formData, smtp_secure: e.target.value as 'TLS' | 'SSL' | 'NONE' })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="TLS">TLS (Recomendado)</option>
-                <option value="SSL">SSL</option>
-                <option value="NONE">Nenhuma</option>
+                <option value="TLS">{t('establishments.form.emailOutgoing.securityOptions.tls')}</option>
+                <option value="SSL">{t('establishments.form.emailOutgoing.securityOptions.ssl')}</option>
+                <option value="NONE">{t('establishments.form.emailOutgoing.securityOptions.none')}</option>
               </select>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                TLS porta 587 | SSL porta 465 | Nenhuma porta 25
+                {t('establishments.form.emailOutgoing.securityHint')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Usuário SMTP *
+                {t('establishments.form.emailOutgoing.smtpUser')} *
               </label>
               <input
                 type="text"
                 value={formData.smtp_user}
                 onChange={(e) => setFormData({ ...formData, smtp_user: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="seu-email@dominio.com"
+                placeholder={t('establishments.form.emailOutgoing.smtpUserPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Senha SMTP *
+                {t('establishments.form.emailOutgoing.smtpPassword')} *
               </label>
               <div className="relative">
                 <input
@@ -375,14 +377,14 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-yellow-800">
-                      <p className="font-semibold mb-1">Gmail requer "Senha de App"</p>
-                      <p className="mb-2">O Gmail não aceita sua senha normal. Você precisa gerar uma "Senha de App":</p>
+                      <p className="font-semibold mb-1">{t('establishments.form.emailOutgoing.gmailWarning')}</p>
+                      <p className="mb-2">{t('establishments.form.emailOutgoing.gmailWarningDesc1')}</p>
                       <ol className="list-decimal ml-4 space-y-1">
-                        <li>Acesse sua <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Conta do Google</a></li>
-                        <li>Ative a "Verificação em duas etapas" se ainda não ativou</li>
-                        <li>Vá em <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Senhas de App</a></li>
-                        <li>Gere uma nova senha para "E-mail" ou "Outro (nome personalizado)"</li>
-                        <li>Use a senha gerada (16 caracteres) no campo acima</li>
+                        <li>{t('establishments.form.emailOutgoing.gmailWarningStep1Text')} <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{t('establishments.form.emailOutgoing.gmailWarningStep1Link')}</a></li>
+                        <li>{t('establishments.form.emailOutgoing.gmailWarningStep2')}</li>
+                        <li>{t('establishments.form.emailOutgoing.gmailWarningStep3Text')} <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{t('establishments.form.emailOutgoing.gmailWarningStep3Link')}</a></li>
+                        <li>{t('establishments.form.emailOutgoing.gmailWarningStep4')}</li>
+                        <li>{t('establishments.form.emailOutgoing.gmailWarningStep5')}</li>
                       </ol>
                     </div>
                   </div>
@@ -392,15 +394,15 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Autenticação *
+                {t('establishments.form.emailOutgoing.authType')} *
               </label>
               <select
                 value={formData.auth_type}
                 onChange={(e) => setFormData({ ...formData, auth_type: e.target.value as 'LOGIN' | 'OAuth2' })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="LOGIN">LOGIN (Usuário/Senha)</option>
-                <option value="OAuth2">OAuth 2.0</option>
+                <option value="LOGIN">{t('establishments.form.emailOutgoing.authTypeLogin')}</option>
+                <option value="OAuth2">{t('establishments.form.emailOutgoing.authTypeOauth2')}</option>
               </select>
             </div>
 
@@ -408,20 +410,20 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               <>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Client ID *
+                    {t('establishments.form.emailOutgoing.clientId')} *
                   </label>
                   <input
                     type="text"
                     value={formData.oauth2_client_id}
                     onChange={(e) => setFormData({ ...formData, oauth2_client_id: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Digite o Client ID fornecido pelo provedor"
+                    placeholder={t('establishments.form.emailOutgoing.clientIdPlaceholder')}
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Client Secret *
+                    {t('establishments.form.emailOutgoing.clientSecret')} *
                   </label>
                   <div className="relative">
                     <input
@@ -429,7 +431,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
                       value={formData.oauth2_client_secret}
                       onChange={(e) => setFormData({ ...formData, oauth2_client_secret: e.target.value })}
                       className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Digite o Client Secret"
+                      placeholder={t('establishments.form.emailOutgoing.clientSecretPlaceholder')}
                     />
                     <button
                       type="button"
@@ -443,14 +445,14 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Refresh Token *
+                    {t('establishments.form.emailOutgoing.refreshToken')} *
                   </label>
                   <input
                     type="text"
                     value={formData.oauth2_refresh_token}
                     onChange={(e) => setFormData({ ...formData, oauth2_refresh_token: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Digite o Refresh Token"
+                    placeholder={t('establishments.form.emailOutgoing.refreshTokenPlaceholder')}
                   />
                 </div>
 
@@ -458,11 +460,9 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
                   <div className="flex items-start gap-2">
                     <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-blue-800 font-medium">Sobre OAuth 2.0</p>
+                      <p className="text-sm text-blue-800 font-medium">{t('establishments.form.emailOutgoing.aboutOauth2')}</p>
                       <p className="text-sm text-blue-700 mt-1">
-                        Para usar OAuth 2.0, você precisa configurar uma aplicação no console do provedor de e-mail
-                        (Google, Microsoft, etc.) e obter o Client ID, Client Secret e Refresh Token.
-                        Consulte a documentação do seu provedor para mais informações.
+                        {t('establishments.form.emailOutgoing.aboutOauth2Desc')}
                       </p>
                     </div>
                   </div>
@@ -472,40 +472,40 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                E-mail Remetente *
+                {t('establishments.form.emailOutgoing.senderEmail')} *
               </label>
               <input
                 type="email"
                 value={formData.from_email}
                 onChange={(e) => setFormData({ ...formData, from_email: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="noreply@empresa.com"
+                placeholder={t('establishments.form.emailOutgoing.senderEmailPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nome do Remetente *
+                {t('establishments.form.emailOutgoing.senderName')} *
               </label>
               <input
                 type="text"
                 value={formData.from_name}
                 onChange={(e) => setFormData({ ...formData, from_name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="TMS - Sistema de Gestão"
+                placeholder={t('establishments.form.emailOutgoing.senderNamePlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                E-mail para Respostas (Opcional)
+                {t('establishments.form.emailOutgoing.replyToEmail')}
               </label>
               <input
                 type="email"
                 value={formData.reply_to_email}
                 onChange={(e) => setFormData({ ...formData, reply_to_email: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="contato@empresa.com"
+                placeholder={t('establishments.form.emailOutgoing.replyToEmailPlaceholder')}
               />
             </div>
 
@@ -518,7 +518,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <label htmlFor="ativo" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                Configuração ativa (usada para envio de e-mails)
+                {t('establishments.form.emailOutgoing.activeConfig')}
               </label>
             </div>
           </div>
@@ -543,7 +543,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               {isSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Salvando...
+                  {t('establishments.buttons.save')}...
                 </>
               ) : (
                 <>
@@ -561,23 +561,23 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <Send className="w-6 h-6 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Testar Envio de E-mail</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('establishments.form.emailOutgoing.testEmail')}</h3>
             </div>
 
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Digite um e-mail para receber uma mensagem de teste e validar a configuração SMTP.
+              {t('establishments.form.emailOutgoing.testEmailDialog.desc')}
             </p>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                E-mail de Teste
+                {t('establishments.form.emailOutgoing.testEmailDialog.testEmail')}
               </label>
               <input
                 type="email"
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="seu-email@exemplo.com"
+                placeholder={t('establishments.form.emailOutgoing.testEmailDialog.testEmailPlaceholder')}
                 onKeyPress={(e) => e.key === 'Enter' && handleTestEmail()}
               />
             </div>

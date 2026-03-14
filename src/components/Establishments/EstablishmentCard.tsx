@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit, Trash2, Eye, Building, MapPin, Hash, FileText, Mail } from 'lucide-react';
 import { Establishment } from '../../services/establishmentsService';
+import { useTranslation } from 'react-i18next';
 
 interface EstablishmentCardProps {
   establishment: Establishment;
@@ -15,6 +16,8 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   onEdit, 
   onDelete 
 }) => {
+  const { t } = useTranslation();
+
   const getTypeColor = (tipo: string) => {
     switch (tipo) {
       case 'matriz': return 'bg-blue-100 text-blue-800';
@@ -43,21 +46,21 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
           <button 
             onClick={() => onView(establishment)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Visualizar"
+            title={t('establishments.buttons.view')}
           >
             <Eye size={16} />
           </button>
           <button 
             onClick={() => onEdit(establishment)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Editar"
+            title={t('establishments.buttons.edit')}
           >
             <Edit size={16} />
           </button>
           <button 
             onClick={() => onDelete(establishment.id)}
             className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-            title="Excluir"
+            title={t('establishments.buttons.delete')}
           >
             <Trash2 size={16} />
           </button>
@@ -105,13 +108,13 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
       
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="text-sm">
-          <span className="text-gray-600 dark:text-gray-400">Tipo:</span>
-          <span className="font-semibold text-gray-900 dark:text-white ml-1 capitalize">{establishment.tipo}</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('establishments.form.fields.type')}:</span>
+          <span className="font-semibold text-gray-900 dark:text-white ml-1 capitalize">{establishment.tipo === 'matriz' ? t('establishments.form.fields.typeOptions.matriz') : establishment.tipo === 'filial' ? t('establishments.form.fields.typeOptions.filial') : establishment.tipo}</span>
         </div>
         <div className="text-right flex items-center space-x-2">
           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(establishment.tipo)}`}>
             <Building size={14} className="mr-1" />
-            <span className="capitalize">{establishment.tipo}</span>
+            <span className="capitalize">{establishment.tipo === 'matriz' ? t('establishments.form.fields.typeOptions.matriz') : establishment.tipo === 'filial' ? t('establishments.form.fields.typeOptions.filial') : establishment.tipo}</span>
           </div>
           
           {hasEmailConfig && (

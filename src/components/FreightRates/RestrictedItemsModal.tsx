@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Search, Edit, Trash2, AlertTriangle, Save } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { restrictedItemsService, RestrictedItem } from '../../services/restrictedItemsService';
 import { Toast } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -15,6 +16,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
   freightRateTableName,
   onClose
 }) => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<RestrictedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,9 +85,9 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       const result = await restrictedItemsService.delete(confirmDialog.itemId);
       if (result.success) {
         await loadItems();
-        setToast({ message: 'Item restrito excluído com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.restrictedItems.deleteSuccess'), type: 'success' });
       } else {
-        setToast({ message: result.error || 'Erro ao excluir item', type: 'error' });
+        setToast({ message: result.error || t('carriers.freightRates.restrictedItems.deleteError'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -95,22 +97,22 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
     e.preventDefault();
 
     if (formData.ncm_code && formData.ncm_code.length > 50) {
-      setToast({ message: 'NCM deve ter no máximo 50 caracteres', type: 'error' });
+      setToast({ message: t('carriers.freightRates.restrictedItems.ncmMaxLength'), type: 'error' });
       return;
     }
 
     if (formData.ean_code && formData.ean_code.length > 50) {
-      setToast({ message: 'EAN deve ter no máximo 50 caracteres', type: 'error' });
+      setToast({ message: t('carriers.freightRates.restrictedItems.eanMaxLength'), type: 'error' });
       return;
     }
 
     if (formData.ncm_code && !/^[0-9.]+$/.test(formData.ncm_code)) {
-      setToast({ message: 'NCM deve conter apenas números e pontos', type: 'error' });
+      setToast({ message: t('carriers.freightRates.restrictedItems.ncmFormat'), type: 'error' });
       return;
     }
 
     if (formData.ean_code && !/^[0-9.]+$/.test(formData.ean_code)) {
-      setToast({ message: 'EAN deve conter apenas números e pontos', type: 'error' });
+      setToast({ message: t('carriers.freightRates.restrictedItems.eanFormat'), type: 'error' });
       return;
     }
 
@@ -126,19 +128,19 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       const result = await restrictedItemsService.update(editingItem.id, itemData);
       if (result.success) {
         await loadItems();
-        setToast({ message: 'Item restrito atualizado com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.restrictedItems.updateSuccess'), type: 'success' });
         setShowForm(false);
       } else {
-        setToast({ message: result.error || 'Erro ao atualizar item', type: 'error' });
+        setToast({ message: result.error || t('carriers.freightRates.restrictedItems.updateError'), type: 'error' });
       }
     } else {
       const result = await restrictedItemsService.create(itemData);
       if (result.success) {
         await loadItems();
-        setToast({ message: 'Item restrito cadastrado com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.restrictedItems.saveSuccess'), type: 'success' });
         setShowForm(false);
       } else {
-        setToast({ message: result.error || 'Erro ao cadastrar item', type: 'error' });
+        setToast({ message: result.error || t('carriers.freightRates.restrictedItems.saveError'), type: 'error' });
       }
     }
   };
@@ -156,7 +158,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                 <AlertTriangle className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Itens Restritos</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.restrictedItems.title')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{freightRateTableName}</p>
               </div>
             </div>
@@ -177,7 +179,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                   <div className="flex-1 flex gap-2">
                     <input
                       type="text"
-                      placeholder="Buscar por código, descrição, NCM ou EAN..."
+                      placeholder={t('carriers.freightRates.restrictedItems.searchPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -188,7 +190,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                       className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg flex items-center gap-2 transition-colors"
                     >
                       <Search className="w-4 h-4" />
-                      Buscar
+                      {t('carriers.freightRates.restrictedItems.search')}
                     </button>
                   </div>
                   <button
@@ -196,7 +198,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                     className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-2 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    Adicionar Item
+                    {t('carriers.freightRates.restrictedItems.addItem')}
                   </button>
                 </div>
 
@@ -204,7 +206,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                 {loading ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-400">Carregando itens restritos...</p>
+                    <p className="text-gray-600 dark:text-gray-400">{t('carriers.freightRates.restrictedItems.loading')}</p>
                   </div>
                 ) : filteredItems.length > 0 ? (
                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -212,19 +214,19 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                       <thead className="bg-gray-50 dark:bg-gray-900">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Código
+                            {t('carriers.freightRates.restrictedItems.code')}
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Descrição
+                            {t('carriers.freightRates.restrictedItems.description')}
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            NCM
+                            {t('carriers.freightRates.restrictedItems.ncm')}
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            EAN
+                            {t('carriers.freightRates.restrictedItems.ean')}
                           </th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Ações
+                            {t('carriers.freightRates.restrictedItems.actions')}
                           </th>
                         </tr>
                       </thead>
@@ -248,14 +250,14 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                                 <button
                                   onClick={() => handleEdit(item)}
                                   className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                  title="Editar"
+                                  title={t('carriers.freightRates.restrictedItems.edit')}
                                 >
                                   <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(item.id!)}
                                   className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                  title="Excluir"
+                                  title={t('carriers.freightRates.restrictedItems.delete')}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -269,16 +271,16 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                 ) : (
                   <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300">
                     <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">Nenhum item restrito cadastrado</p>
+                    <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">{t('carriers.freightRates.restrictedItems.noItemsRegistered')}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                      Adicione itens que não podem ser transportados por este transportador
+                      {t('carriers.freightRates.restrictedItems.addItemsThatCannotBeTransported')}
                     </p>
                     <button
                       onClick={handleAdd}
                       className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg inline-flex items-center gap-2 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
-                      Adicionar Primeiro Item
+                      {t('carriers.freightRates.restrictedItems.addFirstItem')}
                     </button>
                   </div>
                 )}
@@ -291,11 +293,10 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                     <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5" />
                     <div>
                       <h3 className="text-sm font-medium text-orange-900 mb-1">
-                        Atenção: Item Restrito
+                        {t('carriers.freightRates.restrictedItems.attentionRestrictedItem')}
                       </h3>
                       <p className="text-sm text-orange-700">
-                        Itens cadastrados aqui não poderão ser transportados por este transportador.
-                        O sistema bloqueará automaticamente cotações, coletas e romaneios que contenham estes produtos.
+                        {t('carriers.freightRates.restrictedItems.itemsCannotBeTransported')}
                       </p>
                     </div>
                   </div>
@@ -304,7 +305,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Código do Item *
+                      {t('carriers.freightRates.restrictedItems.itemCode')}
                     </label>
                     <input
                       type="text"
@@ -315,12 +316,12 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="Ex: PROD-12345"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Código conforme cadastro no ERP (máx. 50 caracteres)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.freightRates.restrictedItems.codeHelp')}</p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Código NCM
+                      {t('carriers.freightRates.restrictedItems.ncmCode')}
                     </label>
                     <input
                       type="text"
@@ -330,12 +331,12 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="Ex: 1234.56.78"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Máx. 50 caracteres (números e pontos)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.freightRates.restrictedItems.ncmHelp')}</p>
                   </div>
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Descrição do Item *
+                      {t('carriers.freightRates.restrictedItems.itemDescription')}
                     </label>
                     <input
                       type="text"
@@ -346,12 +347,12 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="Ex: Produto inflamável"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Descrição detalhada do item (máx. 200 caracteres)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.freightRates.restrictedItems.descriptionHelp')}</p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Código EAN
+                      {t('carriers.freightRates.restrictedItems.eanCode')}
                     </label>
                     <input
                       type="text"
@@ -361,7 +362,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       placeholder="Ex: 7891234567890"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Máx. 50 caracteres (números e pontos)</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.freightRates.restrictedItems.eanHelp')}</p>
                   </div>
                 </div>
 
@@ -371,14 +372,14 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                     onClick={() => setShowForm(false)}
                     className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                   >
-                    Cancelar
+                    {t('carriers.freightRates.restrictedItems.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{editingItem ? 'Atualizar' : 'Salvar'}</span>
+                    <span>{editingItem ? t('carriers.freightRates.restrictedItems.update') : t('carriers.freightRates.restrictedItems.save')}</span>
                   </button>
                 </div>
               </form>
@@ -389,7 +390,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
           {!showForm && (
             <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <strong>Total de itens restritos:</strong> {items.length}
+                <strong>{t('carriers.freightRates.restrictedItems.totalItems')}</strong> {items.length}
               </p>
             </div>
           )}
@@ -406,8 +407,8 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        title="Confirmar Exclusão"
-        message="Tem certeza que deseja excluir este item restrito? Esta ação não pode ser desfeita."
+        title={t('carriers.freightRates.restrictedItems.confirmDeleteTitle')}
+        message={t('carriers.freightRates.restrictedItems.confirmDeleteMessage')}
         onConfirm={confirmDelete}
         onCancel={() => setConfirmDialog({ isOpen: false })}
       />

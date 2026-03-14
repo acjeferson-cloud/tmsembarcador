@@ -46,10 +46,6 @@ const BusinessPartners: React.FC = () => {
     { label: t('businessPartners.title', 'Parceiros de Negócios'), href: '/business-partners' }
   ];
 
-  const handleCloseModal = () => {
-    setEditingPartner(null);
-  };
-
   const filteredPartners = businessPartners.filter(partner => {
     const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          partner.document.includes(searchTerm) ||
@@ -149,16 +145,16 @@ const BusinessPartners: React.FC = () => {
       const dataToSave = {
         name: partnerData.name,
         document: partnerData.document,
-        document_type: partnerData.documentType,
+        documentType: partnerData.documentType,
         email: partnerData.email,
         phone: partnerData.phone,
         type: partnerData.type,
         status: partnerData.status,
         observations: partnerData.observations,
         website: partnerData.website,
-        tax_regime: partnerData.taxRegime,
-        credit_limit: partnerData.creditLimit,
-        payment_terms: partnerData.paymentTerms,
+        taxRegime: partnerData.taxRegime,
+        creditLimit: partnerData.creditLimit,
+        paymentTerms: partnerData.paymentTerms,
         notes: partnerData.notes,
         contacts: partnerData.contacts?.map((c: any) => ({
           name: c.name || '',
@@ -166,29 +162,29 @@ const BusinessPartners: React.FC = () => {
           phone: c.phone || '',
           position: c.position || '',
           department: c.department || '',
-          is_primary: c.is_primary || false,
-          receive_email_notifications: c.receive_email_notifications ?? true,
-          receive_whatsapp_notifications: c.receive_whatsapp_notifications ?? true,
+          isPrimary: c.isPrimary || false,
+          receiveEmailNotifications: c.receiveEmailNotifications ?? true,
+          receiveWhatsappNotifications: c.receiveWhatsappNotifications ?? true,
           // Email notification preferences
-          email_notify_order_created: c.email_notify_order_created ?? false,
-          email_notify_order_invoiced: c.email_notify_order_invoiced ?? false,
-          email_notify_awaiting_pickup: c.email_notify_awaiting_pickup ?? false,
-          email_notify_picked_up: c.email_notify_picked_up ?? false,
-          email_notify_in_transit: c.email_notify_in_transit ?? false,
-          email_notify_out_for_delivery: c.email_notify_out_for_delivery ?? false,
-          email_notify_delivered: c.email_notify_delivered ?? false,
+          emailNotifyOrderCreated: c.emailNotifyOrderCreated ?? false,
+          emailNotifyOrderInvoiced: c.emailNotifyOrderInvoiced ?? false,
+          emailNotifyAwaitingPickup: c.emailNotifyAwaitingPickup ?? false,
+          emailNotifyPickedUp: c.emailNotifyPickedUp ?? false,
+          emailNotifyInTransit: c.emailNotifyInTransit ?? false,
+          emailNotifyOutForDelivery: c.emailNotifyOutForDelivery ?? false,
+          emailNotifyDelivered: c.emailNotifyDelivered ?? false,
           // WhatsApp notification preferences
-          whatsapp_notify_order_created: c.whatsapp_notify_order_created ?? false,
-          whatsapp_notify_order_invoiced: c.whatsapp_notify_order_invoiced ?? false,
-          whatsapp_notify_awaiting_pickup: c.whatsapp_notify_awaiting_pickup ?? false,
-          whatsapp_notify_picked_up: c.whatsapp_notify_picked_up ?? false,
-          whatsapp_notify_in_transit: c.whatsapp_notify_in_transit ?? false,
-          whatsapp_notify_out_for_delivery: c.whatsapp_notify_out_for_delivery ?? false,
-          whatsapp_notify_delivered: c.whatsapp_notify_delivered ?? false
+          whatsappNotifyOrderCreated: c.whatsappNotifyOrderCreated ?? false,
+          whatsappNotifyOrderInvoiced: c.whatsappNotifyOrderInvoiced ?? false,
+          whatsappNotifyAwaitingPickup: c.whatsappNotifyAwaitingPickup ?? false,
+          whatsappNotifyPickedUp: c.whatsappNotifyPickedUp ?? false,
+          whatsappNotifyInTransit: c.whatsappNotifyInTransit ?? false,
+          whatsappNotifyOutForDelivery: c.whatsappNotifyOutForDelivery ?? false,
+          whatsappNotifyDelivered: c.whatsappNotifyDelivered ?? false
         })) || [],
         addresses: partnerData.addresses?.filter((a: any) => {
           // Filtrar apenas endereços que têm os campos mínimos preenchidos
-          return a.street && a.city && a.state && a.zip_code;
+          return a.street && a.city && a.state && a.zipCode;
         }).map((a: any) => ({
           type: a.type || 'commercial',
           street: a.street,
@@ -197,9 +193,9 @@ const BusinessPartners: React.FC = () => {
           neighborhood: a.neighborhood || '',
           city: a.city,
           state: a.state,
-          zip_code: a.zip_code,
+          zipCode: a.zipCode,
           country: a.country || 'Brasil',
-          is_primary: a.is_primary || false
+          isPrimary: a.isPrimary || false
         })) || []
       };
 

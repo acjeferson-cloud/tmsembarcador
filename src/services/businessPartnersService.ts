@@ -1,59 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { BusinessPartnerAddress } from '../types';
 
-export interface BusinessPartner {
-  id?: string;
-  name: string;
-  document: string;
-  document_type: 'cpf' | 'cnpj';
-  email: string;
-  phone: string;
-  type: 'customer' | 'supplier' | 'both';
-  status: 'active' | 'inactive';
-  observations?: string;
-  website?: string;
-  tax_regime?: 'simples' | 'presumido' | 'real' | 'mei';
-  credit_limit?: number;
-  payment_terms?: number;
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: number;
-  updated_by?: number;
-  contacts?: BusinessPartnerContact[];
-  addresses?: BusinessPartnerAddress[];
-}
 
-interface BusinessPartnerContact {
-  id?: string;
-  partner_id?: string;
-  name: string;
-  email: string;
-  phone: string;
-  position?: string;
-  department?: string;
-  is_primary: boolean;
-  receive_email_notifications: boolean;
-  receive_whatsapp_notifications: boolean;
-  // Email notification preferences
-  email_notify_order_created?: boolean;
-  email_notify_order_invoiced?: boolean;
-  email_notify_awaiting_pickup?: boolean;
-  email_notify_picked_up?: boolean;
-  email_notify_in_transit?: boolean;
-  email_notify_out_for_delivery?: boolean;
-  email_notify_delivered?: boolean;
-  // WhatsApp notification preferences
-  whatsapp_notify_order_created?: boolean;
-  whatsapp_notify_order_invoiced?: boolean;
-  whatsapp_notify_awaiting_pickup?: boolean;
-  whatsapp_notify_picked_up?: boolean;
-  whatsapp_notify_in_transit?: boolean;
-  whatsapp_notify_out_for_delivery?: boolean;
-  whatsapp_notify_delivered?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+import { BusinessPartner } from '../types';
 
 export const businessPartnersService = {
   async getAll(): Promise<BusinessPartner[]> {
@@ -99,7 +47,7 @@ export const businessPartnersService = {
         id: item.id,
         name: item.razao_social || item.nome_fantasia || '',
         document: item.cpf_cnpj || '',
-        document_type: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
+        documentType: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
         email: item.email || '',
         phone: item.telefone || '',
         type: item.tipo === 'cliente' ? 'customer' as const :
@@ -107,15 +55,23 @@ export const businessPartnersService = {
         status: item.ativo ? 'active' as const : 'inactive' as const,
         observations: item.observacoes || '',
         website: item.website || '',
-        tax_regime: item.regime_tributario || '',
-        credit_limit: item.limite_credito || 0,
-        payment_terms: item.prazo_pagamento || 30,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        contacts: item.contacts || [],
-        addresses: (item.addresses || []).map(addr => ({
+        taxRegime: item.regime_tributario || '',
+        creditLimit: item.limite_credito || 0,
+        paymentTerms: item.prazo_pagamento || 30,
+        notes: item.notas_adicionais || '',
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        contacts: (item.contacts || []).map((c: any) => ({
+          ...c,
+          isPrimary: c.is_primary ?? c.isPrimary ?? false,
+          receiveEmailNotifications: c.receive_email_notifications ?? c.receiveEmailNotifications ?? true,
+          receiveWhatsappNotifications: c.receive_whatsapp_notifications ?? c.receiveWhatsappNotifications ?? true
+        })),
+        addresses: (item.addresses || []).map((addr: any) => ({
           ...addr,
-          type: addr.address_type || addr.type
+          type: addr.address_type || addr.type,
+          zipCode: addr.zip_code || addr.zipCode || '',
+          isPrimary: addr.is_primary ?? addr.isPrimary ?? false
         }))
       }));
 
@@ -150,7 +106,7 @@ export const businessPartnersService = {
         id: data.id,
         name: data.razao_social || data.nome_fantasia || '',
         document: data.cpf_cnpj || '',
-        document_type: data.tipo_pessoa === 'juridica' ? 'cnpj' : 'cpf',
+        documentType: data.tipo_pessoa === 'juridica' ? 'cnpj' : 'cpf',
         email: data.email || '',
         phone: data.telefone || '',
         type: data.tipo === 'cliente' ? 'customer' :
@@ -158,15 +114,23 @@ export const businessPartnersService = {
         status: data.ativo ? 'active' : 'inactive',
         observations: data.observacoes || '',
         website: data.website || '',
-        tax_regime: data.regime_tributario || '',
-        credit_limit: data.limite_credito || 0,
-        payment_terms: data.prazo_pagamento || 30,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        contacts: data.contacts || [],
-        addresses: (data.addresses || []).map(addr => ({
+        taxRegime: data.regime_tributario || '',
+        creditLimit: data.limite_credito || 0,
+        paymentTerms: data.prazo_pagamento || 30,
+        notes: data.notas_adicionais || '',
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        contacts: (data.contacts || []).map((c: any) => ({
+          ...c,
+          isPrimary: c.is_primary ?? c.isPrimary ?? false,
+          receiveEmailNotifications: c.receive_email_notifications ?? c.receiveEmailNotifications ?? true,
+          receiveWhatsappNotifications: c.receive_whatsapp_notifications ?? c.receiveWhatsappNotifications ?? true
+        })),
+        addresses: (data.addresses || []).map((addr: any) => ({
           ...addr,
-          type: addr.address_type || addr.type
+          type: addr.address_type || addr.type,
+          zipCode: addr.zip_code || addr.zipCode || '',
+          isPrimary: addr.is_primary ?? addr.isPrimary ?? false
         }))
       };
     } catch (error) {
@@ -207,7 +171,7 @@ export const businessPartnersService = {
       if (existingPartner) {
         return {
           success: false,
-          error: `Já existe um parceiro cadastrado com este ${partnerData.document_type === 'cpf' ? 'CPF' : 'CNPJ'}: ${existingPartner.razao_social}`
+          error: `Já existe um parceiro cadastrado com este ${partnerData.documentType === 'cpf' ? 'CPF' : 'CNPJ'}: ${existingPartner.razao_social}`
         };
       }
 
@@ -217,19 +181,25 @@ export const businessPartnersService = {
         environment_id,
         codigo: partnerData.document || '', // temporário
         tipo: partnerData.type === 'customer' ? 'cliente' : partnerData.type === 'supplier' ? 'fornecedor' : 'ambos',
-        tipo_pessoa: partnerData.document_type === 'cnpj' ? 'juridica' : 'fisica',
+        tipo_pessoa: partnerData.documentType === 'cnpj' ? 'juridica' : 'fisica',
         razao_social: partnerData.name,
         cpf_cnpj: partnerData.document,
         email: partnerData.email,
         telefone: partnerData.phone,
         website: partnerData.website || null,
-        regime_tributario: partnerData.tax_regime || null,
-        prazo_pagamento: partnerData.payment_terms || 30,
-        limite_credito: partnerData.credit_limit || 0,
+        regime_tributario: partnerData.taxRegime || null,
+        prazo_pagamento: partnerData.paymentTerms || 30,
+        limite_credito: partnerData.creditLimit || 0,
         observacoes: partnerData.observations || null,
+        notas_adicionais: partnerData.notes || null,
         ativo: partnerData.status === 'active'
       };
 
+      console.log('[businessPartnersService] Creating partner with DB data:', {
+        ...partnerDbData,
+        limite_credito: partnerDbData.limite_credito,
+        notas_adicionais: partnerDbData.notas_adicionais
+      });
 
 
       const { data: newPartner, error: partnerError } = await supabase
@@ -251,9 +221,46 @@ export const businessPartnersService = {
       if (contacts && contacts.length > 0) {
 
         const contactsToInsert = contacts.map(contact => {
-          const { id: _, ...contactWithoutId } = contact;
+          const {
+            id: _,
+            isPrimary,
+            receiveEmailNotifications,
+            receiveWhatsappNotifications,
+            emailNotifyOrderCreated,
+            emailNotifyOrderInvoiced,
+            emailNotifyAwaitingPickup,
+            emailNotifyPickedUp,
+            emailNotifyInTransit,
+            emailNotifyOutForDelivery,
+            emailNotifyDelivered,
+            whatsappNotifyOrderCreated,
+            whatsappNotifyOrderInvoiced,
+            whatsappNotifyAwaitingPickup,
+            whatsappNotifyPickedUp,
+            whatsappNotifyInTransit,
+            whatsappNotifyOutForDelivery,
+            whatsappNotifyDelivered,
+            ...contactWithoutId
+          } = contact;
           return {
             ...contactWithoutId,
+            is_primary: isPrimary ?? false,
+            receive_email_notifications: receiveEmailNotifications ?? true,
+            receive_whatsapp_notifications: receiveWhatsappNotifications ?? true,
+            email_notify_order_created: emailNotifyOrderCreated,
+            email_notify_order_invoiced: emailNotifyOrderInvoiced,
+            email_notify_awaiting_pickup: emailNotifyAwaitingPickup,
+            email_notify_picked_up: emailNotifyPickedUp,
+            email_notify_in_transit: emailNotifyInTransit,
+            email_notify_out_for_delivery: emailNotifyOutForDelivery,
+            email_notify_delivered: emailNotifyDelivered,
+            whatsapp_notify_order_created: whatsappNotifyOrderCreated,
+            whatsapp_notify_order_invoiced: whatsappNotifyOrderInvoiced,
+            whatsapp_notify_awaiting_pickup: whatsappNotifyAwaitingPickup,
+            whatsapp_notify_picked_up: whatsappNotifyPickedUp,
+            whatsapp_notify_in_transit: whatsappNotifyInTransit,
+            whatsapp_notify_out_for_delivery: whatsappNotifyOutForDelivery,
+            whatsapp_notify_delivered: whatsappNotifyDelivered,
             partner_id: newPartner.id,
             organization_id,
             environment_id,
@@ -262,9 +269,9 @@ export const businessPartnersService = {
           };
         });
 
-        const { error: contactsError } = await supabase
+        const { error: contactsError } = await (supabase as any)
           .from('business_partner_contacts')
-          .insert(contactsToInsert);
+          .insert(contactsToInsert as any);
 
         if (contactsError) {
 
@@ -280,7 +287,7 @@ export const businessPartnersService = {
 
 
           // Validar campos obrigatórios antes de inserir
-          if (!address.type || !address.street || !address.city || !address.state || !address.zip_code) {
+          if (!address.type || !address.street || !address.city || !address.state || !address.zipCode) {
 
             return {
               success: false,
@@ -318,7 +325,7 @@ export const businessPartnersService = {
           }
 
           // Limpar e validar CEP
-          const cleanZipCode = address.zip_code.replace(/\D/g, '');
+          const cleanZipCode = address.zipCode.replace(/\D/g, '');
           if (cleanZipCode.length !== 8) {
 
             return { success: false, error: 'CEP deve conter exatamente 8 dígitos' };
@@ -332,7 +339,7 @@ export const businessPartnersService = {
             organization_id,
             environment_id,
             city_id,
-            address_type: addressType,
+            address_type: addressType as any,
             street: address.street.trim(),
             number: address.number?.trim() || null,
             complement: address.complement?.trim() || null,
@@ -341,7 +348,7 @@ export const businessPartnersService = {
             state: address.state.trim().toUpperCase(),
             zip_code: cleanZipCode,
             country: address.country?.trim() || 'Brasil',
-            is_primary: address.is_primary || false,
+            is_primary: address.isPrimary || false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -410,7 +417,7 @@ export const businessPartnersService = {
         if (existingPartner) {
           return {
             success: false,
-            error: `Já existe um parceiro cadastrado com este ${partnerData.document_type === 'cpf' ? 'CPF' : 'CNPJ'}: ${existingPartner.razao_social}`
+            error: `Já existe um parceiro cadastrado com este ${partnerData.documentType === 'cpf' ? 'CPF' : 'CNPJ'}: ${existingPartner.razao_social}`
           };
         }
       }
@@ -419,19 +426,25 @@ export const businessPartnersService = {
       const partnerDbData: any = {};
       if (partnerData.name) partnerDbData.razao_social = partnerData.name;
       if (partnerData.document) partnerDbData.cpf_cnpj = partnerData.document;
-      if (partnerData.document_type) partnerDbData.tipo_pessoa = partnerData.document_type === 'cnpj' ? 'juridica' : 'fisica';
+      if (partnerData.documentType) partnerDbData.tipo_pessoa = partnerData.documentType === 'cnpj' ? 'juridica' : 'fisica';
       if (partnerData.email) partnerDbData.email = partnerData.email;
       if (partnerData.phone) partnerDbData.telefone = partnerData.phone;
       if (partnerData.type) partnerDbData.tipo = partnerData.type === 'customer' ? 'cliente' : partnerData.type === 'supplier' ? 'fornecedor' : 'ambos';
       if (partnerData.status) partnerDbData.ativo = partnerData.status === 'active';
       if (partnerData.observations !== undefined) partnerDbData.observacoes = partnerData.observations;
       if (partnerData.website !== undefined) partnerDbData.website = partnerData.website;
-      if (partnerData.tax_regime !== undefined) partnerDbData.regime_tributario = partnerData.tax_regime;
-      if (partnerData.payment_terms !== undefined) partnerDbData.prazo_pagamento = partnerData.payment_terms;
-      if (partnerData.credit_limit !== undefined) partnerDbData.limite_credito = partnerData.credit_limit;
+      if (partnerData.taxRegime !== undefined) partnerDbData.regime_tributario = partnerData.taxRegime;
+      if (partnerData.paymentTerms !== undefined) partnerDbData.prazo_pagamento = partnerData.paymentTerms;
+      if (partnerData.creditLimit !== undefined) partnerDbData.limite_credito = partnerData.creditLimit;
+      if (partnerData.notes !== undefined) partnerDbData.notas_adicionais = partnerData.notes;
 
       partnerDbData.updated_at = new Date().toISOString();
 
+      console.log('[businessPartnersService] Updating partner id', id, 'with DB data:', {
+        ...partnerDbData,
+        limite_credito: partnerDbData.limite_credito,
+        notas_adicionais: partnerDbData.notas_adicionais
+      });
 
       const { error: partnerError } = await supabase
         .from('business_partners')
@@ -464,9 +477,46 @@ export const businessPartnersService = {
         if (contacts.length > 0) {
 
           const contactsToInsert = contacts.map(contact => {
-            const { id: _, ...contactWithoutId } = contact;
+            const {
+              id: _,
+              isPrimary,
+              receiveEmailNotifications,
+              receiveWhatsappNotifications,
+              emailNotifyOrderCreated,
+              emailNotifyOrderInvoiced,
+              emailNotifyAwaitingPickup,
+              emailNotifyPickedUp,
+              emailNotifyInTransit,
+              emailNotifyOutForDelivery,
+              emailNotifyDelivered,
+              whatsappNotifyOrderCreated,
+              whatsappNotifyOrderInvoiced,
+              whatsappNotifyAwaitingPickup,
+              whatsappNotifyPickedUp,
+              whatsappNotifyInTransit,
+              whatsappNotifyOutForDelivery,
+              whatsappNotifyDelivered,
+              ...contactWithoutId
+            } = contact;
             return {
               ...contactWithoutId,
+              is_primary: isPrimary ?? false,
+              receive_email_notifications: receiveEmailNotifications ?? true,
+              receive_whatsapp_notifications: receiveWhatsappNotifications ?? true,
+              email_notify_order_created: emailNotifyOrderCreated,
+              email_notify_order_invoiced: emailNotifyOrderInvoiced,
+              email_notify_awaiting_pickup: emailNotifyAwaitingPickup,
+              email_notify_picked_up: emailNotifyPickedUp,
+              email_notify_in_transit: emailNotifyInTransit,
+              email_notify_out_for_delivery: emailNotifyOutForDelivery,
+              email_notify_delivered: emailNotifyDelivered,
+              whatsapp_notify_order_created: whatsappNotifyOrderCreated,
+              whatsapp_notify_order_invoiced: whatsappNotifyOrderInvoiced,
+              whatsapp_notify_awaiting_pickup: whatsappNotifyAwaitingPickup,
+              whatsapp_notify_picked_up: whatsappNotifyPickedUp,
+              whatsapp_notify_in_transit: whatsappNotifyInTransit,
+              whatsapp_notify_out_for_delivery: whatsappNotifyOutForDelivery,
+              whatsapp_notify_delivered: whatsappNotifyDelivered,
               partner_id: id,
               organization_id,
               environment_id,
@@ -477,9 +527,9 @@ export const businessPartnersService = {
 
 
 
-          const { error: contactsError } = await supabase
+          const { error: contactsError } = await (supabase as any)
             .from('business_partner_contacts')
-            .insert(contactsToInsert);
+            .insert(contactsToInsert as any);
 
           if (contactsError) {
 
@@ -535,16 +585,16 @@ export const businessPartnersService = {
               organization_id,
               environment_id,
               city_id,
-              address_type: address.type,
+              address_type: address.type as any,
               street: address.street,
               number: address.number,
               complement: address.complement || null,
               neighborhood: address.neighborhood,
               city: address.city,
               state: address.state,
-              zip_code: address.zip_code,
+              zip_code: address.zipCode,
               country: address.country || 'Brasil',
-              is_primary: address.is_primary || false,
+              is_primary: address.isPrimary || false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
@@ -642,11 +692,9 @@ export const businessPartnersService = {
 
 
       if (deleteError) {
-
-
-
-
-
+        if (deleteError.code === '23503') {
+          return { success: false, error: 'Não é possível excluir este parceiro pois ele está vinculado a um ou mais pedidos de frete ou cadastros.' };
+        }
         return { success: false, error: `Erro ao excluir: ${deleteError.message}` };
       }
 
@@ -682,17 +730,27 @@ export const businessPartnersService = {
         id: item.id,
         name: item.razao_social || item.nome_fantasia || '',
         document: item.cpf_cnpj || '',
-        document_type: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
+        documentType: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
         email: item.email || '',
         phone: item.telefone || '',
         type: item.tipo === 'cliente' ? 'customer' as const :
               item.tipo === 'fornecedor' ? 'supplier' as const : 'both' as const,
         status: item.ativo ? 'active' as const : 'inactive' as const,
         observations: item.observacoes || '',
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        contacts: item.contacts || [],
-        addresses: item.addresses || []
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        contacts: (item.contacts || []).map((c: any) => ({
+          ...c,
+          isPrimary: c.is_primary ?? c.isPrimary ?? false,
+          receiveEmailNotifications: c.receive_email_notifications ?? c.receiveEmailNotifications ?? true,
+          receiveWhatsappNotifications: c.receive_whatsapp_notifications ?? c.receiveWhatsappNotifications ?? true
+        })),
+        addresses: (item.addresses || []).map((addr: any) => ({
+          ...addr,
+          type: addr.address_type || addr.type,
+          zipCode: addr.zip_code || '',
+          isPrimary: addr.is_primary || false
+        }))
       }));
 
       return mapped;
@@ -727,17 +785,32 @@ export const businessPartnersService = {
         id: item.id,
         name: item.razao_social || item.nome_fantasia || '',
         document: item.cpf_cnpj || '',
-        document_type: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
+        documentType: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
         email: item.email || '',
         phone: item.telefone || '',
         type: item.tipo === 'cliente' ? 'customer' as const :
               item.tipo === 'fornecedor' ? 'supplier' as const : 'both' as const,
         status: item.ativo ? 'active' as const : 'inactive' as const,
         observations: item.observacoes || '',
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        contacts: item.contacts || [],
-        addresses: item.addresses || []
+        website: item.website || '',
+        taxRegime: item.regime_tributario || '',
+        creditLimit: item.limite_credito || 0,
+        paymentTerms: item.prazo_pagamento || 30,
+        notes: item.notas_adicionais || '',
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        contacts: (item.contacts || []).map((c: any) => ({
+          ...c,
+          isPrimary: c.is_primary ?? c.isPrimary ?? false,
+          receiveEmailNotifications: c.receive_email_notifications ?? c.receiveEmailNotifications ?? true,
+          receiveWhatsappNotifications: c.receive_whatsapp_notifications ?? c.receiveWhatsappNotifications ?? true
+        })),
+        addresses: (item.addresses || []).map((addr: any) => ({
+          ...addr,
+          type: addr.address_type || addr.type,
+          zipCode: addr.zip_code || addr.zipCode || '',
+          isPrimary: addr.is_primary ?? addr.isPrimary ?? false
+        }))
       }));
 
       return mapped;

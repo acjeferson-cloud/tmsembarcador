@@ -47,13 +47,13 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
   const getRotationTypeLabel = (type: string) => {
     switch (type) {
       case 'manual':
-        return 'Manual';
+        return t('apiKeys.status.manual');
       case 'scheduled':
-        return 'Programada';
+        return t('apiKeys.status.scheduled');
       case 'emergency':
-        return 'Emergência';
+        return t('apiKeys.status.emergency');
       case 'expired':
-        return 'Expirada';
+        return t('apiKeys.status.expired');
       default:
         return type;
     }
@@ -80,7 +80,7 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Histórico de Rotações
+                {t('apiKeys.historyModal.title')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {apiKey.key_name}
@@ -103,7 +103,7 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
           ) : history.length === 0 ? (
             <div className="text-center py-12">
               <History className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">Nenhuma rotação registrada ainda</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('apiKeys.historyModal.noRotations')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -126,7 +126,7 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
                           </span>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {item.rotation_reason || 'Sem motivo especificado'}
+                          {item.rotation_reason || t('apiKeys.rotationModal.reasonNoSpec', { defaultValue: 'Sem motivo especificado' })}
                         </p>
                       </div>
                     </div>
@@ -150,7 +150,7 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="p-3 bg-red-50 rounded border border-red-100">
                       <span className="text-xs text-red-600 font-medium block mb-1">
-                        Chave Anterior (Hash)
+                        {t('apiKeys.historyModal.previousKeyHash')}
                       </span>
                       <code className="text-xs font-mono text-red-700 break-all">
                         {item.old_key_hash || 'N/A'}
@@ -158,7 +158,7 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
                     </div>
                     <div className="p-3 bg-green-50 rounded border border-green-100">
                       <span className="text-xs text-green-600 font-medium block mb-1">
-                        Chave Nova (Hash)
+                        {t('apiKeys.historyModal.newKeyHash')}
                       </span>
                       <code className="text-xs font-mono text-green-700 break-all">
                         {item.new_key_hash}
@@ -169,14 +169,14 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
                   {item.rotated_by && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <User className="w-3 h-3" />
-                      <span>Rotacionado por: {item.rotated_by}</span>
+                      <span>{t('apiKeys.historyModal.rotatedBy', { user: item.rotated_by })}</span>
                     </div>
                   )}
 
                   {item.metadata && Object.keys(item.metadata).length > 0 && (
                     <details className="mt-3">
                       <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:text-gray-300">
-                        Metadados
+                        {t('apiKeys.historyModal.metadata')}
                       </summary>
                       <pre className="mt-2 p-2 bg-gray-50 dark:bg-gray-900 rounded text-xs overflow-x-auto">
                         {JSON.stringify(item.metadata, null, 2)}
@@ -192,11 +192,9 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
             <div className="flex gap-3">
               <AlertTriangle className="w-5 h-5 text-blue-600 flex-shrink-0" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Sobre o Histórico</p>
+                <p className="font-medium mb-1">{t('apiKeys.historyModal.aboutHistory')}</p>
                 <p>
-                  O histórico registra todas as rotações de chaves com hashes SHA-256 das chaves
-                  (não as chaves em si) para fins de auditoria e compliance. As chaves antigas
-                  nunca são armazenadas por questões de segurança.
+                  {t('apiKeys.historyModal.historyDescription')}
                 </p>
               </div>
             </div>
@@ -208,7 +206,7 @@ export const ApiKeyHistoryModal: React.FC<ApiKeyHistoryModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
           >
-            Fechar
+            {t('apiKeys.historyModal.close')}
           </button>
         </div>
       </div>

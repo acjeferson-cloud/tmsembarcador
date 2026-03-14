@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Edit, DollarSign, Sparkles, Check } from 'lucide-react';
+import { Edit, Sparkles, Check, DollarSign, X } from 'lucide-react';
 import { InnovationCrud } from '../../services/innovationsCrudService';
+import { useTranslation } from 'react-i18next';
 
 interface InnovationViewProps {
   innovation: InnovationCrud;
@@ -13,6 +14,8 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
   onClose,
   onEdit
 }) => {
+  const { t } = useTranslation();
+
   const formatPrice = (price: number): string => {
     return price.toFixed(2);
   };
@@ -42,7 +45,7 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
                 {innovation.name}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {innovation.category.charAt(0).toUpperCase() + innovation.category.slice(1)}
+                {t(`innovations.categories.${innovation.category}`) || innovation.category.charAt(0).toUpperCase() + innovation.category.slice(1)}
               </p>
             </div>
           </div>
@@ -50,13 +53,14 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
             <button
               onClick={onEdit}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Editar"
+              title={t('innovations.buttons.edit')}
             >
               <Edit className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title={t('innovations.buttons.close')}
             >
               <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
@@ -68,25 +72,25 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Sobre esta inovação
+                  {t('innovations.card.about')}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
                   {innovation.description}
                 </p>
               </div>
               <div className="text-right ml-4 flex-shrink-0">
-                <p className="text-xs text-gray-600 dark:text-gray-400">A partir de</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{t('innovations.card.startingAt')}</p>
                 <p className="text-3xl font-bold text-blue-600">
                   R$ {formatPrice(innovation.monthly_price)}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">por mês</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{t('innovations.card.perMonth')}</p>
               </div>
             </div>
 
             {innovation.detailed_description && (
               <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-2 text-sm">
-                  Descrição Detalhada
+                  {t('innovations.card.detailedDesc')}
                 </h4>
                 <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
                   {innovation.detailed_description}
@@ -97,16 +101,16 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
             <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800 flex items-center justify-between">
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <DollarSign className="w-4 h-4" />
-                <span>Será adicionado à sua mensalidade</span>
+                <span>{t('innovations.card.addedToBill')}</span>
               </div>
               {innovation.is_active ? (
                 <span className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded-full text-sm font-medium">
                   <Check className="w-4 h-4" />
-                  <span>Ativo</span>
+                  <span>{t('innovations.card.active')}</span>
                 </span>
               ) : (
                 <span className="px-3 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
-                  Inativo
+                  {t('innovations.card.inactive')}
                 </span>
               )}
             </div>
@@ -114,28 +118,28 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ícone</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('innovations.card.icon')}</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {innovation.icon}
               </p>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ordem de Exibição</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('innovations.card.displayOrder')}</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {innovation.display_order}
               </p>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Criado em</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('innovations.card.createdAt')}</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {formatDate(innovation.created_at)}
               </p>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Atualizado em</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('innovations.card.updatedAt')}</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {formatDate(innovation.updated_at)}
               </p>
@@ -148,14 +152,14 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            Fechar
+            {t('innovations.buttons.close')}
           </button>
           <button
             onClick={onEdit}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Edit className="w-4 h-4" />
-            <span>Editar</span>
+            <span>{t('innovations.buttons.edit')}</span>
           </button>
         </div>
       </div>

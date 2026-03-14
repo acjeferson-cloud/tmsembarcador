@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { FreightRate, FreightRateDetail } from '../../services/freightRatesService';
 
 interface FreightRateValuesFormProps {
@@ -13,6 +14,8 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
   onSave,
   onCancel
 }) => {
+  const { t } = useTranslation();
+
   const [grisInputValue, setGrisInputValue] = useState<string>(
     rate.percentual_gris
       ? Number(rate.percentual_gris).toFixed(5).replace('.', ',')
@@ -99,7 +102,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
     }));
   };
 
-  const handleDetailChange = (index: number, field: keyof FreightRateDetail, value: any) => {
+  const handleDetailChange = (index: number, field: keyof FreightRateDetail, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       detalhes: prev.detalhes?.map((detail, i) =>
@@ -127,7 +130,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Valores da Tarifa</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('carriers.freightRates.values.title')}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{rate.codigo} - {rate.descricao}</p>
             </div>
             <button
@@ -143,13 +146,13 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
           <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
             {/* Valores Section */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Valores</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.freightRates.values.sectionValues')}</h3>
 
               <div className="grid grid-cols-4 gap-4">
                 {/* Pedágio */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Pedágio mínimo
+                    {t('carriers.freightRates.values.pedagioMinimo')}
                   </label>
                   <input
                     type="number"
@@ -163,7 +166,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Pedágio por KG
+                    {t('carriers.freightRates.values.pedagioPorKg')}
                   </label>
                   <input
                     type="number"
@@ -177,7 +180,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Pedágio a cada KG
+                    {t('carriers.freightRates.values.pedagioCadaKg')}
                   </label>
                   <input
                     type="number"
@@ -191,7 +194,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Pedágio tipo KG
+                    {t('carriers.freightRates.values.pedagioTipoKg')}
                   </label>
                   <select
                     name="pedagio_tipo_kg"
@@ -199,15 +202,15 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     onChange={handleInputChange}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="peso_calculo">Peso cálculo</option>
-                    <option value="peso_real">Peso real</option>
+                    <option value="peso_calculo">{t('carriers.freightRates.values.pesoCalculo')}</option>
+                    <option value="peso_real">{t('carriers.freightRates.values.pesoReal')}</option>
                   </select>
                 </div>
 
                 {/* ICMS */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    ICMS embutido na tabela
+                    {t('carriers.freightRates.values.icmsEmbutido')}
                   </label>
                   <select
                     name="icms_embutido_tabela"
@@ -215,14 +218,14 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     onChange={handleInputChange}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="nao_embutido">Não embutido no valor</option>
-                    <option value="embutido">Embutido no valor</option>
+                    <option value="nao_embutido">{t('carriers.freightRates.values.naoEmbutido')}</option>
+                    <option value="embutido">{t('carriers.freightRates.values.embutido')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Alíquota ICMS
+                    {t('carriers.freightRates.values.aliquotaIcms')}
                   </label>
                   <input
                     type="number"
@@ -237,7 +240,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                 {/* Fator m³ */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fator m³
+                    {t('carriers.freightRates.values.fatorM3')}
                   </label>
                   <input
                     type="number"
@@ -251,7 +254,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fator m³ apartir Kg
+                    {t('carriers.freightRates.values.fatorM3ApartirKg')}
                   </label>
                   <input
                     type="number"
@@ -265,7 +268,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fator m³ apartir M³
+                    {t('carriers.freightRates.values.fatorM3ApartirM3')}
                   </label>
                   <input
                     type="number"
@@ -279,7 +282,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fator m³ a partir do valor
+                    {t('carriers.freightRates.values.fatorM3ApartirValor')}
                   </label>
                   <input
                     type="number"
@@ -294,14 +297,14 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                 {/* GRIS */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    % GRIS (até 5 casas decimais)
+                    {t('carriers.freightRates.values.percentualGris')}
                   </label>
                   <input
                     type="text"
                     name="percentual_gris"
                     value={grisInputValue}
                     onChange={(e) => {
-                      let value = e.target.value;
+                      const value = e.target.value;
                       // Substituir vírgula por ponto para validação
                       const normalizedValue = value.replace(',', '.');
 
@@ -330,7 +333,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    GRIS mínimo
+                    {t('carriers.freightRates.values.grisMinimo')}
                   </label>
                   <input
                     type="number"
@@ -344,7 +347,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    SECCAT
+                    {t('carriers.freightRates.values.seccat')}
                   </label>
                   <input
                     type="number"
@@ -358,7 +361,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Despacho
+                    {t('carriers.freightRates.values.despacho')}
                   </label>
                   <input
                     type="number"
@@ -372,7 +375,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    ITR
+                    {t('carriers.freightRates.values.itr')}
                   </label>
                   <input
                     type="number"
@@ -386,7 +389,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa adicional
+                    {t('carriers.freightRates.values.taxaAdicional')}
                   </label>
                   <input
                     type="number"
@@ -400,7 +403,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Coleta/Entrega
+                    {t('carriers.freightRates.values.coletaEntrega')}
                   </label>
                   <input
                     type="number"
@@ -414,7 +417,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    TDE/TRT
+                    {t('carriers.freightRates.values.tdeTrt')}
                   </label>
                   <input
                     type="number"
@@ -428,7 +431,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    TAS
+                    {t('carriers.freightRates.values.tas')}
                   </label>
                   <input
                     type="number"
@@ -442,7 +445,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa SUFRAMA
+                    {t('carriers.freightRates.values.taxaSuframa')}
                   </label>
                   <input
                     type="number"
@@ -456,7 +459,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Valor outros %
+                    {t('carriers.freightRates.values.valorOutrosPercent')}
                   </label>
                   <input
                     type="number"
@@ -470,7 +473,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Valor outros mínimo
+                    {t('carriers.freightRates.values.valorOutrosMinimo')}
                   </label>
                   <input
                     type="number"
@@ -484,7 +487,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa outros valor
+                    {t('carriers.freightRates.values.taxaOutrosValor')}
                   </label>
                   <input
                     type="number"
@@ -498,7 +501,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa outros tipo valor
+                    {t('carriers.freightRates.values.taxaOutrosTipoValor')}
                   </label>
                   <select
                     name="taxa_outros_tipo_valor"
@@ -506,14 +509,14 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     onChange={handleInputChange}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="valor">Valor</option>
-                    <option value="percentual">Percentual</option>
+                    <option value="valor">{t('carriers.freightRates.values.valor')}</option>
+                    <option value="percentual">{t('carriers.freightRates.values.percentual')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa a partir de
+                    {t('carriers.freightRates.values.taxaApartirDe')}
                   </label>
                   <input
                     type="number"
@@ -527,7 +530,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa a partir de tipo
+                    {t('carriers.freightRates.values.taxaApartirDeTipo')}
                   </label>
                   <select
                     name="taxa_apartir_de_tipo"
@@ -535,14 +538,14 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     onChange={handleInputChange}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="sem_apartir">Sem a partir</option>
-                    <option value="com_apartir">Com a partir</option>
+                    <option value="sem_apartir">{t('carriers.freightRates.values.semApartir')}</option>
+                    <option value="com_apartir">{t('carriers.freightRates.values.comApartir')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa outros a cada
+                    {t('carriers.freightRates.values.taxaOutrosACada')}
                   </label>
                   <input
                     type="number"
@@ -556,7 +559,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Taxa outros mínima
+                    {t('carriers.freightRates.values.taxaOutrosMinima')}
                   </label>
                   <input
                     type="number"
@@ -571,7 +574,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                 {/* Frete Mínimo */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Frete peso mínimo
+                    {t('carriers.freightRates.values.fretePesoMinimo')}
                   </label>
                   <input
                     type="number"
@@ -585,7 +588,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Frete valor mínimo
+                    {t('carriers.freightRates.values.freteValorMinimo')}
                   </label>
                   <input
                     type="number"
@@ -599,7 +602,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Frete tonelada mínima
+                    {t('carriers.freightRates.values.freteToneladaMinima')}
                   </label>
                   <input
                     type="number"
@@ -613,7 +616,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Frete percentual mínimo
+                    {t('carriers.freightRates.values.fretePercentualMinimo')}
                   </label>
                   <input
                     type="number"
@@ -627,7 +630,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Frete m³ mínimo
+                    {t('carriers.freightRates.values.freteM3Minimo')}
                   </label>
                   <input
                     type="number"
@@ -641,7 +644,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Valor total mínimo
+                    {t('carriers.freightRates.values.valorTotalMinimo')}
                   </label>
                   <input
                     type="number"
@@ -658,14 +661,14 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
             {/* Detalhes Section */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Detalhes</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.values.sectionDetails')}</h3>
                 <button
                   type="button"
                   onClick={handleAddDetail}
                   className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
                 >
                   <Plus size={14} />
-                  <span>Adicionar linha</span>
+                  <span>{t('carriers.freightRates.values.addDetailRow')}</span>
                 </button>
               </div>
 
@@ -680,16 +683,16 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                       </svg>
                     </div>
                     <div className="ml-3 flex-1">
-                      <h3 className="text-sm font-medium text-blue-800">Tipo de Cálculo: Excedente</h3>
+                      <h3 className="text-sm font-medium text-blue-800">{t('carriers.freightRates.values.infoExcedente.title')}</h3>
                       <div className="mt-2 text-sm text-blue-700">
-                        <p className="mb-1"><strong>Como funciona:</strong></p>
-                        <p className="mb-1">No tipo "Excedente", o valor final é calculado somando o valor da faixa anterior com o excedente multiplicado pelo valor por KG.</p>
-                        <p className="mb-1"><strong>Exemplo:</strong> Peso da NF = 308 KG</p>
+                        <p className="mb-1"><strong>{t('carriers.freightRates.values.infoExcedente.subtitle')}</strong></p>
+                        <p className="mb-1">{t('carriers.freightRates.values.infoExcedente.desc1')}</p>
+                        <p className="mb-1"><strong>{t('carriers.freightRates.values.infoExcedente.exampleTitle')}</strong> {t('carriers.freightRates.values.infoExcedente.exampleDesc')}</p>
                         <ul className="list-disc list-inside ml-2 mt-1 space-y-0.5">
-                          <li>Faixa anterior (até 200 KG): R$ 192,38</li>
-                          <li>Peso excedente: 308 - 200 = 108 KG</li>
-                          <li>Valor por KG excedente: R$ 0,84150</li>
-                          <li>Cálculo: R$ 192,38 + (108 × R$ 0,84150) = R$ 283,26</li>
+                          <li>{t('carriers.freightRates.values.infoExcedente.li1')}</li>
+                          <li>{t('carriers.freightRates.values.infoExcedente.li2')}</li>
+                          <li>{t('carriers.freightRates.values.infoExcedente.li3')}</li>
+                          <li>{t('carriers.freightRates.values.infoExcedente.li4')}</li>
                         </ul>
                       </div>
                     </div>
@@ -705,11 +708,11 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                       </svg>
                     </div>
                     <div className="ml-3 flex-1">
-                      <h3 className="text-sm font-medium text-amber-800">Tipo Taxa: Sem Taxas</h3>
+                      <h3 className="text-sm font-medium text-amber-800">{t('carriers.freightRates.values.infoSemTaxas.title')}</h3>
                       <div className="mt-2 text-sm text-amber-700">
-                        <p className="mb-1"><strong>Atenção:</strong></p>
-                        <p>Quando uma linha tiver <strong>Tipo taxa = "Sem taxas"</strong>, o sistema irá <strong>IGNORAR</strong> todas as taxas adicionais configuradas nos campos acima (GRIS, Pedágio, SECCAT, Despacho, ITR, TAS, Coleta/Entrega, Taxa SUFRAMA, etc.).</p>
-                        <p className="mt-1">O cálculo considerará <strong>APENAS</strong> o valor da faixa (Frete Peso + Frete Valor).</p>
+                        <p className="mb-1"><strong>{t('carriers.freightRates.values.infoSemTaxas.subtitle')}</strong></p>
+                        <p>{t('carriers.freightRates.values.infoSemTaxas.desc1')}</p>
+                        <p className="mt-1">{t('carriers.freightRates.values.infoSemTaxas.desc2')}</p>
                       </div>
                     </div>
                   </div>
@@ -720,19 +723,19 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                 <table className="min-w-full divide-y divide-gray-200 text-xs">
                   <thead className="bg-gray-100 dark:bg-gray-700">
                     <tr>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Ordem</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Peso até</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">M³ até</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Volume até</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Valor até</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Valor da faixa</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Tipo de cálculo</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Tipo frete</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Frete valor</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Frete mínimo</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Tipo taxa</th>
-                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Taxa mínima</th>
-                      <th className="px-2 py-2 text-center font-medium text-gray-700 dark:text-gray-300">Ações</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.ordem')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.pesoAte')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.m3Ate')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.volumeAte')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.valorAte')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.valorFaixaCol')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.tipoCalculo')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.tipoFrete')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.freteValor')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.freteMinimo')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.tipoTaxa')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.taxaMinima')}</th>
+                      <th className="px-2 py-2 text-center font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.acoes')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
@@ -790,7 +793,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               onChange={(e) => handleDetailChange(index, 'valor_faixa', parseFloat(e.target.value) || 0)}
                               step="0.01"
                               className="w-24 px-1 py-0.5 border border-gray-300 rounded text-xs"
-                              title={detail.tipo_calculo === 'excedente' ? 'Valor por KG excedente' : 'Valor da faixa'}
+                              title={detail.tipo_calculo === 'excedente' ? t('carriers.freightRates.values.infoExcedente.li3').split(':')[0] : t('carriers.freightRates.values.valorFaixa')}
                               placeholder={detail.tipo_calculo === 'excedente' ? 'R$/KG' : ''}
                             />
                           </td>
@@ -800,9 +803,9 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               onChange={(e) => handleDetailChange(index, 'tipo_calculo', e.target.value)}
                               className="w-32 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             >
-                              <option value="valor_faixa">Valor faixa</option>
-                              <option value="percentual">Percentual</option>
-                              <option value="excedente">Excedente</option>
+                              <option value="valor_faixa">{t('carriers.freightRates.values.valorFaixa')}</option>
+                              <option value="percentual">{t('carriers.freightRates.values.percentual')}</option>
+                              <option value="excedente">{t('carriers.freightRates.values.excedente')}</option>
                             </select>
                           </td>
                           <td className="px-2 py-2">
@@ -811,8 +814,8 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               onChange={(e) => handleDetailChange(index, 'tipo_frete', e.target.value)}
                               className="w-28 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             >
-                              <option value="normal">Normal</option>
-                              <option value="expresso">Expresso</option>
+                              <option value="normal">{t('carriers.freightRates.values.normal')}</option>
+                              <option value="expresso">{t('carriers.freightRates.values.expresso')}</option>
                             </select>
                           </td>
                           <td className="px-2 py-2">
@@ -839,8 +842,8 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               onChange={(e) => handleDetailChange(index, 'tipo_taxa', e.target.value)}
                               className="w-28 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             >
-                              <option value="com_taxas">Com taxas</option>
-                              <option value="sem_taxas">Sem taxas</option>
+                              <option value="com_taxas">{t('carriers.freightRates.values.comTaxas')}</option>
+                              <option value="sem_taxas">{t('carriers.freightRates.values.semTaxas')}</option>
                             </select>
                           </td>
                           <td className="px-2 py-2">
@@ -866,7 +869,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     ) : (
                       <tr>
                         <td colSpan={13} className="px-2 py-4 text-center text-gray-500 dark:text-gray-400">
-                          Nenhum detalhe cadastrado
+                          {t('carriers.freightRates.values.detailsNoData')}
                         </td>
                       </tr>
                     )}
@@ -883,13 +886,13 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
               onClick={onCancel}
               className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
-              Cancelar
+              {t('carriers.freightRates.values.cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Salvar Valores
+              {t('carriers.freightRates.values.saveValues')}
             </button>
           </div>
         </form>

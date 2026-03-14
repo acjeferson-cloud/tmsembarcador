@@ -1,22 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, AlertCircle, Hash, Info, Eye, EyeOff, Mail, Server, Lock, User, Shield, CheckCircle, Building, Map } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, Search, Lock, Eye, EyeOff, User, Shield, Server, Mail, CheckCircle, Building, Map, Info, Hash, AlertCircle } from 'lucide-react';
 import { Establishment, establishmentsService } from '../../services/establishmentsService';
 import { fetchCityByZipCode } from '../../services/citiesService';
 import { receitaFederalService } from '../../services/receitaFederalService';
 import GoogleMap from '../Maps/GoogleMap';
 import { ImageUpload } from '../common/ImageUpload';
 import { InlineMessage } from '../common/InlineMessage';
-import { normalizarCNPJ, formatarCNPJ } from '../../utils/cnpj';
+import { normalizarCNPJ } from '../../utils/cnpj';
 import { formatTitleCase } from '../../utils/formatters';
 import { EmailOutgoingConfigTab } from './EmailOutgoingConfig';
+import { useTranslation } from 'react-i18next';
 
 interface EstablishmentFormProps {
   onBack: () => void;
-  onSave: (establishment: any) => void;
+  onSave: (establishment: Establishment, logoLight?: File | null, logoDark?: File | null, logoNps?: File | null) => void;
   establishment?: Establishment;
 }
 
 export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, onSave, establishment }) => {
+  const { t } = useTranslation();
+
   const [formData, setFormData] = useState({
     codigo: establishment?.codigo || '',
     cnpj: establishment?.cnpj || '',
@@ -34,7 +37,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     logoDarkBase64: establishment?.logo_dark_base64 || '',
     logoNpsBase64: establishment?.logo_nps_base64 || '',
 
-    emailConfig: establishment?.email_config || {
+    email_config: establishment?.email_config || {
       email: '',
       username: '',
       password: '',
@@ -49,22 +52,26 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     }
   });
 
-  const [isSearchingCep, setIsSearchingCep] = useState(false);
-  const [cepError, setCepError] = useState('');
-  const [cepSuccess, setCepSuccess] = useState('');
-  const [codeError, setCodeError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<{
-    success?: boolean;
-    message?: string;
-  }>({});
   const [activeTab, setActiveTab] = useState<'basic' | 'address' | 'logos' | 'email' | 'email-outgoing'>('basic');
   const [mapLocation, setMapLocation] = useState<{lat: number; lng: number; address: string} | null>(null);
 
   // CNPJ Integration
   const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
   const [cnpjMessage, setCnpjMessage] = useState<{ type: 'success' | 'error' | 'warning' | 'info', text: string } | null>(null);
+
+  // Code validation state
+  const [codeError, setCodeError] = useState('');
+
+  // CEP search states
+  const [cepError, setCepError] = useState('');
+  const [cepSuccess, setCepSuccess] = useState('');
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{
+    success?: boolean;
+    message?: string;
+  }>({});
 
   // Auto-generate code for new establishments
   useEffect(() => {
@@ -79,7 +86,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     };
 
     generateCode();
-  }, [establishment]);
+  }, [establishment, formData.codigo]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -103,17 +110,16 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
   };
 
   const handleEmailConfigChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    
     setFormData(prev => ({
       ...prev,
-      emailConfig: {
-        ...prev.emailConfig,
+      email_config: {
+        ...prev.email_config,
         [name]: type === 'checkbox' ? checked : value
       }
     }));
-    
-    // Reset connection status when any field changes
-    setConnectionStatus({});
   };
 
   const validateCode = async (codigo: string) => {
@@ -124,12 +130,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
       return false;
     }
 
-    if (!/^\d{4}$/.test(codigo)) {
+    if (codigo.length !== 4) {
       setCodeError('Código deve ter exatamente 4 dígitos numéricos (ex: 0001)');
       return false;
     }
 
-    if (!establishment || establishment.codigo !== codigo) {
+    if (codigo !== establishment?.codigo) {
       const existing = await establishmentsService.getByCodigo(codigo);
       if (existing) {
         setCodeError('Este código já está sendo usado por outro estabelecimento');
@@ -148,13 +154,13 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     if (numeric.length <= 2) {
       return numeric;
     } else if (numeric.length <= 5) {
-      return `${numeric.slice(0, 2)}.${numeric.slice(2)}`;
+      return `${numeric.substring(0, 2)}.${numeric.substring(2)}`;
     } else if (numeric.length <= 8) {
-      return `${numeric.slice(0, 2)}.${numeric.slice(2, 5)}.${numeric.slice(5)}`;
+      return `${numeric.substring(0, 2)}.${numeric.substring(2, 5)}.${numeric.substring(5)}`;
     } else if (numeric.length <= 12) {
-      return `${numeric.slice(0, 2)}.${numeric.slice(2, 5)}.${numeric.slice(5, 8)}/${numeric.slice(8)}`;
+      return `${numeric.substring(0, 2)}.${numeric.substring(2, 5)}.${numeric.substring(5, 8)}/${numeric.substring(8)}`;
     } else {
-      return `${numeric.slice(0, 2)}.${numeric.slice(2, 5)}.${numeric.slice(5, 8)}/${numeric.slice(8, 12)}-${numeric.slice(12, 14)}`;
+      return `${numeric.substring(0, 2)}.${numeric.substring(2, 5)}.${numeric.substring(5, 8)}/${numeric.substring(8, 12)}-${numeric.substring(12, 14)}`;
     }
   };
 
@@ -170,21 +176,13 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     }
   };
 
-  const formatCode = (value: string) => {
-    // Remove non-numeric characters and limit to 4 digits
-    const numeric = value.replace(/\D/g, '').slice(0, 4);
-    
-    // Pad with leading zeros if less than 4 digits
-    return numeric.padStart(4, '0');
-  };
-
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCode(e.target.value);
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
     setFormData(prev => ({
       ...prev,
-      codigo: formatted
+      codigo: value
     }));
-    validateCode(formatted);
+    validateCode(value);
   };
 
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,7 +205,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     setCepSuccess('');
   };
 
-  const searchCEP = async () => {
+  const searchCEP = useCallback(async () => {
     if (!formData.cep || formData.cep.length < 9) {
       setCepError('CEP deve ter 8 dígitos');
       return;
@@ -231,12 +229,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
       } else {
         setCepError('CEP não encontrado. Verifique o número informado.');
       }
-    } catch (error) {
+    } catch {
       setCepError('Erro ao buscar CEP. Tente novamente.');
     } finally {
       setIsSearchingCep(false);
     }
-  };
+  }, [formData.cep, setFormData, setCepError, setCepSuccess, setIsSearchingCep]);
 
   // Auto-search CEP when it's complete
   useEffect(() => {
@@ -246,56 +244,65 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [formData.cep]);
+  }, [formData.cep, searchCEP]);
 
   // CNPJ Search Function
   const searchCNPJ = async () => {
-    if (!formData.cnpj || normalizarCNPJ(formData.cnpj).length !== 14) {
+    const cnpj = normalizarCNPJ(formData.cnpj);
+    if (!cnpj || cnpj.length !== 14) {
       setCnpjMessage({ type: 'error', text: 'CNPJ deve ter 14 caracteres válidos' });
       return;
     }
 
     setIsSearchingCNPJ(true);
-    setCnpjMessage(null);
+    setCnpjMessage({ type: 'info', text: 'Buscando dados na Receita Federal...' });
 
     try {
-      const data = await receitaFederalService.consultarCNPJ(formData.cnpj);
+      const result = await receitaFederalService.consultarCNPJ(cnpj);
+      
+      if (result && 'success' in result && result.success && result.data) {
+        setCnpjMessage({ type: 'success', text: 'Dados encontrados com sucesso.' });
+        
+        const empresa = result.data as unknown as Record<string, unknown>;
 
-      // Check if company is active
-      if (!receitaFederalService.permiteImportacao(data.situacao_cadastral)) {
+        // Check if company is active
+        if (!receitaFederalService.permiteImportacao(empresa.situacao_cadastral as string)) {
+          setCnpjMessage({
+            type: 'warning',
+            text: receitaFederalService.getMensagemStatus(empresa.situacao_cadastral as string)
+          });
+          setIsSearchingCNPJ(false);
+          return;
+        }
+
+        // Fill form with API data (applying Title Case formatting)
+        setFormData(prev => ({
+          ...prev,
+          razaoSocial: formatTitleCase(empresa.razao_social as string),
+          fantasia: formatTitleCase((empresa.nome_fantasia as string) || (empresa.razao_social as string)),
+          endereco: formatTitleCase(empresa.logradouro as string),
+          bairro: formatTitleCase(empresa.bairro as string),
+          cep: empresa.cep as string,
+          cidade: formatTitleCase(empresa.municipio as string),
+          estado: empresa.uf as string,
+        }));
+
         setCnpjMessage({
-          type: 'warning',
-          text: receitaFederalService.getMensagemStatus(data.situacao_cadastral)
+          type: 'success',
+          text: `${empresa.razao_social} - ${receitaFederalService.getMensagemStatus(empresa.situacao_cadastral as string)}`
         });
-        setIsSearchingCNPJ(false);
-        return;
-      }
 
-      // Fill form with API data (applying Title Case formatting)
-      setFormData(prev => ({
-        ...prev,
-        razaoSocial: formatTitleCase(data.razao_social),
-        fantasia: formatTitleCase(data.nome_fantasia || data.razao_social),
-        endereco: formatTitleCase(data.logradouro),
-        bairro: formatTitleCase(data.bairro),
-        cep: data.cep,
-        cidade: formatTitleCase(data.municipio),
-        estado: data.uf,
-      }));
-
-      setCnpjMessage({
-        type: 'success',
-        text: `${data.razao_social} - ${receitaFederalService.getMensagemStatus(data.situacao_cadastral)}`
-      });
-
-      // Auto-search location if we have address
-      if (data.logradouro && data.municipio && data.uf) {
-        const fullAddress = `${data.logradouro}, ${data.municipio} - ${data.uf}`;
-        setMapLocation({
-          lat: 0,
-          lng: 0,
-          address: fullAddress
-        });
+        // Auto-search location if we have address
+        if (empresa.logradouro && empresa.municipio && empresa.uf) {
+          const fullAddress = `${empresa.logradouro}, ${empresa.municipio} - ${empresa.uf}`;
+          setMapLocation({
+            lat: 0,
+            lng: 0,
+            address: fullAddress
+          });
+        }
+      } else {
+        setCnpjMessage({ type: 'error', text: ('message' in result ? result.message as string : 'Erro ao buscar CNPJ. Tente novamente.') });
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -314,9 +321,9 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     setConnectionStatus({});
     
     // Validate required fields
-    if (!formData.emailConfig.email || !formData.emailConfig.username || 
-        !formData.emailConfig.password || !formData.emailConfig.host || 
-        !formData.emailConfig.port) {
+    if (!formData.email_config.email || !formData.email_config.username || 
+        !formData.email_config.password || !formData.email_config.host || 
+        !formData.email_config.port) {
       setConnectionStatus({
         success: false,
         message: 'Preencha todos os campos obrigatórios da configuração de e-mail'
@@ -346,7 +353,6 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
       // Isso é uma implementação básica - pode ser refinada
       const streetInfo = addressParts[0].trim();
       const neighborhood = addressParts[1]?.trim();
-      const cityState = addressParts[2]?.trim();
       
       if (streetInfo && !formData.endereco) {
         setFormData(prev => ({ ...prev, endereco: streetInfo }));
@@ -359,31 +365,24 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const isCodeValid = await validateCode(formData.codigo);
-    if (!isCodeValid) {
+    
+    const isValid = await validateCode(formData.codigo);
+    if (!isValid) {
+      alert('O código do estabelecimento é inválido ou já existe.');
       return;
     }
     
-    // Validate required fields
-    if (!formData.codigo || !formData.cnpj || !formData.razaoSocial || !formData.endereco || !formData.cep || !formData.cidade || !formData.estado) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    const isComplete = formData.razaoSocial.trim() !== '' && normalizarCNPJ(formData.cnpj || '').length === 14;
+    
+    if (!isComplete) {
+      alert('Preencha todos os campos obrigatórios (*)');
       return;
     }
-
-    // Validate CNPJ format
-    if (normalizarCNPJ(formData.cnpj).length !== 14) {
-      alert('CNPJ deve ter 14 caracteres válidos.');
-      return;
-    }
-
-    // Validate CEP format
-    if (formData.cep.replace(/\D/g, '').length !== 8) {
-      alert('CEP deve ter 8 dígitos.');
-      return;
-    }
-
-    onSave(formData);
+    
+    onSave({
+      ...formData,
+      cnpj: normalizarCNPJ(formData.cnpj || '')
+    });
   };
 
   const generateNewCode = async () => {
@@ -403,12 +402,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Estabelecimentos</span>
+          <span>{t('establishments.buttons.back')}</span>
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {establishment ? 'Editar Estabelecimento' : 'Novo Estabelecimento'}
+          {establishment ? t('establishments.form.editTitle') : t('establishments.form.newTitle')}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">Preencha os dados do estabelecimento</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          {establishment ? t('establishments.form.editSubtitle') : t('establishments.form.newSubtitle')}
+        </p>
       </div>
 
       {/* Tabs */}
@@ -425,7 +426,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             >
               <div className="flex items-center space-x-2">
                 <Building size={16} />
-                <span>Informações Básicas</span>
+                <span>{t('establishments.form.tabs.basic')}</span>
               </div>
             </button>
             <button
@@ -437,8 +438,8 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <MapPin size={16} />
-                <span>Endereço</span>
+                <Map size={16} />
+                <span>{t('establishments.form.tabs.address')}</span>
               </div>
             </button>
             <button
@@ -451,7 +452,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             >
               <div className="flex items-center space-x-2">
                 <Building size={16} />
-                <span>Logotipos</span>
+                <span>{t('establishments.form.tabs.logos')}</span>
               </div>
             </button>
             <button
@@ -464,7 +465,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             >
               <div className="flex items-center space-x-2">
                 <Mail size={16} />
-                <span>E-mail de Entrada</span>
+                <span>{t('establishments.form.tabs.email')}</span>
               </div>
             </button>
             <button
@@ -477,7 +478,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             >
               <div className="flex items-center space-x-2">
                 <Server size={16} />
-                <span>E-mail de Saída</span>
+                <span>{t('establishments.form.tabs.emailOutgoing')}</span>
               </div>
             </button>
           </nav>
@@ -487,12 +488,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
       <form onSubmit={handleSubmit} className="space-y-6">
         {activeTab === 'basic' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.form.tabs.basic')}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Código do Estabelecimento *
+                  {t('establishments.form.fields.code')}
                 </label>
                 <div className="relative">
                   <input
@@ -540,7 +541,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tipo *
+                  {t('establishments.form.fields.type')}
                 </label>
                 <select
                   name="tipo"
@@ -549,14 +550,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="matriz">Matriz</option>
-                  <option value="filial">Filial</option>
+                  <option value="matriz">{t('establishments.form.fields.typeOptions.matriz')}</option>
+                  <option value="filial">{t('establishments.form.fields.typeOptions.filial')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Prefixo de Rastreamento
+                  {t('establishments.form.fields.trackingPrefix')}
                 </label>
                 <input
                   type="text"
@@ -568,13 +569,13 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Prefixo de 3 letras usado nos códigos de rastreamento
+                  {t('establishments.form.fields.trackingPrefixDesc')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CNPJ *
+                  {t('establishments.form.fields.cnpj')}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -615,7 +616,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Inscrição Estadual
+                  {t('establishments.form.fields.ie')}
                 </label>
                 <input
                   type="text"
@@ -629,7 +630,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Razão Social *
+                  {t('establishments.form.fields.companyName')}
                 </label>
                 <input
                   type="text"
@@ -638,13 +639,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Digite a razão social"
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nome Fantasia
+                  {t('establishments.form.fields.tradeName')}
                 </label>
                 <input
                   type="text"
@@ -652,7 +652,6 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   value={formData.fantasia}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Digite o nome fantasia"
                 />
               </div>
             </div>
@@ -661,38 +660,35 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
         {activeTab === 'logos' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Logotipos do Estabelecimento</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Faça upload dos logotipos do estabelecimento. Você pode enviar duas versões: uma para modo claro e outra para modo escuro.
-            </p>
-
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('establishments.form.tabs.logos')}</h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <ImageUpload
-                  label="Logo (Versão Clara)"
+                  label={t('establishments.form.logos.lightTitle')}
                   value={formData.logoLightBase64}
                   onChange={(base64) => setFormData({ ...formData, logoLightBase64: base64 })}
-                  description="Logotipo para modo claro/light (PNG, JPG ou SVG - máx. 2MB)"
+                  description={t('establishments.form.logos.lightDesc')}
                   darkPreview={false}
                 />
               </div>
 
               <div>
                 <ImageUpload
-                  label="Logo (Versão Escura)"
+                  label={t('establishments.form.logos.darkTitle')}
                   value={formData.logoDarkBase64}
                   onChange={(base64) => setFormData({ ...formData, logoDarkBase64: base64 })}
-                  description="Logotipo para modo escuro/dark (PNG, JPG ou SVG - máx. 2MB)"
+                  description={t('establishments.form.logos.darkDesc')}
                   darkPreview={true}
                 />
               </div>
 
               <div>
                 <ImageUpload
-                  label="Logo E-mail de NPS"
+                  label={t('establishments.form.logos.npsTitle')}
                   value={formData.logoNpsBase64}
                   onChange={(base64) => setFormData({ ...formData, logoNpsBase64: base64 })}
-                  description="Logotipo para e-mails de pesquisa NPS (PNG, JPG ou SVG - máx. 2MB)"
+                  description={t('establishments.form.logos.npsDesc')}
                   darkPreview={false}
                 />
               </div>
@@ -702,13 +698,13 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               <div className="flex items-start space-x-3">
                 <Info size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-800 dark:text-blue-200">
-                  <p className="font-medium mb-1">Dicas para melhor resultado:</p>
+                  <p className="font-medium mb-1">{t('establishments.form.logos.tipsTitle')}</p>
                   <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
-                    <li>Use imagens PNG com fundo transparente para melhor integração</li>
-                    <li>Dimensões recomendadas: 200-300px de largura</li>
-                    <li>A versão escura será exibida quando o usuário ativar o modo escuro</li>
-                    <li>O logo de E-mail NPS será usado exclusivamente nos e-mails de pesquisa de satisfação</li>
-                    <li>Se enviar apenas uma versão, ela será usada em ambos os modos</li>
+                    <li>{t('establishments.form.logos.tip1')}</li>
+                    <li>{t('establishments.form.logos.tip2')}</li>
+                    <li>{t('establishments.form.logos.tip3')}</li>
+                    <li>{t('establishments.form.logos.tip4')}</li>
+                    <li>{t('establishments.form.logos.tip5')}</li>
                   </ul>
                 </div>
               </div>
@@ -718,12 +714,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
         {activeTab === 'address' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Endereço</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.form.tabs.address')}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Endereço *
+                  {t('establishments.form.fields.address')}
                 </label>
                 <input
                   type="text"
@@ -732,13 +728,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Rua, Avenida, número, complemento"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Bairro *
+                  {t('establishments.form.address.neighborhood')}
                 </label>
                 <input
                   type="text"
@@ -747,13 +742,13 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Digite o bairro"
+                  placeholder={t('establishments.form.address.neighborhoodPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CEP *
+                  {t('establishments.form.address.zipCode')}
                 </label>
                 <div className="relative">
                   <input
@@ -791,7 +786,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                 
                 {cepSuccess && (
                   <div className="mt-2 flex items-center space-x-2 text-green-600">
-                    <MapPin size={16} />
+                    <Map size={16} />
                     <span className="text-sm">{cepSuccess}</span>
                   </div>
                 )}
@@ -799,7 +794,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Cidade *
+                  {t('establishments.form.fields.city')}
                 </label>
                 <input
                   type="text"
@@ -808,14 +803,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-900"
-                  placeholder="Preenchido automaticamente pelo CEP"
+                  placeholder={t('establishments.form.address.autoFilledByZipCode')}
                   readOnly
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Estado *
+                  {t('establishments.form.fields.state')}
                 </label>
                 <input
                   type="text"
@@ -824,7 +819,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-900"
-                  placeholder="Preenchido automaticamente pelo CEP"
+                  placeholder={t('establishments.form.address.autoFilledByZipCode')}
                   readOnly
                 />
               </div>
@@ -833,13 +828,11 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             {/* CEP Integration Info */}
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-start space-x-2">
-                <MapPin size={16} className="text-blue-600 mt-0.5" />
+                <Map size={16} className="text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-blue-800 font-medium">Busca Automática por CEP</p>
+                  <p className="text-sm text-blue-800 font-medium">{t('establishments.form.address.autoSearch')}</p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Ao informar o CEP, o sistema buscará automaticamente a cidade e estado correspondentes 
-                    no cadastro de cidades. Os campos cidade e estado 
-                    serão preenchidos automaticamente.
+                    {t('establishments.form.address.autoSearchDesc')}
                   </p>
                 </div>
               </div>
@@ -849,10 +842,10 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               <div className="mb-4">
                 <h4 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
                   <Map className="h-5 w-5 text-blue-600" />
-                  Localização no Mapa
+                  {t('establishments.form.address.mapLocation')}
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Clique no mapa ou arraste o marcador para definir a localização exata do estabelecimento
+                  {t('establishments.form.address.mapLocationDesc')}
                 </p>
               </div>
 
@@ -869,10 +862,10 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                 />
                 {mapLocation && (
                   <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 bg-green-50 p-3 rounded border border-green-200">
-                    <p className="text-green-800 font-medium mb-1">📍 Localização selecionada:</p>
+                    <p className="text-green-800 font-medium mb-1">📍 {t('establishments.form.address.selectedLocation')}</p>
                     <p>{mapLocation.address}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Coordenadas: {mapLocation.lat.toFixed(6)}, {mapLocation.lng.toFixed(6)}
+                      {t('establishments.form.address.coordinates')} {mapLocation.lat.toFixed(6)}, {mapLocation.lng.toFixed(6)}
                     </p>
                   </div>
                 )}
@@ -886,27 +879,27 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
               <div className="flex items-center gap-3 mb-2">
                 <Mail className="w-8 h-8" />
-                <h3 className="text-2xl font-bold">Configuração de E-mail de Entrada</h3>
+                <h3 className="text-2xl font-bold">{t('establishments.form.email.title')}</h3>
               </div>
               <p className="text-green-100">
-                Configure as credenciais para recebimento de arquivos e documentos enviados por transportadores (IMAP/POP3)
+                {t('establishments.form.email.subtitle')}
               </p>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuração da Conta</h4>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.form.email.accountConfig')}</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Endereço de E-mail *
+                  {t('establishments.form.email.emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="email"
                     name="email"
-                    value={formData.emailConfig.email}
+                    value={formData.email_config.email}
                     onChange={handleEmailConfigChange}
                     className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="estabelecimento@empresa.com.br"
@@ -916,14 +909,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Usuário *
+                  {t('establishments.form.email.username')}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
                     name="username"
-                    value={formData.emailConfig.username}
+                    value={formData.email_config.username}
                     onChange={handleEmailConfigChange}
                     className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="nome.usuario"
@@ -933,14 +926,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Senha *
+                  {t('establishments.form.email.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    value={formData.emailConfig.password}
+                    value={formData.email_config.password}
                     onChange={handleEmailConfigChange}
                     className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="••••••••"
@@ -957,31 +950,31 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tipo de Autenticação *
+                  {t('establishments.form.email.authType')}
                 </label>
                 <select
                   name="authType"
-                  value={formData.emailConfig.authType}
+                  value={formData.email_config.authType}
                   onChange={handleEmailConfigChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="LOGIN">LOGIN</option>
-                  <option value="OAuth2">OAuth 2.0</option>
+                  <option value="LOGIN">{t('establishments.form.email.authType')}: LOGIN</option>
+                  <option value="OAuth2">{t('establishments.form.email.authType')}: OAuth 2.0</option>
                 </select>
               </div>
 
-              {formData.emailConfig.authType === 'OAuth2' && (
+              {formData.email_config.authType === 'OAuth2' && (
                 <>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Client ID *
+                      {t('establishments.form.email.clientId')}
                     </label>
                     <div className="relative">
                       <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         name="oauth2ClientId"
-                        value={formData.emailConfig.oauth2ClientId || ''}
+                        value={(formData.email_config as Record<string, string>).oauth2ClientId || ''}
                         onChange={handleEmailConfigChange}
                         className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Digite o Client ID fornecido pelo provedor"
@@ -991,14 +984,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Client Secret *
+                      {t('establishments.form.email.clientSecret')}
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type={showPassword ? "text" : "password"}
                         name="oauth2ClientSecret"
-                        value={formData.emailConfig.oauth2ClientSecret || ''}
+                        value={(formData.email_config as Record<string, string>).oauth2ClientSecret || ''}
                         onChange={handleEmailConfigChange}
                         className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Digite o Client Secret"
@@ -1015,14 +1008,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Refresh Token *
+                      {t('establishments.form.email.refreshToken')}
                     </label>
                     <div className="relative">
                       <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         name="oauth2RefreshToken"
-                        value={formData.emailConfig.oauth2RefreshToken || ''}
+                        value={(formData.email_config as Record<string, string>).oauth2RefreshToken || ''}
                         onChange={handleEmailConfigChange}
                         className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Digite o Refresh Token"
@@ -1034,7 +1027,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     <div className="flex items-start space-x-2">
                       <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-blue-800 font-medium">Sobre OAuth 2.0</p>
+                        <p className="text-sm text-blue-800 font-medium">{t('establishments.form.email.aboutOauth2')}</p>
                         <p className="text-xs text-blue-700 mt-1">
                           Para usar OAuth 2.0, você precisa configurar uma aplicação no console do provedor de email (Google, Microsoft, etc.)
                           e obter o Client ID, Client Secret e Refresh Token. Consulte a documentação do seu provedor para mais informações.
@@ -1047,11 +1040,11 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Protocolo de Recebimento *
+                  {t('establishments.form.email.receiveProtocol')}
                 </label>
                 <select
                   name="protocol"
-                  value={formData.emailConfig.protocol}
+                  value={formData.email_config.protocol}
                   onChange={handleEmailConfigChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
@@ -1062,14 +1055,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Servidor de Entrada (Host) *
+                  {t('establishments.form.email.incomingServer')}
                 </label>
                 <div className="relative">
                   <Server className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
                     name="host"
-                    value={formData.emailConfig.host}
+                    value={formData.email_config.host}
                     onChange={handleEmailConfigChange}
                     className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="imap.servidor.com.br"
@@ -1079,15 +1072,15 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Porta *
+                  {t('establishments.form.email.port')}
                 </label>
                 <input
                   type="text"
                   name="port"
-                  value={formData.emailConfig.port}
+                  value={formData.email_config.port}
                   onChange={handleEmailConfigChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={formData.emailConfig.protocol === 'IMAP' ? '993' : '995'}
+                  placeholder={formData.email_config.protocol === 'IMAP' ? '993' : '995'}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Portas padrão: IMAP SSL: 993, POP3 SSL: 995
@@ -1099,12 +1092,12 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   type="checkbox"
                   id="useSSL"
                   name="useSSL"
-                  checked={formData.emailConfig.useSSL}
+                  checked={formData.email_config.useSSL}
                   onChange={handleEmailConfigChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="useSSL" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  Usar conexão segura (SSL/TLS)
+                  {t('establishments.form.email.secureConnection')}
                 </label>
               </div>
             </div>
@@ -1122,7 +1115,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     type="checkbox"
                     id="autoDownloadEnabled"
                     name="autoDownloadEnabled"
-                    checked={formData.emailConfig.autoDownloadEnabled || false}
+                    checked={formData.email_config.autoDownloadEnabled || false}
                     onChange={handleEmailConfigChange}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
@@ -1131,36 +1124,36 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   </label>
                 </div>
 
-                {formData.emailConfig.autoDownloadEnabled && (
+                {formData.email_config.autoDownloadEnabled && (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Intervalo de Verificação *
+                        {t('establishments.form.email.checkInterval')}
                       </label>
                       <select
                         name="autoDownloadInterval"
-                        value={formData.emailConfig.autoDownloadInterval || 15}
+                        value={formData.email_config.autoDownloadInterval || 15}
                         onChange={handleEmailConfigChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
-                        <option value={5}>A cada 5 minutos</option>
-                        <option value={10}>A cada 10 minutos</option>
-                        <option value={15}>A cada 15 minutos</option>
-                        <option value={30}>A cada 30 minutos</option>
-                        <option value={60}>A cada 1 hora</option>
+                        <option value={5}>{t('establishments.form.email.intervalOptions.5')}</option>
+                        <option value={10}>{t('establishments.form.email.intervalOptions.10')}</option>
+                        <option value={15}>{t('establishments.form.email.intervalOptions.15')}</option>
+                        <option value={30}>{t('establishments.form.email.intervalOptions.30')}</option>
+                        <option value={60}>{t('establishments.form.email.intervalOptions.60')}</option>
                       </select>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Frequência com que o sistema verificará novos XMLs no e-mail
                       </p>
                     </div>
 
-                    {formData.emailConfig.lastAutoDownload && (
+                    {formData.email_config.lastAutoDownload && (
                       <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center gap-2 text-sm text-green-800">
                           <CheckCircle size={16} className="text-green-600" />
                           <span className="font-medium">
                             Último download automático:{' '}
-                            {new Date(formData.emailConfig.lastAutoDownload).toLocaleString('pt-BR', {
+                            {new Date(formData.email_config.lastAutoDownload).toLocaleString('pt-BR', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric',
@@ -1176,66 +1169,60 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                       <div className="flex items-start gap-2">
                         <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-sm text-blue-800 font-medium">Como funciona</p>
+                          <p className="text-sm text-blue-800 font-medium">{t('establishments.form.email.howItWorks')}</p>
                           <ul className="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                            <li>O sistema verificará automaticamente a caixa de entrada no intervalo configurado</li>
-                            <li>XMLs de NF-e e CT-e serão identificados e importados automaticamente</li>
-                            <li>Após a importação, os arquivos serão movidos para uma pasta processada</li>
-                            <li>Duplicatas são detectadas e não serão importadas novamente</li>
+                            <li>{t('establishments.form.email.howItWorks1')}</li>
+                            <li>{t('establishments.form.email.howItWorks2')}</li>
+                            <li>{t('establishments.form.email.howItWorks3')}</li>
+                            <li>{t('establishments.form.email.howItWorks4')}</li>
                           </ul>
                         </div>
                       </div>
                     </div>
                   </>
                 )}
-              </div>
-            </div>
-
-            {/* Test Connection Button */}
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={testEmailConnection}
-                disabled={testingConnection}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-              >
-                {testingConnection ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Testando conexão...</span>
-                  </>
-                ) : (
-                  <>
-                    <Server size={16} />
-                    <span>Testar Conexão</span>
-                  </>
-                )}
-              </button>
-              
-              {connectionStatus.success !== undefined && (
-                <div className={`mt-3 p-3 rounded-lg ${connectionStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                  <div className="flex items-center space-x-2">
-                    {connectionStatus.success ? (
-                      <CheckCircle size={16} className="text-green-600" />
+                  <button
+                    type="button"
+                    onClick={testEmailConnection}
+                    disabled={testingConnection}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {testingConnection ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>{t('establishments.form.email.testingConnection')}</span>
+                      </>
                     ) : (
-                      <AlertCircle size={16} className="text-red-600" />
+                      <>
+                        <Server size={16} />
+                        <span>{t('establishments.form.email.testConnection')}</span>
+                      </>
                     )}
-                    <span>{connectionStatus.message}</span>
-                  </div>
+                  </button>
+                  {connectionStatus.success !== undefined && (
+                    <div className={`mt-3 p-3 rounded-lg ${connectionStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                      <div className="flex items-center space-x-2">
+                        {connectionStatus.success ? (
+                          <CheckCircle size={16} className="text-green-600" />
+                        ) : (
+                          <AlertCircle size={16} className="text-red-600" />
+                        )}
+                        <span>{connectionStatus.message}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-              <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-yellow-800 font-medium">Importante</p>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      Certifique-se de que a conta de e-mail configurada permita acesso por aplicativos menos seguros
-                      ou tenha as configurações de segurança adequadas para permitir o acesso via IMAP/POP3.
-                      Recomendamos criar uma conta de e-mail específica para esta finalidade.
-                    </p>
+                <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-yellow-800 font-medium">{t('establishments.form.email.important')}</p>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        Certifique-se de que a conta de e-mail configurada permita acesso por aplicativos menos seguros
+                        ou tenha as configurações de segurança adequadas para permitir o acesso via IMAP/POP3.
+                        Recomendamos criar uma conta de e-mail específica para esta finalidade.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1251,14 +1238,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               onClick={onBack}
               className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
-              Cancelar
+              {t('establishments.buttons.cancel')}
             </button>
             <button
               type="submit"
               disabled={!!codeError}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {establishment ? 'Atualizar' : 'Salvar'} Estabelecimento
+              {establishment ? t('establishments.buttons.update') : t('establishments.buttons.save')}
             </button>
           </div>
         )}

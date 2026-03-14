@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { establishmentsService } from '../../services/establishmentsService';
 import { useTranslation } from 'react-i18next';
 import { BrazilianCity } from '../../types/cities';
+import { cepService } from '../../services/cepService';
 
 const FreightQuote: React.FC = () => {
   const { currentEstablishment, user } = useAuth();
@@ -173,17 +174,49 @@ const FreightQuote: React.FC = () => {
   const handleZipCodeSearch = async (type: 'origin' | 'destination', zipCode: string) => {
     const cleanZip = zipCode.replace(/\D/g, '');
     if (cleanZip.length === 8) {
-      const city = await freightQuoteService.findCityByZipCode(cleanZip);
-      if (city) {
-        if (type === 'origin') {
-          setOriginState(city.state_abbreviation);
-          setOriginCity(city.ibge_code);
-          setFormData({ ...formData, originCityId: city.ibge_code });
+      try {
+        let stateAbbr = '';
+        let ibgeCode = '';
+        
+        // Tentar banco de dados primeiro
+        const city = await freightQuoteService.findCityByZipCode(cleanZip);
+        if (city && city.state_abbreviation && city.ibge_code) {
+          stateAbbr = city.state_abbreviation;
+          ibgeCode = city.ibge_code;
         } else {
-          setDestinationState(city.state_abbreviation);
-          setDestinationCity(city.ibge_code);
-          setFormData({ ...formData, destinationCityId: city.ibge_code });
+          // Fallback para ViaCEP
+          const cepData = await cepService.searchByCEP(cleanZip);
+          if (cepData && cepData.uf && cepData.ibge) {
+            stateAbbr = cepData.uf;
+            ibgeCode = cepData.ibge;
+          }
         }
+
+        if (stateAbbr && ibgeCode) {
+          if (type === 'origin') {
+            setOriginState(stateAbbr);
+            setOriginCity(ibgeCode);
+            setFormData(prev => ({ ...prev, originCityId: ibgeCode }));
+            
+            // Carregar dados das cidades do estado para preencher o input (Cidade Automático)
+            setLoadingOriginCities(true);
+            const cities = await getCitiesByState(stateAbbr);
+            setOriginCities(cities);
+            setLoadingOriginCities(false);
+          } else {
+            setDestinationState(stateAbbr);
+            setDestinationCity(ibgeCode);
+            setFormData(prev => ({ ...prev, destinationCityId: ibgeCode }));
+            
+            // Carregar dados das cidades do estado para preencher o input (Cidade Automático)
+            setLoadingDestCities(true);
+            const cities = await getCitiesByState(stateAbbr);
+            setDestinationCities(cities);
+            setLoadingDestCities(false);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
       }
     }
   };
@@ -200,6 +233,11 @@ const FreightQuote: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.originCityId) {
+      setToast({ message: 'Selecione a cidade de origem', type: 'error' });
+      return;
+    }
 
     if (!formData.destinationCityId) {
       setToast({ message: t('freightQuote.messages.selectDestination'), type: 'error' });

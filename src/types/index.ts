@@ -108,11 +108,16 @@ export interface BusinessPartner {
   phone: string;
   type: 'customer' | 'supplier' | 'both';
   status: 'active' | 'inactive';
-  contacts: BusinessPartnerContact[];
-  addresses: BusinessPartnerAddress[];
-  observations: string;
-  createdAt: string;
-  updatedAt: string;
+  contacts?: BusinessPartnerContact[];
+  addresses?: BusinessPartnerAddress[];
+  observations?: string;
+  website?: string;
+  taxRegime?: string;
+  paymentTerms?: string;
+  creditLimit?: number;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BusinessPartnerContact {
@@ -156,9 +161,9 @@ export interface BusinessPartnerAddress {
   neighborhood?: string;
   city: string;
   state: string;
-  zip_code: string;
+  zipCode: string;
   country?: string;
-  is_primary: boolean;
+  isPrimary: boolean;
   city_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -213,3 +218,5 @@ export interface ReverseLogisticsItem {
   reason: string;
   action: 'refund' | 'exchange' | 'repair' | 'discard';
 }
+
+export type Address = BusinessPartnerAddress;

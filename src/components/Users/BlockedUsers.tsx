@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Unlock, AlertTriangle, Clock, User, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 interface BlockedUser {
   id: string;
@@ -19,7 +20,8 @@ interface BlockedUsersProps {
   currentUserEmail: string;
 }
 
-export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) => {
+export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _currentUserEmail }) => {
+  const { t } = useTranslation();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
@@ -121,7 +123,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
         loadBlockedUsers();
       }, 2000);
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro ao desbloquear usuário' });
+      setMessage({ type: 'error', text: error.message || t('users.blocked.unlockError') });
     } finally {
       setUnlocking(null);
     }
@@ -157,7 +159,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Usuários Bloqueados</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Usuários bloqueados por múltiplas tentativas falhadas de login
+              {t('users.blocked.reasonMultiple') || 'Usuários bloqueados por múltiplas tentativas falhadas de login'}
             </p>
           </div>
         </div>
@@ -200,9 +202,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
                   Código
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Usuário
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">{t('users.table.name')}</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
                   Perfil
                 </th>
@@ -215,9 +215,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
                   Último Login
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Ações
-                </th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">{t('users.table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -253,14 +251,14 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail }) 
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-red-600" />
                       <span className="font-semibold text-red-600">
-                        {user.tentativas_login} tentativas
+                        {user.tentativas_login} {t('users.view.loginAttempts', { count: user.tentativas_login }) || 'tentativas'}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Clock className="w-4 h-4" />
-                      {user.ultimo_login ? formatDateTime(user.ultimo_login) : 'Nunca'}
+                      {user.ultimo_login ? formatDateTime(user.ultimo_login) : t('users.view.never') || 'Nunca'}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

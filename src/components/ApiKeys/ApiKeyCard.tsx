@@ -8,15 +8,13 @@ interface ApiKeyCardProps {
   onRotate: (apiKey: ApiKeyConfig) => void;
   onDelete: (apiKey: ApiKeyConfig) => void;
   onViewHistory: (apiKey: ApiKeyConfig) => void;
-  onRefresh: () => void;
 }
 
 export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
   apiKey,
   onRotate,
   onDelete,
-  onViewHistory,
-  onRefresh
+  onViewHistory
 }) => {
   const { t } = useTranslation();
   const [showKey, setShowKey] = useState(false);
@@ -33,7 +31,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
           <XCircle className="w-3 h-3" />
-          Inativa
+          {t('apiKeys.card.inactive')}
         </span>
       );
     }
@@ -42,7 +40,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
           <AlertTriangle className="w-3 h-3" />
-          Limite Excedido
+          {t('apiKeys.card.limitExceeded')}
         </span>
       );
     }
@@ -51,7 +49,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-full">
           <AlertTriangle className="w-3 h-3" />
-          Próximo do Limite
+          {t('apiKeys.card.nearLimit')}
         </span>
       );
     }
@@ -59,7 +57,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
         <CheckCircle className="w-3 h-3" />
-        Ativa
+        {t('apiKeys.card.active')}
       </span>
     );
   };
@@ -77,7 +75,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Nunca';
+    if (!dateString) return t('apiKeys.card.never');
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -128,7 +126,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                Chave:
+                {t('apiKeys.card.keyLabel')}
               </span>
               <code className="text-xs font-mono text-gray-700 dark:text-gray-300 truncate">
                 {showKey ? apiKey.api_key : apiKeysService.maskApiKey(apiKey.api_key)}
@@ -138,14 +136,14 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
               <button
                 onClick={() => setShowKey(!showKey)}
                 className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors"
-                title={showKey ? 'Ocultar' : 'Mostrar'}
+                title={showKey ? t('apiKeys.card.hide') : t('apiKeys.card.show')}
               >
                 {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
               <button
                 onClick={handleCopyKey}
                 className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors"
-                title="Copiar"
+                title={t('apiKeys.card.copy')}
               >
                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
               </button>
@@ -155,7 +153,7 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
           {apiKey.monthly_limit && (
             <div>
               <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                <span>Uso Mensal</span>
+                <span>{t('apiKeys.card.monthlyUsage')}</span>
                 <span className="font-medium">
                   {apiKey.current_usage.toLocaleString('pt-BR')} / {apiKey.monthly_limit.toLocaleString('pt-BR')}
                   <span className="text-gray-400 ml-1">
@@ -174,39 +172,37 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Última rotação:</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('apiKeys.card.lastRotation')}</span>
               <p className={`font-medium mt-1 ${needsRotation ? 'text-red-600' : 'text-gray-900'}`}>
                 {formatDate(apiKey.rotated_at)}
                 {needsRotation && (
                   <span className="block text-red-500 text-xs mt-0.5">
-                    (há {daysSinceRotation} dias)
+                    {t('apiKeys.card.daysAgo', { days: daysSinceRotation, defaultValue: `(há ${daysSinceRotation} dias)` })}
                   </span>
                 )}
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Último uso:</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('apiKeys.card.lastUse')}</span>
               <p className="font-medium text-gray-900 dark:text-white mt-1">
                 {formatDate(apiKey.last_used_at)}
               </p>
             </div>
           </div>
 
-          {apiKey.expires_at && (
             <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
               <span className="text-yellow-700 font-medium">
-                Expira em: {formatDate(apiKey.expires_at)}
+                {t('apiKeys.card.expiresIn')} {formatDate(apiKey.expires_at)}
               </span>
             </div>
-          )}
 
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
               {apiKey.environment}
             </span>
             {apiKey.rotation_schedule && (
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded" title="Rotação programada">
-                🔄 Automática
+              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded" title={t('apiKeys.card.autoRotationScheduled')}>
+                🔄 {t('apiKeys.card.autoRotation')}
               </span>
             )}
           </div>
@@ -218,21 +214,21 @@ export const ApiKeyCard: React.FC<ApiKeyCardProps> = ({
             className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
           >
             <RotateCw className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Rotacionar</span>
+            <span className="truncate">{t('apiKeys.actions.rotate')}</span>
           </button>
           <button
             onClick={() => onViewHistory(apiKey)}
             className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
           >
             <History className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Histórico</span>
+            <span className="truncate">{t('apiKeys.actions.history')}</span>
           </button>
           <button
             onClick={() => onDelete(apiKey)}
             className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
           >
             <Trash2 className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Excluir</span>
+            <span className="truncate">{t('apiKeys.actions.delete')}</span>
           </button>
         </div>
       </div>

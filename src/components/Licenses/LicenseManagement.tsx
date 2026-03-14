@@ -18,6 +18,7 @@ import { licensesService, License, UserWithLicense, LicenseLog } from '../../ser
 import { useAuth } from '../../hooks/useAuth';
 import { UserForm } from '../Users/UserForm';
 import { usersService, User } from '../../services/usersService';
+import { useTranslation } from 'react-i18next';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -55,6 +56,7 @@ const PurchaseModal: React.FC<{
   onClose: () => void;
   onPurchase: (quantity: number) => Promise<void>;
 }> = ({ isOpen, onClose, onPurchase }) => {
+  const { t } = useTranslation();
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -71,7 +73,7 @@ const PurchaseModal: React.FC<{
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Adquirir Novas Licenças</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('licenses.purchaseModal.title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -85,14 +87,14 @@ const PurchaseModal: React.FC<{
             <div className="flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                O valor das novas licenças será adicionado à sua mensalidade. Nossa equipe entrará em contato para confirmar a aquisição.
+                {t('licenses.purchaseModal.warning')}
               </p>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Quantidade de licenças
+              {t('licenses.purchaseModal.quantityMsg')}
             </label>
             <input
               type="number"
@@ -105,11 +107,11 @@ const PurchaseModal: React.FC<{
 
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Valor estimado por licença:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('licenses.purchaseModal.estimatedValue')}</span>
               <span className="font-semibold text-gray-900 dark:text-white">R$ 49,90/mês</span>
             </div>
             <div className="flex justify-between items-center text-sm mt-2">
-              <span className="text-gray-600 dark:text-gray-400">Total mensal adicional:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('licenses.purchaseModal.totalMonthly')}</span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
                 R$ {(quantity * 49.9).toFixed(2)}
               </span>
@@ -123,7 +125,7 @@ const PurchaseModal: React.FC<{
             disabled={isLoading}
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
-            Cancelar
+            {t('licenses.purchaseModal.cancel')}
           </button>
           <button
             onClick={handlePurchase}
@@ -131,7 +133,7 @@ const PurchaseModal: React.FC<{
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             <ShoppingCart className="w-4 h-4" />
-            <span>{isLoading ? 'Processando...' : 'Solicitar'}</span>
+            <span>{isLoading ? t('licenses.purchaseModal.processing') : t('licenses.purchaseModal.request')}</span>
           </button>
         </div>
       </div>
@@ -146,6 +148,7 @@ const TransferModal: React.FC<{
   users: UserWithLicense[];
   onTransfer: (toUserId: string) => Promise<void>;
 }> = ({ isOpen, onClose, fromUser, users, onTransfer }) => {
+  const { t } = useTranslation();
   const [selectedUser, setSelectedUser] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -165,7 +168,7 @@ const TransferModal: React.FC<{
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Transferir Licença</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('licenses.transferModal.title')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <XCircle className="w-6 h-6" />
           </button>
@@ -174,20 +177,20 @@ const TransferModal: React.FC<{
         <div className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4">
             <p className="text-sm text-blue-800 dark:text-blue-300">
-              <strong>De:</strong> {fromUser.nome} ({fromUser.codigo})
+              <strong>{t('licenses.transferModal.from')}</strong> {fromUser.nome} ({fromUser.codigo})
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Transferir para:
+              {t('licenses.transferModal.to')}
             </label>
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
-              <option value="">Selecione um usuário</option>
+              <option value="">{t('licenses.transferModal.selectUser')}</option>
               {availableUsers.map(user => (
                 <option key={user.codigo} value={user.codigo}>
                   {user.nome} ({user.codigo})
@@ -203,7 +206,7 @@ const TransferModal: React.FC<{
             disabled={isLoading}
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            Cancelar
+            {t('licenses.transferModal.cancel')}
           </button>
           <button
             onClick={handleTransfer}
@@ -211,7 +214,7 @@ const TransferModal: React.FC<{
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             <ArrowRightLeft className="w-4 h-4" />
-            <span>{isLoading ? 'Transferindo...' : 'Transferir'}</span>
+            <span>{isLoading ? t('licenses.transferModal.transferring') : t('licenses.transferModal.transfer')}</span>
           </button>
         </div>
       </div>
@@ -220,6 +223,7 @@ const TransferModal: React.FC<{
 };
 
 export const LicenseManagement: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [licenseConfig, setLicenseConfig] = useState<License | null>(null);
   const [users, setUsers] = useState<UserWithLicense[]>([]);
@@ -283,10 +287,10 @@ export const LicenseManagement: React.FC = () => {
 
     const success = await licensesService.assignLicense(userId, user.id.toString());
     if (success) {
-      setToast({ message: 'Licença atribuída com sucesso!', type: 'success' });
+      setToast({ message: t('licenses.messages.assignSuccess'), type: 'success' });
       loadData();
     } else {
-      setToast({ message: 'Erro ao atribuir licença', type: 'error' });
+      setToast({ message: t('licenses.messages.assignError'), type: 'error' });
     }
   };
 
@@ -295,10 +299,10 @@ export const LicenseManagement: React.FC = () => {
 
     const success = await licensesService.revokeLicense(userId, user.id.toString());
     if (success) {
-      setToast({ message: 'Licença removida com sucesso!', type: 'success' });
+      setToast({ message: t('licenses.messages.revokeSuccess'), type: 'success' });
       loadData();
     } else {
-      setToast({ message: 'Erro ao remover licença', type: 'error' });
+      setToast({ message: t('licenses.messages.revokeError'), type: 'error' });
     }
   };
 
@@ -312,10 +316,10 @@ export const LicenseManagement: React.FC = () => {
     );
 
     if (success) {
-      setToast({ message: 'Licença transferida com sucesso!', type: 'success' });
+      setToast({ message: t('licenses.messages.transferSuccess'), type: 'success' });
       loadData();
     } else {
-      setToast({ message: 'Erro ao transferir licença', type: 'error' });
+      setToast({ message: t('licenses.messages.transferError'), type: 'error' });
     }
   };
 
@@ -324,10 +328,10 @@ export const LicenseManagement: React.FC = () => {
 
     const success = await licensesService.purchaseNewLicenses(quantity, user.id.toString());
     if (success) {
-      setToast({ message: `${quantity} licença(s) solicitada(s) com sucesso!`, type: 'success' });
+      setToast({ message: t('licenses.messages.purchaseSuccess', { count: quantity }), type: 'success' });
       loadData();
     } else {
-      setToast({ message: 'Erro ao solicitar licenças', type: 'error' });
+      setToast({ message: t('licenses.messages.purchaseError'), type: 'error' });
     }
   };
 
@@ -349,17 +353,17 @@ export const LicenseManagement: React.FC = () => {
       if (editingUser) {
         const updated = await usersService.update(editingUser.id, userData);
         if (updated) {
-          setToast({ message: 'Usuário atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('licenses.messages.saveUserSuccess'), type: 'success' });
         }
       } else {
         await usersService.create(userData);
-        setToast({ message: 'Usuário criado com sucesso!', type: 'success' });
+        setToast({ message: t('licenses.messages.createUserSuccess'), type: 'success' });
       }
       setShowUserForm(false);
       setEditingUser(null);
       loadData();
     } catch (error) {
-      setToast({ message: 'Erro ao salvar usuário.', type: 'error' });
+      setToast({ message: t('licenses.messages.saveUserError'), type: 'error' });
     }
   };
 
@@ -384,21 +388,21 @@ export const LicenseManagement: React.FC = () => {
   const getActionText = (log: LicenseLog) => {
     switch (log.action) {
       case 'assigned':
-        return 'Atribuída';
+        return t('licenses.historyMessages.assigned');
       case 'revoked':
-        return 'Removida';
+        return t('licenses.historyMessages.revoked');
       case 'transferred':
-        return 'Transferida';
+        return t('licenses.historyMessages.transferred');
       case 'purchased':
-        return 'Adquiridas';
+        return t('licenses.historyMessages.purchased');
       default:
         return log.action;
     }
   };
 
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Administração de Licenças', current: true }
+    { label: t('common.settings', { defaultValue: 'Configurações' }) },
+    { label: t('licenses.title'), current: true }
   ];
 
   if (isLoading) {
@@ -408,7 +412,7 @@ export const LicenseManagement: React.FC = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando licenças...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('licenses.messages.loading')}</p>
           </div>
         </div>
       </div>
@@ -442,9 +446,9 @@ export const LicenseManagement: React.FC = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Administração de Licenças</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('licenses.title')}</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gerencie as licenças de acesso ao sistema
+            {t('licenses.subtitle')}
           </p>
         </div>
       </div>
@@ -454,7 +458,7 @@ export const LicenseManagement: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Contratadas</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('licenses.counters.total')}</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                 {licenseConfig?.total_licenses || 0}
               </p>
@@ -468,7 +472,7 @@ export const LicenseManagement: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Em Uso</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('licenses.counters.inUse')}</p>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
                 {licensedCount}
               </p>
@@ -482,7 +486,7 @@ export const LicenseManagement: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Disponíveis</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('licenses.counters.available')}</p>
               <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">
                 {licenseConfig?.available_licenses || 0}
               </p>
@@ -502,7 +506,7 @@ export const LicenseManagement: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Buscar usuário..."
+                placeholder={t('licenses.searchUser')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
@@ -516,7 +520,7 @@ export const LicenseManagement: React.FC = () => {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
-              <span>Novo Usuário</span>
+              <span>{t('licenses.actions.newUser')}</span>
             </button>
 
             <button
@@ -524,7 +528,7 @@ export const LicenseManagement: React.FC = () => {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
             >
               <History className="w-4 h-4" />
-              <span>Histórico</span>
+              <span>{t('licenses.actions.history')}</span>
             </button>
 
             <button
@@ -532,7 +536,7 @@ export const LicenseManagement: React.FC = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
             >
               <ShoppingCart className="w-4 h-4" />
-              <span>Adquirir Licenças</span>
+              <span>{t('licenses.actions.purchase')}</span>
             </button>
           </div>
         </div>
@@ -546,25 +550,25 @@ export const LicenseManagement: React.FC = () => {
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Código
+                    {t('licenses.table.code')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Nome
+                    {t('licenses.table.name')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Perfil
+                    {t('licenses.table.profile')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('licenses.table.status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Licença
+                    {t('licenses.table.license')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Código de Licença
+                    {t('licenses.table.licenseCode')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ações
+                    {t('licenses.table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -593,19 +597,19 @@ export const LicenseManagement: React.FC = () => {
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                           : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                       }`}>
-                        {userItem.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        {userItem.status === 'ativo' ? t('licenses.status.active') : t('licenses.status.inactive')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {userItem.has_license ? (
                         <span className="flex items-center space-x-1 text-green-600 dark:text-green-400">
                           <UserCheck className="w-4 h-4" />
-                          <span className="text-sm font-medium">Licenciado</span>
+                          <span className="text-sm font-medium">{t('licenses.status.licensed')}</span>
                         </span>
                       ) : (
                         <span className="flex items-center space-x-1 text-gray-400 dark:text-gray-500 dark:text-gray-400">
                           <UserX className="w-4 h-4" />
-                          <span className="text-sm font-medium">Não licenciado</span>
+                          <span className="text-sm font-medium">{t('licenses.status.unlicensed')}</span>
                         </span>
                       )}
                     </td>
@@ -625,7 +629,7 @@ export const LicenseManagement: React.FC = () => {
                         <button
                           onClick={() => userItem.id && handleEditUser(userItem.id)}
                           className="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                          title="Editar usuário"
+                          title={t('licenses.actions.editUser')}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -634,7 +638,7 @@ export const LicenseManagement: React.FC = () => {
                             <button
                               onClick={() => handleRevokeLicense(userItem.codigo)}
                               className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                              title="Remover licença"
+                              title={t('licenses.actions.revokeLicense')}
                             >
                               <UserX className="w-4 h-4" />
                             </button>
@@ -644,7 +648,7 @@ export const LicenseManagement: React.FC = () => {
                                 setShowTransferModal(true);
                               }}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                              title="Transferir licença"
+                              title={t('licenses.actions.transferLicense')}
                             >
                               <ArrowRightLeft className="w-4 h-4" />
                             </button>
@@ -654,7 +658,7 @@ export const LicenseManagement: React.FC = () => {
                             onClick={() => handleAssignLicense(userItem.codigo)}
                             disabled={!licenseConfig || licenseConfig.available_licenses <= 0}
                             className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Atribuir licença"
+                            title={t('licenses.actions.assignLicense')}
                           >
                             <UserCheck className="w-4 h-4" />
                           </button>
@@ -670,7 +674,7 @@ export const LicenseManagement: React.FC = () => {
           {totalPagesUsers > 1 && (
             <div className="mt-4 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                Mostrando {startIndexUsers + 1} a {Math.min(endIndexUsers, filteredUsers.length)} de {filteredUsers.length} usuários
+                {t('common.showingOutTo', { start: startIndexUsers + 1, end: Math.min(endIndexUsers, filteredUsers.length), total: filteredUsers.length, defaultValue: `Mostrando ${startIndexUsers + 1} a ${Math.min(endIndexUsers, filteredUsers.length)} de ${filteredUsers.length} registros` })}
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -678,17 +682,17 @@ export const LicenseManagement: React.FC = () => {
                   disabled={currentPageUsers === 1}
                   className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  Anterior
+                  {t('common.previous', { defaultValue: 'Anterior' })}
                 </button>
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Página {currentPageUsers} de {totalPagesUsers}
+                  {t('common.pageOf', { current: currentPageUsers, total: totalPagesUsers, defaultValue: `Página ${currentPageUsers} de ${totalPagesUsers}` })}
                 </span>
                 <button
                   onClick={() => setCurrentPageUsers(prev => Math.min(totalPagesUsers, prev + 1))}
                   disabled={currentPageUsers === totalPagesUsers}
                   className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  Próxima
+                  {t('common.next', { defaultValue: 'Próxima' })}
                 </button>
               </div>
             </div>
@@ -697,7 +701,7 @@ export const LicenseManagement: React.FC = () => {
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Histórico de Movimentações
+            {t('licenses.historyTitle')}
           </h2>
           <div className="space-y-3">
             {paginatedLogs.map((log) => (
@@ -710,7 +714,7 @@ export const LicenseManagement: React.FC = () => {
                     {getActionText(log)} - {log.notes}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Por: {log.performed_by} • {new Date(log.created_at).toLocaleString('pt-BR')}
+                    {t('licenses.historyMessages.by')}: {log.performed_by} • {new Date(log.created_at).toLocaleString('pt-BR')}
                   </p>
                 </div>
               </div>
@@ -720,7 +724,7 @@ export const LicenseManagement: React.FC = () => {
           {totalPagesLogs > 1 && (
             <div className="mt-4 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                Mostrando {startIndexLogs + 1} a {Math.min(endIndexLogs, logs.length)} de {logs.length} registros
+                {t('common.showingOutTo', { start: startIndexLogs + 1, end: Math.min(endIndexLogs, logs.length), total: logs.length, defaultValue: `Mostrando ${startIndexLogs + 1} a ${Math.min(endIndexLogs, logs.length)} de ${logs.length} registros` })}
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -728,17 +732,17 @@ export const LicenseManagement: React.FC = () => {
                   disabled={currentPageLogs === 1}
                   className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  Anterior
+                  {t('common.previous', { defaultValue: 'Anterior' })}
                 </button>
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Página {currentPageLogs} de {totalPagesLogs}
+                  {t('common.pageOf', { current: currentPageLogs, total: totalPagesLogs, defaultValue: `Página ${currentPageLogs} de ${totalPagesLogs}` })}
                 </span>
                 <button
                   onClick={() => setCurrentPageLogs(prev => Math.min(totalPagesLogs, prev + 1))}
                   disabled={currentPageLogs === totalPagesLogs}
                   className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  Próxima
+                  {t('common.next', { defaultValue: 'Próxima' })}
                 </button>
               </div>
             </div>

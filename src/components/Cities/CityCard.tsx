@@ -1,6 +1,7 @@
 import React from 'react';
 import { CreditCard as Edit, Trash2, Eye, MapPin, Hash, Building, Mail, Info } from 'lucide-react';
 import { BrazilianCity } from '../../types/cities';
+import { useTranslation } from 'react-i18next';
 
 interface CityCardProps {
   city: BrazilianCity;
@@ -17,6 +18,8 @@ export const CityCard: React.FC<CityCardProps> = ({
   onDelete,
   isAdmin
 }) => {
+  const { t } = useTranslation();
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'cidade': return 'bg-blue-100 text-blue-800';
@@ -53,7 +56,7 @@ export const CityCard: React.FC<CityCardProps> = ({
           <button 
             onClick={() => onView(city)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Visualizar"
+            title={t('cities.actions.view', { defaultValue: 'Visualizar' })}
           >
             <Eye size={16} />
           </button>
@@ -62,14 +65,14 @@ export const CityCard: React.FC<CityCardProps> = ({
               <button 
                 onClick={() => onEdit(city)}
                 className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-                title="Editar"
+                title={t('cities.actions.edit', { defaultValue: 'Editar' })}
               >
                 <Edit size={16} />
               </button>
               <button 
-                onClick={() => onDelete(city.id)}
+                onClick={() => onDelete(Number(city.id))}
                 className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                title="Excluir"
+                title={t('cities.actions.delete', { defaultValue: 'Excluir' })}
               >
                 <Trash2 size={16} />
               </button>
@@ -81,7 +84,7 @@ export const CityCard: React.FC<CityCardProps> = ({
       <div className="space-y-3 text-sm">
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Hash size={14} />
-          <span>IBGE: {city.ibgeCode}</span>
+          <span>{t('cities.form.ibgeCode', { defaultValue: 'Cód. IBGE' })}: {city.ibgeCode}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
@@ -94,7 +97,7 @@ export const CityCard: React.FC<CityCardProps> = ({
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <MapPin size={14} />
-          <span>Região {city.region}</span>
+          <span>{t('cities.form.region', { defaultValue: 'Região' })} {city.region}</span>
         </div>
 
         {/* ZIP Code Ranges Info */}
@@ -102,7 +105,7 @@ export const CityCard: React.FC<CityCardProps> = ({
           <div className="flex items-center space-x-2 text-blue-600 bg-blue-50 px-2 py-1 rounded">
             <Info size={14} />
             <span className="text-xs font-medium">
-              {zipRangeCount} faixa{zipRangeCount > 1 ? 's' : ''} de CEP detalhada{zipRangeCount > 1 ? 's' : ''}
+              {t('cities.stats.zipRanges', { count: zipRangeCount, defaultValue: '{{count}} faixa(s) de CEP detalhada(s)' })}
             </span>
           </div>
         )}
@@ -110,13 +113,13 @@ export const CityCard: React.FC<CityCardProps> = ({
       
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="text-sm">
-          <span className="text-gray-600 dark:text-gray-400">Estado:</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('cities.form.state', { defaultValue: 'Estado' })}:</span>
           <span className="font-semibold text-gray-900 dark:text-white ml-1">{city.stateAbbreviation}</span>
         </div>
         <div className="text-right">
           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(city.type)}`}>
             {getTypeIcon(city.type)}
-            <span className="ml-1 capitalize">{city.type.charAt(0).toUpperCase() + city.type.slice(1)}</span>
+            <span className="ml-1 capitalize">{t(`cities.types.${city.type}`, { defaultValue: city.type.charAt(0).toUpperCase() + city.type.slice(1) })}</span>
           </div>
         </div>
       </div>

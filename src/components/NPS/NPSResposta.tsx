@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, CheckCircle } from 'lucide-react';
 import { npsService, NPSOpinioes } from '../../services/npsService';
 import { Toast, ToastType } from '../common/Toast';
+import { useTranslation } from 'react-i18next';
 
 interface NPSRespostaProps {
   token: string;
@@ -13,11 +14,7 @@ const getNotaColor = (nota: number): string => {
   return 'bg-[#4CAF50]';
 };
 
-const getNotaTextColor = (nota: number): string => {
-  if (nota <= 6) return 'text-[#FF5722]';
-  if (nota <= 8) return 'text-[#FFEB3B]';
-  return 'text-[#4CAF50]';
-};
+
 
 const getNotaTextColorOnBackground = (nota: number): string => {
   if (nota <= 6) return 'text-white';
@@ -25,14 +22,10 @@ const getNotaTextColorOnBackground = (nota: number): string => {
   return 'text-white';
 };
 
-const criterios = [
-  { key: 'velocidade_processamento', label: 'Velocidade no processamento do pedido' },
-  { key: 'clareza_informacoes', label: 'Clareza e precisão nas informações sobre o status do pedido' },
-  { key: 'pontualidade_entrega', label: 'Pontualidade na entrega realizada pelo transportador' },
-  { key: 'condicoes_mercadoria', label: 'Condições da mercadoria no momento da entrega' },
-];
+
 
 export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
+  const { t } = useTranslation();
   const [pesquisa, setPesquisa] = useState<any>(null);
   const [nota, setNota] = useState<number | null>(null);
   const [comentario, setComentario] = useState('');
@@ -42,6 +35,13 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
   const [isSending, setIsSending] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  const criterios = [
+    { key: 'velocidade_processamento', label: t('nps.resposta.criterias.processingSpeed') },
+    { key: 'clareza_informacoes', label: t('nps.resposta.criterias.infoClarity') },
+    { key: 'pontualidade_entrega', label: t('nps.resposta.criterias.deliveryPunctuality') },
+    { key: 'condicoes_mercadoria', label: t('nps.resposta.criterias.merchandiseConditions') },
+  ];
 
   useEffect(() => {
     loadPesquisa();
@@ -71,7 +71,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
       if (!data) {
         console.error('❌ Pesquisa não encontrada');
         setToast({
-          message: 'Pesquisa não encontrada ou link inválido',
+          message: t('nps.resposta.evaluationNotFound'),
           type: 'error',
         });
         return;
@@ -83,7 +83,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
       } else if (data.status === 'expirada') {
         console.log('⏰ Pesquisa expirada');
         setToast({
-          message: 'Esta pesquisa expirou e não pode mais ser respondida',
+          message: t('nps.resposta.evaluationExpired'),
           type: 'error',
         });
       }
@@ -92,7 +92,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
     } catch (error) {
       console.error('❌ Erro ao carregar pesquisa:', error);
       setToast({
-        message: 'Erro ao carregar pesquisa. Tente novamente',
+        message: t('nps.resposta.errorSending'), // Fallback error message
         type: 'error',
       });
     } finally {
@@ -110,7 +110,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
   const handleSubmit = async () => {
     if (nota === null) {
       setToast({
-        message: 'Por favor, selecione uma nota de 0 a 10',
+        message: t('nps.resposta.validationSelectNote'),
         type: 'error',
       });
       return;
@@ -128,13 +128,13 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
       setSubmitted(true);
       setToast({
-        message: 'Obrigado pela sua avaliação!',
+        message: t('nps.resposta.thanksAlert'),
         type: 'success',
       });
     } catch (error) {
       console.error('Erro ao enviar resposta:', error);
       setToast({
-        message: 'Erro ao enviar resposta. Tente novamente',
+        message: t('nps.resposta.errorSending'),
         type: 'error',
       });
     } finally {
@@ -147,7 +147,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Carregando pesquisa...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('nps.resposta.loading')}</p>
         </div>
       </div>
     );
@@ -159,10 +159,10 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            Obrigado pela sua avaliação!
+            {t('nps.resposta.thanksScreenTitle')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Sua opinião é muito importante para melhorarmos nossos serviços.
+            {t('nps.resposta.thanksScreenSub')}
           </p>
         </div>
       </div>
@@ -173,7 +173,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <p className="text-gray-600 dark:text-gray-400">Pesquisa não encontrada</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('nps.resposta.notFoundScreen')}</p>
         </div>
       </div>
     );
@@ -185,11 +185,11 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
         {/* Painel esquerdo - Avaliação */}
         <div className={`${getNotaColor(nota ?? 5)} rounded-lg shadow-lg p-8 flex flex-col items-center justify-center text-center`}>
           <h1 className={`text-3xl font-bold mb-6 ${getNotaTextColorOnBackground(nota ?? 5)}`}>
-            Avalie
+            {t('nps.resposta.rateTitle')}
           </h1>
 
           <p className={`text-base mb-8 max-w-md ${getNotaTextColorOnBackground(nota ?? 5)}`}>
-            Em uma escala de 0 a 10, qual a probabilidade de você recomendar a experiência completa do pedido (desde a compra até a entrega)?
+            {t('nps.resposta.rateQuestion')}
           </p>
 
           {/* Nota grande */}
@@ -235,7 +235,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
         {/* Painel direito - Opiniões */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-            Deixe sua opinião
+            {t('nps.resposta.leaveOpinion')}
           </h2>
 
           <div className="space-y-4 mb-6">
@@ -275,12 +275,12 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Como podemos melhorar?
+              {t('nps.resposta.howCanWeImproveLabel')}
             </label>
             <textarea
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
-              placeholder="Excelente experiência! Todo o processo fica rastreável e de fácil acompanhamento!"
+              placeholder={t('nps.resposta.howCanWeImprovePlaceholder')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
               rows={4}
             />
@@ -294,7 +294,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
                 onChange={(e) => setAvaliarAnonimo(e.target.checked)}
                 className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Avaliar em anonimato</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('nps.resposta.anonReview')}</span>
             </label>
           </div>
 
@@ -303,7 +303,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
             disabled={isSending || nota === null}
             className="w-full bg-[#4CAF50] hover:bg-[#45a049] text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSending ? 'ENVIANDO...' : 'ENVIAR'}
+            {isSending ? t('nps.resposta.submitting') : t('nps.resposta.submitReview')}
           </button>
         </div>
       </div>

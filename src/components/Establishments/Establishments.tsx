@@ -9,11 +9,13 @@ import { EstablishmentForm } from './EstablishmentForm';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
+import { useTranslation } from 'react-i18next';
 
 export const Establishments: React.FC = () => {
+  const { t } = useTranslation();
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Estabelecimentos', current: true }
+    { label: t('establishments.title') },
+    { label: t('establishments.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,7 +78,7 @@ export const Establishments: React.FC = () => {
       }
       setEstablishments(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar estabelecimentos.', type: 'error' });
+      setToast({ message: t('establishments.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +121,7 @@ export const Establishments: React.FC = () => {
     const establishment = establishments.find(e => e.id === establishmentId);
 
     if (!establishment) {
-      setToast({ message: 'Estabelecimento não encontrado.', type: 'error' });
+      setToast({ message: t('establishments.messages.notFound'), type: 'error' });
       return;
     }
 
@@ -170,13 +172,13 @@ export const Establishments: React.FC = () => {
             );
           }
 
-          setToast({ message: 'Estabelecimento excluído com sucesso!', type: 'success' });
+          setToast({ message: t('establishments.messages.deleteSuccess'), type: 'success' });
           forceRefresh();
         } else {
-          setToast({ message: 'Erro ao excluir estabelecimento.', type: 'error' });
+          setToast({ message: t('establishments.messages.deleteError'), type: 'error' });
         }
       } catch (error) {
-        setToast({ message: 'Erro ao excluir estabelecimento.', type: 'error' });
+        setToast({ message: t('establishments.messages.deleteError'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -243,9 +245,9 @@ export const Establishments: React.FC = () => {
             'Administrador'
           );
 
-          setToast({ message: 'Estabelecimento atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('establishments.messages.updateSuccess'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao atualizar estabelecimento.', type: 'error' });
+          setToast({ message: t('establishments.messages.updateError'), type: 'error' });
           return;
         }
       } else {
@@ -265,9 +267,9 @@ export const Establishments: React.FC = () => {
             'Administrador'
           );
 
-          setToast({ message: 'Estabelecimento criado com sucesso!', type: 'success' });
+          setToast({ message: t('establishments.messages.createSuccess'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao criar estabelecimento.', type: 'error' });
+          setToast({ message: t('establishments.messages.createError'), type: 'error' });
           return;
         }
       }
@@ -276,7 +278,7 @@ export const Establishments: React.FC = () => {
       setEditingEstablishment(null);
       forceRefresh();
     } catch (error: any) {
-      const errorMessage = error?.message || 'Erro ao salvar estabelecimento. Tente novamente.';
+      const errorMessage = error?.message || t('establishments.messages.saveError');
       setToast({ message: errorMessage, type: 'error' });
     }
   };
@@ -289,7 +291,7 @@ export const Establishments: React.FC = () => {
   };
 
   const handleExport = () => {
-    alert('Funcionalidade de exportação em desenvolvimento');
+    alert(t('establishments.messages.exportWarning'));
   };
 
   const uniqueStates = Array.from(new Set(establishments.map(e => e.estado))).sort();
@@ -322,15 +324,15 @@ export const Establishments: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Estabelecimentos</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie o cadastro de estabelecimentos da empresa</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('establishments.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('establishments.subtitle')}</p>
         </div>
         <button
           onClick={handleNewEstablishment}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
           <Plus size={20} />
-          <span>Novo Estabelecimento</span>
+          <span>{t('establishments.buttons.new')}</span>
         </button>
       </div>
 
@@ -342,7 +344,7 @@ export const Establishments: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
-                  placeholder="Buscar por razão social, fantasia, CNPJ, código ou CEP..."
+                  placeholder={t('establishments.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -358,7 +360,7 @@ export const Establishments: React.FC = () => {
                   onChange={(e) => setStateFilter(e.target.value)}
                   className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="Todos">Todos os Estados</option>
+                  <option value="Todos">{t('establishments.stateFilter')}</option>
                   {uniqueStates.map(state => (
                     <option key={state} value={state}>{state}</option>
                   ))}
@@ -370,7 +372,7 @@ export const Establishments: React.FC = () => {
                 className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <Download size={20} />
-                <span>Exportar</span>
+                <span>{t('establishments.buttons.export')}</span>
               </button>
             </div>
           </div>
@@ -379,13 +381,13 @@ export const Establishments: React.FC = () => {
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando estabelecimentos...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('establishments.emptyState.loading')}</p>
           </div>
         ) : filteredEstablishments.length === 0 ? (
           <div className="p-12 text-center">
             <Building className="mx-auto text-gray-400 mb-4" size={48} />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum estabelecimento encontrado</h3>
-            <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou cadastrar um novo estabelecimento.</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('establishments.emptyState.title')}</h3>
+            <p className="text-gray-600 dark:text-gray-400">{t('establishments.emptyState.desc')}</p>
           </div>
         ) : (
           <>
@@ -404,7 +406,7 @@ export const Establishments: React.FC = () => {
             {totalPages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredEstablishments.length)} de {filteredEstablishments.length} estabelecimentos
+                  {t('establishments.pagination.showing')} {startIndex + 1} {t('establishments.pagination.to')} {Math.min(startIndex + itemsPerPage, filteredEstablishments.length)} {t('establishments.pagination.of')} {filteredEstablishments.length} {t('establishments.pagination.establishments')}
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -412,17 +414,17 @@ export const Establishments: React.FC = () => {
                     disabled={currentPage === 1}
                     className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:bg-gray-900"
                   >
-                    Anterior
+                    {t('establishments.pagination.previous')}
                   </button>
                   <span className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    {currentPage} de {totalPages}
+                    {currentPage} {t('establishments.pagination.of')} {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                     className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:bg-gray-900"
                   >
-                    Próxima
+                    {t('establishments.pagination.next')}
                   </button>
                 </div>
               </div>
@@ -442,15 +444,15 @@ export const Establishments: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title={confirmDialog.canDelete ? "Confirmar Exclusão" : "Não é Possível Excluir"}
+          title={confirmDialog.canDelete ? t('establishments.confirmDialog.deleteTitle') : t('establishments.confirmDialog.cantDeleteTitle')}
           message={
             confirmDialog.canDelete
-              ? `Tem certeza que deseja excluir o estabelecimento ${confirmDialog.establishmentName}? Esta ação não pode ser desfeita.`
-              : confirmDialog.reason || "Este estabelecimento não pode ser excluído."
+              ? t('establishments.confirmDialog.deleteMessage', { name: confirmDialog.establishmentName })
+              : confirmDialog.reason || t('establishments.confirmDialog.cantDeleteMessage')
           }
           type={confirmDialog.canDelete ? "danger" : "error"}
           errorMode={!confirmDialog.canDelete}
-          confirmText="Excluir"
+          confirmText={t('establishments.confirmDialog.confirmText')}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}
         />

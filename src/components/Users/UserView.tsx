@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Edit, User, Mail, Phone, Building, Shield, Calendar, MapPin, FileText, Clock, AlertTriangle, CheckSquare, Square, ChevronDown, ChevronRight } from 'lucide-react';
 import { User as UserType } from '../../services/usersService';
 import { establishmentsService, Establishment } from '../../services/establishmentsService';
+import { useTranslation } from 'react-i18next';
 
 interface UserViewProps {
   onBack: () => void;
@@ -71,6 +72,7 @@ const menuItems = [
 ];
 
 export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'details' | 'permissions' | 'establishments'>('details');
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
@@ -80,7 +82,8 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
       try {
         const data = await establishmentsService.getAll();
         setEstablishments(data);
-      } catch (error) {
+      } catch (e) {
+        console.error('Failed to load establishments in UserView', e);
       }
     };
     loadEstablishments();
@@ -106,14 +109,14 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  const formatDate = useCallback((dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  }, []);
 
-  const formatDateTime = (dateString?: string) => {
-    if (!dateString) return 'Nunca';
-    return new Date(dateString).toLocaleString('pt-BR');
-  };
+  const formatDateTime = useCallback((dateString?: string) => {
+    if (!dateString) return t('userView.values.never');
+    return new Date(dateString).toLocaleString();
+  }, [t]);
 
   const calculateAge = (birthDate?: string) => {
     if (!birthDate) return null;
@@ -127,21 +130,30 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
     return age;
   };
 
-  const calculateWorkTime = (admissionDate: string) => {
-    const today = new Date();
-    const admission = new Date(admissionDate);
-    const diffTime = Math.abs(today.getTime() - admission.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor((diffDays % 365) / 30);
+  const calculateWorkTime = useCallback((startDate?: string) => {
+    if (!startDate) return '-';
+    const start = new Date(startDate);
+    const now = new Date();
+    
+    let years = now.getFullYear() - start.getFullYear();
+    let months = now.getMonth() - start.getMonth();
+    
+    if (months < 0 || (months === 0 && now.getDate() < start.getDate())) {
+      years--;
+      months += 12;
+    }
+    
+    if (years === 0 && months === 0) {
+      return 'Menos de 1 mês';
+    }
     
     if (years > 0) {
       return `${years} ano${years > 1 ? 's' : ''} e ${months} mês${months > 1 ? 'es' : ''}`;
     }
     return `${months} mês${months > 1 ? 'es' : ''}`;
-  };
+  }, []);
 
-  const isProtectedUser = user.id === 1;
+  const isProtectedUser = String(user.id) === '1'; // Fix string comparison
 
   // Toggle menu expansion
   const toggleMenu = (menuId: string) => {
@@ -161,34 +173,20 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
     return user.permissoes?.includes(menuId) || false;
   };
 
-  // Check if all submenus of a menu are permitted
-  const areAllSubmenusPermitted = (menu: any) => {
-    if (!menu.hasSubmenu || !menu.submenu) return false;
-    if (user.perfil !== 'personalizado') return true; // Non-personalized profiles have all permissions
-    
-    return menu.submenu.every((submenu: any) => isMenuPermitted(submenu.id));
-  };
+  // interface MenuItem to replace "any"
+  interface MenuItem {
+    id: string;
+    label: string;
+    hasSubmenu?: boolean;
+    submenu?: MenuItem[];
+  }
 
   // Check if some submenus of a menu are permitted
-  const areSomeSubmenusPermitted = (menu: any) => {
+  const areSomeSubmenusPermitted = (menu: MenuItem) => {
     if (!menu.hasSubmenu || !menu.submenu) return false;
     if (user.perfil !== 'personalizado') return true; // Non-personalized profiles have all permissions
     
-    return menu.submenu.some((submenu: any) => isMenuPermitted(submenu.id));
-  };
-
-  // Get establishment names from IDs
-  const getEstablishmentNames = () => {
-    if (!user.estabelecimentosPermitidos || user.estabelecimentosPermitidos.length === 0) {
-      return ['Todos os estabelecimentos'];
-    }
-    
-    return user.estabelecimentosPermitidos.map(id => {
-      const establishment = establishments.find(e => e.id === id);
-      return establishment 
-        ? `${establishment.codigo} - ${establishment.fantasia || establishment.razaoSocial}`
-        : `Estabelecimento ID ${id}`;
-    });
+    return menu.submenu.some((submenu: MenuItem) => isMenuPermitted(submenu.id));
   };
 
   return (
@@ -199,18 +197,18 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Usuários</span>
+          <span>{t('userView.back')}</span>
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Usuário</h1>
-            <p className="text-gray-600 dark:text-gray-400">Detalhes completos do usuário</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('userView.title')}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{t('userView.subtitle')}</p>
           </div>
           <div className="flex items-center space-x-3">
             {isProtectedUser && (
               <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg flex items-center space-x-2">
                 <Shield size={16} />
-                <span className="text-sm font-medium">Usuário Protegido</span>
+                <span className="text-sm font-medium">{t('userView.protectedUser')}</span>
               </div>
             )}
             <button
@@ -218,7 +216,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               <Edit size={20} />
-              <span>Editar</span>
+              <span>{t('userView.edit')}</span>
             </button>
           </div>
         </div>
@@ -238,7 +236,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <User size={16} />
-                <span>Detalhes do Usuário</span>
+                <span>{t('userView.tabs.details')}</span>
               </div>
             </button>
             {user.perfil === 'personalizado' && (
@@ -252,7 +250,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
               >
                 <div className="flex items-center space-x-2">
                   <Shield size={16} />
-                  <span>Permissões</span>
+                  <span>{t('userView.tabs.permissions')}</span>
                 </div>
               </button>
             )}
@@ -267,7 +265,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
               >
                 <div className="flex items-center space-x-2">
                   <Building size={16} />
-                  <span>Estabelecimentos</span>
+                  <span>{t('userView.tabs.establishments')}</span>
                 </div>
               </button>
             )}
@@ -294,24 +292,28 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.email')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{user.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">CPF</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.cpf')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{user.cpf}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
-                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                    </span>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.status')}</p>
+                    {user.status && (
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status || '')}`}>
+                        {t(`userCard.status.${user.status}` as unknown as string, { defaultValue: (user.status || '').charAt(0).toUpperCase() + (user.status || '').slice(1) })}
+                      </span>
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Perfil</p>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPerfilColor(user.perfil)}`}>
-                      {user.perfil.charAt(0).toUpperCase() + user.perfil.slice(1)}
-                    </span>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.profile')}</p>
+                    {user.perfil && (
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPerfilColor(user.perfil)}`}>
+                        {t(`userCard.role.${user.perfil}` as unknown as string, { defaultValue: user.perfil.charAt(0).toUpperCase() + user.perfil.slice(1) })}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -319,8 +321,8 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
               {/* Stats */}
               <div className="text-center">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-2xl font-bold text-blue-600">{calculateWorkTime(user.data_admissao)}</p>
-                  <p className="text-sm text-blue-700">Tempo de Empresa</p>
+                  <p className="text-2xl font-bold text-blue-600">{user.data_admissao ? calculateWorkTime(user.data_admissao) : '-'}</p>
+                  <p className="text-sm text-blue-700">{t('userView.fields.companyTime')}</p>
                 </div>
               </div>
             </div>
@@ -328,12 +330,12 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
 
           {/* Contact Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Contato</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.contact')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center space-x-3">
                 <Mail className="text-blue-500" size={20} />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">E-mail</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.email')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{user.email}</p>
                 </div>
               </div>
@@ -342,7 +344,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 <div className="flex items-center space-x-3">
                   <Phone className="text-green-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Telefone</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.phone')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{user.telefone}</p>
                   </div>
                 </div>
@@ -352,7 +354,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 <div className="flex items-center space-x-3">
                   <Phone className="text-purple-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Celular</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.cellphone')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{user.celular}</p>
                   </div>
                 </div>
@@ -362,13 +364,13 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
 
           {/* Professional Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Profissionais</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.professional')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Building className="text-blue-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Cargo</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.role')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{user.cargo}</p>
                   </div>
                 </div>
@@ -376,7 +378,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 <div className="flex items-center space-x-3">
                   <Building className="text-green-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Departamento</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.department')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{user.departamento}</p>
                   </div>
                 </div>
@@ -384,7 +386,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 <div className="flex items-center space-x-3">
                   <Calendar className="text-purple-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Data de Admissão</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.admissionDate')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formatDate(user.data_admissao)}</p>
                   </div>
                 </div>
@@ -394,23 +396,27 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 <div className="flex items-center space-x-3">
                   <Shield className="text-orange-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Perfil de Acesso</p>
-                    <p className="font-medium text-gray-900 dark:text-white capitalize">{user.perfil}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.accessProfile')}</p>
+                    {user.perfil && (
+                      <p className="font-medium text-gray-900 dark:text-white capitalize">
+                        {t(`userCard.role.${user.perfil}` as unknown as string, { defaultValue: (user.perfil || '').charAt(0).toUpperCase() + (user.perfil || '').slice(1) })}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
                   <Building className="text-red-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Estabelecimento Principal</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{user.estabelecimento_nome || 'Não vinculado'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.mainEstablishment')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{user.estabelecimento_nome || t('userView.values.notLinked')}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
                   <Clock className="text-indigo-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Último Login</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.lastLogin')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(user.ultimo_login)}</p>
                   </div>
                 </div>
@@ -421,17 +427,17 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
           {/* Personal Information */}
           {(user.data_nascimento || user.endereco) && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Pessoais</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.personal')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {user.data_nascimento && (
                   <div className="flex items-center space-x-3">
                     <Calendar className="text-pink-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Data de Nascimento</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.birthDate')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">
                         {formatDate(user.data_nascimento)}
-                        {calculateAge(user.data_nascimento) && (
-                          <span className="text-gray-500 dark:text-gray-400 ml-2">({calculateAge(user.data_nascimento)} anos)</span>
+                        {calculateAge(user.data_nascimento) !== null && (
+                          <span className="text-gray-500 dark:text-gray-400 ml-2">({calculateAge(user.data_nascimento)} {t('userView.values.yearsOld')})</span>
                         )}
                       </p>
                     </div>
@@ -442,7 +448,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                   <div className="flex items-center space-x-3">
                     <MapPin className="text-teal-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Endereço</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.address')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">
                         {user.endereco}
                         {user.bairro && `, ${user.bairro}`}
@@ -461,32 +467,40 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
 
           {/* Security Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Segurança</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.security')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">{user.tentativas_login}</p>
-                <p className="text-sm text-blue-700">Tentativas de Login</p>
+                <p className="text-2xl font-bold text-blue-600">{user.tentativas_login || 0}</p>
+                <p className="text-sm text-blue-700">{t('userView.fields.loginAttempts')}</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600 capitalize">{user.status}</p>
-                <p className="text-sm text-green-700">Status da Conta</p>
+                {user.status && (
+                  <p className="text-2xl font-bold text-green-600 capitalize">
+                    {t(`userCard.status.${user.status}` as unknown as string, { defaultValue: (user.status || '').charAt(0).toUpperCase() + (user.status || '').slice(1) })}
+                  </p>
+                )}
+                <p className="text-sm text-green-700">{t('userView.fields.accountStatus')}</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600 capitalize">{user.perfil}</p>
-                <p className="text-sm text-purple-700">Nível de Acesso</p>
+                {user.perfil && (
+                  <p className="text-2xl font-bold text-purple-600 capitalize">
+                    {t(`userCard.role.${user.perfil}` as unknown as string, { defaultValue: (user.perfil || '').charAt(0).toUpperCase() + (user.perfil || '').slice(1) })}
+                  </p>
+                )}
+                <p className="text-sm text-purple-700">{t('userView.fields.accessLevel')}</p>
               </div>
             </div>
 
             {/* Security Alerts */}
-            {user.tentativas_login > 0 && (
+            {(user.tentativas_login || 0) > 0 && (
               <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <div className="flex items-start space-x-2">
                   <AlertTriangle size={16} className="text-orange-600 mt-0.5" />
                   <div>
-                    <p className="text-sm text-orange-800 font-medium">Alerta de Segurança</p>
+                    <p className="text-sm text-orange-800 font-medium">{t('userView.securityAlerts.title')}</p>
                     <p className="text-xs text-orange-700 mt-1">
-                      Este usuário possui {user.tentativas_login} tentativa{user.tentativas_login > 1 ? 's' : ''} de login falhada{user.tentativas_login > 1 ? 's' : ''}. 
-                      {user.tentativas_login >= 5 ? ' A conta foi bloqueada automaticamente.' : ` Após 5 tentativas a conta será bloqueada.`}
+                      {t('userView.securityAlerts.attempts', { attempts: user.tentativas_login || 0 })}
+                      {(user.tentativas_login || 0) >= 5 ? t('userView.securityAlerts.autoBlocked') : t('userView.securityAlerts.willBlock')}
                     </p>
                   </div>
                 </div>
@@ -498,9 +512,9 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                 <div className="flex items-start space-x-2">
                   <AlertTriangle size={16} className="text-red-600 mt-0.5" />
                   <div>
-                    <p className="text-sm text-red-800 font-medium">Conta Bloqueada</p>
+                    <p className="text-sm text-red-800 font-medium">{t('userView.securityAlerts.blockedTitle')}</p>
                     <p className="text-xs text-red-700 mt-1">
-                      Esta conta foi bloqueada devido ao excesso de tentativas de login. Entre em contato com o administrador para desbloqueio.
+                      {t('userView.securityAlerts.blockedDesc')}
                     </p>
                   </div>
                 </div>
@@ -510,43 +524,47 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
 
           {/* Audit Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Auditoria</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.audit')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <User className="text-blue-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Criado por</p>
-                    <p className="font-medium text-gray-900 dark:text-white">Usuário #{user.criadoPor}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.createdBy')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {user.created_by ? t('userView.audit.userNumber', { id: user.created_by }) : '-'}
+                    </p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
                   <Calendar className="text-green-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Data de Criação</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(user.criadoEm)}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.createdAt')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(user.created_at)}</p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                {user.alteradoPor && (
+                {user.updated_by && (
                   <div className="flex items-center space-x-3">
                     <User className="text-purple-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Última alteração por</p>
-                      <p className="font-medium text-gray-900 dark:text-white">Usuário #{user.alteradoPor}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.updatedBy')}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {t('userView.audit.userNumber', { id: user.updated_by })}
+                      </p>
                     </div>
                   </div>
                 )}
                 
-                {user.alteradoEm && (
+                {user.updated_at && (
                   <div className="flex items-center space-x-3">
                     <Calendar className="text-orange-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Data da última alteração</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(user.alteradoEm)}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('userView.fields.updatedAt')}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(user.updated_at)}</p>
                     </div>
                   </div>
                 )}
@@ -557,7 +575,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
           {/* Observations */}
           {user.observacoes && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Observações</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.observations')}</h3>
               <div className="flex items-start space-x-3">
                 <FileText className="text-gray-500 dark:text-gray-400" size={20} />
                 <p className="text-gray-700 dark:text-gray-300">{user.observacoes}</p>
@@ -570,16 +588,15 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
       {activeTab === 'permissions' && user.perfil === 'personalizado' && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permissões Personalizadas</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.customPermissions')}</h3>
             
             <div className="mb-4 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-start space-x-2">
                 <Shield size={16} className="text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-blue-800 font-medium">Perfil Personalizado</p>
+                  <p className="text-sm text-blue-800 font-medium">{t('userView.permissions.customProfileTitle')}</p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Este usuário possui um perfil personalizado com acesso apenas às funcionalidades listadas abaixo.
-                    Todas as outras funcionalidades do sistema não estarão disponíveis para este usuário.
+                    {t('userView.permissions.customProfileDesc')}
                   </p>
                 </div>
               </div>
@@ -589,13 +606,13 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-8 font-medium text-gray-700 dark:text-gray-300">Menu</div>
-                  <div className="col-span-4 font-medium text-gray-700 dark:text-gray-300">Permissão</div>
+                  <div className="col-span-8 font-medium text-gray-700 dark:text-gray-300">{t('userView.permissions.menu')}</div>
+                  <div className="col-span-4 font-medium text-gray-700 dark:text-gray-300">{t('userView.permissions.permission')}</div>
                 </div>
               </div>
               
               <div className="divide-y divide-gray-200">
-                {menuItems.map((menu: any) => (
+                {menuItems.map((menu: MenuItem) => (
                   <div key={menu.id} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:bg-gray-900">
                     {/* Parent Menu */}
                     <div className="px-4 py-3">
@@ -632,7 +649,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                               <Square size={20} className="text-gray-400" />
                             )}
                             <span className="ml-2">
-                              {isMenuPermitted(menu.id) ? 'Permitido' : areSomeSubmenusPermitted(menu) ? 'Parcial' : 'Não permitido'}
+                              {isMenuPermitted(menu.id) ? t('userView.permissions.permitted') : areSomeSubmenusPermitted(menu) ? t('userView.permissions.partial') : t('userView.permissions.notPermitted')}
                             </span>
                           </div>
                         </div>
@@ -642,7 +659,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                     {/* Submenus */}
                     {menu.hasSubmenu && isMenuExpanded(menu.id) && menu.submenu && (
                       <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700">
-                        {menu.submenu.map((submenu: any) => (
+                        {menu.submenu.map((submenu: MenuItem) => (
                           <div key={submenu.id} className="px-4 py-2 pl-10 hover:bg-gray-100 dark:bg-gray-700">
                             <div className="grid grid-cols-12 gap-4 items-center">
                               <div className="col-span-8">
@@ -656,7 +673,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                                     <Square size={20} className="text-gray-400" />
                                   )}
                                   <span className="ml-2">
-                                    {isMenuPermitted(submenu.id) ? 'Permitido' : 'Não permitido'}
+                                    {isMenuPermitted(submenu.id) ? t('userView.permissions.permitted') : t('userView.permissions.notPermitted')}
                                   </span>
                                 </div>
                               </div>
@@ -672,20 +689,20 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
             
             {/* Permissions Summary */}
             <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Resumo de Permissões</h4>
+              <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">{t('userView.permissions.summary')}</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                  <p className="text-sm font-medium text-blue-800">Total de Permissões</p>
+                  <p className="text-sm font-medium text-blue-800">{t('userView.permissions.totalPermissions')}</p>
                   <p className="text-xl font-bold text-blue-600">{user.permissoes?.length || 0}</p>
                 </div>
                 <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                  <p className="text-sm font-medium text-green-800">Menus Principais</p>
+                  <p className="text-sm font-medium text-green-800">{t('userView.permissions.mainMenus')}</p>
                   <p className="text-xl font-bold text-green-600">
                     {user.permissoes?.filter(p => !p.includes('-')).length || 0}
                   </p>
                 </div>
                 <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                  <p className="text-sm font-medium text-purple-800">Submenus</p>
+                  <p className="text-sm font-medium text-purple-800">{t('userView.permissions.submenus')}</p>
                   <p className="text-xl font-bold text-purple-600">
                     {user.permissoes?.filter(p => p.includes('-')).length || 0}
                   </p>
@@ -699,16 +716,15 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
       {activeTab === 'establishments' && user.estabelecimentosPermitidos && user.estabelecimentosPermitidos.length > 0 && (
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Estabelecimentos Permitidos</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('userView.sections.permittedEstablishments')}</h3>
             
             <div className="mb-4 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-start space-x-2">
                 <Building size={16} className="text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-blue-800 font-medium">Acesso Restrito a Estabelecimentos</p>
+                  <p className="text-sm text-blue-800 font-medium">{t('userView.establishments.restrictedAccessTitle')}</p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Este usuário tem acesso apenas aos estabelecimentos listados abaixo.
-                    Após o login, o usuário deverá selecionar um destes estabelecimentos para iniciar o trabalho.
+                    {t('userView.establishments.restrictedAccessDesc')}
                   </p>
                 </div>
               </div>
@@ -717,7 +733,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
             {/* Establishments List */}
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                <div className="font-medium text-gray-700 dark:text-gray-300">Estabelecimentos Permitidos</div>
+                <div className="font-medium text-gray-700 dark:text-gray-300">{t('userView.establishments.listTitle')}</div>
               </div>
               
               <div className="divide-y divide-gray-200">
@@ -729,11 +745,11 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                         <Building size={18} className="text-gray-400 mr-3" />
                         <div>
                           <div className="font-medium text-gray-800 dark:text-gray-200">
-                            {establishment ? (establishment.fantasia || establishment.razaoSocial) : `Estabelecimento ID ${id}`}
+                            {establishment ? (establishment.fantasia || establishment.razao_social) : `Estabelecimento ID ${id}`}
                           </div>
                           {establishment && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {establishment.codigo} - {establishment.tipo.charAt(0).toUpperCase() + establishment.tipo.slice(1)}
+                              {establishment.codigo} {establishment.tipo && `- ${establishment.tipo.charAt(0).toUpperCase() + establishment.tipo.slice(1)}`}
                               {establishment.cidade && ` - ${establishment.cidade}/${establishment.estado}`}
                             </div>
                           )}
@@ -748,14 +764,14 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
             {/* Default Establishment */}
             <div className="mt-6 p-4 bg-green-50 rounded-lg">
               <div className="flex items-start space-x-2">
-                <CheckCircle size={16} className="text-green-600 mt-0.5" />
+                <CheckSquare size={16} className="text-green-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-green-800 font-medium">Estabelecimento Principal</p>
+                  <p className="text-sm text-green-800 font-medium">{t('userView.establishments.mainTitle')}</p>
                   <p className="text-xs text-green-700 mt-1">
                     {user.estabelecimento_nome ? (
-                      <>O estabelecimento principal deste usuário é <strong>{user.estabelecimento_nome}</strong>.</>
+                      <>{t('userView.establishments.mainDescHas')} <strong>{user.estabelecimento_nome}</strong>.</>
                     ) : (
-                      <>Este usuário não possui um estabelecimento principal definido.</>
+                      <>{t('userView.establishments.mainDescHasNot')}</>
                     )}
                   </p>
                 </div>
@@ -766,10 +782,10 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
             <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {user.estabelecimentosPermitidos.length} estabelecimento(s) permitido(s)
+                  {user.estabelecimentosPermitidos.length} {t('userView.establishments.summaryPermitted')}
                 </span>
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {establishments.length} total no sistema
+                  {establishments.length} {t('userView.establishments.summaryTotal')}
                 </span>
               </div>
             </div>

@@ -232,9 +232,9 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     }
 
     // Verificar se pelo menos um endereço está marcado como principal
-    const hasPrimary = addresses.some(addr => addr.is_primary);
+    const hasPrimary = addresses.some(addr => addr.isPrimary);
     if (!hasPrimary && addresses.length > 0) {
-      addresses[0].is_primary = true;
+      addresses[0].isPrimary = true;
     }
 
     // Mapear type para address_type antes de salvar no banco
@@ -242,6 +242,12 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       ...addr,
       address_type: addr.type || addr.address_type || 'commercial'
     }));
+
+    console.log('[BusinessPartnerForm] Submitting partner data:', {
+      ...formData,
+      creditLimit: formData.creditLimit,
+      notes: formData.notes
+    });
 
     onSave({
       ...formData,
@@ -266,25 +272,25 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       phone: '',
       position: '',
       department: '',
-      is_primary: false,
-      receive_whatsapp_notifications: false,
-      receive_email_notifications: false,
+      isPrimary: false,
+      receiveWhatsappNotifications: false,
+      receiveEmailNotifications: false,
       // Email notification preferences (all unchecked by default)
-      email_notify_order_created: false,
-      email_notify_order_invoiced: false,
-      email_notify_awaiting_pickup: false,
-      email_notify_picked_up: false,
-      email_notify_in_transit: false,
-      email_notify_out_for_delivery: false,
-      email_notify_delivered: false,
+      emailNotifyOrderCreated: false,
+      emailNotifyOrderInvoiced: false,
+      emailNotifyAwaitingPickup: false,
+      emailNotifyPickedUp: false,
+      emailNotifyInTransit: false,
+      emailNotifyOutForDelivery: false,
+      emailNotifyDelivered: false,
       // WhatsApp notification preferences (all unchecked by default)
-      whatsapp_notify_order_created: false,
-      whatsapp_notify_order_invoiced: false,
-      whatsapp_notify_awaiting_pickup: false,
-      whatsapp_notify_picked_up: false,
-      whatsapp_notify_in_transit: false,
-      whatsapp_notify_out_for_delivery: false,
-      whatsapp_notify_delivered: false
+      whatsappNotifyOrderCreated: false,
+      whatsappNotifyOrderInvoiced: false,
+      whatsappNotifyAwaitingPickup: false,
+      whatsappNotifyPickedUp: false,
+      whatsappNotifyInTransit: false,
+      whatsappNotifyOutForDelivery: false,
+      whatsappNotifyDelivered: false
     };
     setContacts([...contacts, newContact]);
   };
@@ -294,9 +300,9 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     updatedContacts[index] = { ...updatedContacts[index], [field]: value };
 
     // If setting as primary, unset others
-    if (field === 'is_primary' && value) {
+    if (field === 'isPrimary' && value) {
       updatedContacts.forEach((contact, i) => {
-        if (i !== index) contact.is_primary = false;
+        if (i !== index) contact.isPrimary = false;
       });
     }
 
@@ -306,8 +312,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
   const removeContact = (index: number) => {
     const updatedContacts = contacts.filter((_, i) => i !== index);
     // If removed contact was primary and there are others, make first one primary
-    if (contacts[index].is_primary && updatedContacts.length > 0) {
-      updatedContacts[0].is_primary = true;
+    if (contacts[index].isPrimary && updatedContacts.length > 0) {
+      updatedContacts[0].isPrimary = true;
     }
     setContacts(updatedContacts);
   };
@@ -324,7 +330,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       state: '',
       zip_code: '',
       country: 'Brasil',
-      is_primary: addresses.length === 0
+      isPrimary: addresses.length === 0
     };
     setAddresses([...addresses, newAddress]);
   };
@@ -334,9 +340,9 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     updatedAddresses[index] = { ...updatedAddresses[index], [field]: value };
 
     // If setting as primary, unset others
-    if (field === 'is_primary' && value) {
+    if (field === 'isPrimary' && value) {
       updatedAddresses.forEach((address, i) => {
-        if (i !== index) address.is_primary = false;
+        if (i !== index) address.isPrimary = false;
       });
     }
 
@@ -346,8 +352,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
   const removeAddress = (index: number) => {
     const updatedAddresses = addresses.filter((_, i) => i !== index);
     // If removed address was primary and there are others, make first one primary
-    if (addresses[index].is_primary && updatedAddresses.length > 0) {
-      updatedAddresses[0].is_primary = true;
+    if (addresses[index].isPrimary && updatedAddresses.length > 0) {
+      updatedAddresses[0].isPrimary = true;
     }
     setAddresses(updatedAddresses);
   };
@@ -681,7 +687,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
                         <h4 className="font-semibold text-gray-900 dark:text-white">{t('businessPartners.form.contactItem', 'Contato')} #{index + 1}</h4>
-                        {contact.is_primary && (
+                        {contact.isPrimary && (
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
                             {t('businessPartners.form.primaryContactLabel', 'Principal')}
                           </span>
@@ -772,8 +778,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                       <label className="flex items-center space-x-3 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={contact.is_primary || false}
-                          onChange={(e) => updateContact(index, 'is_primary', e.target.checked)}
+                          checked={contact.isPrimary || false}
+                          onChange={(e) => updateContact(index, 'isPrimary', e.target.checked)}
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -785,8 +791,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                         <label className="flex items-start space-x-3 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={contact.receive_whatsapp_notifications ?? false}
-                            onChange={(e) => updateContact(index, 'receive_whatsapp_notifications', e.target.checked)}
+                            checked={contact.receiveWhatsappNotifications ?? false}
+                            onChange={(e) => updateContact(index, 'receiveWhatsappNotifications', e.target.checked)}
                             className="w-4 h-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <div>
@@ -799,13 +805,13 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           </div>
                         </label>
 
-                        {contact.receive_whatsapp_notifications && (
+                        {contact.receiveWhatsappNotifications && (
                           <div className="ml-7 pl-4 border-l-2 border-blue-200 space-y-2">
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_order_created ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_order_created', e.target.checked)}
+                                checked={contact.whatsappNotifyOrderCreated ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyOrderCreated', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Pedido Realizado</span>
@@ -813,8 +819,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_order_invoiced ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_order_invoiced', e.target.checked)}
+                                checked={contact.whatsappNotifyOrderInvoiced ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyOrderInvoiced', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Pedido Faturado</span>
@@ -822,8 +828,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_awaiting_pickup ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_awaiting_pickup', e.target.checked)}
+                                checked={contact.whatsappNotifyAwaitingPickup ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyAwaitingPickup', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Aguardando Coleta</span>
@@ -831,8 +837,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_picked_up ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_picked_up', e.target.checked)}
+                                checked={contact.whatsappNotifyPickedUp ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyPickedUp', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Coletado pela Transportadora</span>
@@ -840,8 +846,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_in_transit ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_in_transit', e.target.checked)}
+                                checked={contact.whatsappNotifyInTransit ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyInTransit', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Em Transporte</span>
@@ -849,8 +855,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_out_for_delivery ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_out_for_delivery', e.target.checked)}
+                                checked={contact.whatsappNotifyOutForDelivery ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyOutForDelivery', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Saiu para Entrega</span>
@@ -858,8 +864,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.whatsapp_notify_delivered ?? false}
-                                onChange={(e) => updateContact(index, 'whatsapp_notify_delivered', e.target.checked)}
+                                checked={contact.whatsappNotifyDelivered ?? false}
+                                onChange={(e) => updateContact(index, 'whatsappNotifyDelivered', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Entrega Realizada</span>
@@ -872,8 +878,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                         <label className="flex items-start space-x-3 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={contact.receive_email_notifications ?? false}
-                            onChange={(e) => updateContact(index, 'receive_email_notifications', e.target.checked)}
+                            checked={contact.receiveEmailNotifications ?? false}
+                            onChange={(e) => updateContact(index, 'receiveEmailNotifications', e.target.checked)}
                             className="w-4 h-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <div>
@@ -886,13 +892,13 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                           </div>
                         </label>
 
-                        {contact.receive_email_notifications && (
+                        {contact.receiveEmailNotifications && (
                           <div className="ml-7 pl-4 border-l-2 border-blue-200 space-y-2">
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_order_created ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_order_created', e.target.checked)}
+                                checked={contact.emailNotifyOrderCreated ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyOrderCreated', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Pedido Realizado</span>
@@ -900,8 +906,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_order_invoiced ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_order_invoiced', e.target.checked)}
+                                checked={contact.emailNotifyOrderInvoiced ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyOrderInvoiced', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Pedido Faturado</span>
@@ -909,8 +915,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_awaiting_pickup ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_awaiting_pickup', e.target.checked)}
+                                checked={contact.emailNotifyAwaitingPickup ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyAwaitingPickup', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Aguardando Coleta</span>
@@ -918,8 +924,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_picked_up ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_picked_up', e.target.checked)}
+                                checked={contact.emailNotifyPickedUp ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyPickedUp', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Coletado pela Transportadora</span>
@@ -927,8 +933,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_in_transit ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_in_transit', e.target.checked)}
+                                checked={contact.emailNotifyInTransit ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyInTransit', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Em Transporte</span>
@@ -936,8 +942,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_out_for_delivery ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_out_for_delivery', e.target.checked)}
+                                checked={contact.emailNotifyOutForDelivery ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyOutForDelivery', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Saiu para Entrega</span>
@@ -945,8 +951,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <label className="flex items-center space-x-2 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={contact.email_notify_delivered ?? false}
-                                onChange={(e) => updateContact(index, 'email_notify_delivered', e.target.checked)}
+                                checked={contact.emailNotifyDelivered ?? false}
+                                onChange={(e) => updateContact(index, 'emailNotifyDelivered', e.target.checked)}
                                 className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                               <span className="text-xs text-gray-700 dark:text-gray-300">Entrega Realizada</span>
@@ -988,7 +994,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
                         <h4 className="font-semibold text-gray-900 dark:text-white">{t('businessPartners.form.addressItem', 'Endereço')} #{index + 1}</h4>
-                        {address.is_primary && (
+                        {address.isPrimary && (
                           <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
                             {t('businessPartners.form.primaryAddressLabel', 'Principal')}
                           </span>
@@ -1025,10 +1031,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             <input
                               type="text"
                               required
-                              value={address.zip_code || ''}
+                              value={address.zipCode || ''}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                updateAddress(index, 'zip_code', value);
+                                updateAddress(index, 'zipCode', value);
                               }}
                               onBlur={(e) => {
                                 const cep = e.target.value.replace(/\D/g, '');
@@ -1042,7 +1048,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                             />
                             <button
                               type="button"
-                              onClick={() => handleCEPSearch(index, address.zip_code || '')}
+                              onClick={() => handleCEPSearch(index, address.zipCode || '')}
                               disabled={loadingCEP[index]}
                               className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                               title={t('businessPartners.form.searchLabel', 'Buscar CEP')}

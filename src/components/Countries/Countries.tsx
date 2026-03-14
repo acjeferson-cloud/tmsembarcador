@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download } from 'lucide-react';
+import { Search, Plus, Download } from 'lucide-react';
 import { countriesService, Country } from '../../services/countriesService';
 import { CountryCard } from './CountryCard';
 import { CountryView } from './CountryView';
@@ -9,17 +9,19 @@ import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 export const Countries: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Países', current: true }
+    { label: t('settings', { defaultValue: 'Configurações' }) },
+    { label: t('countries.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [continentFilter, setContinentFilter] = useState('Todos');
+  const [continentFilter, setContinentFilter] = useState(t('countries.allContinents'));
   const [showForm, setShowForm] = useState(false);
   const [showView, setShowView] = useState(false);
   const [editingCountry, setEditingCountry] = useState<any>(null);
@@ -27,21 +29,21 @@ export const Countries: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [countriesList, setCountriesList] = useState<Country[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; countryId?: string }>({ isOpen: false });
   const itemsPerPage = 12;
 
   const continents = [
-    'Todos',
-    'América do Norte',
-    'América do Sul',
-    'América Central',
-    'Europa',
-    'Ásia',
-    'África',
-    'Oceania',
-    'Caribe'
+    t('countries.allContinents'),
+    t('countries.continents.northAmerica'),
+    t('countries.continents.southAmerica'),
+    t('countries.continents.centralAmerica'),
+    t('countries.continents.europe'),
+    t('countries.continents.asia'),
+    t('countries.continents.africa'),
+    t('countries.continents.oceania'),
+    t('countries.continents.caribbean')
   ];
 
   useEffect(() => {
@@ -54,17 +56,17 @@ export const Countries: React.FC = () => {
       const data = await countriesService.getAll();
       setCountriesList(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar países.', type: 'error' });
+      setToast({ message: t('countries.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const filteredCountries = countriesList.filter(country => {
-    const matchesSearch = country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         country.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = (country.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (country.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (country.capital && country.capital.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesContinent = continentFilter === 'Todos' || country.continent === continentFilter;
+    const matchesContinent = continentFilter === t('countries.allContinents') || country.continent === continentFilter;
     return matchesSearch && matchesContinent;
   });
 
@@ -99,10 +101,10 @@ export const Countries: React.FC = () => {
         if (country) {
           await logDelete('country', confirmDialog.countryId, country, 1, 'Administrador');
         }
-        setToast({ message: 'País excluído com sucesso!', type: 'success' });
+        setToast({ message: t('countries.messages.deleteSuccess'), type: 'success' });
         await loadCountries();
       } else {
-        setToast({ message: 'Erro ao excluir país.', type: 'error' });
+        setToast({ message: t('countries.messages.deleteError'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -122,32 +124,30 @@ export const Countries: React.FC = () => {
 
       if (editingCountry) {
         const updated = await countriesService.update(editingCountry.id, {
-          ...normalizedData,
-          updated_by: 'current-user-id'
-        });
+          ...normalizedData
+        } as Partial<Country>);
         if (updated) {
           await logUpdate('country', editingCountry.id, editingCountry, updated, 1, 'Administrador');
-          setToast({ message: 'País atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('countries.messages.updateSuccess'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao atualizar país.', type: 'error' });
+          setToast({ message: t('countries.messages.updateError'), type: 'error' });
           return;
         }
       } else {
         const newCountry = await countriesService.create({
-          ...normalizedData,
-          created_by: 'current-user-id'
-        });
+          ...normalizedData
+        } as Omit<Country, 'id' | 'created_at' | 'updated_at'>);
         if (newCountry) {
           await logCreate('country', newCountry.id, newCountry, 1, 'Administrador');
         }
-        setToast({ message: 'País criado com sucesso!', type: 'success' });
+        setToast({ message: t('countries.messages.createSuccess'), type: 'success' });
       }
 
       setShowForm(false);
       setEditingCountry(null);
       await loadCountries();
     } catch (error) {
-      setToast({ message: 'Erro ao salvar país. Tente novamente.', type: 'error' });
+      setToast({ message: t('countries.messages.createError'), type: 'error' });
     }
   };
 
@@ -160,7 +160,14 @@ export const Countries: React.FC = () => {
 
   const handleExport = () => {
     const csvContent = [
-      ['Código', 'Nome', 'Continente', 'Capital', 'Idioma', 'Código BACEN'].join(','),
+      [
+        t('countries.form.code'),
+        t('countries.form.name'),
+        t('countries.form.continent'),
+        t('countries.form.capital'),
+        t('countries.form.language'),
+        t('countries.form.bacenCode')
+      ].join(','),
       ...filteredCountries.map(country => [
         country.code,
         country.name,
@@ -209,8 +216,8 @@ export const Countries: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Países</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie o cadastro de países do mundo</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('countries.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('countries.subtitle')}</p>
         </div>
         {isAdmin && (
           <button
@@ -218,7 +225,7 @@ export const Countries: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Novo País</span>
+            <span>{t('countries.actions.new')}</span>
           </button>
         )}
       </div>
@@ -230,7 +237,7 @@ export const Countries: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por nome, código ou capital..."
+              placeholder={t('countries.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -254,14 +261,14 @@ export const Countries: React.FC = () => {
             className="border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Download size={18} />
-            <span>Exportar</span>
+            <span>{t('countries.actions.export')}</span>
           </button>
         </div>
 
         {/* Stats */}
         <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-          <span>Total: {filteredCountries.length} países</span>
-          <span>Página {currentPage} de {totalPages}</span>
+          <span>Total: {filteredCountries.length}</span>
+          <span>{currentPage} / {totalPages}</span>
         </div>
       </div>
 
@@ -269,7 +276,7 @@ export const Countries: React.FC = () => {
       {isLoading ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Carregando países...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('common.loading', { defaultValue: 'Carregando países...' })}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -291,7 +298,7 @@ export const Countries: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredCountries.length)} de {filteredCountries.length} países
+              {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredCountries.length)} / {filteredCountries.length}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -299,7 +306,7 @@ export const Countries: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                {t('common.previous', { defaultValue: 'Anterior' })}
               </button>
 
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -326,7 +333,7 @@ export const Countries: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                {t('common.next', { defaultValue: 'Próximo' })}
               </button>
             </div>
           </div>
@@ -340,8 +347,8 @@ export const Countries: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum país encontrado</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou cadastrar um novo país.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('countries.noDataTitle', { defaultValue: 'Nenhum país encontrado' })}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('countries.noDataMessage', { defaultValue: 'Tente ajustar os filtros ou cadastrar um novo país.' })}</p>
         </div>
       )}
 
@@ -358,10 +365,10 @@ export const Countries: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir este país? Esta ação não pode ser desfeita."
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          title={t('countries.deleteConfirm.title')}
+          message={t('countries.deleteConfirm.message')}
+          confirmText={t('countries.actions.delete')}
+          cancelText={t('countries.actions.cancel')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

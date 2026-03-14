@@ -273,12 +273,12 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     e.preventDefault();
     // Validate required fields
     if (!formData.razaoSocial) {
-      alert(t('carriers.companyNameRequired'));
+      alert(t('carriers.form.companyNameRequired'));
       return;
     }
 
     if (!formData.cnpj) {
-      alert(t('carriers.cnpjRequired'));
+      alert(t('carriers.form.cnpjRequired'));
       return;
     }
 
@@ -378,7 +378,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const handleConsultarCNPJ = async () => {
     if (!formData.cnpj) {
-      setCnpjMessage({ type: 'error', text: t('carriers.invalidCnpj') });
+      setCnpjMessage({ type: 'error', text: t('carriers.form.invalidCnpj') });
       return;
     }
 
@@ -497,7 +497,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     } catch (error: any) {
       setCnpjMessage({
         type: 'error',
-        text: error.message || t('carriers.cnpjError')
+        text: error.message || t('carriers.form.cnpjError')
       });
     } finally {
       setIsLoadingCNPJ(false);
@@ -508,12 +508,12 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     const cleanCEP = formData.cep.replace(/\D/g, '');
 
     if (cleanCEP.length !== 8) {
-      setCepMessage({ type: 'error', text: t('carriers.cepNeeds8Digits') });
+      setCepMessage({ type: 'error', text: t('carriers.form.cepNeeds8Digits') });
       return;
     }
 
     setLoadingCEP(true);
-    setCepMessage({ type: 'success', text: t('carriers.searchingCep') });
+    setCepMessage({ type: 'success', text: t('carriers.form.searchingCep') });
 
     try {
       // ✅ NOVO: Busca PRIMEIRO no banco de dados (cities + zip_code_ranges)
@@ -575,7 +575,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             text: `✓ ${cityFromDB.name}/${cityFromDB.stateAbbreviation}${cityFromDB.neighborhood ? ' - ' + cityFromDB.neighborhood : ''}`
           });
         } else {
-          setCepMessage({ type: 'error', text: t('carriers.stateNotFound') });
+          setCepMessage({ type: 'error', text: t('carriers.form.stateNotFound') });
         }
       } else {
         // Se não encontrou no banco, busca no ViaCEP como fallback
@@ -583,7 +583,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         const viaCepData = await viaCepResponse.json();
 
         if (viaCepData.erro) {
-          setCepMessage({ type: 'error', text: t('carriers.cepNotFound') });
+          setCepMessage({ type: 'error', text: t('carriers.form.cepNotFound') });
           return;
         }
 
@@ -620,7 +620,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
           setCepMessage({ type: 'success', text: `✓ ${viaCepData.localidade}/${viaCepData.uf}` });
         } else {
-          setCepMessage({ type: 'error', text: t('carriers.stateNotFound') });
+          setCepMessage({ type: 'error', text: t('carriers.form.stateNotFound') });
         }
       }
 
@@ -628,7 +628,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         setCepMessage(null);
       }, 5000);
     } catch (error) {
-      setCepMessage({ type: 'error', text: t('carriers.cepError') });
+      setCepMessage({ type: 'error', text: t('carriers.form.cepError') });
     } finally {
       setLoadingCEP(false);
     }
@@ -645,9 +645,9 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
           <span>{t('carriers.backToCarriers')}</span>
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {isEdit ? `${t('carriers.editAction')} ${t('carriers.carrierTerm')}` : t('carriers.newCarrier')}
+          {isEdit ? `${t('carriers.editAction')} ${t('carriers.form.carrierTerm')}` : t('carriers.newCarrier')}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">{t('carriers.fillCarrierData')}</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('carriers.form.fillCarrierData')}</p>
       </div>
 
       {/* Tabs */}
@@ -677,7 +677,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             >
               <div className="flex items-center space-x-2">
                 <MapPin size={16} />
-                <span>{t('carriers.addressTitle')}</span>
+                <span>{t('carriers.form.addressTitle')}</span>
               </div>
             </button>
             <button
@@ -690,7 +690,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             >
               <div className="flex items-center space-x-2">
                 <Settings size={16} />
-                <span>{t('carriers.tolerances')}</span>
+                <span>{t('carriers.form.tolerances')}</span>
               </div>
             </button>
           </nav>
@@ -705,7 +705,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.code')} *
+                  {t('carriers.form.code')} *
                 </label>
                 <div className="relative">
                   <input
@@ -725,7 +725,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                       type="button"
                       onClick={generateNewCode}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 transition-colors"
-                      title={t('carriers.generateNextCode')}
+                      title={t('carriers.form.generateNextCode')}
                     >
                       <Hash size={18} />
                     </button>
@@ -742,11 +742,11 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <div className="flex items-start space-x-2">
                     <Info size={16} className="text-blue-600 mt-0.5" />
                     <div>
-                      <p className="text-sm text-blue-800 font-medium">{t('carriers.codeSequential')}</p>
+                      <p className="text-sm text-blue-800 font-medium">{t('carriers.form.codeSequential')}</p>
                       <p className="text-xs text-blue-700 mt-1">
-                        {t('carriers.codeSequentialHelp1')}
-                        {!carrier && " " + t('carriers.codeSequentialHelpNew')}
-                        {carrier && " " + t('carriers.codeSequentialHelpEdit')}
+                        {t('carriers.form.codeSequentialHelp1')}
+                        {!carrier && " " + t('carriers.form.codeSequentialHelpNew')}
+                        {carrier && " " + t('carriers.form.codeSequentialHelpEdit')}
                       </p>
                     </div>
                   </div>
@@ -755,7 +755,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.companyNameLabel')} *
+                  {t('carriers.form.companyNameLabel')} *
                 </label>
                 <input
                   type="text"
@@ -764,7 +764,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   onChange={handleCompanyNameChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('carriers.companyNameLabel')}
+                  placeholder={t('carriers.form.companyNameLabel')}
                 />
               </div>
 
@@ -788,7 +788,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     onClick={handleConsultarCNPJ}
                     disabled={isLoadingCNPJ || !formData.cnpj}
                     className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                    title={t('carriers.searchRFB')}
+                    title={t('carriers.form.searchRFB')}
                   >
                     {isLoadingCNPJ ? (
                       <Loader className="w-4 h-4 animate-spin" />
@@ -807,7 +807,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.stateRegistration')}
+                  {t('carriers.form.stateRegistration')}
                 </label>
                 <input
                   type="text"
@@ -821,7 +821,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.fantasyName')}
+                  {t('carriers.form.fantasyName')}
                 </label>
                 <input
                   type="text"
@@ -829,13 +829,13 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   value={formData.fantasia}
                   onChange={handleCompanyNameChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('carriers.fantasyName')}
+                  placeholder={t('carriers.form.fantasyName')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.email')}
+                  {t('carriers.form.email')}
                 </label>
                 <input
                   type="email"
@@ -849,7 +849,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.phone')}
+                  {t('carriers.form.phone')}
                 </label>
                 <input
                   type="text"
@@ -864,7 +864,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.statusLabel')}
+                  {t('carriers.form.statusLabel')}
                 </label>
                 <select
                   name="status"
@@ -873,8 +873,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="ativo">{t('carriers.activeText')}</option>
-                  <option value="inativo">{t('carriers.inactiveText')}</option>
+                  <option value="ativo">{t('carriers.form.activeText')}</option>
+                  <option value="inativo">{t('carriers.form.inactiveText')}</option>
                 </select>
               </div>
             </div>
@@ -882,7 +882,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             {/* Logo Upload */}
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('carriers.logoLabel')}
+                {t('carriers.form.logoLabel')}
               </label>
               <div className="flex items-start space-x-4">
                 <div className="flex-1">
@@ -897,10 +897,10 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     <label htmlFor="logo-upload" className="cursor-pointer">
                       <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {t('carriers.logoHelpDrop')}
+                        {t('carriers.form.logoHelpDrop')}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {t('carriers.logoHelp')}
+                        {t('carriers.form.logoHelp')}
                       </p>
                     </label>
                   </div>
@@ -927,8 +927,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
             {/* Transport Modals Section */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.transportModalsTitle')}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('carriers.transportModalsHelp')}</p>
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.form.transportModalsTitle')}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('carriers.form.transportModalsHelp')}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <label className="flex items-center p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
@@ -942,7 +942,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <div className="ml-3">
                     <div className="flex items-center space-x-2">
                       <Truck className="text-blue-600" size={20} />
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.modals.rodoviario')}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.rodoviario')}</span>
                     </div>
                   </div>
                 </label>
@@ -958,7 +958,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <div className="ml-3">
                     <div className="flex items-center space-x-2">
                       <span className="text-sky-600 text-xl">✈️</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.modals.aereo')}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.aereo')}</span>
                     </div>
                   </div>
                 </label>
@@ -974,7 +974,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <div className="ml-3">
                     <div className="flex items-center space-x-2">
                       <span className="text-cyan-600 text-xl">🚢</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.modals.aquaviario')}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.aquaviario')}</span>
                     </div>
                   </div>
                 </label>
@@ -990,7 +990,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <div className="ml-3">
                     <div className="flex items-center space-x-2">
                       <span className="text-amber-600 text-xl">🚂</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.modals.ferroviario')}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.modals.ferroviario')}</span>
                     </div>
                   </div>
                 </label>
@@ -999,8 +999,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
             {/* Working Days Configuration Section */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.workingDaysConfig')}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('carriers.workingDaysHelp')}</p>
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.form.workingDaysConfig')}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('carriers.form.workingDaysHelp')}</p>
 
               <div className="space-y-3">
                 <label className="flex items-start p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
@@ -1012,8 +1012,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <div className="ml-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.saturdayWorkingDay')}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.saturdayWorkingDayHelp')}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.saturdayWorkingDay')}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.form.saturdayWorkingDayHelp')}</div>
                   </div>
                 </label>
 
@@ -1026,8 +1026,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <div className="ml-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.sundayWorkingDay')}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.sundayWorkingDayHelp')}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.sundayWorkingDay')}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.form.sundayWorkingDayHelp')}</div>
                   </div>
                 </label>
 
@@ -1040,8 +1040,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <div className="ml-3">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.holidaysWorkingDay')}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.holidaysWorkingDayHelp')}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{t('carriers.form.holidaysWorkingDay')}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('carriers.form.holidaysWorkingDayHelp')}</div>
                   </div>
                 </label>
               </div>
@@ -1051,14 +1051,14 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
         {activeTab === 'location' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.addressTitle')}</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.form.addressTitle')}</h2>
 
             <div className="space-y-4">
               {/* CEP Field with Search Button - PRIMEIRO CAMPO */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.zipCode')}
+                    {t('carriers.form.zipCode')}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -1081,7 +1081,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                       onClick={handleCEPSearch}
                       disabled={loadingCEP}
                       className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                      title={t('carriers.searchZipCode')}
+                      title={t('carriers.form.searchZipCode')}
                     >
                       {loadingCEP ? (
                         <Loader className="w-4 h-4 animate-spin" />
@@ -1100,7 +1100,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.countryLabel')}
+                    {t('carriers.form.countryLabel')}
                   </label>
                   <select
                     name="pais"
@@ -1108,7 +1108,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">{t('carriers.selectCountry')}</option>
+                    <option value="">{t('carriers.form.selectCountry')}</option>
                     {countries.map(country => (
                       <option key={country.id} value={country.id}>
                         {country.name}
@@ -1119,7 +1119,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.stateLabel')}
+                    {t('carriers.form.stateLabel')}
                   </label>
                   <select
                     name="estado"
@@ -1127,7 +1127,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">{t('carriers.selectState')}</option>
+                    <option value="">{t('carriers.form.selectState')}</option>
                     {states.map(estado => (
                       <option key={estado.id} value={estado.id}>
                         {estado.name}
@@ -1140,7 +1140,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.cityLabel')}
+                    {t('carriers.form.cityLabel')}
                   </label>
                   <select
                     name="cidade"
@@ -1149,7 +1149,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                     disabled={!formData.estado}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:bg-gray-700"
                   >
-                    <option value="">{t('carriers.selectCity')}</option>
+                    <option value="">{t('carriers.form.selectCity')}</option>
                     {filteredCities.map((cidade: any) => (
                       <option key={cidade.id} value={cidade.id}>
                         {cidade.name}
@@ -1160,7 +1160,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.neighborhoodLabel')}
+                    {t('carriers.form.neighborhoodLabel')}
                   </label>
                   <input
                     type="text"
@@ -1174,7 +1174,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div className="md:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.complementLabel')}
+                    {t('carriers.form.complementLabel')}
                   </label>
                   <input
                     type="text"
@@ -1190,7 +1190,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.streetLabel')}
+                    {t('carriers.form.streetLabel')}
                   </label>
                   <input
                     type="text"
@@ -1204,7 +1204,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.numberLabel')}
+                    {t('carriers.form.numberLabel')}
                   </label>
                   <input
                     type="text"
@@ -1230,7 +1230,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.toleranceCteLabel')}
+                    {t('carriers.form.toleranceCteLabel')}
                   </label>
                   <input
                     type="text"
@@ -1244,7 +1244,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.toleranceCtePercentLabel')}
+                    {t('carriers.form.toleranceCtePercentLabel')}
                   </label>
                   <input
                     type="text"
@@ -1262,7 +1262,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.toleranceInvoiceLabel')}
+                    {t('carriers.form.toleranceInvoiceLabel')}
                   </label>
                   <input
                     type="text"
@@ -1276,7 +1276,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.toleranceInvoicePercentLabel')}
+                    {t('carriers.form.toleranceInvoicePercentLabel')}
                   </label>
                   <input
                     type="text"
@@ -1296,7 +1296,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         <div className="flex items-center justify-end space-x-4">
           {codeError && (
             <div className="mr-4">
-              <InlineMessage type="error" message={`${t('carriers.errorInCode')} ${codeError}`} />
+              <InlineMessage type="error" message={`${t('carriers.form.errorInCode')} ${codeError}`} />
             </div>
           )}
           <button
@@ -1304,7 +1304,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             onClick={onBack}
             className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
           >
-            {t('carriers.cancel')}
+            {t('carriers.form.cancel')}
           </button>
           <button
             type="submit"
@@ -1312,7 +1312,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title={codeError && !carrier ? codeError : ''}
           >
-            {carrier ? t('carriers.update') : t('carriers.save')} {t('carriers.carrierTerm')}
+            {carrier ? t('carriers.form.update') : t('carriers.form.save')} {t('carriers.form.carrierTerm')}
           </button>
         </div>
       </form>

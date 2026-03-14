@@ -3,10 +3,12 @@ import { Save, TestTube, CheckCircle, XCircle, AlertCircle, MessageSquare, FileT
 import { whatsappService, WhatsAppConfig as IWhatsAppConfig, WhatsAppTemplate } from '../../services/whatsappService';
 import { useAuth } from '../../hooks/useAuth';
 import { WhatsAppExtract } from './WhatsAppExtract';
+import { useTranslation } from 'react-i18next';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 
 export const WhatsAppConfig: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { isActive: whatsappActive, isLoading: whatsappLoading } = useInnovation(
     INNOVATION_IDS.WHATSAPP,
     user?.id
@@ -72,7 +74,7 @@ export const WhatsAppConfig: React.FC = () => {
 
   const handleSaveConfig = async () => {
     if (!whatsappActive) {
-      setSaveMessage({ type: 'error', text: 'Recurso não contratado. Ative em Inovações & Sugestões.' });
+      setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
       return;
     }
 
@@ -85,10 +87,10 @@ export const WhatsAppConfig: React.FC = () => {
     });
 
     if (result.success) {
-      setSaveMessage({ type: 'success', text: 'Configuração salva com sucesso!' });
+      setSaveMessage({ type: 'success', text: t('whatsapp.config.saveSuccess') });
       await loadConfig();
     } else {
-      setSaveMessage({ type: 'error', text: result.error || 'Erro ao salvar configuração' });
+      setSaveMessage({ type: 'error', text: result.error || t('whatsapp.config.saveError') });
     }
 
     setIsSaving(false);
@@ -96,7 +98,7 @@ export const WhatsAppConfig: React.FC = () => {
 
   const handleTestConnection = async () => {
     if (!whatsappActive) {
-      setTestResult({ success: false, message: 'Recurso não contratado. Ative em Inovações & Sugestões.' });
+      setTestResult({ success: false, message: t('whatsapp.config.notContractedMsg') });
       return;
     }
 
@@ -106,9 +108,9 @@ export const WhatsAppConfig: React.FC = () => {
     const result = await whatsappService.testConnection(config);
 
     if (result.success) {
-      setTestResult({ success: true, message: 'Conexão testada com sucesso! A configuração está funcionando.' });
+      setTestResult({ success: true, message: t('whatsapp.config.testSuccess') });
     } else {
-      setTestResult({ success: false, message: result.error || 'Falha ao testar conexão' });
+      setTestResult({ success: false, message: result.error || t('whatsapp.config.testError') });
     }
 
     setIsTesting(false);
@@ -117,14 +119,14 @@ export const WhatsAppConfig: React.FC = () => {
 
   const handleSaveTemplate = async () => {
     if (!whatsappActive) {
-      setSaveMessage({ type: 'error', text: 'Recurso não contratado. Ative em Inovações & Sugestões.' });
+      setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
       return;
     }
 
     if (!editingTemplate) return;
 
     if (!editingTemplate.template_name || !editingTemplate.body_text) {
-      setSaveMessage({ type: 'error', text: 'Nome e corpo da mensagem são obrigatórios' });
+      setSaveMessage({ type: 'error', text: t('whatsapp.config.nameAndBodyRequired') });
       return;
     }
 
@@ -140,12 +142,12 @@ export const WhatsAppConfig: React.FC = () => {
     });
 
     if (result.success) {
-      setSaveMessage({ type: 'success', text: 'Template salvo com sucesso!' });
+      setSaveMessage({ type: 'success', text: t('whatsapp.config.saveTemplateSuccess') });
       await loadTemplates();
       setShowTemplateForm(false);
       setEditingTemplate(null);
     } else {
-      setSaveMessage({ type: 'error', text: result.error || 'Erro ao salvar template' });
+      setSaveMessage({ type: 'error', text: result.error || t('whatsapp.config.saveTemplateError') });
     }
 
     setIsSaving(false);
@@ -153,25 +155,25 @@ export const WhatsAppConfig: React.FC = () => {
 
   const handleDeleteTemplate = async (templateId: string) => {
     if (!whatsappActive) {
-      setSaveMessage({ type: 'error', text: 'Recurso não contratado. Ative em Inovações & Sugestões.' });
+      setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
       return;
     }
 
-    if (!confirm('Deseja realmente excluir este template?')) return;
+    if (!confirm(t('whatsapp.config.deleteTemplateConfirm'))) return;
 
     const result = await whatsappService.deleteTemplate(templateId);
 
     if (result.success) {
-      setSaveMessage({ type: 'success', text: 'Template excluído com sucesso!' });
+      setSaveMessage({ type: 'success', text: t('whatsapp.config.deleteTemplateSuccess') });
       await loadTemplates();
     } else {
-      setSaveMessage({ type: 'error', text: result.error || 'Erro ao excluir template' });
+      setSaveMessage({ type: 'error', text: result.error || t('whatsapp.config.deleteTemplateError') });
     }
   };
 
   const handleNewTemplate = () => {
     if (!whatsappActive) {
-      setSaveMessage({ type: 'error', text: 'Recurso não contratado. Ative em Inovações & Sugestões.' });
+      setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
       return;
     }
 
@@ -190,8 +192,8 @@ export const WhatsAppConfig: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configurações do WhatsApp</h1>
-        <p className="text-gray-600 dark:text-gray-400">Configure a integração com WhatsApp Business API</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('whatsapp.config.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('whatsapp.config.subtitle')}</p>
       </div>
 
       {saveMessage && (
@@ -217,8 +219,7 @@ export const WhatsAppConfig: React.FC = () => {
           <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-yellow-800">
-              <strong>Integração com WhatsApp não contratada:</strong> Para utilizar as funcionalidades do WhatsApp Business API,
-              é necessário ativar o serviço em <strong>Inovações & Sugestões</strong>. Sem a ativação, as configurações não terão efeito.
+              <strong>{t('whatsapp.config.notice.title')}</strong> {t('whatsapp.config.notice.text')} <strong>{t('whatsapp.config.notice.link')}</strong>{t('whatsapp.config.notice.textEnd')}
             </p>
           </div>
         </div>
@@ -237,7 +238,7 @@ export const WhatsAppConfig: React.FC = () => {
           >
             <div className="flex items-center space-x-2">
               <MessageSquare size={16} />
-              <span>Configurações API</span>
+              <span>{t('whatsapp.config.tabs.config')}</span>
             </div>
           </button>
           <button
@@ -250,7 +251,7 @@ export const WhatsAppConfig: React.FC = () => {
           >
             <div className="flex items-center space-x-2">
               <FileText size={16} />
-              <span>Templates</span>
+              <span>{t('whatsapp.config.tabs.templates')}</span>
             </div>
           </button>
           <button
@@ -263,7 +264,7 @@ export const WhatsAppConfig: React.FC = () => {
           >
             <div className="flex items-center space-x-2">
               <Receipt size={16} />
-              <span>Extrato</span>
+              <span>{t('whatsapp.config.tabs.extract')}</span>
             </div>
           </button>
         </nav>
@@ -275,7 +276,7 @@ export const WhatsAppConfig: React.FC = () => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Access Token *
+                {t('whatsapp.config.api.accessToken')}
               </label>
               <input
                 type="password"
@@ -283,16 +284,16 @@ export const WhatsAppConfig: React.FC = () => {
                 onChange={(e) => setConfig({ ...config, access_token: e.target.value })}
                 disabled={!whatsappActive}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="EAAxxxxxxxxxxxxxxxxxxxxxxx"
+                placeholder={t('whatsapp.config.api.accessTokenPlaceholder')}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Token de acesso permanente gerado na Meta for Developers
+                {t('whatsapp.config.api.accessTokenHelp')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number ID *
+                {t('whatsapp.config.api.phoneId')}
               </label>
               <input
                 type="text"
@@ -300,16 +301,16 @@ export const WhatsAppConfig: React.FC = () => {
                 onChange={(e) => setConfig({ ...config, phone_number_id: e.target.value })}
                 disabled={!whatsappActive}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="123456789012345"
+                placeholder={t('whatsapp.config.api.phoneIdPlaceholder')}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                ID do número de telefone do WhatsApp Business
+                {t('whatsapp.config.api.phoneIdHelp')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Business Account ID *
+                {t('whatsapp.config.api.accountId')}
               </label>
               <input
                 type="text"
@@ -317,16 +318,16 @@ export const WhatsAppConfig: React.FC = () => {
                 onChange={(e) => setConfig({ ...config, business_account_id: e.target.value })}
                 disabled={!whatsappActive}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="123456789012345"
+                placeholder={t('whatsapp.config.api.accountIdPlaceholder')}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                ID da conta comercial do WhatsApp
+                {t('whatsapp.config.api.accountIdHelp')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Webhook Verify Token (opcional)
+                {t('whatsapp.config.api.webhookToken')}
               </label>
               <input
                 type="text"
@@ -334,10 +335,10 @@ export const WhatsAppConfig: React.FC = () => {
                 onChange={(e) => setConfig({ ...config, webhook_verify_token: e.target.value })}
                 disabled={!whatsappActive}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="seu_token_secreto"
+                placeholder={t('whatsapp.config.api.webhookTokenPlaceholder')}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Token para verificação de webhooks (se configurado)
+                {t('whatsapp.config.api.webhookTokenHelp')}
               </p>
             </div>
 
@@ -367,7 +368,7 @@ export const WhatsAppConfig: React.FC = () => {
                 className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
-                <span>{isSaving ? 'Salvando...' : 'Salvar Configuração'}</span>
+                <span>{isSaving ? t('whatsapp.config.buttons.saving') : t('whatsapp.config.buttons.saveConfig')}</span>
               </button>
 
               <button
@@ -376,7 +377,7 @@ export const WhatsAppConfig: React.FC = () => {
                 className="flex items-center space-x-2 px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <TestTube size={16} />
-                <span>{isTesting ? 'Testando...' : 'Testar Conexão'}</span>
+                <span>{isTesting ? t('whatsapp.config.buttons.testing') : t('whatsapp.config.buttons.testConnection')}</span>
               </button>
             </div>
           </div>
@@ -387,25 +388,25 @@ export const WhatsAppConfig: React.FC = () => {
             <AlertCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">
-                Como obter as credenciais:
+                {t('whatsapp.config.howTo.title')}
               </h3>
               <ol className="text-sm text-green-800 dark:text-green-400 space-y-2 list-decimal list-inside">
-                <li>Acesse <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">Meta for Developers</a></li>
-                <li>Crie ou selecione um App do tipo "Business"</li>
-                <li>Adicione o produto "WhatsApp" ao seu app</li>
-                <li>Em "API Setup", você encontrará o Phone Number ID e poderá gerar o Access Token</li>
-                <li>O Business Account ID está disponível nas configurações do WhatsApp Business</li>
+                <li>{t('whatsapp.config.howTo.step1')} <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">{t('whatsapp.config.howTo.link')}</a></li>
+                <li>{t('whatsapp.config.howTo.step2')}</li>
+                <li>{t('whatsapp.config.howTo.step3')}</li>
+                <li>{t('whatsapp.config.howTo.step4')}</li>
+                <li>{t('whatsapp.config.howTo.step5')}</li>
               </ol>
               <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-300 dark:border-yellow-700">
-                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">WhatsApp Business API (não possui plano gratuito):</p>
+                <p className="text-xs text-yellow-900 dark:text-yellow-300 font-medium mb-1">{t('whatsapp.config.howTo.warningTitle')}</p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  O WhatsApp opera exclusivamente com cobrança por uso, baseada no envio de mensagens e templates. Cada mensagem enviada — principalmente aquelas iniciadas pela empresa — gera custo conforme a tabela oficial de preços da Meta.
+                  {t('whatsapp.config.howTo.warning1')}
                 </p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  Recomendamos configurar limites de consumo no painel da plataforma parceira (BSP) para evitar qualquer gasto inesperado.
+                  {t('whatsapp.config.howTo.warning2')}
                 </p>
                 <p className="text-xs text-yellow-800 dark:text-yellow-400 mt-2">
-                  Lembre-se: além da cobrança por mensagem, existe também o valor mensal fixo do recurso, conforme previsto em contrato.
+                  {t('whatsapp.config.howTo.warning3')}
                 </p>
               </div>
             </div>
@@ -418,7 +419,7 @@ export const WhatsAppConfig: React.FC = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Gerencie os templates de mensagens aprovados pela Meta
+              {t('whatsapp.templates.title')}
             </p>
             <button
               onClick={handleNewTemplate}
@@ -426,14 +427,14 @@ export const WhatsAppConfig: React.FC = () => {
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={16} />
-              <span>Novo Template</span>
+              <span>{t('whatsapp.templates.newTemplateHeader')}</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
             {templates.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                Nenhum template encontrado. Clique em "Novo Template" para criar um.
+                {t('whatsapp.templates.noTemplates')}
               </div>
             ) : (
               templates.map((template) => (
@@ -445,7 +446,7 @@ export const WhatsAppConfig: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {template.template_name || 'Sem nome'}
+                          {template.template_name || t('whatsapp.templates.unnamed')}
                         </h3>
                         {template.approval_status && (
                           <span className={`px-2 py-1 text-xs rounded-full ${
@@ -509,12 +510,12 @@ export const WhatsAppConfig: React.FC = () => {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="p-6 space-y-4">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {editingTemplate.id ? 'Editar Template' : 'Novo Template'}
+                    {editingTemplate.id ? t('whatsapp.templates.editTemplateHeader') : t('whatsapp.templates.newTemplateHeader')}
                   </h2>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nome do Template *
+                      {t('whatsapp.templates.form.name')}
                     </label>
                     <input
                       type="text"
@@ -522,13 +523,13 @@ export const WhatsAppConfig: React.FC = () => {
                       onChange={(e) => setEditingTemplate({ ...editingTemplate, template_name: e.target.value })}
                       disabled={!!editingTemplate.id}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
-                      placeholder="nome_do_template"
+                      placeholder={t('whatsapp.templates.form.namePlaceholder')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Descrição
+                      {t('whatsapp.templates.form.description')}
                     </label>
                     <input
                       type="text"
@@ -536,13 +537,13 @@ export const WhatsAppConfig: React.FC = () => {
                       onChange={(e) => setEditingTemplate({ ...editingTemplate, description: e.target.value })}
                       disabled={!whatsappActive}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      placeholder="Descrição do uso do template"
+                      placeholder={t('whatsapp.templates.form.descriptionPlaceholder')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Corpo da Mensagem *
+                      {t('whatsapp.templates.form.body')}
                     </label>
                     <textarea
                       value={editingTemplate.body_text || ''}
@@ -550,17 +551,17 @@ export const WhatsAppConfig: React.FC = () => {
                       rows={6}
                       disabled={!whatsappActive}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      placeholder="Digite o corpo da mensagem. Use {{1}}, {{2}}, etc. para variáveis."
+                      placeholder={t('whatsapp.templates.form.bodyPlaceholder')}
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Variáveis devem estar no formato {'{{1}}'}, {'{{2}}'}, etc.
+                      {t('whatsapp.templates.form.bodyHelp')}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Categoria
+                        {t('whatsapp.templates.form.category')}
                       </label>
                       <select
                         value={editingTemplate.category || 'UTILITY'}
@@ -576,7 +577,7 @@ export const WhatsAppConfig: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Status de Aprovação
+                        {t('whatsapp.templates.form.approvalStatus')}
                       </label>
                       <select
                         value={editingTemplate.approval_status || 'APPROVED'}
@@ -601,7 +602,7 @@ export const WhatsAppConfig: React.FC = () => {
                       className="rounded border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">
-                      Template ativo
+                      {t('whatsapp.templates.form.active')}
                     </label>
                   </div>
 
@@ -611,7 +612,7 @@ export const WhatsAppConfig: React.FC = () => {
                       disabled={!whatsappActive || isSaving || !editingTemplate.template_name || !editingTemplate.body_text}
                       className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isSaving ? 'Salvando...' : 'Salvar'}
+                      {isSaving ? t('whatsapp.templates.form.saving') : t('whatsapp.templates.form.save')}
                     </button>
                     <button
                       onClick={() => {
@@ -620,7 +621,7 @@ export const WhatsAppConfig: React.FC = () => {
                       }}
                       className="flex-1 px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      Cancelar
+                      {t('whatsapp.templates.form.cancel')}
                     </button>
                   </div>
                 </div>

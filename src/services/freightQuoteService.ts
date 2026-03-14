@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { freightCostCalculator } from './freightCostCalculator';
 import { holidaysService } from './holidaysService';
+import { findCityByCEPFromDatabase } from './citiesService';
 
 export interface QuoteParams {
   originCityId?: string;
@@ -55,13 +56,15 @@ export const freightQuoteService = {
   async findCityByZipCode(zipCode: string): Promise<any> {
     const cleanZip = zipCode.replace(/\D/g, '');
 
-    const { data, error } = await supabase.rpc('find_city_by_zipcode', {
-      search_zip: cleanZip
-    });
+    const city = await findCityByCEPFromDatabase(cleanZip);
 
-    if (error || !data || data.length === 0) return null;
+    if (!city) return null;
 
-    return data[0];
+    return {
+      ibge_code: city.ibgeCode,
+      state_abbreviation: city.stateAbbreviation,
+      nome: city.name
+    };
   },
 
   async calculateDeliveryDeadline(

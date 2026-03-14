@@ -39,7 +39,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
 
     if (!formData.key_name || !formData.api_key) {
       setToast({
-        message: 'Por favor, preencha os campos obrigatórios',
+        message: t('apiKeys.form.messages.fillRequired'),
         type: 'warning'
       });
       return;
@@ -66,7 +66,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
       });
 
       setToast({
-        message: 'Chave de API criada com sucesso!',
+        message: t('apiKeys.form.messages.createSuccess'),
         type: 'success'
       });
 
@@ -74,10 +74,10 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
         onSuccess();
       }, 1000);
     } catch (error: any) {
-      let errorMessage = 'Erro ao criar chave de API. Tente novamente.';
+      let errorMessage = t('apiKeys.form.messages.createError');
 
       if (error?.message?.includes('duplicate key') || error?.code === '23505') {
-        errorMessage = 'Já existe uma chave ativa deste tipo para este ambiente. Desative a chave existente primeiro.';
+        errorMessage = t('apiKeys.form.messages.duplicateKey');
       } else if (error?.message) {
         errorMessage = `Erro: ${error.message}`;
       }
@@ -101,10 +101,10 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Nova Chave de API
+                {t('apiKeys.form.title')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Cadastre uma nova chave de API no sistema
+                {t('apiKeys.form.subtitle')}
               </p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Chave *
+                {t('apiKeys.form.keyType')}
               </label>
               <select
                 value={formData.key_type}
@@ -141,7 +141,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ambiente *
+                {t('apiKeys.form.environment')}
               </label>
               <select
                 value={formData.environment}
@@ -158,41 +158,41 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nome da Chave *
+              {t('apiKeys.form.keyName')}
             </label>
             <input
               type="text"
               value={formData.key_name}
               onChange={(e) => setFormData({ ...formData, key_name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ex: Google Maps API Principal"
+              placeholder={t('apiKeys.form.keyNamePlaceholder')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Descrição
+              {t('apiKeys.form.description')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={2}
-              placeholder="Descrição opcional..."
+              placeholder={t('apiKeys.form.descriptionPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Chave de API *
+              {t('apiKeys.form.apiKey')}
             </label>
             <textarea
               value={formData.api_key}
               onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
               rows={3}
-              placeholder="Cole a chave de API aqui..."
+              placeholder={t('apiKeys.form.apiKeyPlaceholder')}
               required
             />
           </div>
@@ -200,20 +200,20 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Limite Mensal
+                {t('apiKeys.form.monthlyLimit')}
               </label>
               <input
                 type="number"
                 value={formData.monthly_limit}
                 onChange={(e) => setFormData({ ...formData, monthly_limit: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ex: 100000"
+                placeholder={t('apiKeys.form.monthlyLimitPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Alerta em (%)
+                {t('apiKeys.form.alertThreshold')}
               </label>
               <input
                 type="number"
@@ -229,7 +229,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Data de Expiração
+              {t('apiKeys.form.expiresAt')}
             </label>
             <input
               type="datetime-local"
@@ -241,14 +241,14 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Emails para Alertas (separados por vírgula)
+              {t('apiKeys.form.alertEmails')}
             </label>
             <input
               type="text"
               value={formData.alert_emails}
               onChange={(e) => setFormData({ ...formData, alert_emails: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="email1@example.com, email2@example.com"
+              placeholder={t('apiKeys.form.alertEmailsPlaceholder')}
             />
           </div>
 
@@ -261,7 +261,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Ativar chave imediatamente
+              {t('apiKeys.form.activeImmediately')}
             </label>
           </div>
 
@@ -272,7 +272,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
               disabled={isLoading}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-50"
             >
-              Cancelar
+              {t('apiKeys.form.cancel')}
             </button>
             <button
               type="submit"
@@ -282,12 +282,12 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
               {isLoading ? (
                 <>
                   <Loader className="w-4 h-4 animate-spin" />
-                  Criando...
+                  {t('apiKeys.form.creating')}
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  Criar Chave
+                  {t('apiKeys.form.create')}
                 </>
               )}
             </button>

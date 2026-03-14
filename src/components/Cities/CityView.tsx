@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CreditCard as Edit, MapPin, Hash, Building, Mail, Globe, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { BrazilianCity } from '../../types/cities';
 import { fetchCityById } from '../../services/citiesService';
+import { useTranslation } from 'react-i18next';
 
 interface CityViewProps {
   onBack: () => void;
@@ -11,6 +12,7 @@ interface CityViewProps {
 }
 
 export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmin }) => {
+  const { t } = useTranslation();
   const [showZipRanges, setShowZipRanges] = useState(false);
   const [fullCity, setFullCity] = useState<BrazilianCity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,9 +52,9 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
             className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
           >
             <ArrowLeft size={20} />
-            <span>Voltar para Cidades</span>
+            <span>{t('cities.actions.back', { defaultValue: 'Voltar para Cidades' })}</span>
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Carregando...</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('cities.messages.loading', { defaultValue: 'Carregando...' })}</h1>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 flex justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -69,12 +71,12 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Cidades</span>
+          <span>{t('cities.actions.back', { defaultValue: 'Voltar para Cidades' })}</span>
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Cidade</h1>
-            <p className="text-gray-600 dark:text-gray-400">Detalhes completos da cidade</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('cities.actions.viewTitle', { defaultValue: 'Visualizar Cidade' })}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{t('cities.form.viewSubtitle', { defaultValue: 'Detalhes completos da cidade' })}</p>
           </div>
           {isAdmin && (
             <button
@@ -82,7 +84,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               <Edit size={20} />
-              <span>Editar</span>
+              <span>{t('cities.actions.edit', { defaultValue: 'Editar' })}</span>
             </button>
           )}
         </div>
@@ -106,21 +108,21 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Código IBGE</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.ibgeCode', { defaultValue: 'Código IBGE' })}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{fullCity?.ibgeCode || city.ibgeCode}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Tipo</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.type', { defaultValue: 'Tipo' })}</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(fullCity?.type || city.type)}`}>
-                    {(fullCity?.type || city.type).charAt(0).toUpperCase() + (fullCity?.type || city.type).slice(1)}
+                    {t(`cities.types.${fullCity?.type || city.type}`, { defaultValue: (fullCity?.type || city.type).charAt(0).toUpperCase() + (fullCity?.type || city.type).slice(1) })}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Estado</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.state', { defaultValue: 'Estado' })}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{fullCity?.stateName || city.stateName} ({fullCity?.stateAbbreviation || city.stateAbbreviation})</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Região</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.region', { defaultValue: 'Região' })}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{fullCity?.region || city.region}</p>
                 </div>
               </div>
@@ -130,7 +132,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
             <div className="text-center">
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-2xl font-bold text-blue-600">{zipRangeCount}</p>
-                <p className="text-sm text-blue-700">Faixas de CEP</p>
+                <p className="text-sm text-blue-700">{t('cities.stats.zipRangesCount', { defaultValue: 'Faixas de CEP' })}</p>
               </div>
             </div>
           </div>
@@ -138,7 +140,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
 
         {/* Location Information */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Localização</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('cities.form.locationInfo', { defaultValue: 'Informações de Localização' })}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center space-x-3">
               <Globe className="text-purple-500" size={20} />
@@ -168,12 +170,12 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
 
         {/* Postal Information */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Postais</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('cities.form.postalInfo', { defaultValue: 'Informações Postais' })}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center space-x-3">
               <Mail className="text-green-500" size={24} />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">CEP Inicial</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.zipStart', { defaultValue: 'CEP Inicial' })}</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{fullCity?.zipCodeStart || city.zipCodeStart}</p>
               </div>
             </div>
@@ -181,7 +183,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
             <div className="flex items-center space-x-3">
               <Mail className="text-orange-500" size={24} />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">CEP Final</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.zipEnd', { defaultValue: 'CEP Final' })}</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{fullCity?.zipCodeEnd || city.zipCodeEnd}</p>
               </div>
             </div>
@@ -190,7 +192,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
           {(fullCity?.zipCodeStart !== fullCity?.zipCodeEnd) && (
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Faixa de CEPs:</strong> Esta localidade possui uma faixa de CEPs de {fullCity?.zipCodeStart || city.zipCodeStart} até {fullCity?.zipCodeEnd || city.zipCodeEnd}.
+                <strong>{t('cities.form.zipRangeBold', { defaultValue: 'Faixa de CEPs:' })}</strong> {t('cities.form.zipRangeDesc', { defaultValue: 'Esta localidade possui uma faixa de CEPs de {{start}} até {{end}}.', start: fullCity?.zipCodeStart || city.zipCodeStart, end: fullCity?.zipCodeEnd || city.zipCodeEnd })}
               </p>
             </div>
           )}
@@ -200,13 +202,13 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
         {zipRangeCount > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Faixas Detalhadas de CEP</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('cities.form.detailedZipRanges', { defaultValue: 'Faixas Detalhadas de CEP' })}</h3>
               <button
                 onClick={() => setShowZipRanges(!showZipRanges)}
                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
               >
                 <span className="text-sm font-medium">
-                  {showZipRanges ? 'Ocultar' : 'Mostrar'} {zipRangeCount} faixa{zipRangeCount > 1 ? 's' : ''}
+                  {showZipRanges ? t('cities.actions.hide', { defaultValue: 'Ocultar' }) : t('cities.actions.show', { defaultValue: 'Mostrar' })} {t('cities.stats.zipRanges', { count: zipRangeCount, defaultValue: '{{count}} faixa(s)' })}
                 </span>
                 {showZipRanges ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
@@ -218,7 +220,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
                   {fullCity?.zipCodeRanges?.map((range, index) => (
                     <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:bg-gray-900 transition-colors">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">Faixa {index + 1}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{t('cities.form.rangeTitle', { defaultValue: 'Faixa' })} {index + 1}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">#{index + 1}</span>
                       </div>
                       
@@ -232,14 +234,14 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
                         
                         {range.area && (
                           <div>
-                            <span className="text-gray-600 dark:text-gray-400">Área:</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('cities.form.area', { defaultValue: 'Área:' })}</span>
                             <span className="font-medium text-gray-900 dark:text-white ml-1">{range.area}</span>
                           </div>
                         )}
                         
                         {range.neighborhood && (
                           <div>
-                            <span className="text-gray-600 dark:text-gray-400">Bairro/Região:</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('cities.form.neighborhood', { defaultValue: 'Bairro/Região:' })}</span>
                             <span className="font-medium text-gray-900 dark:text-white ml-1">{range.neighborhood}</span>
                           </div>
                         )}
@@ -252,10 +254,9 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
                   <div className="flex items-start space-x-2">
                     <Info size={16} className="text-green-600 mt-0.5" />
                     <div>
-                      <p className="text-sm text-green-800 font-medium">Faixas de CEP Detalhadas</p>
+                      <p className="text-sm text-green-800 font-medium">{t('cities.form.detailedZipRanges', { defaultValue: 'Faixas de CEP Detalhadas' })}</p>
                       <p className="text-xs text-green-700 mt-1">
-                        Esta localidade possui {zipRangeCount} faixa{zipRangeCount > 1 ? 's' : ''} específica{zipRangeCount > 1 ? 's' : ''} de CEP, 
-                        permitindo identificação precisa de áreas, bairros e regiões para melhor logística de entrega.
+                        {t('cities.messages.zipDetailBox', { count: zipRangeCount, defaultValue: `Esta localidade possui {{count}} faixa(s) específica(s) de CEP, permitindo identificação precisa de áreas, bairros e regiões para melhor logística de entrega.` })}
                       </p>
                     </div>
                   </div>
@@ -267,12 +268,12 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
 
         {/* Codes and Identifiers */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Códigos e Identificadores</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('cities.form.codesIdentifiers', { defaultValue: 'Códigos e Identificadores' })}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center space-x-3">
               <Hash className="text-blue-600" size={24} />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Código IBGE</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.ibgeCode', { defaultValue: 'Código IBGE' })}</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{fullCity?.ibgeCode || city.ibgeCode}</p>
               </div>
             </div>
@@ -280,7 +281,7 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
             <div className="flex items-center space-x-3">
               <Building className="text-green-600" size={24} />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">ID do Estado</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('cities.form.stateId', { defaultValue: 'ID do Estado' })}</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{fullCity?.stateId || city.stateId}</p>
               </div>
             </div>
@@ -289,23 +290,25 @@ export const CityView: React.FC<CityViewProps> = ({ onBack, onEdit, city, isAdmi
 
         {/* Statistics */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Gerais</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('cities.form.generalInfo', { defaultValue: 'Informações Gerais' })}</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{(fullCity?.type || city.type).charAt(0).toUpperCase() + (fullCity?.type || city.type).slice(1)}</p>
-              <p className="text-sm text-blue-700">Tipo</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {t(`cities.types.${fullCity?.type || city.type}`, { defaultValue: (fullCity?.type || city.type).charAt(0).toUpperCase() + (fullCity?.type || city.type).slice(1) })}
+              </p>
+              <p className="text-sm text-blue-700">{t('cities.form.type', { defaultValue: 'Tipo' })}</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <p className="text-2xl font-bold text-green-600">{fullCity?.stateAbbreviation || city.stateAbbreviation}</p>
-              <p className="text-sm text-green-700">Estado</p>
+              <p className="text-sm text-green-700">{t('cities.form.state', { defaultValue: 'Estado' })}</p>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <p className="text-2xl font-bold text-purple-600">{fullCity?.region || city.region}</p>
-              <p className="text-sm text-purple-700">Região</p>
+              <p className="text-sm text-purple-700">{t('cities.form.region', { defaultValue: 'Região' })}</p>
             </div>
             <div className="text-center p-4 bg-orange-50 rounded-lg">
               <p className="text-2xl font-bold text-orange-600">{zipRangeCount}</p>
-              <p className="text-sm text-orange-700">Faixas de CEP</p>
+              <p className="text-sm text-orange-700">{t('cities.stats.zipRangesCount', { defaultValue: 'Faixas de CEP' })}</p>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { establishmentsService, Establishment } from '../../services/establishme
 import { PermissionsTree } from './PermissionsTree';
 import { EstablishmentSelector } from './EstablishmentSelector';
 import { Toast, ToastType } from '../common/Toast';
+import { useTranslation } from 'react-i18next';
 import { InlineMessage } from '../common/InlineMessage';
 
 interface UserFormProps {
@@ -15,6 +16,7 @@ interface UserFormProps {
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     codigo: user?.codigo || '',
     nome: user?.nome || '',
@@ -465,21 +467,21 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Usuários</span>
+          <span>{t('users.buttons.back')} {t('users.title').toLowerCase()}</span>
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {user ? 'Editar Usuário' : 'Novo Usuário'}
+          {user ? t('users.form.editTitle') : t('users.form.newTitle')}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">Preencha os dados do usuário</p>
+        <p className="text-gray-600 dark:text-gray-400">{user ? t('users.form.editSubtitle') : t('users.form.newSubtitle')}</p>
         
         {isProtectedUser && (
           <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start space-x-2">
               <AlertCircle size={16} className="text-yellow-600 mt-0.5" />
               <div>
-                <p className="text-sm text-yellow-800 font-medium">Usuário Protegido</p>
+                <p className="text-sm text-yellow-800 font-medium">{t('users.form.hints.protectedUserTitle')}</p>
                 <p className="text-xs text-yellow-700 mt-1">
-                  Este é o usuário administrador principal (admin@tmsgestor.com). Algumas alterações podem ser restritas para manter a segurança do sistema.
+                  {t('users.form.hints.protectedUserDesc')}
                 </p>
               </div>
             </div>
@@ -501,7 +503,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <User size={16} />
-                <span>Informações Básicas</span>
+                <span>{t('users.form.tabs.basic')}</span>
               </div>
             </button>
             <button
@@ -514,7 +516,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <Mail size={16} />
-                <span>Contato</span>
+                <span>{t('users.form.tabs.contact')}</span>
               </div>
             </button>
             <button
@@ -527,7 +529,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <Building size={16} />
-                <span>Profissional</span>
+                <span>{t('users.form.tabs.professional')}</span>
               </div>
             </button>
             <button
@@ -540,7 +542,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <Shield size={16} />
-                <span>Acesso</span>
+                <span>{t('users.form.tabs.access')}</span>
               </div>
             </button>
             <button
@@ -553,7 +555,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <Building size={16} />
-                <span>Estabelecimentos</span>
+                <span>{t('users.form.tabs.establishments')}</span>
               </div>
             </button>
             <button
@@ -566,7 +568,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             >
               <div className="flex items-center space-x-2">
                 <MapPin size={16} />
-                <span>Endereço</span>
+                <span>{t('users.form.tabs.address')}</span>
               </div>
             </button>
             {formData.perfil === 'personalizado' && (
@@ -580,7 +582,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               >
                 <div className="flex items-center space-x-2">
                   <CheckCircle size={16} />
-                  <span>Permissões</span>
+                  <span>{t('users.form.tabs.permissions')}</span>
                 </div>
               </button>
             )}
@@ -591,12 +593,12 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {activeTab === 'basic' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.basic')}</h2>
 
-            {/* Foto de Perfil */}
+            {/* {t('users.form.fields.avatar')} */}
             <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Foto de Perfil
+                {t('users.form.fields.avatar')}
               </label>
               <div className="flex items-center space-x-6">
                 <div className="relative">
@@ -631,7 +633,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                       />
                       <div className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                         <Camera size={18} />
-                        <span>Escolher Foto</span>
+                        <span>{t('users.buttons.choosePhoto')}</span>
                       </div>
                     </label>
                     {profilePhotoPreview && (
@@ -642,12 +644,12 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                         className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
                       >
                         <X size={18} />
-                        <span>Remover</span>
+                        <span>{t('users.buttons.remove')}</span>
                       </button>
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    JPG, PNG, GIF ou WebP. Máximo 5MB.
+                    {t('users.form.fields.avatarHint')}
                   </p>
                 </div>
               </div>
@@ -656,7 +658,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Código do Usuário *
+                  {t('users.form.fields.code')} *
                 </label>
                 <div className="relative">
                   <input
@@ -685,11 +687,8 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   <div className="flex items-start space-x-2">
                     <Info size={16} className="text-blue-600 dark:text-blue-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">Código Gerado Automaticamente</p>
-                      <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-                        Os códigos são gerados automaticamente de forma sequencial, iniciando em 0001.
-                        Este campo não pode ser editado manualmente.
-                      </p>
+                      <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">{t('users.form.hints.autoCodeTitle')}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">{t('users.form.hints.autoCodeDesc')}</p>
                     </div>
                   </div>
                 </div>
@@ -697,7 +696,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nome Completo *
+                  {t('users.form.fields.name')} *
                 </label>
                 <input
                   type="text"
@@ -712,7 +711,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email *
+                  {t('users.form.fields.email')} *
                 </label>
                 <input
                   type="email"
@@ -736,9 +735,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CPF *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.cpf')} * </label>
                 <input
                   type="text"
                   name="cpf"
@@ -765,13 +762,11 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'contact' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Contato</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.contact')}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Telefone
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.phone')} </label>
                 <input
                   type="text"
                   name="telefone"
@@ -784,9 +779,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Celular
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.mobile')} </label>
                 <input
                   type="text"
                   name="celular"
@@ -799,9 +792,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Data de Nascimento
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.birthDate')} </label>
                 <input
                   type="date"
                   name="data_nascimento"
@@ -816,13 +807,11 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'professional' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Profissionais</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.professional')}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Cargo *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.position')} * </label>
                 <input
                   type="text"
                   name="cargo"
@@ -835,9 +824,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Departamento *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.department')} * </label>
                 <select
                   name="departamento"
                   value={formData.departamento}
@@ -845,7 +832,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Selecione o departamento</option>
+                  <option value="">{t('common.select') || 'Selecione'} {t('users.form.fields.department').toLowerCase()}</option>
                   <option value="TI">TI</option>
                   <option value="Operações">Operações</option>
                   <option value="Logística">Logística</option>
@@ -860,9 +847,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Data de Admissão *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.admissionDate')} * </label>
                 <input
                   type="date"
                   name="data_admissao"
@@ -874,16 +859,14 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Estabelecimento Principal
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.mainEstablishment')} </label>
                 <select
                   name="estabelecimento_id"
                   value={formData.estabelecimento_id}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Selecione o estabelecimento</option>
+                  <option value="">{t('common.select') || 'Selecione'} {t('establishments.title').toLowerCase()}</option>
                   {establishments
                     .filter(e => formData.estabelecimentosPermitidos.length === 0 || 
                                 formData.estabelecimentosPermitidos.includes(e.id))
@@ -895,18 +878,14 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   }
                 </select>
                 {formData.estabelecimentosPermitidos.length > 0 && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Apenas estabelecimentos permitidos são exibidos nesta lista.
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('users.form.hints.establishmentLimitations')}</p>
                 )}
               </div>
             </div>
 
             {/* Observations */}
             <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Observações Gerais
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.observations')} </label>
               <textarea
                 name="observacoes"
                 value={formData.observacoes}
@@ -921,13 +900,11 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'access' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Controle de Acesso</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.access')}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Perfil de Acesso *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.role')} * </label>
                 <select
                   name="perfil"
                   value={formData.perfil}
@@ -938,18 +915,16 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                     isProtectedUser ? 'bg-gray-100' : ''
                   }`}
                 >
-                  <option value="administrador">Administrador</option>
-                  <option value="gerente">Gerente</option>
-                  <option value="operador">Operador</option>
-                  <option value="visualizador">Visualizador</option>
-                  <option value="personalizado">Personalizado</option>
+                  <option value="administrador">{t('users.roles.admin')}</option>
+                  <option value="gerente">{t('users.roles.manager')}</option>
+                  <option value="operador">{t('users.roles.operator')}</option>
+                  <option value="visualizador">{t('users.roles.viewer')}</option>
+                  <option value="personalizado">{t('users.roles.custom')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Status *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.status')} * </label>
                 <select
                   name="status"
                   value={formData.status}
@@ -960,16 +935,16 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                     isProtectedUser ? 'bg-gray-100' : ''
                   }`}
                 >
-                  <option value="ativo">Ativo</option>
-                  <option value="inativo">Inativo</option>
-                  <option value="bloqueado">Bloqueado</option>
+                  <option value="ativo">{t('users.filters.active')}</option>
+                  <option value="inativo">{t('users.filters.inactive')}</option>
+                  <option value="bloqueado">{t('users.filters.blocked')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-2">
                   <Globe size={16} />
-                  <span>Idioma Preferido</span>
+                  <span> {t('users.form.fields.preferredLanguage')} </span>
                 </label>
                 <select
                   name="preferred_language"
@@ -983,16 +958,14 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                 </select>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {user ?
-                    'Ao salvar, o idioma selecionado será aplicado imediatamente em todo o sistema (menu, telas, botões, etc.)' :
-                    'Este idioma será usado para exibir o sistema para este usuário.'
+                    t('users.form.hints.languageSaveHint') :
+                    t('users.form.hints.languageUserHint')
                   }
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {user ? 'Nova Senha' : 'Senha *'}
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {user ? t('users.form.fields.newPassword') : t('users.form.fields.password') + ' *'} </label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -1004,7 +977,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                     className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.senha ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder={user ? "Deixe em branco para manter a senha atual" : "Digite a senha"}
+                    placeholder={user ? t('users.form.fields.passwordHint') : "*****"}
                   />
                   <button
                     type="button"
@@ -1023,9 +996,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {user ? 'Confirmar Nova Senha' : 'Confirmar Senha *'}
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {user ? t('users.form.fields.confirmNewPassword') : t('users.form.fields.confirmPassword') + ' *'} </label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
@@ -1037,7 +1008,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                     className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.confirmarSenha ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="Confirme a senha"
+                    placeholder="*****"
                   />
                   <button
                     type="button"
@@ -1061,13 +1032,13 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               <div className="flex items-start space-x-2">
                 <Info size={16} className="text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-blue-800 font-medium">Níveis de Acesso</p>
+                  <p className="text-sm text-blue-800 font-medium">{t('users.form.hints.accessLevelsTitle')}</p>
                   <ul className="text-xs text-blue-700 mt-1 space-y-1">
-                    <li>• <strong>Administrador:</strong> Acesso total ao sistema</li>
-                    <li>• <strong>Gerente:</strong> Acesso a relatórios e gestão de operações</li>
-                    <li>• <strong>Operador:</strong> Acesso às funcionalidades operacionais</li>
-                    <li>• <strong>Visualizador:</strong> Acesso apenas para consulta</li>
-                    <li>• <strong>Personalizado:</strong> Acesso customizado por funcionalidade</li>
+                    <li>• <strong>{t('users.roles.admin')}:</strong> {t('users.form.hints.accessAdmin')}</li>
+                    <li>• <strong>{t('users.roles.manager')}:</strong> {t('users.form.hints.accessManager')}</li>
+                    <li>• <strong>{t('users.roles.operator')}:</strong> {t('users.form.hints.accessOperator')}</li>
+                    <li>• <strong>{t('users.roles.viewer')}:</strong> {t('users.form.hints.accessViewer')}</li>
+                    <li>• <strong>{t('users.roles.custom')}:</strong> {t('users.form.hints.accessCustom')}</li>
                   </ul>
                 </div>
               </div>
@@ -1079,9 +1050,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                 <div className="flex items-start space-x-2">
                   <CheckCircle size={16} className="text-green-600 mt-0.5" />
                   <div>
-                    <p className="text-sm text-green-800 font-medium">Configuração de Permissões Personalizadas</p>
+                    <p className="text-sm text-green-800 font-medium">{t('users.form.hints.customPermissionsTitle')}</p>
                     <p className="text-xs text-green-700 mt-1">
-                      Você selecionou o perfil "Personalizado". Acesse a aba "Permissões" para configurar as permissões de acesso específicas para este usuário.
+                      {t('users.form.hints.customPermissionsDesc')}
                     </p>
                   </div>
                 </div>
@@ -1092,7 +1063,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'establishments' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Estabelecimentos do Usuário</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.establishments')}</h2>
             
             <EstablishmentSelector 
               selectedEstablishments={formData.estabelecimentosPermitidos}
@@ -1103,7 +1074,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'address' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Endereço (opcional)</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.address')} (opcional)</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* CEP - Primeiro campo */}
@@ -1145,31 +1116,27 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
                 {cepSuccess && (
                   <div className="mt-2">
-                    <InlineMessage type="success" message={cepSuccess} />
+                    <InlineMessage type="success" message={`${t('establishments.form.address.successMessage') || 'Endereço encontrado: '} ${cepSuccess.replace('Endereço encontrado: ', '')}`} />
                   </div>
                 )}
               </div>
 
               {/* Cidade - Somente leitura */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Cidade
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.city') || 'Cidade'} </label>
                 <input
                   type="text"
                   name="cidade"
                   value={formData.cidade}
                   readOnly
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 cursor-not-allowed"
-                  placeholder="Preenchido automaticamente pelo CEP"
+                  placeholder={t('establishments.form.address.autoFilledByZipCode')}
                 />
               </div>
 
               {/* Estado - Somente leitura */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Estado (UF)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.state') || 'Estado (UF)'} </label>
                 <input
                   type="text"
                   name="estado"
@@ -1182,9 +1149,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
               {/* Bairro */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Bairro
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.neighborhood') || 'Bairro'} </label>
                 <input
                   type="text"
                   name="bairro"
@@ -1197,9 +1162,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
               {/* Endereço/Logradouro - Ocupa toda a linha */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Logradouro (Rua, Avenida, etc.)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.street') || 'Logradouro'} </label>
                 <input
                   type="text"
                   name="endereco"
@@ -1216,10 +1179,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               <div className="flex items-start space-x-2">
                 <Info size={16} className="text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div>
-                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">Busca Automática por CEP</p>
+                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">{t('users.form.hints.autoZipSearch')}</p>
                   <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-                    Informe o CEP para preencher automaticamente cidade, estado e bairro.
-                    Os campos cidade e estado não podem ser editados manualmente.
+                    {t('users.form.hints.autoZipDesc')}
                   </p>
                 </div>
               </div>
@@ -1229,16 +1191,15 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'permissions' && formData.perfil === 'personalizado' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuração de Permissões</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.hints.customPermissionsTitle')}</h2>
             
             <div className="mb-4 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-start space-x-2">
                 <Info size={16} className="text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-sm text-blue-800 font-medium">Permissões Personalizadas</p>
+                  <p className="text-sm text-blue-800 font-medium">{t('users.roles.custom')}</p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Selecione as opções de menu que este usuário terá acesso. Marque ou desmarque as caixas de seleção para configurar as permissões.
-                    Quando um menu pai é selecionado, todos os seus submenus são automaticamente incluídos.
+                    {t('users.form.hints.customPermissionsExtra')}
                   </p>
                 </div>
               </div>
@@ -1257,14 +1218,12 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
             type="button"
             onClick={onBack}
             className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-          >
-            Cancelar
-          </button>
+          >{t('users.buttons.cancel')}</button>
           <button
             type="submit"
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            {user ? 'Atualizar' : 'Salvar'} Usuário
+            {user ? t('users.buttons.update') : t('users.buttons.save')} {t('users.title').slice(0, -1)}
           </button>
         </div>
       </form>

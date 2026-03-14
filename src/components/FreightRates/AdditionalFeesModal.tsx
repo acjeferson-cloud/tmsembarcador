@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Edit, DollarSign, CheckSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { additionalFeesService, AdditionalFee } from '../../services/additionalFeesService';
 import { businessPartnersService } from '../../services/businessPartnersService';
 import { statesService } from '../../services/statesService';
@@ -31,11 +32,12 @@ interface City {
 }
 
 const CityName: React.FC<{ cityId: string | null; stateId: string | null }> = ({ cityId, stateId }) => {
-  const [cityName, setCityName] = useState<string>('Carregando...');
+  const { t } = useTranslation();
+  const [cityName, setCityName] = useState<string>(t('carriers.freightRates.additionalFees.loading'));
 
   useEffect(() => {
     if (!cityId || !stateId) {
-      setCityName('Todas');
+      setCityName(t('carriers.freightRates.additionalFees.allCities'));
       return;
     }
 
@@ -54,7 +56,7 @@ const CityName: React.FC<{ cityId: string | null; stateId: string | null }> = ({
     };
 
     loadCity();
-  }, [cityId, stateId]);
+  }, [cityId, stateId, t]);
 
   return <>{cityName}</>;
 };
@@ -64,6 +66,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   freightRateTableName,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const [fees, setFees] = useState<AdditionalFee[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editingFee, setEditingFee] = useState<AdditionalFee | null>(null);
@@ -173,7 +176,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
       if (editingFee) {
         await additionalFeesService.update(editingFee.id, dataToSave);
-        setToast({ message: 'Taxa atualizada com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.additionalFees.updateSuccess'), type: 'success' });
       } else {
         const feeToCreate = {
           freight_rate_table_id: freightRateTableId,
@@ -182,7 +185,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         };
         console.log('Creating fee:', feeToCreate);
         await additionalFeesService.create(feeToCreate);
-        setToast({ message: 'Taxa adicionada com sucesso!', type: 'success' });
+        setToast({ message: t('carriers.freightRates.additionalFees.saveSuccess'), type: 'success' });
       }
 
       await loadData();
@@ -191,7 +194,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       console.error('=== ERROR SAVING FEE ===');
       console.error('Error details:', error);
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      setToast({ message: `Erro ao salvar taxa: ${error instanceof Error ? error.message : 'Tente novamente'}`, type: 'error' });
+      setToast({ message: `${t('carriers.freightRates.additionalFees.saveError')}: ${error instanceof Error ? error.message : 'Tente novamente'}`, type: 'error' });
     }
   };
 
@@ -219,11 +222,11 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
     try {
       await additionalFeesService.delete(confirmDialog.feeId);
-      setToast({ message: 'Taxa excluída com sucesso!', type: 'success' });
+      setToast({ message: t('carriers.freightRates.additionalFees.deleteSuccess'), type: 'success' });
       await loadData();
     } catch (error) {
       console.error('Error deleting fee:', error);
-      setToast({ message: 'Erro ao excluir taxa. Tente novamente.', type: 'error' });
+      setToast({ message: t('carriers.freightRates.additionalFees.deleteError'), type: 'error' });
     } finally {
       setConfirmDialog({ isOpen: false });
     }
@@ -246,31 +249,31 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
   const getFeeTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      TDA: 'TDA – Taxa de Dificuldade de Acesso',
-      TDE: 'TDE – Taxa de Dificuldade de Entrega',
-      TRT: 'TRT – Taxa de Restrição de Trânsito',
+      TDA: t('carriers.freightRates.additionalFees.tda'),
+      TDE: t('carriers.freightRates.additionalFees.tde'),
+      TRT: t('carriers.freightRates.additionalFees.trt'),
     };
     return types[type] || type;
   };
 
   const getValueTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      fixed: 'Fixo',
-      percent_weight: '% Frete Peso',
-      percent_value: '% Frete Valor',
-      percent_weight_value: '% Peso + Valor',
-      percent_cte: '% CT-e',
+      fixed: t('carriers.freightRates.additionalFees.fixedShort'),
+      percent_weight: t('carriers.freightRates.additionalFees.pctWeightShort'),
+      percent_value: t('carriers.freightRates.additionalFees.pctValueShort'),
+      percent_weight_value: t('carriers.freightRates.additionalFees.pctWeightValueShort'),
+      percent_cte: t('carriers.freightRates.additionalFees.pctCteShort'),
     };
     return types[type] || type;
   };
 
   const getValueTypeFullLabel = (type: string) => {
     const types: Record<string, string> = {
-      fixed: 'Valor Fixo',
-      percent_weight: 'Percentual sobre Frete Peso',
-      percent_value: 'Percentual sobre Frete Valor',
-      percent_weight_value: 'Percentual sobre Frete Peso + Valor',
-      percent_cte: 'Percentual sobre Valor do CT-e',
+      fixed: t('carriers.freightRates.additionalFees.fixed'),
+      percent_weight: t('carriers.freightRates.additionalFees.percentWeight'),
+      percent_value: t('carriers.freightRates.additionalFees.percentValue'),
+      percent_weight_value: t('carriers.freightRates.additionalFees.percentWeightValue'),
+      percent_cte: t('carriers.freightRates.additionalFees.percentCte'),
     };
     return types[type] || type;
   };
@@ -286,7 +289,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
           <div className="flex items-center space-x-3">
             <DollarSign className="text-white" size={24} />
             <div>
-              <h2 className="text-xl font-bold text-white">Taxas Adicionais da Tabela</h2>
+              <h2 className="text-xl font-bold text-white">{t('carriers.freightRates.additionalFees.title')}</h2>
               <p className="text-orange-100 text-sm">{freightRateTableName}</p>
             </div>
           </div>
@@ -303,21 +306,21 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
             <form onSubmit={handleSubmit} className="space-y-6 bg-blue-50 p-6 rounded-lg">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {editingFee ? 'Editar Taxa' : 'Nova Taxa'}
+                  {editingFee ? t('carriers.freightRates.additionalFees.editFee') : t('carriers.freightRates.additionalFees.newFee')}
                 </h3>
                 <button
                   type="button"
                   onClick={resetForm}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
                 >
-                  Cancelar
+                  {t('carriers.freightRates.additionalFees.cancel')}
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Taxa *
+                    {t('carriers.freightRates.additionalFees.fee')} *
                   </label>
                   <select
                     value={formData.fee_type}
@@ -325,24 +328,24 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="TDA">TDA – Taxa de Dificuldade de Acesso</option>
-                    <option value="TDE">TDE – Taxa de Dificuldade de Entrega</option>
-                    <option value="TRT">TRT – Taxa de Restrição de Trânsito</option>
+                    <option value="TDA">{t('carriers.freightRates.additionalFees.tda')}</option>
+                    <option value="TDE">{t('carriers.freightRates.additionalFees.tde')}</option>
+                    <option value="TRT">{t('carriers.freightRates.additionalFees.trt')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Parceiro de Negócios <span className="text-gray-400 text-xs">(Opcional)</span>
+                    {t('carriers.freightRates.additionalFees.businessPartner')} <span className="text-gray-400 text-xs">{t('carriers.freightRates.additionalFees.optional')}</span>
                   </label>
                   <select
                     value={formData.business_partner_id}
                     onChange={(e) => setFormData({ ...formData, business_partner_id: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Todos os parceiros</option>
+                    <option value="">{t('carriers.freightRates.additionalFees.allPartners')}</option>
                     {businessPartners.length === 0 ? (
-                      <option value="" disabled>Nenhum parceiro cadastrado</option>
+                      <option value="" disabled>{t('carriers.freightRates.additionalFees.noPartners')}</option>
                     ) : (
                       businessPartners.map((bp) => (
                         <option key={bp.id} value={bp.id}>
@@ -363,7 +366,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Considerar raiz de CNPJ para todos os parceiros de negócios?
+                        {t('carriers.freightRates.additionalFees.considerCnpjRoot')}
                       </span>
                     </label>
                   </div>
@@ -371,16 +374,16 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Estado <span className="text-gray-400 text-xs">(Opcional)</span>
+                    {t('carriers.freightRates.additionalFees.state')} <span className="text-gray-400 text-xs">{t('carriers.freightRates.additionalFees.optional')}</span>
                   </label>
                   <select
                     value={formData.state_id}
                     onChange={(e) => setFormData({ ...formData, state_id: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Todos os estados</option>
+                    <option value="">{t('carriers.freightRates.additionalFees.allStates')}</option>
                     {states.length === 0 ? (
-                      <option value="" disabled>Nenhum estado cadastrado</option>
+                      <option value="" disabled>{t('carriers.freightRates.additionalFees.noStates')}</option>
                     ) : (
                       states.map((state) => (
                         <option key={state.id} value={state.id}>
@@ -393,7 +396,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Cidade <span className="text-gray-400 text-xs">(Opcional)</span>
+                    {t('carriers.freightRates.additionalFees.city')} <span className="text-gray-400 text-xs">{t('carriers.freightRates.additionalFees.optional')}</span>
                   </label>
                   <select
                     value={formData.city_id}
@@ -401,9 +404,9 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={!formData.state_id}
                   >
-                    <option value="">{!formData.state_id ? 'Selecione um estado primeiro' : 'Todas as cidades'}</option>
+                    <option value="">{!formData.state_id ? t('carriers.freightRates.additionalFees.selectStateFirst') : t('carriers.freightRates.additionalFees.allCities')}</option>
                     {cities.length === 0 && formData.state_id ? (
-                      <option value="" disabled>Nenhuma cidade encontrada</option>
+                      <option value="" disabled>{t('carriers.freightRates.additionalFees.noCities')}</option>
                     ) : (
                       cities.map((city) => (
                         <option key={city.id} value={city.id}>
@@ -416,7 +419,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tipo de Valor *
+                    {t('carriers.freightRates.additionalFees.valueType')} *
                   </label>
                   <select
                     value={formData.value_type}
@@ -434,7 +437,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Valor da Taxa *
+                    {t('carriers.freightRates.additionalFees.feeValue')} *
                   </label>
                   <input
                     type="number"
@@ -448,7 +451,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Valor Mínimo
+                    {t('carriers.freightRates.additionalFees.minimumValue')}
                   </label>
                   <input
                     type="number"
@@ -466,13 +469,13 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   onClick={resetForm}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900"
                 >
-                  Cancelar
+                  {t('carriers.freightRates.additionalFees.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  {editingFee ? 'Atualizar' : 'Adicionar'}
+                  {editingFee ? t('carriers.freightRates.additionalFees.update') : t('carriers.freightRates.additionalFees.add')}
                 </button>
               </div>
             </form>
@@ -480,34 +483,34 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
             <>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Taxas Cadastradas ({fees.length})
+                  {t('carriers.freightRates.additionalFees.registeredFees')} ({fees.length})
                 </h3>
                 <button
                   onClick={() => setIsEditing(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
                 >
                   <Plus size={16} />
-                  <span>Nova Taxa</span>
+                  <span>{t('carriers.freightRates.additionalFees.newFee')}</span>
                 </button>
               </div>
 
               {loading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">Carregando...</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('carriers.freightRates.additionalFees.loading')}</p>
                 </div>
               ) : fees.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Taxa</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Parceiro</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cidade</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tipo</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Valor</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mínimo</th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ações</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.fee')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.partner')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.state')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.city')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.type')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.value')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.minimum')}</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('carriers.freightRates.additionalFees.actions')}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
@@ -522,18 +525,18 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               <div>
-                                {bp?.name || 'Todos'}
+                                {bp?.name || t('carriers.freightRates.additionalFees.all')}
                                 {fee.consider_cnpj_root && (
                                   <div className="flex items-center space-x-1 text-xs text-blue-600 mt-1">
                                     <CheckSquare size={12} />
-                                    <span>Raiz CNPJ</span>
+                                    <span>{t('carriers.freightRates.additionalFees.cnpjRoot')}</span>
                                   </div>
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{state?.abbreviation || 'Todos'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{state?.abbreviation || t('carriers.freightRates.additionalFees.all')}</td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                              {fee.city_id ? <CityName cityId={fee.city_id} stateId={fee.state_id} /> : 'Todas'}
+                              {fee.city_id ? <CityName cityId={fee.city_id} stateId={fee.state_id} /> : t('carriers.freightRates.additionalFees.allCities')}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               {getValueTypeLabel(fee.value_type)}
@@ -549,14 +552,14 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                                 <button
                                   onClick={() => handleEdit(fee)}
                                   className="text-blue-600 hover:text-blue-900"
-                                  title="Editar"
+                                  title={t('carriers.freightRates.additionalFees.edit')}
                                 >
                                   <Edit size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(fee.id)}
                                   className="text-red-600 hover:text-red-900"
-                                  title="Excluir"
+                                  title={t('carriers.freightRates.additionalFees.delete')}
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -571,15 +574,15 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
               ) : (
                 <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
                   <DollarSign size={64} className="mx-auto text-gray-400 mb-4" />
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Nenhuma taxa adicional cadastrada</h4>
-                  <p className="text-gray-600 dark:text-gray-400 mb-2">As taxas adicionais se aplicam a toda a tabela de frete</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Configure taxas específicas por parceiro, estado ou cidade</p>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('carriers.freightRates.additionalFees.noFeesRegistered')}</h4>
+                  <p className="text-gray-600 dark:text-gray-400 mb-2">{t('carriers.freightRates.additionalFees.feesApplyToAll')}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t('carriers.freightRates.additionalFees.configureSpecificFees')}</p>
                   <button
                     onClick={() => setIsEditing(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg inline-flex items-center space-x-2 shadow-md"
                   >
                     <Plus size={16} />
-                    <span>Adicionar Taxa</span>
+                    <span>{t('carriers.freightRates.additionalFees.addFee')}</span>
                   </button>
                 </div>
               )}
@@ -592,7 +595,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
           >
-            Fechar
+            {t('carriers.freightRates.additionalFees.close')}
           </button>
         </div>
       </div>
@@ -608,8 +611,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={true}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir esta taxa adicional? Esta ação não pode ser desfeita."
+          title={t('carriers.freightRates.additionalFees.confirmDeleteTitle')}
+          message={t('carriers.freightRates.additionalFees.confirmDeleteMessage')}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}
         />

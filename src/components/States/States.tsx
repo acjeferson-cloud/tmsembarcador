@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, Map } from 'lucide-react';
+import { Search, Plus, List, Download, Map } from 'lucide-react';
 import { statesService, State } from '../../services/statesService';
 import { StateCard } from './StateCard';
 import { StateView } from './StateView';
@@ -224,33 +224,29 @@ export const States: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setActiveTab('list')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
               activeTab === 'list'
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <div className="flex items-center justify-center space-x-2">
-              <Filter size={18} />
-              <span>{t('states.tabs.list')}</span>
-            </div>
+            <List className="w-4 h-4" />
+            {t('states.tabs.list')}
           </button>
           <button
             onClick={() => setActiveTab('map')}
-            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
               activeTab === 'map'
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <div className="flex items-center justify-center space-x-2">
-              <Map size={18} />
-              <span>{t('states.tabs.map')}</span>
-            </div>
+            <Map className="w-4 h-4" />
+            {t('states.tabs.map')}
           </button>
         </div>
       </div>

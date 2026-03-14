@@ -3,6 +3,7 @@ import { ArrowLeft, Plus, Trash2, Info } from 'lucide-react';
 import { BrazilianCity, cityTypes } from '../../types/cities';
 import { createCity, updateCity, fetchCityById as fetchCityByIdFromService } from '../../services/citiesService';
 import { supabase } from '../../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 interface CityFormProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ interface State {
 }
 
 export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: city?.name || '',
     ibgeCode: city?.ibgeCode || '',
@@ -42,7 +44,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
   useEffect(() => {
     const loadStates = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from('states')
           .select('id, nome, sigla, regiao')
           .order('nome', { ascending: true });
@@ -151,45 +153,45 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
     const newErrors: {[key: string]: string} = {};
 
     if (!formData.name) {
-      newErrors.name = 'Nome da cidade é obrigatório';
+      newErrors.name = t('cities.validation.nameRequired', { defaultValue: 'Nome da cidade é obrigatório' });
     }
 
     if (!formData.ibgeCode) {
-      newErrors.ibgeCode = 'Código IBGE é obrigatório';
+      newErrors.ibgeCode = t('cities.validation.ibgeRequired', { defaultValue: 'Código IBGE é obrigatório' });
     } else if (!/^\d{7}$/.test(formData.ibgeCode)) {
-      newErrors.ibgeCode = 'Código IBGE deve ter 7 dígitos';
+      newErrors.ibgeCode = t('cities.validation.ibgeInvalid', { defaultValue: 'Código IBGE deve ter 7 dígitos' });
     }
 
     // ✅ CORRIGIDO: Validar stateId ao invés de stateName
     if (!formData.stateId) {
-      newErrors.stateId = 'Estado é obrigatório';
+      newErrors.stateId = t('cities.validation.stateRequired', { defaultValue: 'Estado é obrigatório' });
     }
 
     if (!formData.zipCodeStart) {
-      newErrors.zipCodeStart = 'CEP Inicial é obrigatório';
+      newErrors.zipCodeStart = t('cities.validation.zipStartRequired', { defaultValue: 'CEP Inicial é obrigatório' });
     } else if (!/^\d{5}-\d{3}$/.test(formData.zipCodeStart)) {
-      newErrors.zipCodeStart = 'CEP deve estar no formato 00000-000';
+      newErrors.zipCodeStart = t('cities.validation.zipFormat', { defaultValue: 'CEP deve estar no formato 00000-000' });
     }
 
     if (!formData.zipCodeEnd) {
-      newErrors.zipCodeEnd = 'CEP Final é obrigatório';
+      newErrors.zipCodeEnd = t('cities.validation.zipEndRequired', { defaultValue: 'CEP Final é obrigatório' });
     } else if (!/^\d{5}-\d{3}$/.test(formData.zipCodeEnd)) {
-      newErrors.zipCodeEnd = 'CEP deve estar no formato 00000-000';
+      newErrors.zipCodeEnd = t('cities.validation.zipFormat', { defaultValue: 'CEP deve estar no formato 00000-000' });
     }
 
     // Validate ZIP code ranges
     const validRanges = zipCodeRanges.filter(range => range.start && range.end);
 
     if (validRanges.length === 0) {
-      newErrors.zipCodeRanges = 'Por favor, adicione pelo menos uma faixa de CEP válida';
+      newErrors.zipCodeRanges = t('cities.validation.zipRangesRequired', { defaultValue: 'Por favor, adicione pelo menos uma faixa de CEP válida' });
     } else {
       for (let i = 0; i < zipCodeRanges.length; i++) {
         const range = zipCodeRanges[i];
         if (range.start && !/^\d{5}-\d{3}$/.test(range.start)) {
-          newErrors[`zipRange_${i}_start`] = 'CEP deve estar no formato 00000-000';
+          newErrors[`zipRange_${i}_start`] = t('cities.validation.zipFormat', { defaultValue: 'CEP deve estar no formato 00000-000' });
         }
         if (range.end && !/^\d{5}-\d{3}$/.test(range.end)) {
-          newErrors[`zipRange_${i}_end`] = 'CEP deve estar no formato 00000-000';
+          newErrors[`zipRange_${i}_end`] = t('cities.validation.zipFormat', { defaultValue: 'CEP deve estar no formato 00000-000' });
         }
       }
     }
@@ -212,7 +214,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
       const validRanges = zipCodeRanges.filter(range => range.start && range.end);
 
       if (validRanges.length === 0) {
-        alert('Por favor, adicione pelo menos uma faixa de CEP válida.');
+        alert(t('cities.validation.zipRangesRequired', { defaultValue: 'Por favor, adicione pelo menos uma faixa de CEP válida' }));
         setIsSubmitting(false);
         return;
       }
@@ -232,15 +234,15 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
       };
       if (city?.id) {
         // Update existing city
-        const updated = await updateCity(city.id, cityData);
+        await updateCity(city.id, cityData);
       } else {
         // Create new city
-        const created = await createCity(cityData as any);
+        await createCity(cityData as any);
       }
 
       onSave();
     } catch (error) {
-      alert('Erro ao salvar cidade. Tente novamente.');
+      alert(t('cities.messages.saveError', { defaultValue: 'Erro ao salvar cidade. Tente novamente.' }));
     } finally {
       setIsSubmitting(false);
     }
@@ -291,22 +293,22 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Cidades</span>
+          <span>{t('cities.actions.back', { defaultValue: 'Voltar para Cidades' })}</span>
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {city ? 'Editar Cidade' : 'Nova Cidade'}
+          {city ? t('cities.actions.editTitle', { defaultValue: 'Editar Cidade' }) : t('cities.actions.newTitle', { defaultValue: 'Nova Cidade' })}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">Preencha os dados da localidade com faixas detalhadas de CEP</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('cities.form.subtitle', { defaultValue: 'Preencha os dados da localidade com faixas detalhadas de CEP' })}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('cities.form.basicInfo', { defaultValue: 'Informações Básicas' })}</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nome da Cidade *
+                {t('cities.form.name', { defaultValue: 'Nome da Cidade *' })}
               </label>
               <input
                 type="text"
@@ -324,7 +326,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Código IBGE *
+                {t('cities.form.ibgeCode', { defaultValue: 'Código IBGE *' })}
               </label>
               <input
                 type="text"
@@ -343,7 +345,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Estado *
+                {t('cities.form.state', { defaultValue: 'Estado *' })}
               </label>
               <select
                 name="stateId"
@@ -352,7 +354,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
                 required
                 className={`w-full px-3 py-2 border ${errors.stateId ? 'border-red-300' : 'border-gray-300'} dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               >
-                <option value="">Selecione o Estado</option>
+                <option value="">{t('cities.form.selectState', { defaultValue: 'Selecione o Estado' })}</option>
                 {states.map(state => (
                   <option key={state.id} value={state.id}>
                     {state.nome} ({state.sigla})
@@ -366,7 +368,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                UF *
+                {t('cities.form.uf', { defaultValue: 'UF *' })}
               </label>
               <input
                 type="text"
@@ -381,7 +383,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Região *
+                {t('cities.form.region', { defaultValue: 'Região *' })}
               </label>
               <input
                 type="text"
@@ -396,7 +398,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tipo *
+                {t('cities.form.type', { defaultValue: 'Tipo *' })}
               </label>
               <select
                 name="type"
@@ -407,7 +409,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
               >
                 {cityTypes.filter(type => type !== 'Todos').map(type => (
                   <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {t(`cities.types.${type}`, { defaultValue: type.charAt(0).toUpperCase() + type.slice(1) })}
                   </option>
                 ))}
               </select>
@@ -416,12 +418,12 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Faixa Geral de CEP</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('cities.form.generalZipRange', { defaultValue: 'Faixa Geral de CEP' })}</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                CEP Inicial *
+                {t('cities.form.zipStart', { defaultValue: 'CEP Inicial *' })}
               </label>
               <input
                 type="text"
@@ -440,7 +442,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                CEP Final *
+                {t('cities.form.zipEnd', { defaultValue: 'CEP Final *' })}
               </label>
               <input
                 type="text"
@@ -463,14 +465,14 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
         {/* Detailed ZIP Code Ranges */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Faixas Detalhadas de CEP</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('cities.form.detailedZipRanges', { defaultValue: 'Faixas Detalhadas de CEP' })}</h2>
             <button
               type="button"
               onClick={addZipRange}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Plus size={16} />
-              <span>Adicionar Faixa</span>
+              <span>{t('cities.actions.addRange', { defaultValue: 'Adicionar Faixa' })}</span>
             </button>
           </div>
 
@@ -484,13 +486,13 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
             {zipCodeRanges.map((range, index) => (
               <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">Faixa {index + 1}</h3>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">{t('cities.form.rangeTitle', { defaultValue: 'Faixa' })} {index + 1}</h3>
                   {zipCodeRanges.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeZipRange(index)}
                       className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
-                      title="Remover faixa"
+                      title={t('cities.actions.removeRange', { defaultValue: 'Remover faixa' })}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -500,7 +502,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      CEP Inicial *
+                      {t('cities.form.zipStart', { defaultValue: 'CEP Inicial *' })}
                     </label>
                     <input
                       type="text"
@@ -517,7 +519,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      CEP Final *
+                      {t('cities.form.zipEnd', { defaultValue: 'CEP Final *' })}
                     </label>
                     <input
                       type="text"
@@ -534,7 +536,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Área/Região
+                      {t('cities.form.area', { defaultValue: 'Área/Região' })}
                     </label>
                     <input
                       type="text"
@@ -547,7 +549,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Bairro/Região
+                      {t('cities.form.neighborhood', { defaultValue: 'Bairro/Região' })}
                     </label>
                     <input
                       type="text"
@@ -566,10 +568,9 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
             <div className="flex items-start space-x-2">
               <Info size={16} className="text-blue-600 mt-0.5" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Dica:</p>
+                <p className="font-medium mb-1">{t('cities.form.tipTitle', { defaultValue: 'Dica:' })}</p>
                 <p>
-                  As faixas detalhadas permitem especificar diferentes áreas e bairros dentro da cidade. 
-                  Isso facilita a organização e busca por localidades específicas.
+                  {t('cities.form.tipDesc', { defaultValue: 'As faixas detalhadas permitem especificar diferentes áreas e bairros dentro da cidade. Isso facilita a organização e busca por localidades específicas.' })}
                 </p>
               </div>
             </div>
@@ -583,7 +584,7 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
             onClick={onBack}
             className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
           >
-            Cancelar
+            {t('cities.actions.cancel', { defaultValue: 'Cancelar' })}
           </button>
           <button
             type="submit"
@@ -595,11 +596,11 @@ export const CityForm: React.FC<CityFormProps> = ({ onBack, onSave, city }) => {
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Salvando...</span>
+                  </svg>
+                <span>{t('cities.actions.saving', { defaultValue: 'Salvando...' })}</span>
               </span>
             ) : (
-              <span>{city ? 'Atualizar' : 'Salvar'} Cidade</span>
+              <span>{city ? t('cities.actions.updateSave', { defaultValue: 'Atualizar' }) : t('cities.actions.save', { defaultValue: 'Salvar' })}</span>
             )}
           </button>
         </div>

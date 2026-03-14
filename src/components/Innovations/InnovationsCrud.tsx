@@ -54,7 +54,7 @@ export const InnovationsCrud: React.FC = () => {
       setInnovations(data);
       setFilteredInnovations(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar inovações', type: 'error' });
+      setToast({ message: t('innovations.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -78,15 +78,15 @@ export const InnovationsCrud: React.FC = () => {
   const handleDelete = (innovation: InnovationCrud) => {
     setConfirmDialog({
       isOpen: true,
-      title: 'Confirmar Exclusão',
-      message: `Tem certeza que deseja excluir a inovação "${innovation.name}"?`,
+      title: t('innovations.messages.deleteConfirmTitle'),
+      message: t('innovations.messages.deleteConfirmText', { name: innovation.name }),
       onConfirm: async () => {
         try {
           await innovationsCrudService.delete(innovation.id);
-          setToast({ message: 'Inovação excluída com sucesso', type: 'success' });
+          setToast({ message: t('innovations.messages.deleteSuccess'), type: 'success' });
           loadInnovations();
         } catch (error) {
-          setToast({ message: 'Erro ao excluir inovação', type: 'error' });
+          setToast({ message: t('innovations.messages.deleteError'), type: 'error' });
         }
       }
     });
@@ -96,15 +96,15 @@ export const InnovationsCrud: React.FC = () => {
     try {
       if (selectedInnovation) {
         await innovationsCrudService.update(selectedInnovation.id, innovationData);
-        setToast({ message: 'Inovação atualizada com sucesso', type: 'success' });
+        setToast({ message: t('innovations.messages.updateSuccess'), type: 'success' });
       } else {
         await innovationsCrudService.create(innovationData);
-        setToast({ message: 'Inovação criada com sucesso', type: 'success' });
+        setToast({ message: t('innovations.messages.createSuccess'), type: 'success' });
       }
       setShowForm(false);
       loadInnovations();
     } catch (error) {
-      setToast({ message: 'Erro ao salvar inovação', type: 'error' });
+      setToast({ message: t('innovations.messages.saveError'), type: 'error' });
     }
   };
 
@@ -117,9 +117,9 @@ export const InnovationsCrud: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Inovações & Sugestões</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('innovations.title')}</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Descubra novos recursos para impulsionar seu negócio
+              {t('innovations.subtitle')}
             </p>
           </div>
           <button
@@ -127,7 +127,7 @@ export const InnovationsCrud: React.FC = () => {
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Nova Inovação</span>
+            <span>{t('innovations.buttons.new')}</span>
           </button>
         </div>
 
@@ -135,7 +135,7 @@ export const InnovationsCrud: React.FC = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Buscar por nome, descrição ou categoria..."
+            placeholder={t('innovations.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -151,12 +151,12 @@ export const InnovationsCrud: React.FC = () => {
         <div className="text-center py-12">
           <Sparkles className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {searchTerm ? 'Nenhuma inovação encontrada' : 'Nenhuma inovação cadastrada'}
+            {searchTerm ? t('innovations.emptyResult.searchTitle') : t('innovations.emptyResult.emptyTitle')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
             {searchTerm
-              ? 'Tente buscar com outros termos'
-              : 'Comece adicionando uma nova inovação'}
+              ? t('innovations.emptyResult.searchDesc')
+              : t('innovations.emptyResult.emptyDesc')}
           </p>
         </div>
       ) : (
@@ -173,28 +173,28 @@ export const InnovationsCrud: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">{innovation.name}</h3>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{innovation.category}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{t(`innovations.categories.${innovation.category}`) || innovation.category}</span>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleView(innovation)}
                     className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
-                    title="Visualizar"
+                    title={t('innovations.buttons.view')}
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleEdit(innovation)}
                     className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
-                    title="Editar"
+                    title={t('innovations.buttons.edit')}
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(innovation)}
                     className="p-1 text-red-400 hover:text-red-600 rounded transition-colors"
-                    title="Excluir"
+                    title={t('innovations.buttons.delete')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -207,19 +207,19 @@ export const InnovationsCrud: React.FC = () => {
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">A partir de</p>
-                  <p className="text-lg font-bold text-blue-600">R$ {formatPrice(innovation.monthly_price)}/mês</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('innovations.card.startingAt')}</p>
+                  <p className="text-lg font-bold text-blue-600">R$ {formatPrice(innovation.monthly_price)}{t('innovations.card.perMonthShort')}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   {innovation.is_active ? (
                     <span className="flex items-center space-x-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                       <Check className="w-3 h-3" />
-                      <span>Ativo</span>
+                      <span>{t('innovations.card.active')}</span>
                     </span>
                   ) : (
                     <span className="flex items-center space-x-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
                       <X className="w-3 h-3" />
-                      <span>Inativo</span>
+                      <span>{t('innovations.card.inactive')}</span>
                     </span>
                   )}
                 </div>
