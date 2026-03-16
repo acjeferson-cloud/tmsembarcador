@@ -82,7 +82,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
           onClick={onBack}
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size="1.25rem" />
           <span>{t('establishments.buttons.back')}</span>
         </button>
         <div className="flex items-center justify-between">
@@ -94,7 +94,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
             onClick={onEdit}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
-            <Edit size={20} />
+            <Edit size="1.25rem" />
             <span>{t('establishments.buttons.edit')}</span>
           </button>
         </div>
@@ -113,7 +113,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Building size={16} />
+                <Building size="1rem" />
                 <span>{t('establishments.form.tabs.basic')}</span>
               </div>
             </button>
@@ -126,7 +126,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <MapPin size={16} />
+                <MapPin size="1rem" />
                 <span>{t('establishments.form.tabs.address')}</span>
               </div>
             </button>
@@ -139,7 +139,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Image size={16} />
+                <Image size="1rem" />
                 <span>{t('establishments.form.tabs.logos')}</span>
               </div>
             </button>
@@ -152,7 +152,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Mail size={16} />
+                <Mail size="1rem" />
                 <span>{t('establishments.form.tabs.email')}</span>
                 {!hasEmailConfig && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -170,7 +170,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Server size={16} />
+                <Server size="1rem" />
                 <span>{t('establishments.form.tabs.emailOutgoing')}</span>
                 {!emailOutgoingConfig && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -237,7 +237,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.view.legalInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center space-x-3">
-                <Hash className="text-blue-600" size={24} />
+                <Hash className="text-blue-600" size="1.5rem" />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.cnpj')}</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{establishment.cnpj}</p>
@@ -246,7 +246,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
 
               {establishment.inscricao_estadual && (
                 <div className="flex items-center space-x-3">
-                  <FileText className="text-green-600" size={24} />
+                  <FileText className="text-green-600" size="1.5rem" />
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.ie')}</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">{establishment.inscricao_estadual}</p>
@@ -285,7 +285,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <MapPin className="text-blue-500" size={20} />
+                  <MapPin className="text-blue-500" size="1.25rem" />
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.address')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{establishment.endereco}</p>
@@ -293,7 +293,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <Building className="text-green-500" size={20} />
+                  <Building className="text-green-500" size="1.25rem" />
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.neighborhood')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{establishment.bairro}</p>
@@ -301,7 +301,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <Mail className="text-purple-500" size={20} />
+                  <Mail className="text-purple-500" size="1.25rem" />
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.cep')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{establishment.cep}</p>
@@ -311,7 +311,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
 
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <Globe className="text-orange-500" size={20} />
+                  <Globe className="text-orange-500" size="1.25rem" />
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.city')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{establishment.cidade}</p>
@@ -319,7 +319,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <Globe className="text-red-500" size={20} />
+                  <Globe className="text-red-500" size="1.25rem" />
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.form.fields.state')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{establishment.estado}</p>
@@ -382,7 +382,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                     />
                   ) : (
                     <div className="text-gray-500 dark:text-gray-400 text-center">
-                      <Image size={48} className="mx-auto mb-2 opacity-50" />
+                      <Image size="3rem" className="mx-auto mb-2 opacity-50" />
                       <p className="text-sm">{t('establishments.view.noLogo')}</p>
                     </div>
                   )}
@@ -401,7 +401,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                     />
                   ) : (
                     <div className="text-gray-400 text-center">
-                      <Image size={48} className="mx-auto mb-2 opacity-50" />
+                      <Image size="3rem" className="mx-auto mb-2 opacity-50" />
                       <p className="text-sm">{t('establishments.view.noLogo')}</p>
                     </div>
                   )}
@@ -420,7 +420,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                     />
                   ) : (
                     <div className="text-blue-400 text-center">
-                      <Image size={48} className="mx-auto mb-2 opacity-50" />
+                      <Image size="3rem" className="mx-auto mb-2 opacity-50" />
                       <p className="text-sm">{t('establishments.view.noLogo')}</p>
                     </div>
                   )}
@@ -436,14 +436,14 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
           {!hasEmailConfig ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="text-center py-8">
-                <Mail size={48} className="mx-auto text-gray-400 mb-4" />
+                <Mail size="3rem" className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('establishments.view.emailIncoming.notConfiguredTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('establishments.view.emailIncoming.notConfiguredDesc')}</p>
                 <button
                   onClick={onEdit}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center space-x-2 transition-colors"
                 >
-                  <Edit size={20} />
+                  <Edit size="1.25rem" />
                   <span>{t('establishments.view.configureNow')}</span>
                 </button>
               </div>
@@ -455,7 +455,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.view.emailIncoming.configTitle')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex items-center space-x-3">
-                    <Mail className="text-blue-500" size={20} />
+                    <Mail className="text-blue-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.emailAddress')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.email}</p>
@@ -463,7 +463,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <User className="text-green-500" size={20} />
+                    <User className="text-green-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.username')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.username}</p>
@@ -471,7 +471,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Lock className="text-purple-500" size={20} />
+                    <Lock className="text-purple-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.password')}</p>
                       <div className="flex items-center space-x-2">
@@ -483,14 +483,14 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                           onClick={() => setShowPassword(!showPassword)}
                           className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                         >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {showPassword ? <EyeOff size="1rem" /> : <Eye size="1rem" />}
                         </button>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Shield className="text-orange-500" size={20} />
+                    <Shield className="text-orange-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.authType')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.authType}</p>
@@ -504,7 +504,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.view.emailIncoming.serverConfigTitle')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex items-center space-x-3">
-                    <Server className="text-blue-500" size={20} />
+                    <Server className="text-blue-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.protocol')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.protocol}</p>
@@ -512,7 +512,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Server className="text-green-500" size={20} />
+                    <Server className="text-green-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.host')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.host}</p>
@@ -520,7 +520,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Hash className="text-purple-500" size={20} />
+                    <Hash className="text-purple-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.port')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.port}</p>
@@ -528,7 +528,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Lock className="text-orange-500" size={20} />
+                    <Lock className="text-orange-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailIncoming.secure')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{establishment.email_config?.useSSL ? t('common.yes') : t('common.no')}</p>
@@ -541,7 +541,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
               <div className="bg-green-50 rounded-xl shadow-sm border border-green-200 p-6">
                 <div className="flex items-start space-x-4">
                   <div className="bg-green-100 p-3 rounded-full">
-                    <Mail className="text-green-600" size={24} />
+                    <Mail className="text-green-600" size="1.5rem" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-green-900 mb-2">{t('establishments.view.emailIncoming.activeConfigTitle')}</h3>
@@ -568,14 +568,14 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
           ) : !emailOutgoingConfig ? (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="text-center py-8">
-                <Server size={48} className="mx-auto text-gray-400 mb-4" />
+                <Server size="3rem" className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('establishments.view.emailOutgoing.notConfiguredTitle')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('establishments.view.emailOutgoing.notConfiguredDesc')}</p>
                 <button
                   onClick={onEdit}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center space-x-2 transition-colors"
                 >
-                  <Edit size={20} />
+                  <Edit size="1.25rem" />
                   <span>{t('establishments.view.configureNow')}</span>
                 </button>
               </div>
@@ -587,7 +587,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('establishments.view.emailOutgoing.smtpConfig')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex items-center space-x-3">
-                    <Server className="text-blue-500" size={20} />
+                    <Server className="text-blue-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailOutgoing.smtpHost')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{emailOutgoingConfig.smtp_host}</p>
@@ -595,7 +595,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <Hash className="text-green-500" size={20} />
+                    <Hash className="text-green-500" size="1.25rem" />
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">{t('establishments.view.emailOutgoing.port')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{emailOutgoingConfig.smtp_port}</p>

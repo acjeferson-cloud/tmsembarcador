@@ -143,7 +143,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
     return (
       <div className="flex items-center justify-center p-8">
         <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-        <span className="ml-2 text-gray-600 dark:text-gray-400">Carregando usuários bloqueados...</span>
+        <span className="ml-2 text-gray-600 dark:text-gray-400">{t('users.blocked.loading')}</span>
       </div>
     );
   }
@@ -157,9 +157,9 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
             <Shield className="w-6 h-6 text-red-600" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Usuários Bloqueados</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('users.filters.blocked')}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('users.blocked.reasonMultiple') || 'Usuários bloqueados por múltiplas tentativas falhadas de login'}
+              {t('users.blocked.reasonMultiple')}
             </p>
           </div>
         </div>
@@ -168,7 +168,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
           className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
-          Atualizar
+          {t('common.refresh')}
         </button>
       </div>
 
@@ -189,9 +189,9 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
       {blockedUsers.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <Shield className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Nenhum usuário bloqueado</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">{t('users.blocked.emptyTitle')}</p>
           <p className="text-sm text-gray-400 mt-1">
-            Todos os usuários estão com acesso liberado
+            {t('users.blocked.emptyDesc')}
           </p>
         </div>
       ) : (
@@ -200,20 +200,20 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Código
+                  {t('users.table.code')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">{t('users.table.name')}</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Perfil
+                  {t('users.table.profile')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Estabelecimento
+                  {t('users.table.establishment')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Tentativas
+                  {t('users.table.attempts')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                  Último Login
+                  {t('users.table.lastLogin')}
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">{t('users.table.actions')}</th>
               </tr>
@@ -251,14 +251,14 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-red-600" />
                       <span className="font-semibold text-red-600">
-                        {user.tentativas_login} {t('users.view.loginAttempts', { count: user.tentativas_login }) || 'tentativas'}
+                        {user.tentativas_login} {t('users.view.loginAttempts', { count: user.tentativas_login })}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Clock className="w-4 h-4" />
-                      {user.ultimo_login ? formatDateTime(user.ultimo_login) : t('users.view.never') || 'Nunca'}
+                      {user.ultimo_login ? formatDateTime(user.ultimo_login) : t('users.view.never')}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -268,7 +268,7 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
                       className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition-colors font-medium text-sm"
                     >
                       <Unlock className="w-4 h-4" />
-                      {unlocking === user.id ? 'Desbloqueando...' : 'Desbloquear'}
+                      {unlocking === user.id ? t('users.blocked.unlocking') : t('users.blocked.unlockBtn')}
                     </button>
                   </td>
                 </tr>
@@ -283,14 +283,14 @@ export const BlockedUsers: React.FC<BlockedUsersProps> = ({ currentUserEmail: _c
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 mb-2">Informações sobre Bloqueio e Desbloqueio</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">{t('users.blocked.infoTitle')}</h3>
             <ul className="space-y-1 text-sm text-blue-800">
-              <li>• Usuários são bloqueados após <strong>3 tentativas falhadas</strong> de login em 1 hora</li>
-              <li>• Apenas <strong>administradores</strong> podem desbloquear usuários manualmente</li>
-              <li>• Ao desbloquear, <strong>todas as tentativas são resetadas para zero</strong></li>
-              <li>• Usuário desbloqueado volta a ter <strong>3 tentativas disponíveis</strong></li>
-              <li>• Bloqueios expiram automaticamente após 7 dias</li>
-              <li>• Todas as tentativas são registradas para auditoria</li>
+              <li>• {t('users.blocked.infoItem1')}</li>
+              <li>• {t('users.blocked.infoItem2')}</li>
+              <li>• {t('users.blocked.infoItem3')}</li>
+              <li>• {t('users.blocked.infoItem4')}</li>
+              <li>• {t('users.blocked.infoItem5')}</li>
+              <li>• {t('users.blocked.infoItem6')}</li>
             </ul>
           </div>
         </div>

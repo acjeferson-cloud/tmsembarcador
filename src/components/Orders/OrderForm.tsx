@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Info, DollarSign, Users, Package, CheckCircle, AlertCircle, Save, Plus, Trash2 } from 'lucide-react';
-import { ordersService, OrderDeliveryStatus } from '../../services/ordersService';
+import { ordersService, OrderDeliveryStatus, Order } from '../../services/ordersService';
 import { carriersService } from '../../services/carriersService';
 import { businessPartnersService } from '../../services/businessPartnersService';
 import { statesService } from '../../services/statesService';
 import { orderNotificationService } from '../../services/orderNotificationService';
+import { useAuth } from '../../hooks/useAuth';
+import { freightQuoteService } from '../../services/freightQuoteService';
+import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
 
 interface OrderFormProps {
   onClose: () => void;
@@ -20,9 +23,12 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  weight?: number;
+  cubic_meters?: number;
 }
 
 export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, order }) => {
+  const { currentEstablishment, user } = useAuth();
   const [activeTab, setActiveTab] = useState<'basic' | 'customer' | 'products' | 'values'>('basic');
   const [carriers, setCarriers] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -36,6 +42,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
   const [formData, setFormData] = useState({
     order_number: '',
+    serie: '',
     customer_id: '',
     customer_name: '',
     issue_date: new Date().toISOString().split('T')[0],
@@ -48,9 +55,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
     destination_city: '',
     destination_state: '',
     recipient_phone: '',
-    status: 'emitido' as 'emitido' | 'coletado' | 'em_transito' | 'saiu_entrega' | 'entregue' | 'cancelado',
+    status: 'emitido' as any,
     tracking_code: '',
-    observations: ''
+    observations: '',
+    weight: '',
+    volume_qty: '',
+    cubic_meters: '',
+    freight_results: [] as any[],
+    best_carrier_id: ''
   });
 
   const [customerData, setCustomerData] = useState({
@@ -93,12 +105,20 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
   useEffect(() => {
     if (order) {
+      console.log('=============== RECUPERANDO PEDIDO PARA EDICAO ===============');
+      console.log('Order Data Props:', JSON.parse(JSON.stringify(order)));
+      
+      const safeDataPedido = order.issue_date ? order.issue_date.split('T')[0] : new Date().toISOString().split('T')[0];
+      const safeDataEntrada = order.entry_date ? order.entry_date.split('T')[0] : new Date().toISOString().split('T')[0];
+      const safePrevisao = order.expected_delivery ? order.expected_delivery.split('T')[0] : '';
+
       // Load existing order data for editing
       setFormData({
         order_number: order.order_number || '',
-        issue_date: order.issue_date || new Date().toISOString().split('T')[0],
-        entry_date: order.entry_date || new Date().toISOString().split('T')[0],
-        expected_delivery: order.expected_delivery || '',
+        serie: order.serie || '',
+        issue_date: safeDataPedido,
+        entry_date: safeDataEntrada,
+        expected_delivery: safePrevisao,
         carrier_id: order.carrier_id || '',
         carrier_name: order.carrier_name || '',
         customer_id: order.customer_id || '',
@@ -110,10 +130,32 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
         order_value: order.order_value || 0,
         status: order.status || 'pending',
         observations: order.observations || '',
-        created_by: userId
+        weight: order.weight || '',
+        volume_qty: order.volume_qty || '',
+        cubic_meters: order.cubic_meters || '',
+        tracking_code: order.tracking_code || '',
+        freight_results: order.freight_results || [],
+        best_carrier_id: order.best_carrier_id || ''
       });
 
-      setCustomerSearchTerm(order.customer_name || '');
+      // Tenta recuperar do objeto populado do banco, ou fallback para os campos diretos
+      const bp = order.business_partners || {};
+      
+      setCustomerSearchTerm(bp.razao_social || bp.nome_fantasia || order.customer_name || '');
+      
+      setCustomerData({
+        name: bp.razao_social || bp.nome_fantasia || order.customer_name || '',
+        cnpj: bp.cpf_cnpj || order.customer_id || '',
+        address: bp.logradouro || order.destination_street || '',
+        number: bp.numero || order.destination_number || '',
+        complement: bp.complemento || order.destination_complement || '',
+        neighborhood: bp.bairro || order.destination_neighborhood || '',
+        city: bp.cidade || order.destination_city || '',
+        state: bp.estado || order.destination_state || '',
+        zip_code: bp.cep || order.destination_zip_code || '',
+        phone: bp.telefone || order.recipient_phone || '',
+        email: bp.email || ''
+      });
 
       // Load order items if they exist
       if (order.items && order.items.length > 0) {
@@ -270,12 +312,28 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
       product_description: '',
       quantity: 1,
       unit_price: 0,
-      total_price: 0
+      total_price: 0,
+      weight: 0,
+      cubic_meters: 0
     }]);
   };
 
   const removeProduct = (index: number) => {
-    setProducts(products.filter((_, i) => i !== index));
+    const newProducts = products.filter((_, i) => i !== index);
+    setProducts(newProducts);
+    
+    const totalProductsValue = newProducts.reduce((sum, p) => sum + p.total_price, 0);
+    const totalWeight = newProducts.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
+    const totalVolume = newProducts.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+    const totalCubicMeters = newProducts.reduce((sum, p) => sum + (Number(p.cubic_meters) || 0), 0);
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      order_value: totalProductsValue,
+      weight: String(totalWeight),
+      volume_qty: String(totalVolume || 1),
+      cubic_meters: String(totalCubicMeters)
+    }));
   };
 
   const updateProduct = (index: number, field: string, value: any) => {
@@ -294,7 +352,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
     setProducts(updatedProducts);
 
     const totalProductsValue = updatedProducts.reduce((sum, p) => sum + p.total_price, 0);
-    setFormData(prev => ({ ...prev, order_value: totalProductsValue }));
+    const totalWeight = updatedProducts.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
+    const totalVolume = updatedProducts.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+    const totalCubicMeters = updatedProducts.reduce((sum, p) => sum + (Number(p.cubic_meters) || 0), 0);
+
+    setFormData(prev => ({ 
+      ...prev, 
+      order_value: totalProductsValue,
+      weight: String(totalWeight),
+      volume_qty: String(totalVolume || 1),
+      cubic_meters: String(totalCubicMeters)
+    }));
   };
 
   const handleSubmit = async () => {
@@ -331,23 +399,83 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
     setError('');
 
     try {
+      let finalFreightValue = Number(formData.freight_value) || 0;
+      let freightResults = formData.freight_results || [];
+      let bestCarrierId = formData.best_carrier_id || null;
+      let carrierName = formData.carrier_name || 'Sem transportador';
+      let carrierId = formData.carrier_id || null;
+
+      // Executar automaticamente o cálculo de custo de frete se tivermos peso e valor
+      if (Number(formData.weight) > 0 && products.length > 0) {
+        // Tentar usar o zip_code de customerData, ou destination_city caso zip_code esteja vazio
+        console.log('Calculando cotação de frete no pedido...');
+        try {
+          const results = await freightQuoteService.calculateQuote(
+            {
+              destinationZipCode: customerData.zip_code ? customerData.zip_code.replace(/\D/g, '') : undefined,
+              destinationCityId: undefined, // Poderia buscar o IBGE pela cidade, mas o service usa o zipCode primeiro se passado
+              weight: Number(formData.weight),
+              volumeQty: Number(formData.volume_qty) || 1,
+              cubicMeters: Number(formData.cubic_meters) || 0,
+              cargoValue: totalProductsValue,
+              establishmentId: currentEstablishment?.id?.toString(),
+              selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+            },
+            user?.supabaseUser?.id,
+            user?.name,
+            user?.email
+          );
+
+          if (results && results.length > 0) {
+            freightResults = results;
+            bestCarrierId = results[0].carrierId;
+            finalFreightValue = results[0].totalValue;
+            carrierId = bestCarrierId;
+            carrierName = results[0].carrierName;
+            console.log('Cotação Calculada Com Sucesso. Transportadora Vencedora:', carrierName, finalFreightValue);
+          }
+        } catch (calcError) {
+          console.error('Erro ao calcular frete no pedido. Isso não impede de salvar o pedido.', calcError);
+        }
+      }
+
+      let finalTrackingCode = formData.tracking_code;
+      if (!finalTrackingCode && currentEstablishment) {
+        finalTrackingCode = generateTrackingCode(
+          formData.order_number,
+          new Date(formData.issue_date || new Date()),
+          currentEstablishment.codigo,
+          currentEstablishment.trackingPrefix || 'TGL'
+        );
+      } else if (!finalTrackingCode) {
+        finalTrackingCode = `TMS-${formData.order_number}`;
+      }
+
       const orderData = {
         order_number: formData.order_number,
+        serie: formData.serie || null,
         customer_id: formData.customer_id || null,
-        customer_name: formData.customer_name || '',
         issue_date: formData.issue_date,
         entry_date: formData.entry_date,
         expected_delivery: formData.expected_delivery || null,
-        carrier_id: formData.carrier_id || null,
-        carrier_name: formData.carrier_name || 'Sem transportador',
-        freight_value: Number(formData.freight_value) || 0,
-        order_value: Number(formData.order_value) || 0,
-        destination_city: formData.destination_city,
-        destination_state: formData.destination_state,
-        recipient_phone: formData.recipient_phone || null,
+        carrier_id: carrierId,
+        freight_value: finalFreightValue,
+        order_value: totalProductsValue,
         status: formData.status || 'pending',
-        tracking_code: formData.tracking_code || null,
+        tracking_code: finalTrackingCode,
         observations: formData.observations || null,
+        weight: Number(formData.weight) || 0,
+        volume_qty: Number(formData.volume_qty) || 1,
+        cubic_meters: Number(formData.cubic_meters) || 0,
+        destination_zip_code: customerData.zip_code,
+        destination_street: customerData.address,
+        destination_number: customerData.number,
+        destination_complement: customerData.complement,
+        destination_neighborhood: customerData.neighborhood,
+        destination_city: customerData.city,
+        destination_state: customerData.state,
+        freight_results: freightResults,
+        best_carrier_id: bestCarrierId,
         created_by: userId
       };
 
@@ -357,7 +485,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
         // Update existing order
         console.log('Atualizando pedido existente:', order.id);
         const previousStatus = order.status;
-        const result = await ordersService.update(order.id, orderData);
+        const result = await ordersService.update(order.id, orderData as Partial<Order>);
         console.log('Resultado da atualização:', result);
 
         if (result.success) {
@@ -393,7 +521,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
       } else {
         // Create new order
         console.log('Criando novo pedido...');
-        const result = await ordersService.create(orderData);
+        const result = await ordersService.create(orderData as any);
         console.log('Resultado da criação:', result);
 
         if (result.success && result.id) {
@@ -554,6 +682,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Série
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.serie || ''}
+                        onChange={(e) => handleInputChange('serie', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ex: 1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Número do Pedido *
                       </label>
                       <input
@@ -573,8 +714,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         type="text"
                         value={formData.tracking_code}
                         onChange={(e) => handleInputChange('tracking_code', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Ex: TRACK0000000001"
+                        readOnly
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
+                        placeholder="Gerado automaticamente"
                       />
                     </div>
 
@@ -902,6 +1045,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                             <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Código</th>
                             <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição</th>
                             <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Qtd</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Peso (kg)</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Cubagem (m³)</th>
                             <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Valor Unit.</th>
                             <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Valor Total</th>
                             <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Ações</th>
@@ -933,7 +1078,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                                   type="number"
                                   value={product.quantity}
                                   onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                  className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                   min="0"
                                   step="1"
                                 />
@@ -941,9 +1086,29 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                               <td className="py-3 px-4">
                                 <input
                                   type="number"
+                                  value={product.weight || 0}
+                                  onChange={(e) => updateProduct(index, 'weight', e.target.value)}
+                                  className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                  min="0"
+                                  step="0.001"
+                                />
+                              </td>
+                              <td className="py-3 px-4">
+                                <input
+                                  type="number"
+                                  value={product.cubic_meters || 0}
+                                  onChange={(e) => updateProduct(index, 'cubic_meters', e.target.value)}
+                                  className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                  min="0"
+                                  step="0.0001"
+                                />
+                              </td>
+                              <td className="py-3 px-4">
+                                <input
+                                  type="number"
                                   value={product.unit_price}
                                   onChange={(e) => updateProduct(index, 'unit_price', e.target.value)}
-                                  className="w-28 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                  className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                   min="0"
                                   step="0.01"
                                 />
@@ -965,7 +1130,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         </tbody>
                         <tfoot>
                           <tr className="border-t-2 border-gray-300 bg-gray-50 dark:bg-gray-900">
-                            <td colSpan={4} className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white text-right">
+                            <td colSpan={6} className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white text-right">
                               Total dos Produtos:
                             </td>
                             <td className="py-3 px-4 text-sm font-bold text-gray-900 dark:text-white text-right">
@@ -1009,16 +1174,56 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Valor do Frete
+                        Valor do Frete Estimado
                       </label>
                       <input
                         type="number"
                         value={formData.freight_value}
                         onChange={(e) => handleInputChange('freight_value', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-900"
                         min="0"
                         step="0.01"
                       />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Será sobrescrito pelo cálculo automático se o peso for preenchido</p>
+                    </div>
+
+                    <div className="col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Dados da Carga (para cálculo de frete automático)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Peso Total (kg)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.weight || 0}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Quantidade de Volumes
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.volume_qty || 1}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Cubagem (m³)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.cubic_meters || 0}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="col-span-2 mt-4">

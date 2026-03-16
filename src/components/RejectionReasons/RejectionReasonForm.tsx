@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, AlertCircle, Hash, Info, Tag, Plus } from 'lucide-react';
+import { ArrowLeft, Hash, Info, Tag, Plus } from 'lucide-react';
 import {
   RejectionReason,
   getNextRejectionReasonCode,
@@ -7,6 +7,7 @@ import {
   isRejectionReasonCodeUnique
 } from '../../data/rejectionReasonsData';
 import { InlineMessage } from '../common/InlineMessage';
+import { useTranslation } from 'react-i18next';
 
 interface RejectionReasonFormProps {
   onBack: () => void;
@@ -21,6 +22,7 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
   reason,
   categories 
 }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     codigo: reason?.codigo || '',
     categoria: reason?.categoria || (categories.length > 0 ? categories[0] : ''),
@@ -60,17 +62,17 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
     setCodeError('');
     
     if (!codigo) {
-      setCodeError('Código é obrigatório');
+      setCodeError(t('rejectionReasons.form.validations.codeRequired'));
       return false;
     }
 
     if (!isValidRejectionReasonCode(codigo)) {
-      setCodeError('Código deve ter exatamente 3 dígitos numéricos (ex: 001)');
+      setCodeError(t('rejectionReasons.form.validations.codeFormat'));
       return false;
     }
 
     if (!reason && !isRejectionReasonCodeUnique(codigo)) {
-      setCodeError('Este código já está sendo usado por outro motivo de rejeição');
+      setCodeError(t('rejectionReasons.form.validations.codeUnique'));
       return false;
     }
 
@@ -96,7 +98,7 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
 
   const handleAddNewCategory = () => {
     if (!newCategory.trim()) {
-      alert('Por favor, informe o nome da nova categoria.');
+      alert(t('rejectionReasons.form.validations.newCategoryRequired'));
       return;
     }
     
@@ -119,18 +121,18 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
     
     // Validate description
     if (!formData.descricao) {
-      alert('Por favor, informe a descrição do motivo de rejeição.');
+      alert(t('rejectionReasons.form.validations.descriptionRequired'));
       return;
     }
 
     if (formData.descricao.length > 200) {
-      alert('A descrição deve ter no máximo 200 caracteres.');
+      alert(t('rejectionReasons.form.validations.descriptionMaxLength'));
       return;
     }
     
     // Validate category
     if (!formData.categoria) {
-      alert('Por favor, selecione ou informe uma categoria.');
+      alert(t('rejectionReasons.form.validations.categoryRequired'));
       return;
     }
 
@@ -154,22 +156,22 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Motivos de Rejeições</span>
+          <span>{t('rejectionReasons.form.backBtn')}</span>
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {reason ? 'Editar Motivo de Rejeição' : 'Novo Motivo de Rejeição'}
+          {reason ? t('rejectionReasons.form.editTitle') : t('rejectionReasons.form.newTitle')}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">Preencha os dados do motivo de rejeição de documentos</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('rejectionReasons.form.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações do Motivo</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('rejectionReasons.form.infoSection.title')}</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Código do Motivo *
+                {t('rejectionReasons.form.codeLabel')}
               </label>
               <div className="relative">
                 <input
@@ -190,7 +192,7 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
                     type="button"
                     onClick={generateNewCode}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 transition-colors"
-                    title="Gerar próximo código"
+                    title={t('rejectionReasons.form.generateCodeTooltip')}
                   >
                     <Hash size={18} />
                   </button>
@@ -207,11 +209,9 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
                 <div className="flex items-start space-x-2">
                   <Info size={16} className="text-blue-600 mt-0.5" />
                   <div>
-                    <p className="text-sm text-blue-800 font-medium">Código Sequencial</p>
+                    <p className="text-sm text-blue-800 font-medium">{t('rejectionReasons.form.codeGuideTitle')}</p>
                     <p className="text-xs text-blue-700 mt-1">
-                      Os códigos são gerados automaticamente em sequência numérica começando em 001. 
-                      {!reason && " Clique no ícone # para gerar o próximo código disponível."}
-                      {reason && " O código não pode ser alterado após o cadastro."}
+                      {!reason ? t('rejectionReasons.form.codeGuideNew') : t('rejectionReasons.form.codeGuideEdit')}
                     </p>
                   </div>
                 </div>
@@ -220,7 +220,7 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Categoria da Inconsistência *
+                {t('rejectionReasons.form.categoryLabel')}
               </label>
               {!showNewCategoryInput ? (
                 <div className="flex space-x-2">
@@ -252,21 +252,21 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Nova categoria"
+                    placeholder={t('rejectionReasons.form.newCategoryPlaceholder')}
                   />
                   <button
                     type="button"
                     onClick={handleAddNewCategory}
                     className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    Adicionar
+                    {t('rejectionReasons.form.addBtn')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowNewCategoryInput(false)}
                     className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
                   >
-                    Cancelar
+                    {t('rejectionReasons.form.cancelBtn')}
                   </button>
                 </div>
               )}
@@ -275,10 +275,9 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
                 <div className="flex items-start space-x-2">
                   <Tag size={16} className="text-yellow-600 mt-0.5" />
                   <div>
-                    <p className="text-sm text-yellow-800 font-medium">Categorias</p>
+                    <p className="text-sm text-yellow-800 font-medium">{t('rejectionReasons.form.categoryGuideTitle')}</p>
                     <p className="text-xs text-yellow-700 mt-1">
-                      As categorias ajudam a agrupar os motivos de rejeição por tipo de problema,
-                      facilitando a análise e geração de relatórios.
+                      {t('rejectionReasons.form.categoryGuideDesc')}
                     </p>
                   </div>
                 </div>
@@ -287,7 +286,7 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Descrição da Rejeição *
+                {t('rejectionReasons.form.descriptionLabel')}
               </label>
               <textarea
                 name="descricao"
@@ -297,10 +296,10 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
                 maxLength={200}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Digite a descrição detalhada do motivo de rejeição"
+                placeholder={t('rejectionReasons.form.descriptionPlaceholder')}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Máximo de 200 caracteres. Restantes: {200 - formData.descricao.length}
+                {t('rejectionReasons.form.descriptionLimit', { count: 200 - formData.descricao.length })}
               </p>
             </div>
 
@@ -315,11 +314,11 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="ativo" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  Ativo
+                  {t('rejectionReasons.form.activeLabel')}
                 </label>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Motivos inativos não serão exibidos nas integrações e telas de validação.
+                {t('rejectionReasons.form.activeDesc')}
               </p>
             </div>
           </div>
@@ -330,19 +329,18 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
           <div className="flex items-start space-x-2">
             <Info size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre Motivos de Rejeição</h3>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('rejectionReasons.infoBox.title')}</h3>
               <p className="text-blue-800 mb-4">
-                Os motivos de rejeição são utilizados para padronizar o processo de conferência eletrônica de documentos fiscais.
-                Quando uma inconsistência é identificada, o sistema associa um motivo padronizado de rejeição ao documento.
+                {t('rejectionReasons.infoBox.description1')} {t('rejectionReasons.infoBox.description2')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                  <p className="font-semibold text-blue-900">Auditoria Automática</p>
-                  <p className="text-blue-700">Validação de CT-es e Faturas</p>
+                  <p className="font-semibold text-blue-900">{t('rejectionReasons.infoBox.features.audit.title')}</p>
+                  <p className="text-blue-700">{t('rejectionReasons.infoBox.features.audit.desc')}</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                  <p className="font-semibold text-blue-900">Categorização</p>
-                  <p className="text-blue-700">Agrupamento por tipo de problema</p>
+                  <p className="font-semibold text-blue-900">{t('rejectionReasons.infoBox.features.categorization.title')}</p>
+                  <p className="text-blue-700">{t('rejectionReasons.infoBox.features.categorization.desc')}</p>
                 </div>
               </div>
             </div>
@@ -356,14 +354,14 @@ export const RejectionReasonForm: React.FC<RejectionReasonFormProps> = ({
             onClick={onBack}
             className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
           >
-            Cancelar
+            {t('rejectionReasons.form.cancelBtn')}
           </button>
           <button
             type="submit"
             disabled={!!codeError}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {reason ? 'Atualizar' : 'Salvar'} Motivo
+            {reason ? t('rejectionReasons.form.updateBtn') : t('rejectionReasons.form.saveBtn')}
           </button>
         </div>
       </form>

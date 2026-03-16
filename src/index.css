@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-size: 80%; /* Reduz a escala geral do sistema em 20% utilizando base rem */
+  }
+}
+
 /* Dark mode styles */
 .dark {
   color-scheme: dark;

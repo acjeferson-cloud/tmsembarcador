@@ -2656,14 +2656,16 @@
     }
   },
   "holidays": {
-    "title": "Holidays Registration",
-    "subtitle": "Manage national, state and municipal holidays",
+    "title": "Holidays",
+    "subtitle": "Manage national, state, and municipal holidays",
     "searchPlaceholder": "Search holiday...",
     "types": {
       "all": "All types",
       "national": "National",
       "state": "State",
-      "municipal": "Municipal"
+      "municipal": "Municipal",
+      "nacional": "National",
+      "estadual": "State"
     },
     "groups": {
       "national": "National Holidays",
@@ -2691,10 +2693,13 @@
     },
     "messages": {
       "loadError": "Error loading holidays.",
-      "deleteSuccess": "Holiday deleted successfully!",
+      "deleteSuccess": "Holiday successfully deleted!",
       "deleteError": "Error deleting holiday.",
-      "saveSuccess": "Holiday saved successfully!",
-      "saveError": "Error saving holiday."
+      "saveSuccess": "Holiday effectively saved!",
+      "saveError": "Error saving holiday. Please try again.",
+      "loading": "Loading...",
+      "confirmDeleteTitle": "Confirm Deletion",
+      "confirmDeleteMessage": "Are you sure you want to delete this holiday? This action cannot be undone."
     },
     "form": {
       "name": "Holiday Name",
@@ -2702,11 +2707,47 @@
       "type": "Type (National/State/Municipal)",
       "isRecurring": "Recurring Holiday (Yearly)",
       "stateId": "State",
-      "cityId": "City"
+      "cityId": "City",
+      "newTitle": "New Holiday",
+      "editTitle": "Edit Holiday",
+      "nameLabel": "Holiday Name *",
+      "namePlaceholder": "Ex: Patron Saint's Day",
+      "dateLabel": "Date *",
+      "typeLabel": "Type *",
+      "recurringLabel": "Recurring holiday (repeats every year)",
+      "countryLabel": "Country *",
+      "stateLabel": "State *",
+      "cityLabel": "City *",
+      "selectPlaceholder": "Select...",
+      "stateRequired": "Select a state first",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "validations": {
+        "nameRequired": "Holiday name is required",
+        "dateRequired": "Date is required",
+        "countryRequired": "Country is required",
+        "stateRequiredForStateMsg": "State is required for state holidays",
+        "cityRequiredForCityMsg": "City is required for municipal holidays"
+      }
     },
     "deleteConfirm": {
       "title": "Confirm Deletion",
       "message": "Are you sure you want to delete this holiday?"
+    },
+    "breadcrumb": "Settings",
+    "boards": {
+      "nacional": "National Holidays",
+      "estadual": "State Holidays",
+      "municipal": "Municipal Holidays"
+    },
+    "emptyStates": {
+      "nacional": "No national holidays registered",
+      "estadual": "No state holidays registered",
+      "municipal": "No municipal holidays registered"
+    },
+    "card": {
+      "recurring": "Recurring"
     }
   },
   "licenses": {
@@ -3665,6 +3706,658 @@
       "mainDescHasNot": "The user does not have a default establishment configured.",
       "summaryPermitted": "allowed unit(s)",
       "summaryTotal": "total registered units"
+    }
+  },
+  "occurrences": {
+    "title": "Occurrences History",
+    "subtitle": "Manage occurrence codes for EDI integration",
+    "newButton": "New Occurrence",
+    "breadcrumb": "Reverse Logistics",
+    "stats": {
+      "total": "Total Occurrences",
+      "deliveries": "Delivery Occurrences",
+      "problems": "Problem Occurrences"
+    },
+    "searchPlaceholder": "Search by code or description...",
+    "export": "Export",
+    "summary": "Total: {{total}} occurrences",
+    "page": "Page {{current}} of {{total}}",
+    "emptyTitle": "No occurrences found",
+    "emptyDesc": "Try adjusting the filters or registering a new occurrence.",
+    "about": {
+      "title": "About Occurrence Histories",
+      "desc": "Occurrence codes are used to standardize communication with carriers via EDI (OCOREN 5.0). Each code represents a type of event that can occur during the delivery process.",
+      "patternTitle": "OCOREN Standard",
+      "patternDesc": "Compatible with EDI OCOREN 5.0",
+      "trackingTitle": "Tracking",
+      "trackingDesc": "Integration with tracking",
+      "standardTitle": "Standard Codes",
+      "standardDesc": "Pre-configured for immediate use",
+      "customTitle": "Customization",
+      "customDesc": "Add specific codes"
+    },
+    "card": {
+      "problem": "Problem",
+      "delivery": "Delivery",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "code": "Code",
+      "type": "Type"
+    },
+    "form": {
+      "back": "Back to Occurrences History",
+      "titleNew": "New Occurrence",
+      "titleEdit": "Edit Occurrence",
+      "subtitle": "Fill in the occurrence data",
+      "infoTitle": "Occurrence Information",
+      "codeLabel": "Occurrence Code *",
+      "codePlaceholder": "001",
+      "descLabel": "Occurrence Description *",
+      "descPlaceholder": "Enter the occurrence description",
+      "descCharCount": "Maximum 100 characters. Remaining: {{count}}",
+      "codeRequired": "Code is required",
+      "codeInvalid": "Code must have exactly 3 numeric digits (e.g.: 001)",
+      "codeExists": "This code is already in use by another occurrence",
+      "descRequired": "Please enter the occurrence description.",
+      "descLength": "The description must be at most 100 characters.",
+      "aboutCodesTitle": "About Occurrence Codes",
+      "aboutCodesDesc": "Occurrence codes are used to standardize communication with carriers via EDI (OCOREN 5.0). Each code represents a type of event that can occur during the delivery process.",
+      "codesDeliveryTitle": "Codes 001-049",
+      "codesDeliveryDesc": "Occurrences related to deliveries",
+      "codesProblemTitle": "Codes 050-099",
+      "codesProblemDesc": "Occurrences related to problems",
+      "cancel": "Cancel",
+      "save": "Save Occurrence",
+      "update": "Update Occurrence",
+      "sequentialTitle": "Sequential Code",
+      "sequentialDescNew": "Codes are automatically generated in numerical sequence starting at 001. Click the # icon to generate the next available code.",
+      "sequentialDescEdit": "Codes are automatically generated in numerical sequence starting at 001. The code cannot be changed after registration."
+    },
+    "view": {
+      "back": "Back to Occurrences History",
+      "title": "View Occurrence",
+      "subtitle": "Details of the EDI occurrence code",
+      "edit": "Edit",
+      "descTitle": "Full Description",
+      "ediTitle": "EDI Information",
+      "ediCode": "Code for EDI OCOREN",
+      "ediFormat": "Format in File",
+      "auditTitle": "Audit Information",
+      "createdAt": "Creation Date",
+      "createdBy": "Created By",
+      "updatedAt": "Last Update Date",
+      "updatedBy": "Last Update By",
+      "userPrefix": "User #{{id}}",
+      "usageTitle": "Usage in the System",
+      "usageDesc": "This occurrence code is used to interpret EDI OCOREN 5.0 files received from carriers. When a carrier sends a status update via EDI, the system uses this record to identify and process the occurrence correctly.",
+      "integrationTitle": "EDI Integration",
+      "integrationDesc": "Used in reading OCOREN files",
+      "trackingTitle": "Tracking",
+      "trackingDesc": "Displayed in the delivery history",
+      "problem": "Problem",
+      "delivery": "Delivery",
+      "codeLabel": "Code",
+      "typeLabel": "Type"
+    },
+    "messages": {
+      "loadError": "Error loading occurrences.",
+      "deleteSuccess": "Occurrence history successfully deleted!",
+      "deleteError": "Error deleting occurrence history.",
+      "updateSuccess": "Occurrence history successfully updated!",
+      "updateError": "Error updating occurrence history.",
+      "createSuccess": "Occurrence history effectively created!",
+      "saveError": "Error saving occurrence history. Please try again.",
+      "confirmDeleteTitle": "Confirm Deletion",
+      "confirmDeleteMessage": "Are you sure you want to delete this occurrence history? This action cannot be undone.",
+      "confirmDeleteBtn": "Delete",
+      "cancelBtn": "Cancel",
+      "pagination": "Showing {{start}} to {{end}} of {{total}} occurrences",
+      "prev": "Previous",
+      "next": "Next"
+    }
+  },
+  "rejectionReasons": {
+    "breadcrumb": "Settings",
+    "title": "Document Rejection Reasons",
+    "subtitle": "Manage rejection reasons for electronic document conference",
+    "newReasonBtn": "New Reason",
+    "stats": {
+      "total": "Total Reasons",
+      "active": "Active Reasons",
+      "inactive": "Inactive Reasons",
+      "distribution": "Distribution by Category"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by code, category or description...",
+      "statusAll": "All Statuses",
+      "statusActive": "Only Active",
+      "statusInactive": "Only Inactive",
+      "exportBtn": "Export"
+    },
+    "pagination": {
+      "total": "Total: {{count}} reasons",
+      "page": "Page {{current}} of {{total}}",
+      "showing": "Showing {{start}} to {{end}} of {{total}} reasons",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "emptyState": {
+      "title": "No rejection reason found",
+      "description": "Try adjusting the filters or registering a new rejection reason."
+    },
+    "infoBox": {
+      "title": "About Rejection Reasons",
+      "description1": "Rejection reasons are used to standardize the electronic conference process of tax documents.",
+      "description2": "When an inconsistency is identified, the system associates a standardized rejection reason to the document.",
+      "description3": "This rejection reason is used in the electronic tax document conference process. When an inconsistency is identified, the system associates this standardized reason with the document, facilitating communication with the carrier and report generation.",
+      "features": {
+        "audit": {
+          "title": "Automatic Audit",
+          "desc": "Validation of CT-es and Invoices"
+        },
+        "conciliation": {
+          "title": "Conciliation",
+          "desc": "Freight conciliation process"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "desc": "Alerts for carriers"
+        },
+        "categorization": {
+          "title": "Categorization",
+          "desc": "Grouping by problem type"
+        }
+      }
+    },
+    "messages": {
+      "loadError": "Error loading data.",
+      "deleteSuccess": "Rejection reason successfully deleted!",
+      "deleteError": "Error deleting rejection reason.",
+      "updateSuccess": "Rejection reason successfully updated!",
+      "updateError": "Error updating rejection reason.",
+      "createSuccess": "Rejection reason successfully created!",
+      "saveError": "Error saving rejection reason. Please try again.",
+      "confirmDeleteTitle": "Confirm Deletion",
+      "confirmDeleteMessage": "Are you sure you want to delete this rejection reason? This action cannot be undone.",
+      "deleteConfirmBtn": "Delete",
+      "cancelBtn": "Cancel"
+    },
+    "form": {
+      "backBtn": "Back to Rejection Reasons",
+      "newTitle": "New Rejection Reason",
+      "editTitle": "Edit Rejection Reason",
+      "subtitle": "Fill in the details for the document rejection reason",
+      "infoSection": {
+        "title": "Reason Information"
+      },
+      "codeLabel": "Reason Code *",
+      "generateCodeTooltip": "Generate next code",
+      "codeGuideTitle": "Sequential Code",
+      "codeGuideNew": "Codes are automatically generated in numerical sequence starting from 001. Click the # icon to generate the next available code.",
+      "codeGuideEdit": "Codes are automatically generated in numerical sequence starting from 001. The code cannot be changed after registration.",
+      "categoryLabel": "Inconsistency Category *",
+      "newCategoryPlaceholder": "New category",
+      "addBtn": "Add",
+      "categoryGuideTitle": "Categories",
+      "categoryGuideDesc": "Categories help group rejection reasons by problem type, making analysis and reporting easier.",
+      "descriptionLabel": "Rejection Description *",
+      "descriptionPlaceholder": "Enter the detailed description of the rejection reason",
+      "descriptionLimit": "Maximum 200 characters. Remaining: {{count}}",
+      "activeLabel": "Active",
+      "activeDesc": "Inactive reasons will not be displayed in integrations and validation screens.",
+      "cancelBtn": "Cancel",
+      "saveBtn": "Save Reason",
+      "updateBtn": "Update Reason",
+      "validations": {
+        "codeRequired": "Code is required",
+        "codeFormat": "Code must have exactly 3 numeric digits (e.g. 001)",
+        "codeUnique": "This code is already being used by another rejection reason",
+        "newCategoryRequired": "Please enter the name of the new category.",
+        "descriptionRequired": "Please provide the description of the rejection reason.",
+        "descriptionMaxLength": "The description must have a maximum of 200 characters.",
+        "categoryRequired": "Please select or inform a category."
+      }
+    },
+    "view": {
+      "title": "View Rejection Reason",
+      "subtitle": "Complete details of the rejection reason",
+      "editBtn": "Edit",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "codeLabel": "Code",
+      "statusLabel": "Status",
+      "categoryTitle": "Category",
+      "descriptionTitle": "Full Description",
+      "auditTitle": "Audit Information",
+      "createdAt": "Creation Date",
+      "createdBy": "Created by",
+      "updatedAt": "Last update date",
+      "updatedBy": "Last edit by",
+      "userPrefix": "User #{{id}}",
+      "usageTitle": "System Usage"
+    },
+    "card": {
+      "viewTooltip": "View",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete",
+      "codePrefix": "Code:",
+      "statusPrefix": "Status:",
+      "statusActive": "Active",
+      "statusInactive": "Inactive"
+    }
+  },
+  "implementationCenter": {
+    "title": "Implementation Center",
+    "description": "Import data and manage settings in bulk to speed up deployment",
+    "tabs": {
+      "deployAgent": "AI Deploy Agent",
+      "erpIntegration": "ERP Integration",
+      "carriers": "Carriers",
+      "freightTables": "Freight Tables",
+      "cities": "Cities",
+      "tableFees": "Table Fees",
+      "restrictedCeps": "Restricted Zips",
+      "adjustTables": "Adjust Tables"
+    },
+    "erpIntegration": {
+      "configTitle": "ERP Integration Configuration",
+      "template": {
+        "title": "Configuration Template",
+        "description": "Download the template or import existing configurations",
+        "downloadBtn": "Template",
+        "importBtn": "Import",
+        "processing": "Processing file...",
+        "success": "File successfully imported!",
+        "successDesc": "{{count}} record(s) processed. Fields filled automatically based on the first record."
+      },
+      "selectErp": "Select the ERP",
+      "selectErpPlaceholder": "Select an ERP...",
+      "connection": {
+        "title": "Connection Settings",
+        "serviceLayerAddress": "Service Layer Address",
+        "port": "Port",
+        "username": "Username",
+        "password": "Password",
+        "database": "Database"
+      },
+      "cte": {
+        "title": "CT-e Settings",
+        "integrationType": "CT-e Integration Type",
+        "typeDraft": "Draft",
+        "typeEntry": "Inbound Invoice",
+        "cteModel": "CT-e Model",
+        "invoiceModel": "Invoice Model"
+      },
+      "billing": {
+        "title": "Billing Settings",
+        "nfeItem": "Billing NF-e Item",
+        "usage": "Billing Usage",
+        "controlAccount": "Billing Control Account"
+      },
+      "invoice": {
+        "title": "Invoice Settings",
+        "outboundItem": "Outbound Invoice Item generated from CT-e",
+        "cteWithoutNfItem": "Item for CT-e without Invoice",
+        "cteUsage": "CT-e Usage",
+        "inboundControlAccount": "Inbound Invoice issuance Control Account",
+        "transitoryAccount": "Invoice closing Transitory Account"
+      },
+      "additional": {
+        "title": "Additional Settings",
+        "nfeXmlAddress": "NF-e XMLs Network Address",
+        "fiscalModule": "Fiscal Module"
+      },
+      "saveBtn": "Save Configurations",
+      "saving": "Saving...",
+      "importConfig": {
+        "title": "Configuration Import",
+        "clickUpload": "Click to upload",
+        "dragDrop": "or drag and drop",
+        "fileType": "Excel File (.xlsx)"
+      }
+    },
+    "imports": {
+      "templateExcel": "Excel Template",
+      "downloadTemplate": "Download Template",
+      "dragDrop": "Drag the Excel file here or click to select",
+      "acceptedFormats": "Accepted formats: .xlsx, .xls",
+      "selectFile": "Select File",
+      "processing": "Processing import...",
+      "recordsProcessed": "Records processed: {{count}}",
+      "errorsFound": "Errors found:",
+      "carriers": {
+        "title": "Import Carriers",
+        "description": "Import carrier records in bulk using an Excel file",
+        "templateName": "template_carriers.xlsx"
+      },
+      "freight": {
+        "title": "Import Freight Tables",
+        "description": "Import freight tables with rate ranges per carrier",
+        "templateName": "template_freight_tables.xlsx"
+      },
+      "cities": {
+        "title": "Import Table Cities",
+        "description": "Import city records linked to freight tables",
+        "templateName": "template_cities.xlsx"
+      },
+      "fees": {
+        "title": "Import Table Fees",
+        "description": "Upload Excel file with fees (toll, collection/delivery, etc.) of freight tables.",
+        "templateName": "template_table_fees.xlsx"
+      },
+      "restrictedCeps": {
+        "title": "Import Restricted Zips",
+        "description": "Upload Excel file containing restricted zip codes per carrier.",
+        "templateName": "template_restricted_zips.xlsx"
+      }
+    },
+    "adjustment": {
+      "infoTitle": "Freight Tables Adjustment",
+      "infoDesc": "Apply mass adjustments to active freight tables. Choose between percentage application or manual value insertion.",
+      "configTitle": "Adjustment Configuration",
+      "type": "Adjustment Type",
+      "typePercentage": "Apply Percentage",
+      "typeManual": "Manual Value Insertion",
+      "percentageLabel": "Adjustment Percentage (%)",
+      "percentagePlaceholder": "Ex: 5.5 (increase) or -3.2 (decrease)",
+      "percentageHint": "Use positive values for increase and negative for decrease",
+      "manualLabel": "Excel File with New Values",
+      "manualUploadDesc": "Click to upload or drag the file here",
+      "manualUploadHint": "Excel files only (.xlsx, .xls)",
+      "downloadManualTemplate": "Download Template for New Values",
+      "tablesToAdjust": "Tables to Adjust",
+      "allTables": "All Active Tables",
+      "submitBtn": "Apply Adjustment",
+      "submitting": "Processing Adjustment...",
+      "instructions": {
+        "title": "Instructions",
+        "percentageTitle": "Percentage Adjustment:",
+        "percentage1": "Type desired percentage (e.g. 5.5 for a 5.5% increase)",
+        "percentage2": "Use negative values for decrease (e.g. -3.2 for a 3.2% decrease)",
+        "percentage3": "The adjustment will be applied to all table values",
+        "percentage4": "Values will be rounded to 2 decimal places",
+        "manualTitle": "Manual Insertion:",
+        "manual1": "Download the template with the current structure",
+        "manual2": "Fill in the desired new values",
+        "manual3": "Upload the filled file",
+        "manual4": "Blank values will retain current data"
+      }
+    },
+    "instructions": {
+      "title": "Usage Instructions",
+      "step1": "1. Download the Excel template corresponding to the data type to import",
+      "step2": "2. Fill the file strictly following the layout provided",
+      "step3": "3. Upload the filled file",
+      "step4": "4. Wait for processing and check the results",
+      "step5": "5. Fix eventual errors and re-import if necessary"
+    },
+    "messages": {
+      "templateError": "Error generating template: {{error}}. Check inputs.",
+      "unsupportedTemplate": "Unsupported template type",
+      "unsupportedImport": "Unsupported import type",
+      "processError": "Error processing file",
+      "adjustError": "Error applying adjustment",
+      "saveSuccess": "ERP configurations successfully saved!",
+      "saveError": "Error saving ERP configurations",
+      "importSuccessAlert": "Template successfully imported! {{count}} record(s) processed.",
+      "importErrorAlert": "Error processing file: {{error}}"
+    },
+    "deployAgent": {
+      "title": "Deploy Agent",
+      "description": "Automated deployment with Artificial Intelligence",
+      "subDescription": "Upload your data and let AI configure the entire system automatically",
+      "newProjectBtn": "New Project",
+      "features": {
+        "uploadTitle": "Smart Upload",
+        "uploadDesc": "Upload sheets and files, AI automatically identifies the data type",
+        "aiTitle": "AI Interpretation",
+        "aiDesc": "OpenAI analyzes, validates, and maps fields automatically",
+        "executeTitle": "Auto-Execution",
+        "executeDesc": "Automatic parametrization of records, tables, and integrations",
+        "monitorTitle": "Monitoring",
+        "monitorDesc": "Real-time dashboard showing status, errors, and improvement suggestions"
+      },
+      "projectsTitle": "Deployment Projects",
+      "loadingProjects": "Loading projects...",
+      "noProjects": "No projects created yet",
+      "createFirstProjectBtn": "Create First Project",
+      "clientPrefix": "Client: ",
+      "startedAt": "Started: ",
+      "progressPrefix": "Progress: ",
+      "completedAt": "Completed: ",
+      "viewDetails": "View Details",
+      "deleteProjectTitle": "Delete Project",
+      "statuses": {
+        "pending": "Pending",
+        "collecting": "Collecting",
+        "interpreting": "Interpreting",
+        "executing": "Executing",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "newProjectModal": {
+        "title": "New Deployment Project",
+        "projectName": "Project Name *",
+        "projectNamePlaceholder": "Ex: Client ABC Deployment",
+        "clientName": "Client Name *",
+        "clientNamePlaceholder": "Ex: XYZ Inc.",
+        "autoExecute": "Execute automatically after interpretation",
+        "requireApproval": "Require approval before executing",
+        "cancelBtn": "Cancel",
+        "createBtn": "Create Project"
+      },
+      "deleteConfirm": {
+        "title": "Are you sure you want to delete this project?",
+        "message": "Project: \"{{name}}\"\n\nThis action cannot be undone.",
+        "confirmBtn": "OK",
+        "cancelBtn": "Cancel"
+      },
+      "dashboard": {
+        "backBtn": "Back to Projects",
+        "uploadBtn": "Upload Files",
+        "stats": {
+          "progress": "Progress",
+          "steps": "{{completed}} of {{total}} steps",
+          "errors": "Errors",
+          "errorsDesc": "Require attention",
+          "warnings": "Warnings",
+          "warningsDesc": "For review",
+          "suggestions": "Suggestions",
+          "suggestionsDesc": "Possible improvements"
+        },
+        "generalProgress": "Overall Progress",
+        "implementation": "Implementation",
+        "steps": {
+          "collection": "Collection",
+          "interpretation": "Interpretation",
+          "execution": "Execution",
+          "completed": "Completed"
+        },
+        "uploads": {
+          "title": "Uploaded Files",
+          "noUploads": "No files uploaded yet",
+          "executeBtn": "Execute Import",
+          "statuses": {
+            "executed": "Imported (100%)",
+            "validated": "Waiting for Import"
+          }
+        },
+        "validations": {
+          "title": "Validations",
+          "noValidations": "No validations registered",
+          "fieldPrefix": "Field: "
+        },
+        "suggestions": {
+          "title": "Improvement Suggestions",
+          "noSuggestions": "No suggestions available",
+          "approveBtn": "Approve"
+        }
+      },
+      "uploader": {
+        "title": "Upload File",
+        "description": "AI will interpret and configure it automatically",
+        "dataType": "Data Type *",
+        "categories": {
+          "erpIntegration": "ERP Integration",
+          "carriers": "Carriers",
+          "freightTables": "Freight Tables",
+          "cities": "Cities",
+          "fees": "Table Fees",
+          "restrictedZips": "Restricted Zips",
+          "tableAdjustments": "Adjust Table"
+        },
+        "fileLabel": "File *",
+        "dropzoneClick": "Click to select or drag the file",
+        "dropzoneFormats": "Formats: XLSX, XLS, CSV, TXT",
+        "statusMessages": {
+          "idle": "Sending file...",
+          "success": "File successfully uploaded!",
+          "processing": "Processing with AI...",
+          "completed": "Processing complete!"
+        },
+        "howItWorks": {
+          "title": "How does it work?",
+          "item1": "AI identifies the data structure automatically",
+          "item2": "Validates required fields and formats",
+          "item3": "Maps fields to the database",
+          "item4": "Detects errors and suggests improvements",
+          "item5": "Configure records automatically",
+          "devMode": "Dev Mode:",
+          "devModeDesc": "If OpenAI is not configured, mocks interpretation for demo."
+        },
+        "cancelBtn": "Cancel",
+        "sendBtn": "Send and Process",
+        "sendingBtn": "Sending...",
+        "processingBtn": "Processing..."
+      },
+      "messages": {
+        "loadError": "Error loading projects",
+        "fillRequired": "Fill all required fields",
+        "createSuccess": "Project successfully created!",
+        "deleteSuccess": "Project successfully deleted!",
+        "approveSuggestionError": "Error approving suggestion",
+        "executeUploadSuccess": "File processed and imported successfully!",
+        "executeUploadError": "Error executing import",
+        "uploadValidationMissing": "Select a category and a file"
+      }
+    }
+  },
+  "changeLog": {
+    "title": "Change Log",
+    "subtitle": "Detailed history of all system changes",
+    "stats": {
+      "total": "Total Logs",
+      "creates": "Creations",
+      "updates": "Edits",
+      "deletes": "Deletions"
+    },
+    "filters": {
+      "searchPlaceholder": "Search logs...",
+      "allEntities": "All Entities",
+      "allActions": "All Actions",
+      "actions": {
+        "CREATE": "Creation",
+        "UPDATE": "Edit",
+        "DELETE": "Deletion"
+      },
+      "entities": {
+        "establishment": "Establishment",
+        "user": "User",
+        "businessPartner": "Business Partner",
+        "carrier": "Carrier",
+        "city": "City",
+        "state": "State",
+        "country": "Country",
+        "freightRate": "Freight Table",
+        "invoice": "Invoice",
+        "cte": "CT-e",
+        "order": "Order",
+        "pickup": "Pickup",
+        "reverseLogistics": "Reverse Logistics"
+      },
+      "exportCsv": "Export CSV"
+    },
+    "table": {
+      "action": "Action",
+      "entity": "Entity",
+      "field": "Field",
+      "oldValue": "Old Value",
+      "newValue": "New Value",
+      "user": "User",
+      "dateTime": "Date/Time",
+      "loading": "Loading logs...",
+      "noLogs": "No logs found"
+    },
+    "pagination": {
+      "showing": "Showing",
+      "to": "to",
+      "of": "of",
+      "logs": "logs"
+    },
+    "infoBox": {
+      "title": "About the Change Log",
+      "desc": "This system automatically records all changes made in the system, providing a complete and auditable history of all operations.",
+      "items": {
+        "traceability": {
+          "title": "Traceability",
+          "desc": "Complete audit of actions"
+        },
+        "user": {
+          "title": "User",
+          "desc": "Responsible identification"
+        },
+        "history": {
+          "title": "History",
+          "desc": "Before and after values"
+        },
+        "export": {
+          "title": "Export",
+          "desc": "CSV reports"
+        }
+      }
+    },
+    "fields": {
+      "razaoSocial": "Company Name",
+      "fantasia": "Trade Name",
+      "cnpj": "Tax ID (CNPJ)",
+      "inscricaoEstadual": "State Registration",
+      "inscricaoMunicipal": "Municipal Registration",
+      "endereco": "Address",
+      "numero": "Number",
+      "complemento": "Complement",
+      "bairro": "Neighborhood",
+      "cidade": "City",
+      "estado": "State",
+      "cep": "ZIP Code",
+      "telefone": "Phone",
+      "email": "Email",
+      "responsavel": "Responsible",
+      "nome": "Name",
+      "cpf": "Tax ID (CPF)",
+      "cargo": "Role",
+      "departamento": "Department",
+      "perfil": "Profile",
+      "status": "Status",
+      "name": "Name",
+      "document": "Document",
+      "document_type": "Document Type",
+      "phone": "Phone",
+      "type": "Type",
+      "website": "Website",
+      "tax_regime": "Tax Regime",
+      "credit_limit": "Credit Limit",
+      "payment_terms": "Payment Terms",
+      "abbreviation": "Abbreviation",
+      "capital": "Capital",
+      "region": "Region",
+      "ibge_code": "IBGE Code",
+      "codigo": "Code",
+      "descricao": "Description",
+      "observacoes": "Notes",
+      "observations": "Notes",
+      "ativo": "Active",
+      "active": "Active"
     }
   }
 }

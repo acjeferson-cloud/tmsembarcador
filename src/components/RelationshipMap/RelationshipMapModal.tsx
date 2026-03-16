@@ -33,231 +33,85 @@ interface RelationshipMapModalProps {
   onDocumentClick?: (document: Document) => void;
 }
 
-const getMockRelatedDocuments = (sourceDocument: Document) => {
+import { supabase } from '../../lib/supabase';
+
+// Add these to imports at the top:
+// import { supabase } from '../../lib/supabase';
+
+const getLiveRelatedDocuments = async (sourceDocument: Document) => {
   const documents: Document[] = [sourceDocument];
   const relationships: Array<{from: string, to: string}> = [];
   
-  // Generate related documents based on source document type
   if (sourceDocument.type === 'order') {
-    // Order -> Invoices -> CTes -> Bills
-    const invoiceCount = Math.floor(Math.random() * 2) + 1; // 1-2 invoices per order
+    // Busca Invoices e CTes relacionados a esse pedido
+    const orderId = sourceDocument.id.replace('order-', '');
     
-    for (let i = 0; i < invoiceCount; i++) {
-      const invoice: Document = {
-        id: `invoice-${Math.floor(Math.random() * 9000) + 1000}`,
-        type: 'invoice',
-        number: `NF-${Math.floor(Math.random() * 9000) + 1000}`,
-        date: new Date(new Date(sourceDocument.date).getTime() + (1000 * 60 * 60 * 24 * (Math.floor(Math.random() * 3) + 1))).toISOString(),
-        status: ['Emitida', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-        value: Math.floor(Math.random() * 5000) + 1000
-      };
-      
-      documents.push(invoice);
-      relationships.push({ from: sourceDocument.id, to: invoice.id });
-      
-      // Each invoice has 1 CTe
-      const cte: Document = {
-        id: `cte-${Math.floor(Math.random() * 9000) + 1000}`,
-        type: 'cte',
-        number: `CT-${Math.floor(Math.random() * 9000) + 1000}`,
-        date: new Date(new Date(invoice.date).getTime() + (1000 * 60 * 60 * 24)).toISOString(),
-        status: ['Emitido', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-        value: Math.floor(invoice.value * 0.1)
-      };
-      
-      documents.push(cte);
-      relationships.push({ from: invoice.id, to: cte.id });
-      
-      // Each CTe has 1 bill
-      const bill: Document = {
-        id: `bill-${Math.floor(Math.random() * 9000) + 1000}`,
-        type: 'bill',
-        number: `FAT-${Math.floor(Math.random() * 9000) + 1000}`,
-        date: new Date(new Date(cte.date).getTime() + (1000 * 60 * 60 * 24 * 7)).toISOString(),
-        status: ['Emitida', 'Paga', 'Pendente'][Math.floor(Math.random() * 3)],
-        value: cte.value
-      };
-      
-      documents.push(bill);
-      relationships.push({ from: cte.id, to: bill.id });
-    }
-  } else if (sourceDocument.type === 'invoice') {
-    // Invoice -> Order (backward)
-    const order: Document = {
-      id: `order-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'order',
-      number: `PED-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(sourceDocument.date).getTime() - (1000 * 60 * 60 * 24 * (Math.floor(Math.random() * 3) + 1))).toISOString(),
-      status: ['Emitido', 'Processado', 'Concluído'][Math.floor(Math.random() * 3)],
-      value: sourceDocument.value
-    };
-    
-    documents.push(order);
-    relationships.push({ from: order.id, to: sourceDocument.id });
-    
-    // Invoice -> CTe -> Bill (forward)
-    const cte: Document = {
-      id: `cte-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'cte',
-      number: `CT-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(sourceDocument.date).getTime() + (1000 * 60 * 60 * 24)).toISOString(),
-      status: ['Emitido', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-      value: Math.floor(sourceDocument.value * 0.1)
-    };
-    
-    documents.push(cte);
-    relationships.push({ from: sourceDocument.id, to: cte.id });
-    
-    const bill: Document = {
-      id: `bill-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'bill',
-      number: `FAT-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(cte.date).getTime() + (1000 * 60 * 60 * 24 * 7)).toISOString(),
-      status: ['Emitida', 'Paga', 'Pendente'][Math.floor(Math.random() * 3)],
-      value: cte.value
-    };
-    
-    documents.push(bill);
-    relationships.push({ from: cte.id, to: bill.id });
-  } else if (sourceDocument.type === 'pickup') {
-    // Pickup -> Invoices (backward) and CTes (forward)
-    // A coleta pode ter múltiplas notas fiscais vinculadas
-    const invoiceCount = Math.floor(Math.random() * 3) + 1; // 1-3 invoices per pickup
+    // Invoices by order_id
+    const { data: invoicesData } = await supabase
+      .from('invoices')
+      .select('id, numero, data_emissao, status, valor_total')
+      .eq('order_id', orderId);
 
-    for (let i = 0; i < invoiceCount; i++) {
-      const invoice: Document = {
-        id: `invoice-${Math.floor(Math.random() * 9000) + 1000}`,
-        type: 'invoice',
-        number: `NF-${Math.floor(Math.random() * 9000) + 1000}`,
-        date: new Date(new Date(sourceDocument.date).getTime() - (1000 * 60 * 60 * 24)).toISOString(),
-        status: ['Emitida', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-        value: Math.floor(Math.random() * 5000) + 1000
-      };
-
-      documents.push(invoice);
-      relationships.push({ from: invoice.id, to: sourceDocument.id });
-
-      // Each invoice may have an order
-      if (Math.random() > 0.3) {
-        const order: Document = {
-          id: `order-${Math.floor(Math.random() * 9000) + 1000}`,
-          type: 'order',
-          number: `PED-${Math.floor(Math.random() * 9000) + 1000}`,
-          date: new Date(new Date(invoice.date).getTime() - (1000 * 60 * 60 * 24 * (Math.floor(Math.random() * 3) + 1))).toISOString(),
-          status: ['Emitido', 'Processado', 'Concluído'][Math.floor(Math.random() * 3)],
-          value: invoice.value
-        };
-
-        documents.push(order);
-        relationships.push({ from: order.id, to: invoice.id });
+    if (invoicesData && invoicesData.length > 0) {
+      for (const inv of invoicesData) {
+        const invId = `invoice-${inv.id}`;
+        documents.push({
+          id: invId,
+          type: 'invoice',
+          number: inv.numero,
+          date: inv.data_emissao || new Date().toISOString(),
+          status: inv.status || 'Emitida',
+          value: Number(inv.valor_total || 0)
+        });
+        relationships.push({ from: sourceDocument.id, to: invId });
+        
+        // E procura CTes conectados a essa Invoice
+        const { data: ctesData } = await supabase
+          .from('ctes')
+          .select('id, numero, data_emissao, status, valor_total')
+          .eq('invoice_id', inv.id);
+          
+        if (ctesData && ctesData.length > 0) {
+          for (const cte of ctesData) {
+            const cteId = `cte-${cte.id}`;
+            documents.push({
+              id: cteId,
+              type: 'cte',
+              number: cte.numero,
+              date: cte.data_emissao || new Date().toISOString(),
+              status: cte.status || 'Emitido',
+              value: Number(cte.valor_total || 0)
+            });
+            relationships.push({ from: invId, to: cteId });
+          }
+        }
+      }
+    } else {
+      // Se não tem invoice, tenta achar CTe direto pelo order_id
+      const { data: ctesDirect } = await supabase
+        .from('ctes')
+        .select('id, numero, data_emissao, status, valor_total')
+        .eq('order_id', orderId);
+        
+      if (ctesDirect && ctesDirect.length > 0) {
+        for (const cte of ctesDirect) {
+          const cteId = `cte-${cte.id}`;
+          documents.push({
+            id: cteId,
+            type: 'cte',
+            number: cte.numero,
+            date: cte.data_emissao || new Date().toISOString(),
+            status: cte.status || 'Emitido',
+            value: Number(cte.valor_total || 0)
+          });
+          relationships.push({ from: sourceDocument.id, to: cteId });
+        }
       }
     }
-
-    // Pickup -> CTes (forward) - A coleta pode gerar 1 ou mais CT-es
-    const cteCount = Math.floor(Math.random() * 2) + 1; // 1-2 CTes per pickup
-
-    for (let i = 0; i < cteCount; i++) {
-      const cte: Document = {
-        id: `cte-${Math.floor(Math.random() * 9000) + 1000}`,
-        type: 'cte',
-        number: `CT-${Math.floor(Math.random() * 9000) + 1000}`,
-        date: new Date(new Date(sourceDocument.date).getTime() + (1000 * 60 * 60 * 24)).toISOString(),
-        status: ['Emitido', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-        value: Math.floor(sourceDocument.value * 0.1)
-      };
-
-      documents.push(cte);
-      relationships.push({ from: sourceDocument.id, to: cte.id });
-
-      // Each CTe has 1 bill
-      const bill: Document = {
-        id: `bill-${Math.floor(Math.random() * 9000) + 1000}`,
-        type: 'bill',
-        number: `FAT-${Math.floor(Math.random() * 9000) + 1000}`,
-        date: new Date(new Date(cte.date).getTime() + (1000 * 60 * 60 * 24 * 7)).toISOString(),
-        status: ['Emitida', 'Paga', 'Pendente'][Math.floor(Math.random() * 3)],
-        value: cte.value
-      };
-
-      documents.push(bill);
-      relationships.push({ from: cte.id, to: bill.id });
-    }
-  } else if (sourceDocument.type === 'cte') {
-    // CTe -> Invoice -> Order (backward)
-    const invoice: Document = {
-      id: `invoice-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'invoice',
-      number: `NF-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(sourceDocument.date).getTime() - (1000 * 60 * 60 * 24)).toISOString(),
-      status: ['Emitida', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-      value: sourceDocument.value * 10
-    };
-    
-    documents.push(invoice);
-    relationships.push({ from: invoice.id, to: sourceDocument.id });
-    
-    const order: Document = {
-      id: `order-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'order',
-      number: `PED-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(invoice.date).getTime() - (1000 * 60 * 60 * 24 * (Math.floor(Math.random() * 3) + 1))).toISOString(),
-      status: ['Emitido', 'Processado', 'Concluído'][Math.floor(Math.random() * 3)],
-      value: invoice.value
-    };
-    
-    documents.push(order);
-    relationships.push({ from: order.id, to: invoice.id });
-    
-    // CTe -> Bill (forward)
-    const bill: Document = {
-      id: `bill-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'bill',
-      number: `FAT-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(sourceDocument.date).getTime() + (1000 * 60 * 60 * 24 * 7)).toISOString(),
-      status: ['Emitida', 'Paga', 'Pendente'][Math.floor(Math.random() * 3)],
-      value: sourceDocument.value
-    };
-    
-    documents.push(bill);
-    relationships.push({ from: sourceDocument.id, to: bill.id });
-  } else if (sourceDocument.type === 'bill') {
-    // Bill -> CTe -> Invoice -> Order (backward)
-    const cte: Document = {
-      id: `cte-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'cte',
-      number: `CT-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(sourceDocument.date).getTime() - (1000 * 60 * 60 * 24 * 7)).toISOString(),
-      status: ['Emitido', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-      value: sourceDocument.value
-    };
-    
-    documents.push(cte);
-    relationships.push({ from: cte.id, to: sourceDocument.id });
-    
-    const invoice: Document = {
-      id: `invoice-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'invoice',
-      number: `NF-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(cte.date).getTime() - (1000 * 60 * 60 * 24)).toISOString(),
-      status: ['Emitida', 'Entregue', 'Em Trânsito'][Math.floor(Math.random() * 3)],
-      value: cte.value * 10
-    };
-    
-    documents.push(invoice);
-    relationships.push({ from: invoice.id, to: cte.id });
-    
-    const order: Document = {
-      id: `order-${Math.floor(Math.random() * 9000) + 1000}`,
-      type: 'order',
-      number: `PED-${Math.floor(Math.random() * 9000) + 1000}`,
-      date: new Date(new Date(invoice.date).getTime() - (1000 * 60 * 60 * 24 * (Math.floor(Math.random() * 3) + 1))).toISOString(),
-      status: ['Emitido', 'Processado', 'Concluído'][Math.floor(Math.random() * 3)],
-      value: invoice.value
-    };
-    
-    documents.push(order);
-    relationships.push({ from: order.id, to: invoice.id });
   }
+
+  // A partir daqui pode-se expandir os fluxos reversos (quando abre mapa pela Invoice, por exempo)
+  // Como a tela em que estamos está listando a partir dos Pedidos, esse foi o foco:
   
   return { documents, relationships };
 };
@@ -389,60 +243,67 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
     
     setIsLoading(true);
     
-    // Simulate API call to get related documents
-    setTimeout(() => {
-      const { documents, relationships } = getMockRelatedDocuments(sourceDocument);
-      
-      // Create nodes
-      const newNodes: Node[] = documents.map((doc, index) => {
-        // Calculate position based on document type
-        let position = { x: 0, y: 0 };
+    // Asynchronous call wrapper
+    const loadMap = async () => {
+      try {
+        const { documents, relationships } = await getLiveRelatedDocuments(sourceDocument);
         
-        // Position nodes in a logical flow: Order -> Invoice -> CTe -> Bill
-        switch (doc.type) {
-          case 'order':
-            position = { x: 0, y: 100 * index };
-            break;
-          case 'invoice':
-            position = { x: 300, y: 100 * index };
-            break;
-          case 'pickup':
-            position = { x: 450, y: 100 * index };
-            break;
-          case 'cte':
-            position = { x: 600, y: 100 * index };
-            break;
-          case 'bill':
-            position = { x: 900, y: 100 * index };
-            break;
-        }
+        // Create nodes
+        const newNodes: Node[] = documents.map((doc, index) => {
+          // Calculate position based on document type
+          let position = { x: 0, y: 0 };
+          
+          // Position nodes in a logical flow: Order -> Invoice -> CTe -> Bill
+          switch (doc.type) {
+            case 'order':
+              position = { x: 0, y: 100 * index };
+              break;
+            case 'invoice':
+              position = { x: 300, y: 100 * index };
+              break;
+            case 'pickup':
+              position = { x: 450, y: 100 * index };
+              break;
+            case 'cte':
+              position = { x: 600, y: 100 * index };
+              break;
+            case 'bill':
+              position = { x: 900, y: 100 * index };
+              break;
+          }
+          
+          return {
+            id: doc.id,
+            type: 'documentNode',
+            position,
+            data: { 
+              document: doc,
+              onClick: onDocumentClick
+            },
+            sourcePosition: Position.Right,
+            targetPosition: Position.Left,
+          };
+        });
         
-        return {
-          id: doc.id,
-          type: 'documentNode',
-          position,
-          data: { 
-            document: doc,
-            onClick: onDocumentClick
-          },
-          sourcePosition: Position.Right,
-          targetPosition: Position.Left,
-        };
-      });
-      
-      // Create edges
-      const newEdges: Edge[] = relationships.map((rel, index) => ({
-        id: `e${index}`,
-        source: rel.from,
-        target: rel.to,
-        animated: true,
-        style: { stroke: '#64748b' },
-      }));
-      
-      setNodes(newNodes);
-      setEdges(newEdges);
-      setIsLoading(false);
-    }, 1000);
+        // Create edges
+        const newEdges: Edge[] = relationships.map((rel, index) => ({
+          id: `e${index}`,
+          source: rel.from,
+          target: rel.to,
+          animated: true,
+          style: { stroke: '#64748b' },
+        }));
+        
+        setNodes(newNodes);
+        setEdges(newEdges);
+      } catch (error) {
+        console.error("Failed to load map relations:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadMap();
   }, [isOpen, sourceDocument, onDocumentClick]);
   
   if (!isOpen) return null;

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Filter, Download, History, User, Calendar, File as FileEdit, Plus, Trash2, RefreshCw } from 'lucide-react';
-import { ChangeLog as ChangeLogType, fetchLogs, getLogsStats, getFieldLabel, LogFilters } from '../../services/logsService';
-import { formatDistanceToNow } from '../../utils/formatters';
+import { Search, Download, History, User, Calendar, File as FileEdit, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { ChangeLog as ChangeLogType, fetchLogs, getLogsStats, LogFilters } from '../../services/logsService';
+import { useTranslation } from 'react-i18next';
 
 export const ChangeLog: React.FC = () => {
+  const { t } = useTranslation();
+  
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Log de Modificações', current: true }
+    { label: t('menu.settings', 'Configurações') },
+    { label: t('menu.changeLog', 'Log de Modificações'), current: true }
   ];
 
   const [logs, setLogs] = useState<ChangeLogType[]>([]);
@@ -15,7 +17,11 @@ export const ChangeLog: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [stats, setStats] = useState({ total: 0, byAction: {}, byEntity: {} });
+  const [stats, setStats] = useState<{ total: number; byAction: Record<string, number>; byEntity: Record<string, number> }>({ 
+    total: 0, 
+    byAction: {}, 
+    byEntity: {} 
+  });
   const [filters, setFilters] = useState<LogFilters>({
     entityType: undefined,
     actionType: undefined
@@ -89,11 +95,11 @@ export const ChangeLog: React.FC = () => {
   const getActionLabel = (actionType: string) => {
     switch (actionType) {
       case 'CREATE':
-        return 'Criação';
+        return t('changeLog.filters.actions.CREATE', 'Criação');
       case 'UPDATE':
-        return 'Edição';
+        return t('changeLog.filters.actions.UPDATE', 'Edição');
       case 'DELETE':
-        return 'Exclusão';
+        return t('changeLog.filters.actions.DELETE', 'Exclusão');
       default:
         return actionType;
     }
@@ -101,36 +107,46 @@ export const ChangeLog: React.FC = () => {
 
   const getEntityTypeLabel = (entityType: string) => {
     const labels: Record<string, string> = {
-      establishment: 'Estabelecimento',
-      user: 'Usuário',
-      city: 'Cidade',
-      state: 'Estado',
-      country: 'País',
-      carrier: 'Transportadora',
-      businessPartner: 'Parceiro de Negócio',
-      freightRate: 'Tabela de Frete',
-      invoice: 'Nota Fiscal',
-      cte: 'CT-e',
-      order: 'Pedido',
-      pickup: 'Coleta',
-      reverseLogistics: 'Logística Reversa'
+      establishment: t('changeLog.filters.entities.establishment', 'Estabelecimento'),
+      user: t('changeLog.filters.entities.user', 'Usuário'),
+      city: t('changeLog.filters.entities.city', 'Cidade'),
+      state: t('changeLog.filters.entities.state', 'Estado'),
+      country: t('changeLog.filters.entities.country', 'País'),
+      carrier: t('changeLog.filters.entities.carrier', 'Transportadora'),
+      businessPartner: t('changeLog.filters.entities.businessPartner', 'Parceiro de Negócio'),
+      freightRate: t('changeLog.filters.entities.freightRate', 'Tabela de Frete'),
+      invoice: t('changeLog.filters.entities.invoice', 'Nota Fiscal'),
+      cte: t('changeLog.filters.entities.cte', 'CT-e'),
+      order: t('changeLog.filters.entities.order', 'Pedido'),
+      pickup: t('changeLog.filters.entities.pickup', 'Coleta'),
+      reverseLogistics: t('changeLog.filters.entities.reverseLogistics', 'Logística Reversa')
     };
     return labels[entityType] || entityType;
   };
 
   const handleExport = () => {
     const csvContent = [
-      ['Tipo', 'Entidade', 'ID', 'Ação', 'Usuário', 'Campo', 'Valor Anterior', 'Novo Valor', 'Data/Hora'].join(','),
+      [
+        t('changeLog.table.entity', 'Tipo'), 
+        t('changeLog.table.entity', 'Entidade'), 
+        'ID', 
+        t('changeLog.table.action', 'Ação'), 
+        t('changeLog.table.user', 'Usuário'), 
+        t('changeLog.table.field', 'Campo'), 
+        t('changeLog.table.oldValue', 'Valor Anterior'), 
+        t('changeLog.table.newValue', 'Novo Valor'), 
+        t('changeLog.table.dateTime', 'Data/Hora')
+      ].join(','),
       ...filteredLogs.map(log => [
         getEntityTypeLabel(log.entity_type),
         log.entity_type,
         log.entity_id,
         getActionLabel(log.action_type),
         log.user_name,
-        log.field_name ? getFieldLabel(log.field_name) : '',
+        log.field_name ? t(`changeLog.fields.${log.field_name}`, { defaultValue: log.field_name }) : '',
         log.old_value || '',
         log.new_value || '',
-        new Date(log.created_at).toLocaleString('pt-BR')
+        new Date(log.created_at).toLocaleString()
       ].join(','))
     ].join('\n');
 
@@ -149,8 +165,8 @@ export const ChangeLog: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Log de Modificações</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Histórico detalhado de todas as alterações no sistema</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('changeLog.title', 'Log de Modificações')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">{t('changeLog.subtitle', 'Histórico detalhado de todas as alterações no sistema')}</p>
           </div>
         </div>
 
@@ -159,7 +175,7 @@ export const ChangeLog: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Logs</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('changeLog.stats.total', 'Total de Logs')}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -171,7 +187,7 @@ export const ChangeLog: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Criações</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('changeLog.stats.creates', 'Criações')}</p>
               <p className="text-2xl font-bold text-green-600">{stats.byAction['CREATE'] || 0}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -183,7 +199,7 @@ export const ChangeLog: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Edições</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('changeLog.stats.updates', 'Edições')}</p>
               <p className="text-2xl font-bold text-blue-600">{stats.byAction['UPDATE'] || 0}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -195,7 +211,7 @@ export const ChangeLog: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Exclusões</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('changeLog.stats.deletes', 'Exclusões')}</p>
               <p className="text-2xl font-bold text-red-600">{stats.byAction['DELETE'] || 0}</p>
             </div>
             <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -212,7 +228,7 @@ export const ChangeLog: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Buscar nos logs..."
+              placeholder={t('changeLog.filters.searchPlaceholder', 'Buscar nos logs...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -224,20 +240,20 @@ export const ChangeLog: React.FC = () => {
             onChange={(e) => setFilters({ ...filters, entityType: e.target.value || undefined })}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">Todas as Entidades</option>
-            <option value="establishment">Estabelecimentos</option>
-            <option value="user">Usuários</option>
-            <option value="businessPartner">Parceiros de Negócio</option>
-            <option value="carrier">Transportadoras</option>
-            <option value="city">Cidades</option>
-            <option value="state">Estados</option>
-            <option value="country">Países</option>
-            <option value="freightRate">Tabelas de Frete</option>
-            <option value="invoice">Notas Fiscais</option>
-            <option value="cte">CT-es</option>
-            <option value="order">Pedidos</option>
-            <option value="pickup">Coletas</option>
-            <option value="reverseLogistics">Logística Reversa</option>
+            <option value="">{t('changeLog.filters.allEntities', 'Todas as Entidades')}</option>
+            <option value="establishment">{t('changeLog.filters.entities.establishment', 'Estabelecimento')}</option>
+            <option value="user">{t('changeLog.filters.entities.user', 'Usuário')}</option>
+            <option value="businessPartner">{t('changeLog.filters.entities.businessPartner', 'Parceiro de Negócio')}</option>
+            <option value="carrier">{t('changeLog.filters.entities.carrier', 'Transportadora')}</option>
+            <option value="city">{t('changeLog.filters.entities.city', 'Cidade')}</option>
+            <option value="state">{t('changeLog.filters.entities.state', 'Estado')}</option>
+            <option value="country">{t('changeLog.filters.entities.country', 'País')}</option>
+            <option value="freightRate">{t('changeLog.filters.entities.freightRate', 'Tabela de Frete')}</option>
+            <option value="invoice">{t('changeLog.filters.entities.invoice', 'Nota Fiscal')}</option>
+            <option value="cte">{t('changeLog.filters.entities.cte', 'CT-e')}</option>
+            <option value="order">{t('changeLog.filters.entities.order', 'Pedido')}</option>
+            <option value="pickup">{t('changeLog.filters.entities.pickup', 'Coleta')}</option>
+            <option value="reverseLogistics">{t('changeLog.filters.entities.reverseLogistics', 'Logística Reversa')}</option>
           </select>
 
           <select
@@ -245,10 +261,10 @@ export const ChangeLog: React.FC = () => {
             onChange={(e) => setFilters({ ...filters, actionType: e.target.value || undefined })}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">Todas as Ações</option>
-            <option value="CREATE">Criação</option>
-            <option value="UPDATE">Edição</option>
-            <option value="DELETE">Exclusão</option>
+            <option value="">{t('changeLog.filters.allActions', 'Todas as Ações')}</option>
+            <option value="CREATE">{t('changeLog.filters.actions.CREATE', 'Criação')}</option>
+            <option value="UPDATE">{t('changeLog.filters.actions.UPDATE', 'Edição')}</option>
+            <option value="DELETE">{t('changeLog.filters.actions.DELETE', 'Exclusão')}</option>
           </select>
 
           <button
@@ -256,7 +272,7 @@ export const ChangeLog: React.FC = () => {
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
           >
             <Download className="w-4 h-4" />
-            <span>Exportar CSV</span>
+            <span>{t('changeLog.filters.exportCsv', 'Exportar CSV')}</span>
           </button>
         </div>
       </div>
@@ -268,25 +284,25 @@ export const ChangeLog: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ação
+                  {t('changeLog.table.action', 'Ação')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Entidade
+                  {t('changeLog.table.entity', 'Entidade')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Campo
+                  {t('changeLog.table.field', 'Campo')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Valor Anterior
+                  {t('changeLog.table.oldValue', 'Valor Anterior')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Novo Valor
+                  {t('changeLog.table.newValue', 'Novo Valor')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Usuário
+                  {t('changeLog.table.user', 'Usuário')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Data/Hora
+                  {t('changeLog.table.dateTime', 'Data/Hora')}
                 </th>
               </tr>
             </thead>
@@ -295,14 +311,14 @@ export const ChangeLog: React.FC = () => {
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-2" />
-                    <p className="text-gray-500 dark:text-gray-400">Carregando logs...</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('changeLog.table.loading', 'Carregando logs...')}</p>
                   </td>
                 </tr>
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <History className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 dark:text-gray-400">Nenhum log encontrado</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('changeLog.table.noLogs', 'Nenhum log encontrado')}</p>
                   </td>
                 </tr>
               ) : (
@@ -320,7 +336,7 @@ export const ChangeLog: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {log.field_name ? getFieldLabel(log.field_name) : '-'}
+                        {log.field_name ? t(`changeLog.fields.${log.field_name}`, { defaultValue: log.field_name }) : '-'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -364,9 +380,9 @@ export const ChangeLog: React.FC = () => {
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                Mostrando <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a{' '}
-                <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> de{' '}
-                <span className="font-medium">{totalCount}</span> logs
+                {t('changeLog.pagination.showing', 'Mostrando')} <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> {t('changeLog.pagination.to', 'a')}{' '}
+                <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalCount)}</span> {t('changeLog.pagination.of', 'de')}{' '}
+                <span className="font-medium">{totalCount}</span> {t('changeLog.pagination.logs', 'logs')}
               </p>
               <div className="flex items-center space-x-2">
                 <button
@@ -374,7 +390,7 @@ export const ChangeLog: React.FC = () => {
                   disabled={currentPage === 1}
                   className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Anterior
+                  {t('common.previous', 'Anterior')}
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const page = i + 1;
@@ -397,7 +413,7 @@ export const ChangeLog: React.FC = () => {
                   disabled={currentPage === totalPages}
                   className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Próximo
+                  {t('common.next', 'Próximo')}
                 </button>
               </div>
             </div>
@@ -407,27 +423,26 @@ export const ChangeLog: React.FC = () => {
 
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre o Log de Modificações</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('changeLog.infoBox.title', 'Sobre o Log de Modificações')}</h3>
         <p className="text-blue-800 mb-4">
-          Este sistema registra automaticamente todas as alterações realizadas no sistema, fornecendo um histórico
-          completo e auditável de todas as operações.
+          {t('changeLog.infoBox.desc', 'Este sistema registra automaticamente todas as alterações realizadas no sistema, fornecendo um histórico completo e auditável de todas as operações.')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Rastreabilidade</p>
-            <p className="text-blue-700">Auditoria completa de ações</p>
+            <p className="font-semibold text-blue-900">{t('changeLog.infoBox.items.traceability.title', 'Rastreabilidade')}</p>
+            <p className="text-blue-700">{t('changeLog.infoBox.items.traceability.desc', 'Auditoria completa de ações')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Usuário</p>
-            <p className="text-blue-700">Identificação de responsável</p>
+            <p className="font-semibold text-blue-900">{t('changeLog.infoBox.items.user.title', 'Usuário')}</p>
+            <p className="text-blue-700">{t('changeLog.infoBox.items.user.desc', 'Identificação de responsável')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Histórico</p>
-            <p className="text-blue-700">Valores antes e depois</p>
+            <p className="font-semibold text-blue-900">{t('changeLog.infoBox.items.history.title', 'Histórico')}</p>
+            <p className="text-blue-700">{t('changeLog.infoBox.items.history.desc', 'Valores antes e depois')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Exportação</p>
-            <p className="text-blue-700">Relatórios em CSV</p>
+            <p className="font-semibold text-blue-900">{t('changeLog.infoBox.items.export.title', 'Exportação')}</p>
+            <p className="text-blue-700">{t('changeLog.infoBox.items.export.desc', 'Relatórios em CSV')}</p>
           </div>
         </div>
       </div>

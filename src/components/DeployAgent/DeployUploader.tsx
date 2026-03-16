@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { deployAgentService } from '../../services/deployAgentService';
 import * as XLSX from 'xlsx';
+import { useTranslation } from 'react-i18next';
 
 interface DeployUploaderProps {
   projectId: string;
@@ -9,6 +10,7 @@ interface DeployUploaderProps {
 }
 
 export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClose }) => {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -17,13 +19,13 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
   const [message, setMessage] = useState('');
 
   const categories = [
-    { value: 'erp_integration', label: 'Integração ao ERP', icon: '🔗' },
-    { value: 'carriers', label: 'Transportadoras', icon: '🚚' },
-    { value: 'freight_tables', label: 'Tabelas de Fretes', icon: '📊' },
-    { value: 'cities', label: 'Cidades', icon: '🏙️' },
-    { value: 'fees', label: 'Taxas da Tabela', icon: '💰' },
-    { value: 'restricted_zips', label: 'CEPs Restritos', icon: '🚫' },
-    { value: 'table_adjustments', label: 'Reajustar Tabela', icon: '📈' }
+    { value: 'erp_integration', label: t('implementationCenter.uploader.categories.erpIntegration'), icon: '🔗' },
+    { value: 'carriers', label: t('implementationCenter.uploader.categories.carriers'), icon: '🚚' },
+    { value: 'freight_tables', label: t('implementationCenter.uploader.categories.freightTables'), icon: '📊' },
+    { value: 'cities', label: t('implementationCenter.uploader.categories.cities'), icon: '🏙️' },
+    { value: 'fees', label: t('implementationCenter.uploader.categories.fees'), icon: '💰' },
+    { value: 'restricted_zips', label: t('implementationCenter.uploader.categories.restrictedZips'), icon: '🚫' },
+    { value: 'table_adjustments', label: t('implementationCenter.uploader.categories.tableAdjustments'), icon: '📈' }
   ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,14 +88,14 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
   const handleUpload = async () => {
     if (!file || !selectedCategory) {
       setStatus('error');
-      setMessage('Selecione uma categoria e um arquivo');
+      setMessage(t('implementationCenter.uploader.messages.selectCategoryAndFile'));
       return;
     }
 
     try {
       setIsUploading(true);
       setStatus('idle');
-      setMessage('Enviando arquivo...');
+      setMessage(t('implementationCenter.uploader.messages.sendingFile'));
 
       const fileContent = await readFileContent(file);
 
@@ -107,15 +109,15 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
       });
 
       setStatus('success');
-      setMessage('Arquivo enviado com sucesso!');
+      setMessage(t('implementationCenter.uploader.messages.fileSentSuccess'));
 
       // Start processing
       setIsProcessing(true);
-      setMessage('Processando com IA...');
+      setMessage(t('implementationCenter.uploader.messages.processingAI'));
 
       await deployAgentService.processFile(upload.id);
 
-      setMessage('Processamento concluído!');
+      setMessage(t('implementationCenter.uploader.messages.processingComplete'));
 
       setTimeout(() => {
         onClose();
@@ -123,7 +125,7 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
 
     } catch (error: any) {
       setStatus('error');
-      const errorMessage = error?.message || 'Erro ao processar arquivo. Tente novamente.';
+      const errorMessage = error?.message || t('implementationCenter.uploader.messages.processingError');
       setMessage(errorMessage);
 
       // Keep error visible longer
@@ -142,9 +144,9 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Enviar Arquivo</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{t('implementationCenter.uploader.title')}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              A IA irá interpretar e configurar automaticamente
+              {t('implementationCenter.uploader.subtitle')}
             </p>
           </div>
           <button
@@ -160,7 +162,7 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
           {/* Category Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Tipo de Dados *
+              {t('implementationCenter.uploader.dataType')} *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {categories.map((cat) => (
@@ -186,7 +188,7 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Arquivo *
+              {t('implementationCenter.uploader.file')} *
             </label>
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
@@ -219,10 +221,10 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
                   <div>
                     <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                     <div className="text-gray-600 dark:text-gray-400">
-                      Clique para selecionar ou arraste o arquivo
+                      {t('implementationCenter.uploader.clickOrDrag')}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Formatos: XLSX, XLS, CSV, TXT
+                      {t('implementationCenter.uploader.formats')}
                     </div>
                   </div>
                 )}
@@ -246,17 +248,17 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
 
           {/* Info Box */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Como funciona?</h4>
+            <h4 className="font-medium text-blue-900 mb-2">{t('implementationCenter.uploader.infoBox.title')}</h4>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• A IA identifica a estrutura dos dados automaticamente</li>
-              <li>• Valida campos obrigatórios e formatos</li>
-              <li>• Mapeia os campos para o banco de dados</li>
-              <li>• Detecta erros e sugere melhorias</li>
-              <li>• Configura os cadastros automaticamente</li>
+              <li>• {t('implementationCenter.uploader.infoBox.item1')}</li>
+              <li>• {t('implementationCenter.uploader.infoBox.item2')}</li>
+              <li>• {t('implementationCenter.uploader.infoBox.item3')}</li>
+              <li>• {t('implementationCenter.uploader.infoBox.item4')}</li>
+              <li>• {t('implementationCenter.uploader.infoBox.item5')}</li>
             </ul>
             <div className="mt-3 pt-3 border-t border-blue-200">
               <p className="text-xs text-blue-700">
-                <strong>Modo Desenvolvimento:</strong> Se OpenAI não estiver configurada, usa interpretação mock para demonstração.
+                <strong>{t('implementationCenter.uploader.infoBox.devMode')}</strong> {t('implementationCenter.uploader.infoBox.devModeDesc')}
               </p>
             </div>
           </div>
@@ -268,7 +270,7 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
             disabled={isUploading || isProcessing}
             className="px-6 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
           >
-            Cancelar
+            {t('implementationCenter.uploader.cancelBtn')}
           </button>
           <button
             onClick={handleUpload}
@@ -278,12 +280,12 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
             {isUploading || isProcessing ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                {isProcessing ? 'Processando...' : 'Enviando...'}
+                {isProcessing ? t('implementationCenter.uploader.processingBtn') : t('implementationCenter.uploader.sendingBtn')}
               </>
             ) : (
               <>
                 <Upload className="w-4 h-4" />
-                Enviar e Processar
+                {t('implementationCenter.uploader.submitBtn')}
               </>
             )}
           </button>

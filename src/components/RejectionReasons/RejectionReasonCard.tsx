@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit, Trash2, Eye, FileText, Hash, Tag, CheckCircle, XCircle } from 'lucide-react';
 import { RejectionReason } from '../../data/rejectionReasonsData';
+import { useTranslation } from 'react-i18next';
 
 interface RejectionReasonCardProps {
   reason: RejectionReason;
@@ -17,6 +18,8 @@ export const RejectionReasonCard: React.FC<RejectionReasonCardProps> = ({
   onDelete,
   isAdmin
 }) => {
+  const { t } = useTranslation();
+  
   // Get category color based on category name
   const getCategoryColor = () => {
     if (reason.categoria.includes('Dados do Documento')) return 'bg-blue-100 text-blue-800';
@@ -48,7 +51,7 @@ export const RejectionReasonCard: React.FC<RejectionReasonCardProps> = ({
           <button 
             onClick={() => onView(reason)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title="Visualizar"
+            title={t('rejectionReasons.card.viewTooltip')}
           >
             <Eye size={16} />
           </button>
@@ -57,14 +60,14 @@ export const RejectionReasonCard: React.FC<RejectionReasonCardProps> = ({
               <button 
                 onClick={() => onEdit(reason)}
                 className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-                title="Editar"
+                title={t('rejectionReasons.card.editTooltip')}
               >
                 <Edit size={16} />
               </button>
               <button 
                 onClick={() => onDelete(reason.id)}
                 className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                title="Excluir"
+                title={t('rejectionReasons.card.deleteTooltip')}
               >
                 <Trash2 size={16} />
               </button>
@@ -76,7 +79,7 @@ export const RejectionReasonCard: React.FC<RejectionReasonCardProps> = ({
       <div className="space-y-3 text-sm">
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Hash size={14} />
-          <span>Código: {reason.codigo}</span>
+          <span>{t('rejectionReasons.card.codePrefix')} {reason.codigo}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
@@ -92,9 +95,9 @@ export const RejectionReasonCard: React.FC<RejectionReasonCardProps> = ({
       
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="text-sm">
-          <span className="text-gray-600 dark:text-gray-400">Status:</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('rejectionReasons.card.statusPrefix')}</span>
           <span className={`font-semibold ml-1 ${reason.ativo ? 'text-green-600' : 'text-red-600'}`}>
-            {reason.ativo ? 'Ativo' : 'Inativo'}
+            {reason.ativo ? t('rejectionReasons.card.statusActive') : t('rejectionReasons.card.statusInactive')}
           </span>
         </div>
         <div className="text-right">
@@ -102,12 +105,12 @@ export const RejectionReasonCard: React.FC<RejectionReasonCardProps> = ({
             {reason.ativo ? (
               <>
                 <CheckCircle size={14} className="mr-1" />
-                <span>Ativo</span>
+                <span>{t('rejectionReasons.card.statusActive')}</span>
               </>
             ) : (
               <>
                 <XCircle size={14} className="mr-1" />
-                <span>Inativo</span>
+                <span>{t('rejectionReasons.card.statusInactive')}</span>
               </>
             )}
           </div>

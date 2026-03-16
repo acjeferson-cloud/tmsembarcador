@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit, Calculator } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 import { formatCurrency } from '../../utils/formatters';
 import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
@@ -19,9 +19,11 @@ interface Order {
   ufDestino: string;
   valorPedido: number;
   chaveAcesso: string;
+  serie?: string;
   establishmentId?: string;
   date?: string;
   number?: string;
+  trackingCode?: string;
 }
 
 interface OrdersTableProps {
@@ -55,6 +57,10 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
 
   // Helper function to get tracking code for an order
   const getOrderTrackingCode = (order: Order): string => {
+    if (order.trackingCode) {
+      return order.trackingCode;
+    }
+
     try {
       const establishment = establishments.find(est => 
         est.id.toString() === order.establishmentId || 
@@ -65,7 +71,12 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
         return `TMS-${order.numero}`;
       }
       
-      return generateTrackingCode(establishment.trackingPrefix || 'TGL', establishment.code, parseInt(order.number?.replace('PED-', '') || '0'), new Date(order.date || order.dataEmissao));
+      return generateTrackingCode(
+        order.numero || order.number || '',
+        new Date(order.date || order.dataEmissao || new Date()),
+        establishment.codigo,
+        establishment.trackingPrefix || 'TGL'
+      );
     } catch (error) {
       return `TMS-${order.numero}`;
     }
@@ -85,20 +96,23 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
     let aValue = a[sortField];
     let bValue = b[sortField];
     
+    if (aValue === undefined || aValue === null) aValue = '' as any;
+    if (bValue === undefined || bValue === null) bValue = '' as any;
+    
     // Special handling for dates
     if (typeof aValue === 'string' && (sortField.includes('data') || sortField.includes('Data'))) {
-      aValue = new Date(aValue).getTime();
-      bValue = new Date(bValue || '').getTime();
+      aValue = new Date(aValue).getTime() as any;
+      bValue = new Date((bValue as string) || '').getTime() as any;
     }
     
     // Special handling for numbers stored as strings
     if (typeof aValue === 'string' && !isNaN(Number(aValue))) {
-      aValue = Number(aValue);
-      bValue = Number(bValue);
+      aValue = Number(aValue) as any;
+      bValue = Number(bValue) as any;
     }
     
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    if ((aValue as any) < (bValue as any)) return sortDirection === 'asc' ? -1 : 1;
+    if ((aValue as any) > (bValue as any)) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -156,10 +170,10 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
   };
 
   // Format chave de acesso for display
-  const formatChaveAcesso = (chave: string) => {
-    if (chave.length <= 20) return chave;
-    return `${chave.substring(0, 20)}...`;
-  };
+  // const formatChaveAcesso = (chave: string) => {
+  //   if (chave.length <= 20) return chave;
+  //   return `${chave.substring(0, 20)}...`;
+  // };
 
   // Toggle action menu
   const toggleActionMenu = (orderId: number) => {
@@ -201,6 +215,9 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                     />
                   </div>
                 </th>
+                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Ações
+                </th>
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -216,6 +233,18 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('serie')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Série</span>
+                    {sortField === 'serie' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('numero')}
                 >
                   <div className="flex items-center space-x-1">
@@ -224,6 +253,9 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
                   </div>
+                </th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Cód. Rastreamento
                 </th>
                 <th 
                   scope="col" 
@@ -276,10 +308,22 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('valorPedido')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Valor Pedido</span>
+                    {sortField === 'valorPedido' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('valorFrete')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Valor Frete</span>
+                    <span>Valor Custo</span>
                     {sortField === 'valorFrete' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -321,24 +365,6 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                     )}
                   </div>
                 </th>
-                <th 
-                  scope="col" 
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('valorPedido')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Valor Pedido</span>
-                    {sortField === 'valorPedido' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Código Rastreamento
-                </th>
-                <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ações
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -353,46 +379,8 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
                     />
                   </td>
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {order.numero}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(order.dataEmissao)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(order.dataEntrada)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(order.dataPrevisaoEntrega)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {order.transportador}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                    {formatCurrency(order.valorFrete)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {order.cliente}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {order.cidadeDestino}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {order.ufDestino}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                    {formatCurrency(order.valorPedido)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-blue-600">
-                    {getOrderTrackingCode(order)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                    <div className="flex items-center justify-end space-x-1">
+                  <td className="px-3 py-4 whitespace-nowrap text-left text-sm font-medium relative">
+                    <div className="flex items-center justify-start space-x-1">
                       {/* View Details */}
                       <button
                         onClick={() => onAction(order.id, 'view-details')}
@@ -446,7 +434,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         
                         {/* Dropdown menu */}
                         {openActionMenu === order.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                          <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                             <div className="py-1">
                               {/* Additional actions can be added here */}
                               <button
@@ -476,6 +464,19 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                                 </button>
                               )}
 
+                              {/* Recalcular Pedido */}
+                              <button
+                                onClick={() => {
+                                  onAction(order.id, 'recalculate');
+                                  setOpenActionMenu(null);
+                                }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center space-x-2"
+                              >
+                                <Calculator size={14} />
+                                <span>Recalcular Pedido</span>
+                              </button>
+
                               {/* Relationship Map */}
                               <button
                                 onClick={() => {
@@ -493,6 +494,47 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         )}
                       </div>
                     </div>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                      {getStatusLabel(order.status)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {order.serie || '-'}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {order.numero}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-mono text-blue-600">
+                    {getOrderTrackingCode(order)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(order.dataEmissao)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(order.dataEntrada)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(order.dataPrevisaoEntrega)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white truncate max-w-[200px]" title={order.transportador}>
+                    {order.transportador}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                    {formatCurrency(order.valorPedido)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-red-600 dark:text-red-400">
+                    {formatCurrency(order.valorFrete)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white" title={order.cliente}>
+                    {order.cliente && order.cliente.length > 30 ? `${order.cliente.substring(0, 30)}...` : order.cliente || '-'}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {order.cidadeDestino}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {order.ufDestino}
                   </td>
                 </tr>
               ))}

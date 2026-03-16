@@ -2658,14 +2658,16 @@
     }
   },
   "holidays": {
-    "title": "Cadastro de Feriados",
+    "title": "Feriados",
     "subtitle": "Gerencie feriados nacionais, estaduais e municipais",
     "searchPlaceholder": "Buscar feriado...",
     "types": {
       "all": "Todos os tipos",
       "national": "Nacional",
       "state": "Estadual",
-      "municipal": "Municipal"
+      "municipal": "Municipal",
+      "nacional": "Nacional",
+      "estadual": "Estadual"
     },
     "groups": {
       "national": "Feriados Nacionais",
@@ -2696,7 +2698,10 @@
       "deleteSuccess": "Feriado excluído com sucesso!",
       "deleteError": "Erro ao excluir feriado.",
       "saveSuccess": "Feriado salvo com sucesso!",
-      "saveError": "Erro ao salvar feriado."
+      "saveError": "Erro ao salvar feriado. Tente novamente.",
+      "loading": "Carregando...",
+      "confirmDeleteTitle": "Confirmar Exclusão",
+      "confirmDeleteMessage": "Tem certeza que deseja excluir este feriado? Esta ação não pode ser desfeita."
     },
     "form": {
       "name": "Nome do Feriado",
@@ -2704,11 +2709,47 @@
       "type": "Tipo (Nacional/Estadual/Municipal)",
       "isRecurring": "Feriado Recorrente (Anual)",
       "stateId": "Estado",
-      "cityId": "Cidade"
+      "cityId": "Cidade",
+      "newTitle": "Novo Feriado",
+      "editTitle": "Editar Feriado",
+      "nameLabel": "Nome do Feriado *",
+      "namePlaceholder": "Ex: Dia da Padroeira",
+      "dateLabel": "Data *",
+      "typeLabel": "Tipo *",
+      "recurringLabel": "Feriado recorrente (repete todo ano)",
+      "countryLabel": "País *",
+      "stateLabel": "Estado *",
+      "cityLabel": "Cidade *",
+      "selectPlaceholder": "Selecione...",
+      "stateRequired": "Selecione um estado primeiro",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando...",
+      "validations": {
+        "nameRequired": "Nome do feriado é obrigatório",
+        "dateRequired": "Data é obrigatória",
+        "countryRequired": "País é obrigatório",
+        "stateRequiredForStateMsg": "Estado é obrigatório para feriados estaduais",
+        "cityRequiredForCityMsg": "Cidade é obrigatória para feriados municipais"
+      }
     },
     "deleteConfirm": {
       "title": "Confirmar Exclusão",
       "message": "Tem certeza que deseja excluir este feriado?"
+    },
+    "breadcrumb": "Configurações",
+    "boards": {
+      "nacional": "Feriados Nacionais",
+      "estadual": "Feriados Estaduais",
+      "municipal": "Feriados Municipais"
+    },
+    "emptyStates": {
+      "nacional": "Nenhum feriado nacional cadastrado",
+      "estadual": "Nenhum feriado estadual cadastrado",
+      "municipal": "Nenhum feriado municipal cadastrado"
+    },
+    "card": {
+      "recurring": "Recorrente"
     }
   },
   "licenses": {
@@ -3688,6 +3729,658 @@
       "mainDescHasNot": "O usuário não possui um estabelecimento padrão configurado.",
       "summaryPermitted": "unidade(s) permitida(s)",
       "summaryTotal": "unidades totais cadastradas"
+    }
+  },
+  "occurrences": {
+    "title": "Históricos de Ocorrências",
+    "subtitle": "Gerencie os códigos de ocorrências para integração EDI",
+    "newButton": "Nova Ocorrência",
+    "breadcrumb": "Logística Reversa",
+    "stats": {
+      "total": "Total de Ocorrências",
+      "deliveries": "Ocorrências de Entrega",
+      "problems": "Ocorrências de Problema"
+    },
+    "searchPlaceholder": "Buscar por código ou descrição...",
+    "export": "Exportar",
+    "summary": "Total: {{total}} ocorrências",
+    "page": "Página {{current}} de {{total}}",
+    "emptyTitle": "Nenhuma ocorrência encontrada",
+    "emptyDesc": "Tente ajustar os filtros ou cadastrar uma nova ocorrência.",
+    "about": {
+      "title": "Sobre Históricos de Ocorrências",
+      "desc": "Os códigos de ocorrência são utilizados para padronizar a comunicação com transportadores via EDI (OCOREN 5.0). Cada código representa um tipo de evento que pode ocorrer durante o processo de entrega.",
+      "patternTitle": "Padrão OCOREN",
+      "patternDesc": "Compatível com EDI OCOREN 5.0",
+      "trackingTitle": "Rastreamento",
+      "trackingDesc": "Integração com rastreamento",
+      "standardTitle": "Códigos Padrão",
+      "standardDesc": "Pré-configurados para uso imediato",
+      "customTitle": "Personalização",
+      "customDesc": "Adicione códigos específicos"
+    },
+    "card": {
+      "problem": "Problema",
+      "delivery": "Entrega",
+      "view": "Visualizar",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "code": "Código",
+      "type": "Tipo"
+    },
+    "form": {
+      "back": "Voltar para Históricos de Ocorrências",
+      "titleNew": "Nova Ocorrência",
+      "titleEdit": "Editar Ocorrência",
+      "subtitle": "Preencha os dados da ocorrência",
+      "infoTitle": "Informações da Ocorrência",
+      "codeLabel": "Código da Ocorrência *",
+      "codePlaceholder": "001",
+      "descLabel": "Descrição da Ocorrência *",
+      "descPlaceholder": "Digite a descrição da ocorrência",
+      "descCharCount": "Máximo de 100 caracteres. Restantes: {{count}}",
+      "codeRequired": "Código é obrigatório",
+      "codeInvalid": "Código deve ter exatamente 3 dígitos numéricos (ex: 001)",
+      "codeExists": "Este código já está sendo usado por outra ocorrência",
+      "descRequired": "Por favor, informe a descrição da ocorrência.",
+      "descLength": "A descrição deve ter no máximo 100 caracteres.",
+      "aboutCodesTitle": "Sobre Códigos de Ocorrência",
+      "aboutCodesDesc": "Os códigos de ocorrência são utilizados para padronizar a comunicação com transportadores via EDI (OCOREN 5.0). Cada código representa um tipo de evento que pode ocorrer durante o processo de entrega.",
+      "codesDeliveryTitle": "Códigos 001-049",
+      "codesDeliveryDesc": "Ocorrências relacionadas a entregas",
+      "codesProblemTitle": "Códigos 050-099",
+      "codesProblemDesc": "Ocorrências relacionadas a problemas",
+      "cancel": "Cancelar",
+      "save": "Salvar Ocorrência",
+      "update": "Atualizar Ocorrência",
+      "sequentialTitle": "Código Sequencial",
+      "sequentialDescNew": "Os códigos são gerados automaticamente em sequência numérica começando em 001. Clique no ícone # para gerar o próximo código disponível.",
+      "sequentialDescEdit": "Os códigos são gerados automaticamente em sequência numérica começando em 001. O código não pode ser alterado após o cadastro."
+    },
+    "view": {
+      "back": "Voltar para Históricos de Ocorrências",
+      "title": "Visualizar Ocorrência",
+      "subtitle": "Detalhes do código de ocorrência EDI",
+      "edit": "Editar",
+      "descTitle": "Descrição Completa",
+      "ediTitle": "Informações para EDI",
+      "ediCode": "Código para EDI OCOREN",
+      "ediFormat": "Formato no Arquivo",
+      "auditTitle": "Informações de Auditoria",
+      "createdAt": "Data de Criação",
+      "createdBy": "Criado por",
+      "updatedAt": "Data da última alteração",
+      "updatedBy": "Última alteração por",
+      "userPrefix": "Usuário #{{id}}",
+      "usageTitle": "Utilização no Sistema",
+      "usageDesc": "Este código de ocorrência é utilizado para interpretar arquivos EDI OCOREN 5.0 recebidos dos transportadores. Quando um transportador envia uma atualização de status via EDI, o sistema utiliza este cadastro para identificar e processar corretamente a ocorrência.",
+      "integrationTitle": "Integração EDI",
+      "integrationDesc": "Utilizado na leitura de arquivos OCOREN",
+      "trackingTitle": "Rastreamento",
+      "trackingDesc": "Exibido no histórico de entregas",
+      "problem": "Problema",
+      "delivery": "Entrega",
+      "codeLabel": "Código",
+      "typeLabel": "Tipo"
+    },
+    "messages": {
+      "loadError": "Erro ao carregar ocorrências.",
+      "deleteSuccess": "Histórico de ocorrência excluído com sucesso!",
+      "deleteError": "Erro ao excluir histórico de ocorrência.",
+      "updateSuccess": "Histórico de ocorrência atualizado com sucesso!",
+      "updateError": "Erro ao atualizar histórico de ocorrência.",
+      "createSuccess": "Histórico de ocorrência criado com sucesso!",
+      "saveError": "Erro ao salvar histórico de ocorrência. Tente novamente.",
+      "confirmDeleteTitle": "Confirmar Exclusão",
+      "confirmDeleteMessage": "Tem certeza que deseja excluir este histórico de ocorrência? Esta ação não pode ser desfeita.",
+      "confirmDeleteBtn": "Excluir",
+      "cancelBtn": "Cancelar",
+      "pagination": "Mostrando {{start}} a {{end}} de {{total}} ocorrências",
+      "prev": "Anterior",
+      "next": "Próximo"
+    }
+  },
+  "rejectionReasons": {
+    "breadcrumb": "Configurações",
+    "title": "Motivos de Rejeições de Documentos",
+    "subtitle": "Gerencie os motivos de rejeição para conferência eletrônica de documentos",
+    "newReasonBtn": "Novo Motivo",
+    "stats": {
+      "total": "Total de Motivos",
+      "active": "Motivos Ativos",
+      "inactive": "Motivos Inativos",
+      "distribution": "Distribuição por Categoria"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar por código, categoria ou descrição...",
+      "statusAll": "Todos os Status",
+      "statusActive": "Somente Ativos",
+      "statusInactive": "Somente Inativos",
+      "exportBtn": "Exportar"
+    },
+    "pagination": {
+      "total": "Total: {{count}} motivos",
+      "page": "Página {{current}} de {{total}}",
+      "showing": "Mostrando {{start}} a {{end}} de {{total}} motivos",
+      "prev": "Anterior",
+      "next": "Próximo"
+    },
+    "emptyState": {
+      "title": "Nenhum motivo de rejeição encontrado",
+      "description": "Tente ajustar os filtros ou cadastrar um novo motivo de rejeição."
+    },
+    "infoBox": {
+      "title": "Sobre Motivos de Rejeição",
+      "description1": "Os motivos de rejeição são utilizados para padronizar o processo de conferência eletrônica de documentos fiscais.",
+      "description2": "Quando uma inconsistência é identificada, o sistema associa um motivo padronizado de rejeição ao documento.",
+      "description3": "Este motivo de rejeição é utilizado no processo de conferência eletrônica de documentos fiscais. Quando uma inconsistência é identificada, o sistema associa este motivo padronizado ao documento, facilitando a comunicação com o transportador e a geração de relatórios.",
+      "features": {
+        "audit": {
+          "title": "Auditoria Automática",
+          "desc": "Validação de CT-es e Faturas"
+        },
+        "conciliation": {
+          "title": "Conciliação",
+          "desc": "Processo de conciliação de fretes"
+        },
+        "notifications": {
+          "title": "Notificações",
+          "desc": "Alertas para transportadores"
+        },
+        "categorization": {
+          "title": "Categorização",
+          "desc": "Agrupamento por tipo de problema"
+        }
+      }
+    },
+    "messages": {
+      "loadError": "Erro ao carregar dados.",
+      "deleteSuccess": "Motivo de rejeição excluído com sucesso!",
+      "deleteError": "Erro ao excluir motivo de rejeição.",
+      "updateSuccess": "Motivo de rejeição atualizado com sucesso!",
+      "updateError": "Erro ao atualizar motivo de rejeição.",
+      "createSuccess": "Motivo de rejeição criado com sucesso!",
+      "saveError": "Erro ao salvar motivo de rejeição. Tente novamente.",
+      "confirmDeleteTitle": "Confirmar Exclusão",
+      "confirmDeleteMessage": "Tem certeza que deseja excluir este motivo de rejeição? Esta ação não pode ser desfeita.",
+      "deleteConfirmBtn": "Excluir",
+      "cancelBtn": "Cancelar"
+    },
+    "form": {
+      "backBtn": "Voltar para Motivos de Rejeições",
+      "newTitle": "Novo Motivo de Rejeição",
+      "editTitle": "Editar Motivo de Rejeição",
+      "subtitle": "Preencha os dados do motivo de rejeição de documentos",
+      "infoSection": {
+        "title": "Informações do Motivo"
+      },
+      "codeLabel": "Código do Motivo *",
+      "generateCodeTooltip": "Gerar próximo código",
+      "codeGuideTitle": "Código Sequencial",
+      "codeGuideNew": "Os códigos são gerados automaticamente em sequência numérica começando em 001. Clique no ícone # para gerar o próximo código disponível.",
+      "codeGuideEdit": "Os códigos são gerados automaticamente em sequência numérica começando em 001. O código não pode ser alterado após o cadastro.",
+      "categoryLabel": "Categoria da Inconsistência *",
+      "newCategoryPlaceholder": "Nova categoria",
+      "addBtn": "Adicionar",
+      "categoryGuideTitle": "Categorias",
+      "categoryGuideDesc": "As categorias ajudam a agrupar os motivos de rejeição por tipo de problema, facilitando a análise e geração de relatórios.",
+      "descriptionLabel": "Descrição da Rejeição *",
+      "descriptionPlaceholder": "Digite a descrição detalhada do motivo de rejeição",
+      "descriptionLimit": "Máximo de 200 caracteres. Restantes: {{count}}",
+      "activeLabel": "Ativo",
+      "activeDesc": "Motivos inativos não serão exibidos nas integrações e telas de validação.",
+      "cancelBtn": "Cancelar",
+      "saveBtn": "Salvar Motivo",
+      "updateBtn": "Atualizar Motivo",
+      "validations": {
+        "codeRequired": "Código é obrigatório",
+        "codeFormat": "Código deve ter exatamente 3 dígitos numéricos (ex: 001)",
+        "codeUnique": "Este código já está sendo usado por outro motivo de rejeição",
+        "newCategoryRequired": "Por favor, informe o nome da nova categoria.",
+        "descriptionRequired": "Por favor, informe a descrição do motivo de rejeição.",
+        "descriptionMaxLength": "A descrição deve ter no máximo 200 caracteres.",
+        "categoryRequired": "Por favor, selecione ou informe uma categoria."
+      }
+    },
+    "view": {
+      "title": "Visualizar Motivo de Rejeição",
+      "subtitle": "Detalhes completos do motivo de rejeição",
+      "editBtn": "Editar",
+      "statusActive": "Ativo",
+      "statusInactive": "Inativo",
+      "codeLabel": "Código",
+      "statusLabel": "Status",
+      "categoryTitle": "Categoria",
+      "descriptionTitle": "Descrição Completa",
+      "auditTitle": "Informações de Auditoria",
+      "createdAt": "Data de Criação",
+      "createdBy": "Criado por",
+      "updatedAt": "Data da última alteração",
+      "updatedBy": "Última alteração por",
+      "userPrefix": "Usuário #{{id}}",
+      "usageTitle": "Utilização no Sistema"
+    },
+    "card": {
+      "viewTooltip": "Visualizar",
+      "editTooltip": "Editar",
+      "deleteTooltip": "Excluir",
+      "codePrefix": "Código:",
+      "statusPrefix": "Status:",
+      "statusActive": "Ativo",
+      "statusInactive": "Inativo"
+    }
+  },
+  "implementationCenter": {
+    "title": "Centro de Implementação",
+    "description": "Importe dados e gerencie configurações em massa para acelerar a implementação",
+    "tabs": {
+      "deployAgent": "Deploy Agent IA",
+      "erpIntegration": "Integração ao ERP",
+      "carriers": "Transportadoras",
+      "freightTables": "Tabelas de Frete",
+      "cities": "Cidades",
+      "tableFees": "Taxas da Tabela",
+      "restrictedCeps": "CEPs Restritos",
+      "adjustTables": "Reajustar Tabelas"
+    },
+    "erpIntegration": {
+      "configTitle": "Configuração de Integração ERP",
+      "template": {
+        "title": "Template de Configuração",
+        "description": "Baixe o template ou importe configurações existentes",
+        "downloadBtn": "Template",
+        "importBtn": "Importar",
+        "processing": "Processando arquivo...",
+        "success": "Arquivo importado com sucesso!",
+        "successDesc": "{{count}} registro(s) processado(s). Os campos foram preenchidos automaticamente com os dados do primeiro registro."
+      },
+      "selectErp": "Selecione o ERP",
+      "selectErpPlaceholder": "Selecione um ERP...",
+      "connection": {
+        "title": "Configurações de Conexão",
+        "serviceLayerAddress": "Endereço do Service Layer",
+        "port": "Porta",
+        "username": "Usuário",
+        "password": "Senha",
+        "database": "Database"
+      },
+      "cte": {
+        "title": "Configurações de CT-e",
+        "integrationType": "Tipo de integração de CT-e",
+        "typeDraft": "Esboço",
+        "typeEntry": "Nota de Entrada",
+        "cteModel": "Modelo de CT-e",
+        "invoiceModel": "Modelo de Fatura"
+      },
+      "billing": {
+        "title": "Configurações de Faturamento",
+        "nfeItem": "Item da NF-e de Faturamento",
+        "usage": "Utilização de Faturamento",
+        "controlAccount": "Conta Controle de Faturamento"
+      },
+      "invoice": {
+        "title": "Configurações de Notas Fiscais",
+        "outboundItem": "Item da Nota Fiscal de Saída gerada a partir de CT-e",
+        "cteWithoutNfItem": "Item para CT-e sem Nota Fiscal",
+        "cteUsage": "Utilização de CT-e",
+        "inboundControlAccount": "Conta Controle para emissão de Nota Fiscal de Entrada",
+        "transitoryAccount": "Conta Transitória para fechamento de Invoice"
+      },
+      "additional": {
+        "title": "Configurações Adicionais",
+        "nfeXmlAddress": "Endereço de rede dos XMLs da NF-e",
+        "fiscalModule": "Módulo Fiscal"
+      },
+      "saveBtn": "Salvar Configurações",
+      "saving": "Salvando...",
+      "importConfig": {
+        "title": "Importação de Configurações",
+        "clickUpload": "Clique para fazer upload",
+        "dragDrop": "ou arraste e solte",
+        "fileType": "Arquivo Excel (.xlsx)"
+      }
+    },
+    "imports": {
+      "templateExcel": "Template Excel",
+      "downloadTemplate": "Baixar Template",
+      "dragDrop": "Arraste o arquivo Excel aqui ou clique para selecionar",
+      "acceptedFormats": "Formatos aceitos: .xlsx, .xls",
+      "selectFile": "Selecionar Arquivo",
+      "processing": "Processando importação...",
+      "recordsProcessed": "Registros processados: {{count}}",
+      "errorsFound": "Erros encontrados:",
+      "carriers": {
+        "title": "Importar Transportadoras",
+        "description": "Importe cadastros de transportadoras em massa através de arquivo Excel",
+        "templateName": "template_transportadoras.xlsx"
+      },
+      "freight": {
+        "title": "Importar Tabelas de Frete",
+        "description": "Importe tabelas de frete com faixas de valores por transportadora",
+        "templateName": "template_tabelas_frete.xlsx"
+      },
+      "cities": {
+        "title": "Importar Cidades da Tabela",
+        "description": "Importe cadastro de cidades vinculadas às tabelas de frete",
+        "templateName": "template_cidades.xlsx"
+      },
+      "fees": {
+        "title": "Importar Taxas da Tabela",
+        "description": "Faça upload do arquivo Excel com as taxas (pedágio, coleta/entrega, etc.) das tabelas de frete.",
+        "templateName": "template_taxas_tabela.xlsx"
+      },
+      "restrictedCeps": {
+        "title": "Importar CEPs Restritos",
+        "description": "Faça upload do arquivo Excel com a listagem de CEPs restritos por transportadora.",
+        "templateName": "template_ceps_restritos.xlsx"
+      }
+    },
+    "adjustment": {
+      "infoTitle": "Reajuste de Tabelas de Frete",
+      "infoDesc": "Aplique reajustes em massa nas tabelas de frete ativas. Escolha entre aplicação de percentual ou inserção manual de valores.",
+      "configTitle": "Configuração do Reajuste",
+      "type": "Tipo de Reajuste",
+      "typePercentage": "Aplicar Percentual",
+      "typeManual": "Inserção Manual de Valores",
+      "percentageLabel": "Percentual de Reajuste (%)",
+      "percentagePlaceholder": "Ex: 5.5 (aumento) ou -3.2 (redução)",
+      "percentageHint": "Use valores positivos para aumento e negativos para redução",
+      "manualLabel": "Arquivo Excel com Novos Valores",
+      "manualUploadDesc": "Clique para fazer upload ou arraste o arquivo aqui",
+      "manualUploadHint": "Apenas arquivos Excel (.xlsx, .xls)",
+      "downloadManualTemplate": "Baixar Template para Novos Valores",
+      "tablesToAdjust": "Tabelas a Reajustar",
+      "allTables": "Todas as Tabelas Ativas",
+      "submitBtn": "Aplicar Reajuste",
+      "submitting": "Processando Reajuste...",
+      "instructions": {
+        "title": "Instruções",
+        "percentageTitle": "Reajuste por Percentual:",
+        "percentage1": "Digite o percentual desejado (ex: 5.5 para aumento de 5,5%)",
+        "percentage2": "Use valores negativos para redução (ex: -3.2 para redução de 3,2%)",
+        "percentage3": "O reajuste será aplicado a todos os valores da tabela",
+        "percentage4": "Valores serão arredondados para 2 casas decimais",
+        "manualTitle": "Inserção Manual:",
+        "manual1": "Baixe o template com a estrutura atual",
+        "manual2": "Preencha os novos valores desejados",
+        "manual3": "Faça upload do arquivo preenchido",
+        "manual4": "Valores em branco manterão o valor atual"
+      }
+    },
+    "instructions": {
+      "title": "Instruções de Uso",
+      "step1": "1. Baixe o template Excel correspondente ao tipo de dados que deseja importar",
+      "step2": "2. Preencha o arquivo seguindo exatamente o layout fornecido",
+      "step3": "3. Faça o upload do arquivo preenchido",
+      "step4": "4. Aguarde o processamento e verifique os resultados",
+      "step5": "5. Corrija eventuais erros e reimporte se necessário"
+    },
+    "messages": {
+      "templateError": "Erro ao gerar template: {{error}}. Verifique se todos os dados estão corretos.",
+      "unsupportedTemplate": "Tipo de template não suportado",
+      "unsupportedImport": "Tipo de importação não suportado",
+      "processError": "Erro ao processar arquivo",
+      "adjustError": "Erro ao aplicar reajuste",
+      "saveSuccess": "Configurações de ERP salvas com sucesso!",
+      "saveError": "Erro ao salvar configurações de ERP",
+      "importSuccessAlert": "Template importado com sucesso! {{count}} registro(s) processado(s).",
+      "importErrorAlert": "Erro ao processar arquivo: {{error}}"
+    },
+    "deployAgent": {
+      "title": "Deploy Agent",
+      "description": "Implantação automatizada com Inteligência Artificial",
+      "subDescription": "Envie seus dados e deixe a IA configurar automaticamente todo o sistema",
+      "newProjectBtn": "Novo Projeto",
+      "features": {
+        "uploadTitle": "Upload Inteligente",
+        "uploadDesc": "Envie planilhas e arquivos, a IA identifica automaticamente o tipo de dados",
+        "aiTitle": "Interpretação IA",
+        "aiDesc": "OpenAI analisa, valida e mapeia os campos automaticamente",
+        "executeTitle": "Auto-Execução",
+        "executeDesc": "Parametrização automática de cadastros, tabelas e integrações",
+        "monitorTitle": "Monitoramento",
+        "monitorDesc": "Dashboard com status, erros e sugestões de melhoria em tempo real"
+      },
+      "projectsTitle": "Projetos de Implantação",
+      "loadingProjects": "Carregando projetos...",
+      "noProjects": "Nenhum projeto criado ainda",
+      "createFirstProjectBtn": "Criar Primeiro Projeto",
+      "clientPrefix": "Cliente: ",
+      "startedAt": "Iniciado: ",
+      "progressPrefix": "Progresso: ",
+      "completedAt": "Concluído: ",
+      "viewDetails": "Ver detalhes",
+      "deleteProjectTitle": "Excluir projeto",
+      "statuses": {
+        "pending": "Pendente",
+        "collecting": "Coletando",
+        "interpreting": "Interpretando",
+        "executing": "Executando",
+        "completed": "Concluído",
+        "failed": "Falha"
+      },
+      "newProjectModal": {
+        "title": "Novo Projeto de Implantação",
+        "projectName": "Nome do Projeto *",
+        "projectNamePlaceholder": "Ex: Implantação Cliente ABC",
+        "clientName": "Nome do Cliente *",
+        "clientNamePlaceholder": "Ex: Empresa XYZ Ltda",
+        "autoExecute": "Executar automaticamente após interpretação",
+        "requireApproval": "Requerer aprovação antes de executar",
+        "cancelBtn": "Cancelar",
+        "createBtn": "Criar Projeto"
+      },
+      "deleteConfirm": {
+        "title": "Tem certeza que deseja excluir o projeto?",
+        "message": "Projeto: \"{{name}}\"\n\nEsta ação não pode ser desfeita.",
+        "confirmBtn": "OK",
+        "cancelBtn": "Cancelar"
+      },
+      "dashboard": {
+        "backBtn": "Voltar para Projetos",
+        "uploadBtn": "Enviar Arquivos",
+        "stats": {
+          "progress": "Progresso",
+          "steps": "{{completed}} de {{total}} etapas",
+          "errors": "Erros",
+          "errorsDesc": "Requerem atenção",
+          "warnings": "Avisos",
+          "warningsDesc": "Para revisão",
+          "suggestions": "Sugestões",
+          "suggestionsDesc": "Melhorias possíveis"
+        },
+        "generalProgress": "Progresso Geral",
+        "implementation": "Implantação",
+        "steps": {
+          "collection": "Coleta",
+          "interpretation": "Interpretação",
+          "execution": "Execução",
+          "completed": "Concluído"
+        },
+        "uploads": {
+          "title": "Arquivos Enviados",
+          "noUploads": "Nenhum arquivo enviado ainda",
+          "executeBtn": "Efetivar Importação",
+          "statuses": {
+            "executed": "Importado (100%)",
+            "validated": "Aguardando Importação"
+          }
+        },
+        "validations": {
+          "title": "Validações",
+          "noValidations": "Nenhuma validação registrada",
+          "fieldPrefix": "Campo: "
+        },
+        "suggestions": {
+          "title": "Sugestões de Melhoria",
+          "noSuggestions": "Nenhuma sugestão disponível",
+          "approveBtn": "Aprovar"
+        }
+      },
+      "uploader": {
+        "title": "Enviar Arquivo",
+        "description": "A IA irá interpretar e configurar automaticamente",
+        "dataType": "Tipo de Dados *",
+        "categories": {
+          "erpIntegration": "Integração ao ERP",
+          "carriers": "Transportadoras",
+          "freightTables": "Tabelas de Fretes",
+          "cities": "Cidades",
+          "fees": "Taxas da Tabela",
+          "restrictedZips": "CEPs Restritos",
+          "tableAdjustments": "Reajustar Tabela"
+        },
+        "fileLabel": "Arquivo *",
+        "dropzoneClick": "Clique para selecionar ou arraste o arquivo",
+        "dropzoneFormats": "Formatos: XLSX, XLS, CSV, TXT",
+        "statusMessages": {
+          "idle": "Enviando arquivo...",
+          "success": "Arquivo enviado com sucesso!",
+          "processing": "Processando com IA...",
+          "completed": "Processamento concluído!"
+        },
+        "howItWorks": {
+          "title": "Como funciona?",
+          "item1": "A IA identifica a estrutura dos dados automaticamente",
+          "item2": "Valida campos obrigatórios e formatos",
+          "item3": "Mapeia os campos para o banco de dados",
+          "item4": "Detecta erros e sugere melhorias",
+          "item5": "Configura os cadastros automaticamente",
+          "devMode": "Modo Desenvolvimento:",
+          "devModeDesc": "Se OpenAI não estiver configurada, usa interpretação mock para demonstração."
+        },
+        "cancelBtn": "Cancelar",
+        "sendBtn": "Enviar e Processar",
+        "sendingBtn": "Enviando...",
+        "processingBtn": "Processando..."
+      },
+      "messages": {
+        "loadError": "Erro ao carregar projetos",
+        "fillRequired": "Preencha todos os campos obrigatórios",
+        "createSuccess": "Projeto criado com sucesso!",
+        "deleteSuccess": "Projeto excluído com sucesso!",
+        "approveSuggestionError": "Erro ao aprovar sugestão",
+        "executeUploadSuccess": "Arquivo processado e importado com sucesso!",
+        "executeUploadError": "Erro ao executar importação",
+        "uploadValidationMissing": "Selecione uma categoria e um arquivo"
+      }
+    }
+  },
+  "changeLog": {
+    "title": "Log de Modificações",
+    "subtitle": "Histórico detalhado de todas as alterações no sistema",
+    "stats": {
+      "total": "Total de Logs",
+      "creates": "Criações",
+      "updates": "Edições",
+      "deletes": "Exclusões"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar nos logs...",
+      "allEntities": "Todas as Entidades",
+      "allActions": "Todas as Ações",
+      "actions": {
+        "CREATE": "Criação",
+        "UPDATE": "Edição",
+        "DELETE": "Exclusão"
+      },
+      "entities": {
+        "establishment": "Estabelecimento",
+        "user": "Usuário",
+        "businessPartner": "Parceiro de Negócio",
+        "carrier": "Transportadora",
+        "city": "Cidade",
+        "state": "Estado",
+        "country": "País",
+        "freightRate": "Tabela de Frete",
+        "invoice": "Nota Fiscal",
+        "cte": "CT-e",
+        "order": "Pedido",
+        "pickup": "Coleta",
+        "reverseLogistics": "Logística Reversa"
+      },
+      "exportCsv": "Exportar CSV"
+    },
+    "table": {
+      "action": "Ação",
+      "entity": "Entidade",
+      "field": "Campo",
+      "oldValue": "Valor Anterior",
+      "newValue": "Novo Valor",
+      "user": "Usuário",
+      "dateTime": "Data/Hora",
+      "loading": "Carregando logs...",
+      "noLogs": "Nenhum log encontrado"
+    },
+    "pagination": {
+      "showing": "Mostrando",
+      "to": "a",
+      "of": "de",
+      "logs": "logs"
+    },
+    "infoBox": {
+      "title": "Sobre o Log de Modificações",
+      "desc": "Este sistema registra automaticamente todas as alterações realizadas no sistema, fornecendo um histórico completo e auditável de todas as operações.",
+      "items": {
+        "traceability": {
+          "title": "Rastreabilidade",
+          "desc": "Auditoria completa de ações"
+        },
+        "user": {
+          "title": "Usuário",
+          "desc": "Identificação de responsável"
+        },
+        "history": {
+          "title": "Histórico",
+          "desc": "Valores antes e depois"
+        },
+        "export": {
+          "title": "Exportação",
+          "desc": "Relatórios em CSV"
+        }
+      }
+    },
+    "fields": {
+      "razaoSocial": "Razão Social",
+      "fantasia": "Nome Fantasia",
+      "cnpj": "CNPJ",
+      "inscricaoEstadual": "Inscrição Estadual",
+      "inscricaoMunicipal": "Inscrição Municipal",
+      "endereco": "Endereço",
+      "numero": "Número",
+      "complemento": "Complemento",
+      "bairro": "Bairro",
+      "cidade": "Cidade",
+      "estado": "Estado",
+      "cep": "CEP",
+      "telefone": "Telefone",
+      "email": "Email",
+      "responsavel": "Responsável",
+      "nome": "Nome",
+      "cpf": "CPF",
+      "cargo": "Cargo",
+      "departamento": "Departamento",
+      "perfil": "Perfil",
+      "status": "Status",
+      "name": "Nome",
+      "document": "Documento",
+      "document_type": "Tipo de Documento",
+      "phone": "Telefone",
+      "type": "Tipo",
+      "website": "Website",
+      "tax_regime": "Regime Tributário",
+      "credit_limit": "Limite de Crédito",
+      "payment_terms": "Prazo de Pagamento",
+      "abbreviation": "Sigla",
+      "capital": "Capital",
+      "region": "Região",
+      "ibge_code": "Código IBGE",
+      "codigo": "Código",
+      "descricao": "Descrição",
+      "observacoes": "Observações",
+      "observations": "Observações",
+      "ativo": "Ativo",
+      "active": "Ativo"
     }
   }
 }

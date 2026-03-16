@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Calendar, Trash2, Edit2, Filter } from 'lucide-react';
+import { Search, Plus, Trash2, Edit2 } from 'lucide-react';
 import { holidaysService, Holiday } from '../../services/holidaysService';
 import { HolidayForm } from './HolidayForm';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useTranslation } from 'react-i18next';
 
 export const Holidays: React.FC = () => {
+  const { t } = useTranslation();
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Feriados', current: true }
+    { label: t('holidays.breadcrumb') },
+    { label: t('holidays.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +34,7 @@ export const Holidays: React.FC = () => {
       const data = await holidaysService.getByYear(selectedYear);
       setHolidaysList(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar feriados.', type: 'error' });
+      setToast({ message: t('holidays.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -68,10 +70,10 @@ export const Holidays: React.FC = () => {
     if (confirmDialog.holidayId) {
       try {
         await holidaysService.delete(confirmDialog.holidayId);
-        setToast({ message: 'Feriado excluído com sucesso!', type: 'success' });
+        setToast({ message: t('holidays.messages.deleteSuccess'), type: 'success' });
         await loadHolidays();
       } catch (error) {
-        setToast({ message: 'Erro ao excluir feriado.', type: 'error' });
+        setToast({ message: t('holidays.messages.deleteError'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -81,7 +83,7 @@ export const Holidays: React.FC = () => {
     setShowForm(false);
     setEditingHoliday(null);
     await loadHolidays();
-    setToast({ message: 'Feriado salvo com sucesso!', type: 'success' });
+    setToast({ message: t('holidays.messages.saveSuccess'), type: 'success' });
   };
 
   const formatDate = (dateStr: string) => {
@@ -89,31 +91,13 @@ export const Holidays: React.FC = () => {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const getTypeLabel = (type: string) => {
-    const labels = {
-      nacional: 'Nacional',
-      estadual: 'Estadual',
-      municipal: 'Municipal'
-    };
-    return labels[type as keyof typeof labels] || type;
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors = {
-      nacional: 'bg-blue-100 text-blue-800',
-      estadual: 'bg-green-100 text-green-800',
-      municipal: 'bg-orange-100 text-orange-800'
-    };
-    return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
   return (
     <div className="p-6">
       <Breadcrumbs items={breadcrumbItems} />
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Cadastro de Feriados</h1>
-        <p className="text-gray-600 dark:text-gray-400">Gerencie feriados nacionais, estaduais e municipais</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('holidays.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('holidays.subtitle')}</p>
       </div>
 
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -121,7 +105,7 @@ export const Holidays: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Buscar feriado..."
+            placeholder={t('holidays.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -144,10 +128,10 @@ export const Holidays: React.FC = () => {
           onChange={(e) => setSelectedType(e.target.value as any)}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
-          <option value="all">Todos os tipos</option>
-          <option value="nacional">Nacional</option>
-          <option value="estadual">Estadual</option>
-          <option value="municipal">Municipal</option>
+          <option value="all">{t('holidays.types.all')}</option>
+          <option value="nacional">{t('holidays.types.nacional')}</option>
+          <option value="estadual">{t('holidays.types.estadual')}</option>
+          <option value="municipal">{t('holidays.types.municipal')}</option>
         </select>
       </div>
 
@@ -155,7 +139,7 @@ export const Holidays: React.FC = () => {
         {/* Feriados Nacionais */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Feriados Nacionais</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">{t('holidays.boards.nacional')}</h2>
             <button
               onClick={() => handleNewHoliday('nacional')}
               className="p-1 text-blue-600 hover:bg-blue-50 rounded"
@@ -165,9 +149,9 @@ export const Holidays: React.FC = () => {
           </div>
           <div className="p-4 space-y-2 max-h-[600px] overflow-y-auto">
             {isLoading ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Carregando...</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">{t('holidays.messages.loading')}</p>
             ) : groupedHolidays.nacional.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Nenhum feriado nacional cadastrado</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">{t('holidays.emptyStates.nacional')}</p>
             ) : (
               groupedHolidays.nacional.map(holiday => (
                 <div key={holiday.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:bg-gray-900">
@@ -193,7 +177,7 @@ export const Holidays: React.FC = () => {
                   </div>
                   {holiday.is_recurring && (
                     <span className="inline-block px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
-                      Recorrente
+                      {t('holidays.card.recurring')}
                     </span>
                   )}
                 </div>
@@ -205,7 +189,7 @@ export const Holidays: React.FC = () => {
         {/* Feriados Estaduais */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Feriados Estaduais</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">{t('holidays.boards.estadual')}</h2>
             <button
               onClick={() => handleNewHoliday('estadual')}
               className="p-1 text-green-600 hover:bg-green-50 rounded"
@@ -215,9 +199,9 @@ export const Holidays: React.FC = () => {
           </div>
           <div className="p-4 space-y-2 max-h-[600px] overflow-y-auto">
             {isLoading ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Carregando...</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">{t('holidays.messages.loading')}</p>
             ) : groupedHolidays.estadual.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Nenhum feriado estadual cadastrado</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">{t('holidays.emptyStates.estadual')}</p>
             ) : (
               groupedHolidays.estadual.map(holiday => (
                 <div key={holiday.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:bg-gray-900">
@@ -243,7 +227,7 @@ export const Holidays: React.FC = () => {
                   </div>
                   {holiday.is_recurring && (
                     <span className="inline-block px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded">
-                      Recorrente
+                      {t('holidays.card.recurring')}
                     </span>
                   )}
                 </div>
@@ -255,7 +239,7 @@ export const Holidays: React.FC = () => {
         {/* Feriados Municipais */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Feriados Municipais</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">{t('holidays.boards.municipal')}</h2>
             <button
               onClick={() => handleNewHoliday('municipal')}
               className="p-1 text-orange-600 hover:bg-orange-50 rounded"
@@ -265,9 +249,9 @@ export const Holidays: React.FC = () => {
           </div>
           <div className="p-4 space-y-2 max-h-[600px] overflow-y-auto">
             {isLoading ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Carregando...</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">{t('holidays.messages.loading')}</p>
             ) : groupedHolidays.municipal.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Nenhum feriado municipal cadastrado</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">{t('holidays.emptyStates.municipal')}</p>
             ) : (
               groupedHolidays.municipal.map(holiday => (
                 <div key={holiday.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:bg-gray-900">
@@ -293,7 +277,7 @@ export const Holidays: React.FC = () => {
                   </div>
                   {holiday.is_recurring && (
                     <span className="inline-block px-2 py-0.5 text-xs bg-orange-100 text-orange-800 rounded">
-                      Recorrente
+                      {t('holidays.card.recurring')}
                     </span>
                   )}
                 </div>
@@ -325,8 +309,8 @@ export const Holidays: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir este feriado? Esta ação não pode ser desfeita."
+          title={t('holidays.messages.confirmDeleteTitle')}
+          message={t('holidays.messages.confirmDeleteMessage')}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}
         />

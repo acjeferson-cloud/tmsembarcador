@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Calendar, Package, ShoppingCart } from 'lucide-react';
+import { Plus, FileText, CheckCircle, XCircle, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 import { OrdersFilters } from './OrdersFilters';
 import { OrdersTable } from './OrdersTable';
 import { OrdersActions } from './OrdersActions';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { OrderForm } from './OrderForm';
+import { orderPdfService } from '../../services/orderPdfService';
 import { ordersService } from '../../services/ordersService';
 import { useAuth } from '../../hooks/useAuth';
+import { freightQuoteService } from '../../services/freightQuoteService';
 
 interface Order {
   id: number;
@@ -23,6 +25,8 @@ interface Order {
   ufDestino: string;
   valorPedido: number;
   chaveAcesso: string;
+  serie?: string;
+  trackingCode?: string;
 }
 
 
@@ -77,7 +81,10 @@ export const Orders: React.FC = () => {
         cidadeDestino: order.destination_city,
         ufDestino: order.destination_state,
         valorPedido: order.order_value,
-        chaveAcesso: order.tracking_code || ''
+        chaveAcesso: order.tracking_code || '',
+        serie: order.serie || '',
+        trackingCode: order.tracking_code || '',
+        freight_results: order.freight_results || []
       }));
       setOrders(mappedData as any);
       setFilteredOrders(mappedData as any);
@@ -213,7 +220,7 @@ export const Orders: React.FC = () => {
     return { canEdit: true };
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedOrders.length === 0) {
       alert('Por favor, selecione pelo menos um pedido para realizar esta ação.');
       return;
@@ -221,54 +228,214 @@ export const Orders: React.FC = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
+    if (action === 'recalculate') {
+       try {
+           let successCount = 0;
+           for (const orderId of selectedOrders) {
+               const orderData = await ordersService.getById(orderId.toString());
+               if (!orderData || !orderData.id) continue;
+               
+               const weight = Number(orderData.weight) || 0;
+               const volume_qty = Number(orderData.volume_qty) || 1;
+               const cubic_meters = Number(orderData.cubic_meters) || 0;
+               const order_value = Number(orderData.order_value) || 0;
+               
+               if (weight === 0 || order_value === 0) continue;
+               
+               const destZipCode = orderData.destination_zip_code ? orderData.destination_zip_code.replace(/\D/g, '') : undefined;
+               
+               const results = await freightQuoteService.calculateQuote(
+                  {
+                     destinationZipCode: destZipCode,
+                     weight,
+                     volumeQty: volume_qty,
+                     cubicMeters: cubic_meters,
+                     cargoValue: order_value,
+                     selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'] 
+                  },
+                  user?.supabaseUser?.id,
+                  user?.name,
+                  user?.email
+               );
+
+               if (results && results.length > 0) {
+                   const bestCarrierId = results[0].carrierId;
+                   const finalFreightValue = results[0].totalValue;
+                   
+                   await ordersService.update(orderData.id, {
+                       freight_results: results,
+                       best_carrier_id: bestCarrierId,
+                       carrier_id: bestCarrierId,
+                       freight_value: finalFreightValue
+                   });
+                   successCount++;
+               }
+           }
+           if (successCount > 0) {
+               alert(`Custo de frete recalculado para ${successCount} pedido(s) com sucesso!`);
+               await loadOrders();
+           } else {
+               alert('Não foi possível recalcular. Verifique pesos e CEPs de destino.');
+           }
+        } catch (error) {
+            console.error('Erro ao recalcular em massa:', error);
+            alert('Erro ao recalcular custos de frete.');
+        }
+        setIsLoading(false);
+        setSelectedOrders([]);
+        return;
+    } else if (action === 'export-excel') {
+        // Assume fileExportService (if exists later) or just skip it since it wasn't requested for PDF
+        setIsLoading(false);
+        setSelectedOrders([]);
+        return;
+    } else if (action === 'export-pdf' || action === 'download' || action === 'print') {
+        try {
+            // Precisamos dos dados completos (Order interface completa com items/clientes etc)
+            const fullOrdersToPrint = await Promise.all(
+                selectedOrders.map(async (id) => {
+                    return await ordersService.getById(id.toString());
+                })
+            );
+            
+            // Remove nulls
+            const validOrders = fullOrdersToPrint.filter(o => !!(o && o.id));
+            
+            if (validOrders.length === 0) {
+                 alert('Não foi possível recuperar os dados completos dos pedidos selecionados.');
+                 setIsLoading(false);
+                 setSelectedOrders([]);
+                 return;
+            }
+
+            if (action === 'export-pdf' || action === 'download') {
+                orderPdfService.generateOrderPDF(validOrders as any[], 'download');
+            } else {
+                const pdfUrl = orderPdfService.generateOrderPDF(validOrders as any[], 'print');
+                const printWindow = window.open(pdfUrl, '_blank');
+                if (printWindow) {
+                    printWindow.onload = () => {
+                        printWindow.print();
+                    };
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao gerar PDF:', error);
+            alert('Erro ao processar impressão/download dos pedidos.');
+        }
+        
+        setIsLoading(false);
+        setSelectedOrders([]);
+        return;
+    }
+    
+    // Default mock response for unmapped actions
     setTimeout(() => {
-      switch (action) {
-        case 'print':
-          alert(`Gerando impressão para ${selectedOrders.length} pedido(s) selecionado(s).`);
-          break;
-        case 'download':
-          alert(`Baixando ${selectedOrders.length} pedido(s) selecionado(s).`);
-          break;
-        default:
-          break;
-      }
-      
-      setIsLoading(false);
-      // Clear selection after action
-      setSelectedOrders([]);
-    }, 1000);
+        alert(`Ação "${action}" executada para ${selectedOrders.length} pedidos.`);
+        setIsLoading(false);
+        setSelectedOrders([]);
+    }, 500);
   };
 
-  const handleSingleAction = (orderId: number, action: string) => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+  const handleSingleAction = async (orderId: number, action: string) => {
+    if (action === 'recalculate') {
+       setIsLoading(true);
+       try {
+           const orderData = await ordersService.getById(orderId.toString());
+           if (!orderData || !orderData.id) throw new Error('Pedido não encontrado no banco');
+
+           const weight = Number(orderData.weight) || 0;
+           const volume_qty = Number(orderData.volume_qty) || 1;
+           const cubic_meters = Number(orderData.cubic_meters) || 0;
+           const order_value = Number(orderData.order_value) || 0;
+           
+           if (weight === 0 || order_value === 0) {
+               throw new Error('Pedido sem peso ou valor. Edite-o e preencha estes dados.');
+           }
+
+           const destZipCode = orderData.destination_zip_code ? orderData.destination_zip_code.replace(/\D/g, '') : undefined;
+
+           const results = await freightQuoteService.calculateQuote(
+              {
+                 destinationZipCode: destZipCode,
+                 weight,
+                 volumeQty: volume_qty,
+                 cubicMeters: cubic_meters,
+                 cargoValue: order_value,
+                 selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'] 
+              },
+              user?.supabaseUser?.id,
+              user?.name,
+              user?.email
+           );
+
+           if (results && results.length > 0) {
+               const bestCarrierId = results[0].carrierId;
+               const finalFreightValue = results[0].totalValue;
+               await ordersService.update(orderData.id, {
+                   freight_results: results,
+                   best_carrier_id: bestCarrierId,
+                   carrier_id: bestCarrierId,
+                   freight_value: finalFreightValue
+               });
+               alert('Frete recalculado com sucesso!');
+               await loadOrders();
+           } else {
+               alert('Nenhuma transportadora atende a esta cotação ou CEP não coberto.');
+           }
+       } catch (error: any) {
+           console.error(error);
+           alert(error.message || 'Erro ao recalcular frete.');
+       }
+       setIsLoading(false);
+       return;
+    }
+
+    // Para visualização de detalhes usamos o objeto do cache (grid) para não bloquear
+    if (action === 'view-details') {
       const order = orders.find(o => o.id === orderId);
-      
-      if (!order) {
-        setIsLoading(false);
-        return;
+      if (order) {
+        setSelectedOrder(order);
+        setShowDetailsModal(true);
       }
+      return;
+    }
+    
+    setIsLoading(true);
+
+    try {
+      // Para as demais ações, buscamos o objeto completo do banco (com Itens e Relacionamentos)
+      const cachedOrder = orders.find(o => o.id === orderId);
+      if (!cachedOrder) throw new Error('Pedido não encontrado na base de dados atual.');
+
+      let order: any = cachedOrder;
       
+      if (action === 'print' || action === 'download') {
+         const fullOrderData = await ordersService.getById(orderId.toString());
+         if (!fullOrderData) throw new Error('Falha ao obter detalhamento do pedido para geração do documento.');
+         order = fullOrderData;
+      }
+
       switch (action) {
-        case 'view-details':
-          setSelectedOrder(order);
-          setShowDetailsModal(true);
-          break;
         case 'print':
-          alert(`Gerando impressão para o pedido ${order.numero}.`);
+          const printUrl = orderPdfService.generateOrderPDF([order] as any, 'print');
+          const printWindow = window.open(printUrl, '_blank');
+          if (printWindow) {
+            printWindow.onload = () => printWindow.print();
+          }
           break;
         case 'download':
-          alert(`Baixando pedido ${order.numero}.`);
+          orderPdfService.generateOrderPDF([order] as any, 'download');
           break;
         default:
           break;
       }
-      
+    } catch (err: any) {
+      console.error('Erro na ação single:', err);
+      alert(`Erro ao processar: ${err.message || 'Erro desconhecido.'}`);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const refreshData = async () => {

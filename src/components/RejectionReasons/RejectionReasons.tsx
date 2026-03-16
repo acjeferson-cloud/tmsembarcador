@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Search, Plus, Download, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { rejectionReasonsService } from '../../services/rejectionReasonsService';
 import { RejectionReasonCard } from './RejectionReasonCard';
 import { RejectionReasonView } from './RejectionReasonView';
@@ -8,13 +8,15 @@ import { RejectionReasonForm } from './RejectionReasonForm';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 export const RejectionReasons: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Motivos de Rejeição', current: true }
+    { label: t('rejectionReasons.breadcrumb') },
+    { label: t('rejectionReasons.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +29,7 @@ export const RejectionReasons: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [reasonsList, setReasonsList] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(['Todas']);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -59,7 +61,7 @@ export const RejectionReasons: React.FC = () => {
       setStats(stats);
     } catch (error) {
 
-      setToast({ message: 'Erro ao carregar dados.', type: 'error' });
+      setToast({ message: t('rejectionReasons.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -107,10 +109,10 @@ export const RejectionReasons: React.FC = () => {
     if (confirmDialog.reasonId) {
       const success = await rejectionReasonsService.delete(confirmDialog.reasonId);
       if (success) {
-        setToast({ message: 'Motivo de rejeição excluído com sucesso!', type: 'success' });
+        setToast({ message: t('rejectionReasons.messages.deleteSuccess'), type: 'success' });
         await forceRefresh();
       } else {
-        setToast({ message: 'Erro ao excluir motivo de rejeição.', type: 'error' });
+        setToast({ message: t('rejectionReasons.messages.deleteError'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -123,16 +125,16 @@ export const RejectionReasons: React.FC = () => {
           ...reasonData
         });
         if (updated) {
-          setToast({ message: 'Motivo de rejeição atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('rejectionReasons.messages.updateSuccess'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao atualizar motivo de rejeição.', type: 'error' });
+          setToast({ message: t('rejectionReasons.messages.updateError'), type: 'error' });
           return;
         }
       } else {
         await rejectionReasonsService.create({
           ...reasonData
         });
-        setToast({ message: 'Motivo de rejeição criado com sucesso!', type: 'success' });
+        setToast({ message: t('rejectionReasons.messages.createSuccess'), type: 'success' });
       }
 
       setShowForm(false);
@@ -140,7 +142,7 @@ export const RejectionReasons: React.FC = () => {
       await forceRefresh();
     } catch (error) {
 
-      setToast({ message: 'Erro ao salvar motivo de rejeição. Tente novamente.', type: 'error' });
+      setToast({ message: t('rejectionReasons.messages.saveError'), type: 'error' });
     }
   };
 
@@ -158,7 +160,7 @@ export const RejectionReasons: React.FC = () => {
         reason.codigo,
         reason.categoria,
         `"${reason.descricao.replace(/"/g, '""')}"`, // Escape quotes for CSV
-        reason.ativo ? 'Ativo' : 'Inativo'
+        reason.ativo ? t('rejectionReasons.card.statusActive') : t('rejectionReasons.card.statusInactive')
       ].join(','))
     ].join('\n');
 
@@ -201,8 +203,8 @@ export const RejectionReasons: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Motivos de Rejeições de Documentos</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie os motivos de rejeição para conferência eletrônica de documentos</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('rejectionReasons.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('rejectionReasons.subtitle')}</p>
         </div>
         {isAdmin && (
           <button 
@@ -210,7 +212,7 @@ export const RejectionReasons: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Novo Motivo</span>
+            <span>{t('rejectionReasons.newReasonBtn')}</span>
           </button>
         )}
       </div>
@@ -220,7 +222,7 @@ export const RejectionReasons: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Motivos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('rejectionReasons.stats.total')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -232,7 +234,7 @@ export const RejectionReasons: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Motivos Ativos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('rejectionReasons.stats.active')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.active}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -244,7 +246,7 @@ export const RejectionReasons: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Motivos Inativos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('rejectionReasons.stats.inactive')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.inactive}</p>
             </div>
             <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -256,7 +258,7 @@ export const RejectionReasons: React.FC = () => {
 
       {/* Category Stats */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Distribuição por Categoria</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('rejectionReasons.stats.distribution')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(stats.byCategory).map(([category, count]) => (
             <div key={category} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
@@ -282,7 +284,7 @@ export const RejectionReasons: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por código, categoria ou descrição..."
+              placeholder={t('rejectionReasons.filters.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -306,9 +308,9 @@ export const RejectionReasons: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="Todos">Todos os Status</option>
-            <option value="Ativos">Somente Ativos</option>
-            <option value="Inativos">Somente Inativos</option>
+            <option value="Todos">{t('rejectionReasons.filters.statusAll')}</option>
+            <option value="Ativos">{t('rejectionReasons.filters.statusActive')}</option>
+            <option value="Inativos">{t('rejectionReasons.filters.statusInactive')}</option>
           </select>
           
           <button 
@@ -316,14 +318,14 @@ export const RejectionReasons: React.FC = () => {
             className="border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Download size={18} />
-            <span>Exportar</span>
+            <span>{t('rejectionReasons.filters.exportBtn')}</span>
           </button>
         </div>
 
         {/* Stats */}
         <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-          <span>Total: {filteredReasons.length} motivos</span>
-          <span>Página {currentPage} de {totalPages || 1}</span>
+          <span>{t('rejectionReasons.pagination.total', { count: filteredReasons.length })}</span>
+          <span>{t('rejectionReasons.pagination.page', { current: currentPage, total: totalPages || 1 })}</span>
         </div>
       </div>
 
@@ -346,7 +348,11 @@ export const RejectionReasons: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredReasons.length)} de {filteredReasons.length} motivos
+              {t('rejectionReasons.pagination.showing', {
+                start: startIndex + 1,
+                end: Math.min(startIndex + itemsPerPage, filteredReasons.length),
+                total: filteredReasons.length
+              })}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -354,7 +360,7 @@ export const RejectionReasons: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                {t('rejectionReasons.pagination.prev')}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -381,7 +387,7 @@ export const RejectionReasons: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                {t('rejectionReasons.pagination.next')}
               </button>
             </div>
           </div>
@@ -393,34 +399,33 @@ export const RejectionReasons: React.FC = () => {
           <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
             <AlertCircle size={48} />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum motivo de rejeição encontrado</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou cadastrar um novo motivo de rejeição.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('rejectionReasons.emptyState.title')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('rejectionReasons.emptyState.description')}</p>
         </div>
       )}
 
       {/* Information Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre Motivos de Rejeição</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('rejectionReasons.infoBox.title')}</h3>
         <p className="text-blue-800 mb-4">
-          Os motivos de rejeição são utilizados para padronizar o processo de conferência eletrônica de documentos fiscais.
-          Quando uma inconsistência é identificada, o sistema associa um motivo padronizado de rejeição ao documento.
+          {t('rejectionReasons.infoBox.description1')} {t('rejectionReasons.infoBox.description2')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Auditoria Automática</p>
-            <p className="text-blue-700">Validação de CT-es e Faturas</p>
+            <p className="font-semibold text-blue-900">{t('rejectionReasons.infoBox.features.audit.title')}</p>
+            <p className="text-blue-700">{t('rejectionReasons.infoBox.features.audit.desc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Conciliação</p>
-            <p className="text-blue-700">Processo de conciliação de fretes</p>
+            <p className="font-semibold text-blue-900">{t('rejectionReasons.infoBox.features.conciliation.title')}</p>
+            <p className="text-blue-700">{t('rejectionReasons.infoBox.features.conciliation.desc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Notificações</p>
-            <p className="text-blue-700">Alertas para transportadores</p>
+            <p className="font-semibold text-blue-900">{t('rejectionReasons.infoBox.features.notifications.title')}</p>
+            <p className="text-blue-700">{t('rejectionReasons.infoBox.features.notifications.desc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Categorização</p>
-            <p className="text-blue-700">Agrupamento por tipo de problema</p>
+            <p className="font-semibold text-blue-900">{t('rejectionReasons.infoBox.features.categorization.title')}</p>
+            <p className="text-blue-700">{t('rejectionReasons.infoBox.features.categorization.desc')}</p>
           </div>
         </div>
       </div>
@@ -438,10 +443,10 @@ export const RejectionReasons: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir este motivo de rejeição? Esta ação não pode ser desfeita."
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          title={t('rejectionReasons.messages.confirmDeleteTitle')}
+          message={t('rejectionReasons.messages.confirmDeleteMessage')}
+          confirmText={t('rejectionReasons.messages.deleteConfirmBtn')}
+          cancelText={t('rejectionReasons.messages.cancelBtn')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

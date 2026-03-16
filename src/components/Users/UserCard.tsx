@@ -59,34 +59,34 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   const formatLastLogin = (lastLogin?: string) => {
-    if (!lastLogin) return t('users.view.emptyDept') || 'Nunca';
+    if (!lastLogin) return t('users.view.never');
     
     const date = new Date(lastLogin);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return t('users.view.now') || 'Agora';
-    if (diffInHours < 24) return `${diffInHours} ${t('users.view.hoursAgo') || 'h atrás'}`;
-    if (diffInHours < 48) return t('users.view.yesterday') || 'Ontem';
+    if (diffInHours < 1) return t('users.view.now');
+    if (diffInHours < 24) return `${diffInHours} ${t('users.view.hoursAgo')}`;
+    if (diffInHours < 48) return t('users.view.yesterday');
     return date.toLocaleDateString('pt-BR');
   };
 
   const getStatusTranslation = (status: string) => {
     switch (status) {
-      case 'ativo': return t('users.filters.active') || 'Ativo';
-      case 'inativo': return t('users.filters.inactive') || 'Inativo';
-      case 'bloqueado': return t('users.filters.blocked') || 'Bloqueado';
+      case 'ativo': return t('users.filters.active');
+      case 'inativo': return t('users.filters.inactive');
+      case 'bloqueado': return t('users.filters.blocked');
       default: return status;
     }
   };
 
   const getRoleTranslation = (perfil: string) => {
     switch (perfil) {
-      case 'administrador': return t('users.form.roles.admin') || 'Administrador';
-      case 'gerente': return t('users.form.roles.manager') || 'Gerente';
-      case 'operador': return t('users.form.roles.operator') || 'Operador';
-      case 'visualizador': return t('users.form.roles.viewer') || 'Visualizador';
-      case 'personalizado': return t('users.form.roles.custom') || 'Personalizado';
+      case 'administrador': return t('users.form.roles.admin');
+      case 'gerente': return t('users.form.roles.manager');
+      case 'operador': return t('users.form.roles.operator');
+      case 'visualizador': return t('users.form.roles.viewer');
+      case 'personalizado': return t('users.form.roles.custom');
       default: return perfil;
     }
   };
@@ -109,14 +109,14 @@ export const UserCard: React.FC<UserCardProps> = ({
           <button 
             onClick={() => onView(user)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title={t('users.buttons.view') || 'Visualizar'}
+            title={t('users.buttons.view')}
           >
             <Eye size={16} />
           </button>
           <button 
             onClick={() => onEdit(user)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
-            title={t('users.buttons.edit') || 'Editar'}
+            title={t('users.buttons.edit')}
           >
             <Edit size={16} />
           </button>
@@ -124,13 +124,13 @@ export const UserCard: React.FC<UserCardProps> = ({
             <button 
               onClick={() => onDelete(user.id)}
               className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-              title={t('users.buttons.delete') || 'Excluir'}
+              title={t('users.buttons.delete')}
             >
               <Trash2 size={16} />
             </button>
           )}
           {isProtectedUser && (
-            <div className="p-1 text-yellow-500" title={t('users.stats.adminProtectUser') || 'Usuário protegido'}>
+            <div className="p-1 text-yellow-500" title={t('users.stats.adminProtectUser')}>
               <Shield size={16} />
             </div>
           )}
@@ -145,7 +145,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Phone size={14} />
-          <span>{user.celular || user.telefone || t('users.view.emptyPhone') || 'Não informado'}</span>
+          <span>{user.celular || user.telefone || t('users.view.emptyPhone')}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
@@ -155,7 +155,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <User size={14} />
-          <span className="truncate">{user.estabelecimento_nome || t('establishments.view.notConfigured') || 'Não vinculado'}</span>
+          <span className="truncate">{user.estabelecimento_nome || t('establishments.view.notConfigured')}</span>
         </div>
 
         {/* Login attempts warning */}
@@ -163,7 +163,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-2 py-1 rounded">
             <AlertTriangle size={14} />
             <span className="text-xs font-medium">
-              {user.tentativas_login} {t('users.view.loginAttempts', { count: user.tentativas_login }) || 'tentativa(s) de login'}
+              {user.tentativas_login} {t('users.view.loginAttempts', { count: user.tentativas_login })}
             </span>
           </div>
         )}
@@ -173,7 +173,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           <div className="flex items-center space-x-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
             <Shield size={14} />
             <span className="text-xs font-medium">
-              {user.permissoes?.length || 0} {t('users.view.permissionsConfigured', { count: user.permissoes?.length || 0 }) || 'permissão(ões) configurada(s)'}
+              {user.permissoes?.length || 0} {t('users.view.permissionsConfigured', { count: user.permissoes?.length || 0 })}
             </span>
           </div>
         )}
@@ -194,7 +194,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 
         {/* Last Login */}
         <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          {t('users.view.lastLogin') || 'Último login'}: {formatLastLogin(user.ultimo_login)}
+          {t('users.view.lastLogin')}: {formatLastLogin(user.ultimo_login)}
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { holidaysService, Holiday } from '../../services/holidaysService';
 import { supabase } from '../../lib/supabase';
 import { TenantContextHelper } from '../../utils/tenantContext';
+import { useTranslation } from 'react-i18next';
 
 interface HolidayFormProps {
   holiday: Holiday | null;
@@ -11,6 +12,7 @@ interface HolidayFormProps {
 }
 
 export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSave }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -125,31 +127,31 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
     try {
       // Validações
       if (!formData.name.trim()) {
-        setError('Nome do feriado é obrigatório');
+        setError(t('holidays.form.validations.nameRequired'));
         setIsLoading(false);
         return;
       }
 
       if (!formData.date) {
-        setError('Data é obrigatória');
+        setError(t('holidays.form.validations.dateRequired'));
         setIsLoading(false);
         return;
       }
 
       if (!formData.country_id) {
-        setError('País é obrigatório');
+        setError(t('holidays.form.validations.countryRequired'));
         setIsLoading(false);
         return;
       }
 
       if (formData.type === 'estadual' && !formData.state_id) {
-        setError('Estado é obrigatório para feriados estaduais');
+        setError(t('holidays.form.validations.stateRequiredForStateMsg'));
         setIsLoading(false);
         return;
       }
 
       if (formData.type === 'municipal' && !formData.city_id) {
-        setError('Cidade é obrigatória para feriados municipais');
+        setError(t('holidays.form.validations.cityRequiredForCityMsg'));
         setIsLoading(false);
         return;
       }
@@ -183,7 +185,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
 
       onSave();
     } catch (err) {
-      setError('Erro ao salvar feriado. Tente novamente.');
+      setError(t('holidays.messages.saveError'));
     } finally {
       setIsLoading(false);
     }
@@ -212,7 +214,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {holiday?.id ? 'Editar Feriado' : 'Novo Feriado'}
+            {holiday?.id ? t('holidays.form.editTitle') : t('holidays.form.newTitle')}
           </h2>
           <button
             onClick={onClose}
@@ -231,21 +233,21 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nome do Feriado *
+              {t('holidays.form.nameLabel')}
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ex: Dia da Padroeira"
+              placeholder={t('holidays.form.namePlaceholder')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Data *
+              {t('holidays.form.dateLabel')}
             </label>
             <input
               type="date"
@@ -258,7 +260,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tipo *
+              {t('holidays.form.typeLabel')}
             </label>
             <select
               value={formData.type}
@@ -266,9 +268,9 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="nacional">Nacional</option>
-              <option value="estadual">Estadual</option>
-              <option value="municipal">Municipal</option>
+              <option value="nacional">{t('holidays.types.nacional')}</option>
+              <option value="estadual">{t('holidays.types.estadual')}</option>
+              <option value="municipal">{t('holidays.types.municipal')}</option>
             </select>
           </div>
 
@@ -281,13 +283,13 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <label htmlFor="is_recurring" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-              Feriado recorrente (repete todo ano)
+              {t('holidays.form.recurringLabel')}
             </label>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              País *
+              {t('holidays.form.countryLabel')}
             </label>
             <select
               value={formData.country_id}
@@ -295,7 +297,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="">Selecione...</option>
+              <option value="">{t('holidays.form.selectPlaceholder')}</option>
               {countries.map(country => (
                 <option key={country.id} value={country.id}>
                   {country.nome}
@@ -307,7 +309,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
           {(formData.type === 'estadual' || formData.type === 'municipal') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Estado *
+                {t('holidays.form.stateLabel')}
               </label>
               <select
                 value={formData.state_id}
@@ -315,7 +317,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
-                <option value="">Selecione...</option>
+                <option value="">{t('holidays.form.selectPlaceholder')}</option>
                 {states.map(state => (
                   <option key={state.id} value={state.id}>
                     {state.name} - {state.uf}
@@ -328,7 +330,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
           {formData.type === 'municipal' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Cidade *
+                {t('holidays.form.cityLabel')}
               </label>
               <select
                 value={formData.city_id}
@@ -337,7 +339,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
                 required
                 disabled={!formData.state_id}
               >
-                <option value="">Selecione...</option>
+                <option value="">{t('holidays.form.selectPlaceholder')}</option>
                 {cities.map(city => (
                   <option key={city.id} value={city.id}>
                     {city.name}
@@ -345,7 +347,7 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
                 ))}
               </select>
               {!formData.state_id && (
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Selecione um estado primeiro</p>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('holidays.form.stateRequired')}</p>
               )}
             </div>
           )}
@@ -357,14 +359,14 @@ export const HolidayForm: React.FC<HolidayFormProps> = ({ holiday, onClose, onSa
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900"
               disabled={isLoading}
             >
-              Cancelar
+              {t('holidays.form.cancel')}
             </button>
             <button
               type="submit"
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               disabled={isLoading}
             >
-              {isLoading ? 'Salvando...' : 'Salvar'}
+              {isLoading ? t('holidays.form.saving') : t('holidays.form.save')}
             </button>
           </div>
         </form>

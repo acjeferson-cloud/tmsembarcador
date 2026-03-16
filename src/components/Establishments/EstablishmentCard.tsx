@@ -48,28 +48,28 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             title={t('establishments.buttons.view')}
           >
-            <Eye size={16} />
+            <Eye size="1rem" />
           </button>
           <button 
             onClick={() => onEdit(establishment)}
             className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             title={t('establishments.buttons.edit')}
           >
-            <Edit size={16} />
+            <Edit size="1rem" />
           </button>
           <button 
             onClick={() => onDelete(establishment.id)}
             className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
             title={t('establishments.buttons.delete')}
           >
-            <Trash2 size={16} />
+            <Trash2 size="1rem" />
           </button>
         </div>
       </div>
       
       <div className="space-y-3 text-sm">
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <Hash size={14} />
+          <Hash size="0.875rem" />
           <span>Código: {establishment.codigo}</span>
           <span className="ml-4 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono">
             {establishment.tracking_prefix}
@@ -77,30 +77,30 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <MapPin size={14} />
+          <MapPin size="0.875rem" />
           <span>{establishment.endereco}, {establishment.bairro}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <MapPin size={14} />
+          <MapPin size="0.875rem" />
           <span>{establishment.cidade} - {establishment.estado}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <MapPin size={14} />
+          <MapPin size="0.875rem" />
           <span>CEP: {establishment.cep}</span>
         </div>
         
         {establishment.inscricao_estadual && (
           <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-            <FileText size={14} />
+            <FileText size="0.875rem" />
             <span>IE: {establishment.inscricao_estadual}</span>
           </div>
         )}
         
         {hasEmailConfig && (
           <div className="flex items-center space-x-2 text-blue-600">
-            <Mail size={14} />
+            <Mail size="0.875rem" />
             <span>{establishment.email_config.email}</span>
           </div>
         )}
@@ -113,13 +113,13 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
         </div>
         <div className="text-right flex items-center space-x-2">
           <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(establishment.tipo)}`}>
-            <Building size={14} className="mr-1" />
+            <Building size="0.875rem" className="mr-1" />
             <span className="capitalize">{establishment.tipo === 'matriz' ? t('establishments.form.fields.typeOptions.matriz') : establishment.tipo === 'filial' ? t('establishments.form.fields.typeOptions.filial') : establishment.tipo}</span>
           </div>
           
           {hasEmailConfig && (
             <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              <Mail size={14} className="mr-1" />
+              <Mail size="0.875rem" className="mr-1" />
               <span>E-mail</span>
             </div>
           )}

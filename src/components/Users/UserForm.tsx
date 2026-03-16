@@ -605,7 +605,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   {profilePhotoPreview ? (
                     <img
                       src={profilePhotoPreview}
-                      alt="Foto de perfil"
+                      alt={t('users.form.fields.avatar')}
                       className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                     />
                   ) : (
@@ -705,7 +705,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Digite o nome completo"
+                  placeholder={t('users.form.fields.namePlaceholder')}
                 />
               </div>
 
@@ -832,7 +832,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">{t('common.select') || 'Selecione'} {t('users.form.fields.department').toLowerCase()}</option>
+                  <option value="">{t('common.select')} {t('users.form.fields.department').toLowerCase()}</option>
                   <option value="TI">TI</option>
                   <option value="Operações">Operações</option>
                   <option value="Logística">Logística</option>
@@ -866,7 +866,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">{t('common.select') || 'Selecione'} {t('establishments.title').toLowerCase()}</option>
+                  <option value="">{t('common.select')} {t('establishments.title').toLowerCase()}</option>
                   {establishments
                     .filter(e => formData.estabelecimentosPermitidos.length === 0 || 
                                 formData.estabelecimentosPermitidos.includes(e.id))
@@ -892,7 +892,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                 onChange={handleInputChange}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Informações adicionais sobre o usuário..."
+                placeholder={t('users.form.fields.observationsPlaceholder')}
               />
             </div>
           </div>
@@ -1074,7 +1074,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'address' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.address')} (opcional)</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.tabs.address')} ({t('common.optional')})</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* CEP - Primeiro campo */}
@@ -1097,7 +1097,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                     onClick={searchCEP}
                     disabled={isSearchingCep || formData.cep.length < 9}
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 disabled:text-gray-400 transition-colors"
-                    title="Buscar CEP"
+                    title={t('common.search')}
                   >
                     {isSearchingCep ? (
                       <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -1116,14 +1116,14 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
                 {cepSuccess && (
                   <div className="mt-2">
-                    <InlineMessage type="success" message={`${t('establishments.form.address.successMessage') || 'Endereço encontrado: '} ${cepSuccess.replace('Endereço encontrado: ', '')}`} />
+                    <InlineMessage type="success" message={`${t('establishments.form.address.successMessage')} ${cepSuccess.replace('Endereço encontrado: ', '')}`} />
                   </div>
                 )}
               </div>
 
               {/* Cidade - Somente leitura */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.city') || 'Cidade'} </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.city')} </label>
                 <input
                   type="text"
                   name="cidade"
@@ -1136,7 +1136,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
               {/* Estado - Somente leitura */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.state') || 'Estado (UF)'} </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.state')} </label>
                 <input
                   type="text"
                   name="estado"
@@ -1149,20 +1149,20 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
               {/* Bairro */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.neighborhood') || 'Bairro'} </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.neighborhood')} </label>
                 <input
                   type="text"
                   name="bairro"
                   value={formData.bairro}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Digite o bairro"
+                  placeholder={t('establishments.form.address.neighborhood')}
                 />
               </div>
 
               {/* Endereço/Logradouro - Ocupa toda a linha */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.street') || 'Logradouro'} </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('establishments.form.address.street')} </label>
                 <input
                   type="text"
                   name="endereco"

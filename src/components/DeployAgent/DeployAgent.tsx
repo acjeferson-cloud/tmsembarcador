@@ -11,12 +11,14 @@ import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 export const DeployAgent: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const breadcrumbItems = [
-    { label: 'Centro de Implementação' },
-    { label: 'Deploy Agent', current: true }
+    { label: t('implementationCenter.title') },
+    { label: t('implementationCenter.deployAgent.title'), current: true }
   ];
 
   const [projects, setProjects] = useState<DeployProject[]>([]);
@@ -43,7 +45,7 @@ export const DeployAgent: React.FC = () => {
       const data = await deployAgentService.getProjects();
       setProjects(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar projetos', type: 'error' });
+      setToast({ message: t('implementationCenter.deployAgent.messages.loadError'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +53,7 @@ export const DeployAgent: React.FC = () => {
 
   const handleCreateProject = async () => {
     if (!newProjectData.project_name || !newProjectData.client_name) {
-      setToast({ message: 'Preencha todos os campos obrigatórios', type: 'error' });
+      setToast({ message: t('implementationCenter.deployAgent.messages.requiredFields'), type: 'error' });
       return;
     }
 
@@ -62,13 +64,13 @@ export const DeployAgent: React.FC = () => {
         ...newProjectData,
         user_id: userId
       });
-      setToast({ message: 'Projeto criado com sucesso!', type: 'success' });
+      setToast({ message: t('implementationCenter.deployAgent.messages.createSuccess'), type: 'success' });
       setShowNewProject(false);
       setNewProjectData({ project_name: '', client_name: '', auto_execute: false, require_approval: true });
       await loadProjects();
       setSelectedProject(project.id);
     } catch (error: any) {
-      const errorMessage = error?.message || 'Erro ao criar projeto. Verifique o console para mais detalhes.';
+      const errorMessage = error?.message || t('implementationCenter.deployAgent.messages.createError');
       setToast({ message: errorMessage, type: 'error' });
     }
   };
@@ -107,11 +109,11 @@ export const DeployAgent: React.FC = () => {
 
     try {
       await deployAgentService.deleteProject(deleteConfirm.projectId);
-      setToast({ message: 'Projeto excluído com sucesso!', type: 'success' });
+      setToast({ message: t('implementationCenter.deployAgent.messages.deleteSuccess'), type: 'success' });
       setDeleteConfirm(null);
       await loadProjects();
     } catch (error: any) {
-      const errorMessage = error?.message || 'Erro ao excluir projeto';
+      const errorMessage = error?.message || t('implementationCenter.deployAgent.messages.deleteError');
       setToast({ message: errorMessage, type: 'error' });
       setDeleteConfirm(null);
     }
@@ -142,13 +144,13 @@ export const DeployAgent: React.FC = () => {
               <div className="w-12 h-12 bg-white dark:bg-gray-800/20 rounded-lg flex items-center justify-center">
                 <Bot className="w-6 h-6" />
               </div>
-              <h1 className="text-3xl font-bold">Deploy Agent</h1>
+              <h1 className="text-3xl font-bold">{t('implementationCenter.deployAgent.title')}</h1>
             </div>
             <p className="text-white/90 text-lg">
-              Implantação automatizada com Inteligência Artificial
+              {t('implementationCenter.deployAgent.description')}
             </p>
             <p className="text-white/80 mt-2">
-              Envie seus dados e deixe a IA configurar automaticamente todo o sistema
+              {t('implementationCenter.deployAgent.subDescription')}
             </p>
           </div>
           <button
@@ -156,7 +158,7 @@ export const DeployAgent: React.FC = () => {
             className="px-6 py-3 bg-white dark:bg-gray-800 text-purple-600 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors flex items-center gap-2 font-semibold"
           >
             <Play className="w-5 h-5" />
-            Novo Projeto
+            {t('implementationCenter.deployAgent.newProjectBtn')}
           </button>
         </div>
       </div>
@@ -168,10 +170,10 @@ export const DeployAgent: React.FC = () => {
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <Upload className="w-5 h-5 text-blue-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Upload Inteligente</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.deployAgent.features.uploadTitle')}</h3>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Envie planilhas e arquivos, a IA identifica automaticamente o tipo de dados
+            {t('implementationCenter.deployAgent.features.uploadDesc')}
           </p>
         </div>
 
@@ -180,10 +182,10 @@ export const DeployAgent: React.FC = () => {
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
               <Bot className="w-5 h-5 text-purple-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Interpretação IA</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.deployAgent.features.aiTitle')}</h3>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            OpenAI analisa, valida e mapeia os campos automaticamente
+            {t('implementationCenter.deployAgent.features.aiDesc')}
           </p>
         </div>
 
@@ -192,10 +194,10 @@ export const DeployAgent: React.FC = () => {
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-green-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Auto-Execução</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.deployAgent.features.executeTitle')}</h3>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Parametrização automática de cadastros, tabelas e integrações
+            {t('implementationCenter.deployAgent.features.executeDesc')}
           </p>
         </div>
 
@@ -204,10 +206,10 @@ export const DeployAgent: React.FC = () => {
             <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
               <Target className="w-5 h-5 text-yellow-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Monitoramento</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.deployAgent.features.monitorTitle')}</h3>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Dashboard com status, erros e sugestões de melhoria em tempo real
+            {t('implementationCenter.deployAgent.features.monitorDesc')}
           </p>
         </div>
       </div>
@@ -215,23 +217,23 @@ export const DeployAgent: React.FC = () => {
       {/* Projects List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Projetos de Implantação</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('implementationCenter.deployAgent.projectsTitle')}</h2>
         </div>
 
         {isLoading ? (
           <div className="p-12 text-center">
             <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-600 dark:text-gray-400">Carregando projetos...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('implementationCenter.deployAgent.loading')}</p>
           </div>
         ) : projects.length === 0 ? (
           <div className="p-12 text-center">
             <Bot className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum projeto criado ainda</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{t('implementationCenter.deployAgent.noProjects')}</p>
             <button
               onClick={() => setShowNewProject(true)}
               className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Criar Primeiro Projeto
+              {t('implementationCenter.deployAgent.createFirstProjectBtn')}
             </button>
           </div>
         ) : (
@@ -250,20 +252,20 @@ export const DeployAgent: React.FC = () => {
                       </h3>
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                         {getStatusIcon(project.status)}
-                        {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                        {t(`implementationCenter.deployAgent.statuses.${project.status}`)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      Cliente: {project.client_name}
+                      {t('implementationCenter.deployAgent.clientPrefix')}: {project.client_name}
                     </p>
                     <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      <span>Iniciado: {new Date(project.started_at).toLocaleDateString('pt-BR')}</span>
+                      <span>{t('implementationCenter.deployAgent.startedAt')}: {new Date(project.started_at).toLocaleDateString('pt-BR')}</span>
                       <span>•</span>
-                      <span>Progresso: {project.progress_percentage}%</span>
+                      <span>{t('implementationCenter.deployAgent.progressPrefix')}: {project.progress_percentage}%</span>
                       {project.completed_at && (
                         <>
                           <span>•</span>
-                          <span>Concluído: {new Date(project.completed_at).toLocaleDateString('pt-BR')}</span>
+                          <span>{t('implementationCenter.deployAgent.completedAt')}: {new Date(project.completed_at).toLocaleDateString('pt-BR')}</span>
                         </>
                       )}
                     </div>
@@ -280,7 +282,7 @@ export const DeployAgent: React.FC = () => {
                         e.stopPropagation();
                         setSelectedProject(project.id);
                       }}
-                      title="Ver detalhes"
+                      title={t('implementationCenter.deployAgent.viewDetails')}
                     >
                       <Eye className="w-5 h-5" />
                     </button>
@@ -290,7 +292,7 @@ export const DeployAgent: React.FC = () => {
                         e.stopPropagation();
                         handleDeleteProject(project.id, project.project_name);
                       }}
-                      title="Excluir projeto"
+                      title={t('implementationCenter.deployAgent.deleteProjectTitle')}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -316,32 +318,32 @@ export const DeployAgent: React.FC = () => {
       {showNewProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Novo Projeto de Implantação</h3>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{t('implementationCenter.deployAgent.newProjectModal.title')}</h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome do Projeto *
+                  {t('implementationCenter.deployAgent.newProjectModal.projectNamePlaceholder')} *
                 </label>
                 <input
                   type="text"
                   value={newProjectData.project_name}
                   onChange={(e) => setNewProjectData({ ...newProjectData, project_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Ex: Implantação Cliente ABC"
+                  placeholder={t('implementationCenter.deployAgent.newProjectModal.projectNamePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome do Cliente *
+                  {t('implementationCenter.deployAgent.newProjectModal.clientNamePlaceholder')} *
                 </label>
                 <input
                   type="text"
                   value={newProjectData.client_name}
                   onChange={(e) => setNewProjectData({ ...newProjectData, client_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Ex: Empresa XYZ Ltda"
+                  placeholder={t('implementationCenter.deployAgent.newProjectModal.clientNamePlaceholder')}
                 />
               </div>
 
@@ -353,7 +355,7 @@ export const DeployAgent: React.FC = () => {
                     onChange={(e) => setNewProjectData({ ...newProjectData, auto_execute: e.target.checked })}
                     className="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Executar automaticamente após interpretação</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('implementationCenter.deployAgent.newProjectModal.autoExecute')}</span>
                 </label>
 
                 <label className="flex items-center gap-2">
@@ -363,7 +365,7 @@ export const DeployAgent: React.FC = () => {
                     onChange={(e) => setNewProjectData({ ...newProjectData, require_approval: e.target.checked })}
                     className="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Requerer aprovação antes de executar</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('implementationCenter.deployAgent.newProjectModal.requireApproval')}</span>
                 </label>
               </div>
             </div>
@@ -376,14 +378,14 @@ export const DeployAgent: React.FC = () => {
                 }}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 rounded-lg transition-colors"
               >
-                Cancelar
+                {t('implementationCenter.deployAgent.newProjectModal.cancelBtn')}
               </button>
               <button
                 onClick={handleCreateProject}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
               >
                 <Play className="w-4 h-4" />
-                Criar Projeto
+                {t('implementationCenter.deployAgent.newProjectModal.createBtn')}
               </button>
             </div>
           </div>
@@ -400,10 +402,10 @@ export const DeployAgent: React.FC = () => {
 
       <ConfirmDialog
         isOpen={deleteConfirm?.show || false}
-        title="Tem certeza que deseja excluir o projeto?"
-        message={`Projeto: "${deleteConfirm?.projectName}"\n\nEsta ação não pode ser desfeita.`}
+        title={t('implementationCenter.deployAgent.deleteDialog.title')}
+        message={`${t('implementationCenter.deployAgent.deleteDialog.projectPrefix')}: "${deleteConfirm?.projectName}"\n\n${t('implementationCenter.deployAgent.deleteDialog.warning')}`}
         confirmText="OK"
-        cancelText="Cancelar"
+        cancelText={t('implementationCenter.deployAgent.newProjectModal.cancelBtn')}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
         type="danger"

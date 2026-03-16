@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, XCircle, AlertCircle, Info, Shield, Percent, TrendingUp, Settings, Save, Bot } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot } from 'lucide-react';
 import { DeployAgent } from '../DeployAgent/DeployAgent';
-import { Calculator } from '../Calculator/Calculator';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
 import { implementationService } from '../../services/implementationService';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast } from '../common/Toast';
+import { useTranslation } from 'react-i18next';
 
 interface ImportResult {
   success: boolean;
@@ -17,8 +17,10 @@ interface ImportResult {
 
 const ImplementationCenter: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
+  
   const breadcrumbItems = [
-    { label: 'Centro de Implementação', current: true }
+    { label: t('implementationCenter.title'), current: true }
   ];
 
   const [activeTab, setActiveTab] = useState('deploy-agent');
@@ -105,10 +107,10 @@ const ImplementationCenter: React.FC = () => {
           result = await implementationService.processCitiesImport(file, user.id);
           break;
         case 'table-fees':
-          result = await implementationService.processAdditionalFeesImport(file, user.id);
+          result = await implementationService.processTableFeesImport(file, user.id);
           break;
         default:
-          result = { success: false, message: 'Tipo de importação não suportado' };
+          result = { success: false, message: t('implementationCenter.messages.unsupportedImport') };
       }
 
       const importResult: ImportResult = {
@@ -123,7 +125,7 @@ const ImplementationCenter: React.FC = () => {
       console.error('Erro durante importação:', error);
       setImportResults([{
         success: false,
-        message: 'Erro ao processar arquivo'
+        message: t('implementationCenter.messages.processError')
       }]);
     } finally {
       setIsUploading(false);
@@ -135,29 +137,29 @@ const ImplementationCenter: React.FC = () => {
       switch (type) {
         case 'carriers':
           generateCarriersTemplate();
-          setToast({ type: 'success', message: 'Template de Transportadoras gerado com sucesso' });
+          setToast({ type: 'success', message: t('implementationCenter.imports.carriers.title') + ' - ' + t('implementationCenter.messages.saveSuccess') });
           break;
         case 'freight':
           generateFreightRatesTemplate();
-          setToast({ type: 'success', message: 'Template de Tabelas de Frete gerado com sucesso' });
+          setToast({ type: 'success', message: t('implementationCenter.imports.freight.title') + ' - ' + t('implementationCenter.messages.saveSuccess') });
           break;
         case 'cities':
           generateFreightRateCitiesTemplate();
-          setToast({ type: 'success', message: 'Template de Cidades gerado com sucesso' });
+          setToast({ type: 'success', message: t('implementationCenter.imports.cities.title') + ' - ' + t('implementationCenter.messages.saveSuccess') });
           break;
         case 'table-fees':
           generateAdditionalFeesTemplate();
-          setToast({ type: 'success', message: 'Template de Taxas Adicionais gerado com sucesso' });
+          setToast({ type: 'success', message: t('implementationCenter.imports.fees.title') + ' - ' + t('implementationCenter.messages.saveSuccess') });
           break;
         default:
-          setToast({ type: 'error', message: 'Tipo de template não suportado' });
+          setToast({ type: 'error', message: t('implementationCenter.messages.unsupportedTemplate') });
       }
     } catch (error) {
       console.error('Erro ao gerar template:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       setToast({
         type: 'error',
-        message: `Erro ao gerar template: ${errorMessage}. Verifique se todos os dados estão corretos.`
+        message: t('implementationCenter.messages.templateError', { error: errorMessage })
       });
     }
   };
@@ -186,7 +188,7 @@ const ImplementationCenter: React.FC = () => {
       console.error('Erro ao aplicar reajuste:', error);
       setImportResults([{
         success: false,
-        message: 'Erro ao aplicar reajuste'
+        message: t('implementationCenter.messages.adjustError')
       }]);
     } finally {
       setIsUploading(false);
@@ -223,24 +225,24 @@ const ImplementationCenter: React.FC = () => {
           <div className="flex items-center gap-3">
             <FileSpreadsheet className="w-5 h-5 text-green-600" />
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">Template Excel</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{templateName}</p>
-            </div>
+            <p className="font-medium text-gray-900 dark:text-white">{t('implementationCenter.imports.templateExcel')}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{templateName}</p>
           </div>
-          <button
-            onClick={() => downloadTemplate(type)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Baixar Template
-          </button>
         </div>
+        <button
+          onClick={() => downloadTemplate(type)}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          {t('implementationCenter.imports.downloadTemplate')}
+        </button>
+      </div>
 
         {/* Upload Area */}
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
           <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400 mb-2">Arraste o arquivo Excel aqui ou clique para selecionar</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Formatos aceitos: .xlsx, .xls</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-2">{t('implementationCenter.imports.dragDrop')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('implementationCenter.imports.acceptedFormats')}</p>
           
           <input
             type="file"
@@ -314,9 +316,9 @@ const ImplementationCenter: React.FC = () => {
         <div className="flex items-start space-x-3">
           <Info className="w-5 h-5 text-blue-600 mt-0.5" />
           <div>
-            <h4 className="font-medium text-blue-900">Reajuste de Tabelas de Frete</h4>
+            <h4 className="font-medium text-blue-900">{t('implementationCenter.adjustment.infoTitle')}</h4>
             <p className="text-sm text-blue-700 mt-1">
-              Aplique reajustes em massa nas tabelas de frete ativas. Escolha entre aplicação de percentual ou inserção manual de valores.
+              {t('implementationCenter.adjustment.infoDesc')}
             </p>
           </div>
         </div>
@@ -324,11 +326,11 @@ const ImplementationCenter: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configuração do Reajuste</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('implementationCenter.adjustment.configTitle')}</h3>
           
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tipo de Reajuste
+              {t('implementationCenter.adjustment.type')}
             </label>
             <div className="space-y-2">
               <label className="flex items-center">
@@ -340,7 +342,7 @@ const ImplementationCenter: React.FC = () => {
                   onChange={(e) => setAdjustmentType(e.target.value as 'percentage' | 'manual')}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Aplicar Percentual</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{t('implementationCenter.adjustment.typePercentage')}</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -351,7 +353,7 @@ const ImplementationCenter: React.FC = () => {
                   onChange={(e) => setAdjustmentType(e.target.value as 'percentage' | 'manual')}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Inserção Manual de Valores</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{t('implementationCenter.adjustment.typeManual')}</span>
               </label>
             </div>
           </div>
@@ -438,37 +440,37 @@ const ImplementationCenter: React.FC = () => {
             {isUploading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Processando Reajuste...
+                {t('implementationCenter.adjustment.submitting')}
               </>
             ) : (
               <>
                 <Percent className="w-4 h-4 mr-2" />
-                Aplicar Reajuste
+                {t('implementationCenter.adjustment.submitBtn')}
               </>
             )}
           </button>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Instruções</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('implementationCenter.adjustment.instructions.title')}</h3>
           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-3">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900 dark:text-white">Reajuste por Percentual:</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white">{t('implementationCenter.adjustment.instructions.percentageTitle')}</h4>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                <li>• Digite o percentual desejado (ex: 5.5 para aumento de 5,5%)</li>
-                <li>• Use valores negativos para redução (ex: -3.2 para redução de 3,2%)</li>
-                <li>• O reajuste será aplicado a todos os valores da tabela</li>
-                <li>• Valores serão arredondados para 2 casas decimais</li>
+                <li>• {t('implementationCenter.adjustment.instructions.percentage1')}</li>
+                <li>• {t('implementationCenter.adjustment.instructions.percentage2')}</li>
+                <li>• {t('implementationCenter.adjustment.instructions.percentage3')}</li>
+                <li>• {t('implementationCenter.adjustment.instructions.percentage4')}</li>
               </ul>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900 dark:text-white">Inserção Manual:</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white">{t('implementationCenter.adjustment.instructions.manualTitle')}</h4>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4">
-                <li>• Baixe o template com a estrutura atual</li>
-                <li>• Preencha os novos valores desejados</li>
-                <li>• Faça upload do arquivo preenchido</li>
-                <li>• Valores em branco manterão o valor atual</li>
+                <li>• {t('implementationCenter.adjustment.instructions.manual1')}</li>
+                <li>• {t('implementationCenter.adjustment.instructions.manual2')}</li>
+                <li>• {t('implementationCenter.adjustment.instructions.manual3')}</li>
+                <li>• {t('implementationCenter.adjustment.instructions.manual4')}</li>
               </ul>
             </div>
           </div>
@@ -515,13 +517,13 @@ const ImplementationCenter: React.FC = () => {
 
       setImportResults(prev => [...prev, {
         success: result.success,
-        message: result.success ? 'Configurações de ERP salvas com sucesso!' : result.error || 'Erro ao salvar'
+        message: result.success ? t('implementationCenter.messages.saveSuccess') : result.error || t('implementationCenter.messages.saveError')
       }]);
     } catch (error) {
       console.error('Erro ao salvar configuração ERP:', error);
       setImportResults(prev => [...prev, {
         success: false,
-        message: 'Erro ao salvar configurações de ERP'
+        message: t('implementationCenter.messages.saveError')
       }]);
     } finally {
       setIsLoading(false);
@@ -533,7 +535,11 @@ const ImplementationCenter: React.FC = () => {
       generateERPIntegrationTemplate();
     } catch (error) {
       console.error('Erro ao gerar template:', error);
-      alert('Erro ao gerar template. Tente novamente.');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setToast({
+        type: 'error',
+        message: t('implementationCenter.messages.templateError', { error: errorMessage })
+      });
     }
   };
 
@@ -573,10 +579,10 @@ const ImplementationCenter: React.FC = () => {
         }));
       }
       
-      alert(`Template importado com sucesso! ${data.length} registro(s) processado(s).`);
+      setToast({ type: 'success', message: t('implementationCenter.messages.importSuccessAlert', { count: data.length }) });
     } catch (error) {
       console.error('Erro ao processar arquivo:', error);
-      alert('Erro ao processar arquivo: ' + (error as Error).message);
+      setToast({ type: 'error', message: t('implementationCenter.messages.importErrorAlert', { error: (error as Error).message }) });
     } finally {
       setIsLoading(false);
       // Limpar input
@@ -587,15 +593,15 @@ const ImplementationCenter: React.FC = () => {
   const tabs = [
     {
       id: 'deploy-agent',
-      label: 'Deploy Agent IA',
+      label: t('implementationCenter.deployAgent.title'),
       icon: Bot,
-      description: 'Implantação automatizada com Inteligência Artificial'
+      description: t('implementationCenter.deployAgent.description')
     },
     {
       id: 'erp-integration',
-      label: 'Integração ao ERP',
+      label: t('implementationCenter.erpIntegration.configTitle'),
       icon: Settings,
-      description: 'Configure a integração com sistemas ERP'
+      description: t('implementationCenter.tabs.erpIntegration')
     },
     { id: 'carriers', label: 'Transportadoras', icon: Truck },
     { id: 'freight', label: 'Tabelas de Frete', icon: DollarSign },
@@ -651,8 +657,8 @@ const ImplementationCenter: React.FC = () => {
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Template de Configuração</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Baixe o template ou importe configurações existentes</p>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{t('implementationCenter.erpIntegration.template.title')}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('implementationCenter.erpIntegration.template.description')}</p>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -661,11 +667,11 @@ const ImplementationCenter: React.FC = () => {
                       className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
                     >
                       <Download className="w-4 h-4" />
-                      Template
+                      {t('implementationCenter.erpIntegration.template.downloadBtn')}
                     </button>
                     <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 cursor-pointer">
                       <Upload className="w-4 h-4" />
-                      Importar
+                      {t('implementationCenter.erpIntegration.template.importBtn')}
                       <input
                         type="file"
                         accept=".xlsx,.xls"
@@ -681,7 +687,7 @@ const ImplementationCenter: React.FC = () => {
                   <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-blue-700">Processando arquivo...</span>
+                      <span className="text-blue-700">{t('implementationCenter.erpIntegration.template.processing')}</span>
                     </div>
                   </div>
                 )}
@@ -691,12 +697,11 @@ const ImplementationCenter: React.FC = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="w-4 h-4 text-green-600" />
                       <span className="text-green-700 font-medium">
-                        Arquivo importado com sucesso!
+                        {t('implementationCenter.erpIntegration.template.success')}
                       </span>
                     </div>
                     <p className="text-green-600 text-sm">
-                      {erpIntegrationData.length} registro(s) processado(s). 
-                      Os campos foram preenchidos automaticamente com os dados do primeiro registro.
+                      {t('implementationCenter.erpIntegration.template.successDesc', { count: erpIntegrationData.length })}
                     </p>
                   </div>
                 )}
@@ -705,14 +710,14 @@ const ImplementationCenter: React.FC = () => {
               {/* ERP Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Selecione o ERP
+                  {t('implementationCenter.erpIntegration.selectErp')}
                 </label>
                 <select
                   value={selectedERP}
                   onChange={(e) => setSelectedERP(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Selecione um ERP...</option>
+                  <option value="">{t('implementationCenter.erpIntegration.selectErpPlaceholder')}</option>
                   <option value="sap-business-one">SAP - Business One</option>
                   <option value="sap-s4hana">SAP - S/4 Hana Cloud Public Edition</option>
                   <option value="totvs-protheus">TOTVS - Protheus</option>
@@ -735,7 +740,7 @@ const ImplementationCenter: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Endereço do Service Layer
+                          {t('implementationCenter.erpIntegration.connection.serviceLayerAddress')}
                         </label>
                         <input
                           type="text"
@@ -747,7 +752,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Porta
+                          {t('implementationCenter.erpIntegration.connection.port')}
                         </label>
                         <input
                           type="text"
@@ -759,7 +764,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Usuário
+                          {t('implementationCenter.erpIntegration.connection.username')}
                         </label>
                         <input
                           type="text"
@@ -771,7 +776,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Senha
+                          {t('implementationCenter.erpIntegration.connection.password')}
                         </label>
                         <input
                           type="password"
@@ -783,7 +788,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Database
+                          {t('implementationCenter.erpIntegration.connection.database')}
                         </label>
                         <input
                           type="text"
@@ -800,25 +805,25 @@ const ImplementationCenter: React.FC = () => {
                   <div>
                     <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                       <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                      Configurações de CT-e
+                      {t('implementationCenter.erpIntegration.cte.title')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Tipo de integração de CT-e
+                          {t('implementationCenter.erpIntegration.cte.integrationType')}
                         </label>
                         <select
                           value={erpConfig.cteIntegrationType}
                           onChange={(e) => handleErpConfigChange('cteIntegrationType', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="draft">Esboço</option>
-                          <option value="entry">Nota de Entrada</option>
+                          <option value="draft">{t('implementationCenter.erpIntegration.cte.typeDraft')}</option>
+                          <option value="entry">{t('implementationCenter.erpIntegration.cte.typeEntry')}</option>
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Modelo de CT-e
+                          {t('implementationCenter.erpIntegration.cte.cteModel')}
                         </label>
                         <input
                           type="number"
@@ -832,7 +837,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Modelo de Fatura
+                          {t('implementationCenter.erpIntegration.cte.invoiceModel')}
                         </label>
                         <input
                           type="number"
@@ -851,12 +856,12 @@ const ImplementationCenter: React.FC = () => {
                   <div>
                     <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-green-600" />
-                      Configurações de Faturamento
+                      {t('implementationCenter.erpIntegration.billing.title')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Item da NF-e de Faturamento
+                          {t('implementationCenter.erpIntegration.billing.nfeItem')}
                         </label>
                         <input
                           type="text"
@@ -868,7 +873,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Utilização de Faturamento
+                          {t('implementationCenter.erpIntegration.billing.usage')}
                         </label>
                         <input
                           type="text"
@@ -880,7 +885,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Conta Controle de Faturamento
+                          {t('implementationCenter.erpIntegration.billing.controlAccount')}
                         </label>
                         <input
                           type="text"
@@ -897,12 +902,12 @@ const ImplementationCenter: React.FC = () => {
                   <div>
                     <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                       <FileSpreadsheet className="w-5 h-5 text-purple-600" />
-                      Configurações de Notas Fiscais
+                      {t('implementationCenter.erpIntegration.invoice.title')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Item da Nota Fiscal de Saída gerada a partir de CT-e
+                          {t('implementationCenter.erpIntegration.invoice.outboundItem')}
                         </label>
                         <input
                           type="text"
@@ -914,7 +919,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Item para CT-e sem Nota Fiscal
+                          {t('implementationCenter.erpIntegration.invoice.cteWithoutNfItem')}
                         </label>
                         <input
                           type="text"
@@ -926,7 +931,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Utilização de CT-e
+                          {t('implementationCenter.erpIntegration.invoice.cteUsage')}
                         </label>
                         <input
                           type="text"
@@ -938,7 +943,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Conta Controle para emissão de Nota Fiscal de Entrada
+                          {t('implementationCenter.erpIntegration.invoice.inboundControlAccount')}
                         </label>
                         <input
                           type="text"
@@ -950,7 +955,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Conta Transitória para fechamento de Invoice
+                          {t('implementationCenter.erpIntegration.invoice.transitoryAccount')}
                         </label>
                         <input
                           type="text"
@@ -967,12 +972,12 @@ const ImplementationCenter: React.FC = () => {
                   <div>
                     <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                       <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      Configurações Adicionais
+                      {t('implementationCenter.erpIntegration.additional.title')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Endereço de rede dos XMLs da NF-e
+                          {t('implementationCenter.erpIntegration.additional.nfeXmlAddress')}
                         </label>
                         <input
                           type="text"
@@ -1008,12 +1013,12 @@ const ImplementationCenter: React.FC = () => {
                       {isLoading ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Salvando...
+                          {t('implementationCenter.erpIntegration.saveBtnLoading')}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4" />
-                          Salvar Configurações
+                          {t('implementationCenter.erpIntegration.saveBtn')}
                         </>
                       )}
                     </button>
@@ -1025,7 +1030,7 @@ const ImplementationCenter: React.FC = () => {
               <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                   <Upload className="w-5 h-5 text-indigo-600" />
-                  Importação de Configurações
+                  {t('implementationCenter.erpIntegration.importConfig.title')}
                 </h4>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
@@ -1033,9 +1038,9 @@ const ImplementationCenter: React.FC = () => {
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-2 text-gray-400" />
                         <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                          <span className="font-semibold">Clique para fazer upload</span> ou arraste e solte
+                          {t('implementationCenter.erpIntegration.importConfig.clickToUpload')}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Arquivo Excel (.xlsx)</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('implementationCenter.imports.acceptedFormats')}</p>
                       </div>
                       <input
                         type="file"
@@ -1055,8 +1060,8 @@ const ImplementationCenter: React.FC = () => {
         {activeTab === 'carriers' && (
           <ImportSection
             type="carriers"
-            title="Importar Transportadoras"
-            description="Importe cadastros de transportadoras em massa através de arquivo Excel"
+            title={t('implementationCenter.imports.carriers.title')}
+            description={t('implementationCenter.imports.carriers.description')}
             icon={Truck}
             templateName="template_transportadoras.xlsx"
           />
@@ -1064,9 +1069,9 @@ const ImplementationCenter: React.FC = () => {
 
         {activeTab === 'freight' && (
           <ImportSection
-            type="freight"
-            title="Importar Tabelas de Frete"
-            description="Importe tabelas de frete com faixas de valores por transportadora"
+            type="freight-tables"
+            title={t('implementationCenter.imports.freightTables.title')}
+            description={t('implementationCenter.imports.freightTables.description')}
             icon={DollarSign}
             templateName="template_tabelas_frete.xlsx"
           />
@@ -1075,8 +1080,8 @@ const ImplementationCenter: React.FC = () => {
         {activeTab === 'cities' && (
           <ImportSection
             type="cities"
-            title="Importar Cidades da Tabela"
-            description="Importe cadastro de cidades vinculadas às tabelas de frete"
+            title={t('implementationCenter.imports.cities.title')}
+            description={t('implementationCenter.imports.cities.description')}
             icon={MapPin}
             templateName="template_cidades.xlsx"
           />
@@ -1085,8 +1090,8 @@ const ImplementationCenter: React.FC = () => {
         {activeTab === 'table-fees' && (
           <ImportSection
             type="table-fees"
-            title="Importar Taxas da Tabela"
-            description="Faça upload do arquivo Excel com as taxas (pedágio, coleta/entrega, etc.) das tabelas de frete."
+            title={t('implementationCenter.imports.tableFees.title')}
+            description={t('implementationCenter.imports.tableFees.description')}
             icon={FileSpreadsheet}
             templateName="template_taxas_tabela.xlsx"
           />
@@ -1095,25 +1100,25 @@ const ImplementationCenter: React.FC = () => {
         {activeTab === 'restricted-ceps' && (
           <ImportSection
             type="restricted-ceps"
-            title="Importar CEPs Restritos"
-            description="Faça upload do arquivo Excel com a listagem de CEPs restritos por transportadora."
+            title={t('implementationCenter.imports.restrictedCeps.title')}
+            description={t('implementationCenter.imports.restrictedCeps.description')}
             icon={Shield}
             templateName="template_ceps_restritos.xlsx"
           />
         )}
 
-        {activeTab === 'adjust-tables' && renderAdjustmentSection()}
+        {activeTab === 'adjustment' && renderAdjustmentSection()}
       </div>
 
       {/* Instructions */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">Instruções de Uso</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('implementationCenter.deployAgent.uploader.howItWorks.title')}</h3>
         <div className="space-y-2 text-blue-800">
-          <p>• <strong>1.</strong> Baixe o template Excel correspondente ao tipo de dados que deseja importar</p>
-          <p>• <strong>2.</strong> Preencha o arquivo seguindo exatamente o layout fornecido</p>
-          <p>• <strong>3.</strong> Faça o upload do arquivo preenchido</p>
-          <p>• <strong>4.</strong> Aguarde o processamento e verifique os resultados</p>
-          <p>• <strong>5.</strong> Corrija eventuais erros e reimporte se necessário</p>
+          <p>• <strong>1.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item1')}</p>
+          <p>• <strong>2.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item2')}</p>
+          <p>• <strong>3.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item3')}</p>
+          <p>• <strong>4.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item4')}</p>
+          <p>• <strong>5.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item5')}</p>
         </div>
       </div>
 

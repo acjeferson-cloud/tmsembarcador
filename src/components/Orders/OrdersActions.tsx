@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, Download } from 'lucide-react';
+import { Printer, Download, Calculator } from 'lucide-react';
 
 interface OrdersActionsProps {
   selectedCount: number;
@@ -17,6 +17,15 @@ export const OrdersActions: React.FC<OrdersActionsProps> = ({ selectedCount, onA
         
         <div className="flex-1"></div>
         
+        <button
+          onClick={() => onAction('recalculate')}
+          disabled={selectedCount === 0 || isLoading}
+          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+        >
+          <Calculator size={16} />
+          <span>Recalcular Pedidos</span>
+        </button>
+
         <button
           onClick={() => onAction('print')}
           disabled={selectedCount === 0 || isLoading}

@@ -331,7 +331,7 @@ export const Establishments: React.FC = () => {
           onClick={handleNewEstablishment}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
-          <Plus size={20} />
+          <Plus size="1.25rem" />
           <span>{t('establishments.buttons.new')}</span>
         </button>
       </div>
@@ -341,7 +341,7 @@ export const Establishments: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div className="flex-1 max-w-md">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.25rem" />
                 <input
                   type="text"
                   placeholder={t('establishments.searchPlaceholder')}
@@ -354,7 +354,7 @@ export const Establishments: React.FC = () => {
 
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <Filter size={20} className="text-gray-400" />
+                <Filter size="1.25rem" className="text-gray-400" />
                 <select
                   value={stateFilter}
                   onChange={(e) => setStateFilter(e.target.value)}
@@ -371,7 +371,7 @@ export const Establishments: React.FC = () => {
                 onClick={handleExport}
                 className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <Download size={20} />
+                <Download size="1.25rem" />
                 <span>{t('establishments.buttons.export')}</span>
               </button>
             </div>
@@ -385,7 +385,7 @@ export const Establishments: React.FC = () => {
           </div>
         ) : filteredEstablishments.length === 0 ? (
           <div className="p-12 text-center">
-            <Building className="mx-auto text-gray-400 mb-4" size={48} />
+            <Building className="mx-auto text-gray-400 mb-4" size="3rem" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('establishments.emptyState.title')}</h3>
             <p className="text-gray-600 dark:text-gray-400">{t('establishments.emptyState.desc')}</p>
           </div>

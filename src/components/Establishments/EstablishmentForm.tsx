@@ -401,7 +401,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
           onClick={onBack}
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size="1.25rem" />
           <span>{t('establishments.buttons.back')}</span>
         </button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -425,7 +425,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Building size={16} />
+                <Building size="1rem" />
                 <span>{t('establishments.form.tabs.basic')}</span>
               </div>
             </button>
@@ -438,7 +438,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Map size={16} />
+                <Map size="1rem" />
                 <span>{t('establishments.form.tabs.address')}</span>
               </div>
             </button>
@@ -451,7 +451,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Building size={16} />
+                <Building size="1rem" />
                 <span>{t('establishments.form.tabs.logos')}</span>
               </div>
             </button>
@@ -464,7 +464,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Mail size={16} />
+                <Mail size="1rem" />
                 <span>{t('establishments.form.tabs.email')}</span>
               </div>
             </button>
@@ -477,7 +477,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Server size={16} />
+                <Server size="1rem" />
                 <span>{t('establishments.form.tabs.emailOutgoing')}</span>
               </div>
             </button>
@@ -514,20 +514,20 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 transition-colors"
                     title="Gerar próximo código"
                   >
-                    <Hash size={18} />
+                    <Hash size="1.125rem" />
                   </button>
                 </div>
                 
                 {codeError && (
                   <div className="mt-2 flex items-center space-x-2 text-red-600">
-                    <AlertCircle size={16} />
+                    <AlertCircle size="1rem" />
                     <span className="text-sm">{codeError}</span>
                   </div>
                 )}
                 
                 <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-start space-x-2">
-                    <Info size={16} className="text-blue-600 mt-0.5" />
+                    <Info size="1rem" className="text-blue-600 mt-0.5" />
                     <div>
                       <p className="text-sm text-blue-800 font-medium">Código Sequencial</p>
                       <p className="text-xs text-blue-700 mt-1">
@@ -696,7 +696,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
             <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-start space-x-3">
-                <Info size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <Info size="1.25rem" className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-800 dark:text-blue-200">
                   <p className="font-medium mb-1">{t('establishments.form.logos.tipsTitle')}</p>
                   <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
@@ -771,7 +771,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     {isSearchingCep ? (
                       <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     ) : (
-                      <Search size={18} />
+                      <Search size="1.125rem" />
                     )}
                   </button>
                 </div>
@@ -779,14 +779,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                 {/* CEP Messages */}
                 {cepError && (
                   <div className="mt-2 flex items-center space-x-2 text-red-600">
-                    <AlertCircle size={16} />
+                    <AlertCircle size="1rem" />
                     <span className="text-sm">{cepError}</span>
                   </div>
                 )}
                 
                 {cepSuccess && (
                   <div className="mt-2 flex items-center space-x-2 text-green-600">
-                    <Map size={16} />
+                    <Map size="1rem" />
                     <span className="text-sm">{cepSuccess}</span>
                   </div>
                 )}
@@ -828,7 +828,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             {/* CEP Integration Info */}
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-start space-x-2">
-                <Map size={16} className="text-blue-600 mt-0.5" />
+                <Map size="1rem" className="text-blue-600 mt-0.5" />
                 <div>
                   <p className="text-sm text-blue-800 font-medium">{t('establishments.form.address.autoSearch')}</p>
                   <p className="text-xs text-blue-700 mt-1">
@@ -895,7 +895,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   {t('establishments.form.email.emailAddress')}
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                   <input
                     type="email"
                     name="email"
@@ -912,7 +912,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   {t('establishments.form.email.username')}
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                   <input
                     type="text"
                     name="username"
@@ -929,7 +929,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   {t('establishments.form.email.password')}
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
@@ -943,7 +943,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-400"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size="1.125rem" /> : <Eye size="1.125rem" />}
                   </button>
                 </div>
               </div>
@@ -970,7 +970,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                       {t('establishments.form.email.clientId')}
                     </label>
                     <div className="relative">
-                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                       <input
                         type="text"
                         name="oauth2ClientId"
@@ -987,7 +987,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                       {t('establishments.form.email.clientSecret')}
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                       <input
                         type={showPassword ? "text" : "password"}
                         name="oauth2ClientSecret"
@@ -1001,7 +1001,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-400"
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size="1.125rem" /> : <Eye size="1.125rem" />}
                       </button>
                     </div>
                   </div>
@@ -1011,7 +1011,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                       {t('establishments.form.email.refreshToken')}
                     </label>
                     <div className="relative">
-                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                       <input
                         type="text"
                         name="oauth2RefreshToken"
@@ -1025,7 +1025,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
                   <div className="md:col-span-2 p-4 bg-blue-50 rounded-lg">
                     <div className="flex items-start space-x-2">
-                      <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Info size="1.125rem" className="text-blue-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-sm text-blue-800 font-medium">{t('establishments.form.email.aboutOauth2')}</p>
                         <p className="text-xs text-blue-700 mt-1">
@@ -1058,7 +1058,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   {t('establishments.form.email.incomingServer')}
                 </label>
                 <div className="relative">
-                  <Server className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Server className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
                   <input
                     type="text"
                     name="host"
@@ -1105,7 +1105,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
             {/* Automatic XML Download Configuration */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <CheckCircle size={18} className="text-green-600" />
+                <CheckCircle size="1.125rem" className="text-green-600" />
                 Importação Automática de XML
               </h4>
 
@@ -1150,7 +1150,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     {formData.email_config.lastAutoDownload && (
                       <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center gap-2 text-sm text-green-800">
-                          <CheckCircle size={16} className="text-green-600" />
+                          <CheckCircle size="1rem" className="text-green-600" />
                           <span className="font-medium">
                             Último download automático:{' '}
                             {new Date(formData.email_config.lastAutoDownload).toLocaleString('pt-BR', {
@@ -1167,7 +1167,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <div className="flex items-start gap-2">
-                        <Info size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                        <Info size="1.125rem" className="text-blue-600 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-sm text-blue-800 font-medium">{t('establishments.form.email.howItWorks')}</p>
                           <ul className="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
@@ -1194,7 +1194,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                       </>
                     ) : (
                       <>
-                        <Server size={16} />
+                        <Server size="1rem" />
                         <span>{t('establishments.form.email.testConnection')}</span>
                       </>
                     )}
@@ -1203,9 +1203,9 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                     <div className={`mt-3 p-3 rounded-lg ${connectionStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
                       <div className="flex items-center space-x-2">
                         {connectionStatus.success ? (
-                          <CheckCircle size={16} className="text-green-600" />
+                          <CheckCircle size="1rem" className="text-green-600" />
                         ) : (
-                          <AlertCircle size={16} className="text-red-600" />
+                          <AlertCircle size="1rem" className="text-red-600" />
                         )}
                         <span>{connectionStatus.message}</span>
                       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, AlertTriangle, CheckCircle, FileText } from 'lucide-react';
+import { Search, Plus, Download, AlertTriangle, CheckCircle, FileText } from 'lucide-react';
 import { occurrencesService } from '../../services/occurrencesService';
 import { OccurrenceCard } from './OccurrenceCard';
 import { OccurrenceView } from './OccurrenceView';
@@ -8,13 +8,15 @@ import { OccurrenceForm } from './OccurrenceForm';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 export const Occurrences: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
   const breadcrumbItems = [
-    { label: 'Logística Reversa' },
-    { label: 'Ocorrências', current: true }
+    { label: t('occurrences.breadcrumb') },
+    { label: t('occurrences.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +26,6 @@ export const Occurrences: React.FC = () => {
   const [viewingOccurrence, setViewingOccurrence] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [occurrencesList, setOccurrencesList] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; occurrenceId?: string }>({ isOpen: false });
   const itemsPerPage = 12;
@@ -35,13 +36,10 @@ export const Occurrences: React.FC = () => {
 
   const loadOccurrences = async () => {
     try {
-      setIsLoading(true);
       const data = await occurrencesService.getAll();
       setOccurrencesList(data);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar ocorrências.', type: 'error' });
-    } finally {
-      setIsLoading(false);
+      setToast({ message: t('occurrences.messages.loadError'), type: 'error' });
     }
   };
 
@@ -78,10 +76,10 @@ export const Occurrences: React.FC = () => {
     if (confirmDialog.occurrenceId) {
       const success = await occurrencesService.delete(confirmDialog.occurrenceId);
       if (success) {
-        setToast({ message: 'Histórico de ocorrência excluído com sucesso!', type: 'success' });
+        setToast({ message: t('occurrences.messages.deleteSuccess'), type: 'success' });
         await loadOccurrences();
       } else {
-        setToast({ message: 'Erro ao excluir histórico de ocorrência.', type: 'error' });
+        setToast({ message: t('occurrences.messages.deleteError'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -94,23 +92,23 @@ export const Occurrences: React.FC = () => {
           ...occurrenceData
         });
         if (updated) {
-          setToast({ message: 'Histórico de ocorrência atualizado com sucesso!', type: 'success' });
+          setToast({ message: t('occurrences.messages.updateSuccess'), type: 'success' });
         } else {
-          setToast({ message: 'Erro ao atualizar histórico de ocorrência.', type: 'error' });
+          setToast({ message: t('occurrences.messages.updateError'), type: 'error' });
           return;
         }
       } else {
         await occurrencesService.create({
           ...occurrenceData
         });
-        setToast({ message: 'Histórico de ocorrência criado com sucesso!', type: 'success' });
+        setToast({ message: t('occurrences.messages.createSuccess'), type: 'success' });
       }
 
       setShowForm(false);
       setEditingOccurrence(null);
       await loadOccurrences();
     } catch (error) {
-      setToast({ message: 'Erro ao salvar histórico de ocorrência. Tente novamente.', type: 'error' });
+      setToast({ message: t('occurrences.messages.saveError'), type: 'error' });
     }
   };
 
@@ -168,8 +166,8 @@ export const Occurrences: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Históricos de Ocorrências</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie os códigos de ocorrências para integração EDI</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('occurrences.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('occurrences.subtitle')}</p>
         </div>
         {isAdmin && (
           <button 
@@ -177,7 +175,7 @@ export const Occurrences: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Nova Ocorrência</span>
+            <span>{t('occurrences.newButton')}</span>
           </button>
         )}
       </div>
@@ -187,7 +185,7 @@ export const Occurrences: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Ocorrências</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('occurrences.stats.total')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{occurrencesList.length}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -199,7 +197,7 @@ export const Occurrences: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ocorrências de Entrega</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('occurrences.stats.deliveries')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
                 {occurrencesList.filter(o => parseInt(o.codigo) < 50).length}
               </p>
@@ -213,7 +211,7 @@ export const Occurrences: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ocorrências de Problema</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('occurrences.stats.problems')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
                 {occurrencesList.filter(o => parseInt(o.codigo) >= 50).length}
               </p>
@@ -232,7 +230,7 @@ export const Occurrences: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por código ou descrição..."
+              placeholder={t('occurrences.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -244,14 +242,14 @@ export const Occurrences: React.FC = () => {
             className="border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Download size={18} />
-            <span>Exportar</span>
+            <span>{t('occurrences.export')}</span>
           </button>
         </div>
 
         {/* Stats */}
         <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-          <span>Total: {filteredOccurrences.length} ocorrências</span>
-          <span>Página {currentPage} de {totalPages || 1}</span>
+          <span>{t('occurrences.summary', { total: filteredOccurrences.length })}</span>
+          <span>{t('occurrences.page', { current: currentPage, total: totalPages || 1 })}</span>
         </div>
       </div>
 
@@ -274,7 +272,7 @@ export const Occurrences: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredOccurrences.length)} de {filteredOccurrences.length} ocorrências
+              {t('occurrences.messages.pagination', { start: startIndex + 1, end: Math.min(startIndex + itemsPerPage, filteredOccurrences.length), total: filteredOccurrences.length })}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -282,7 +280,7 @@ export const Occurrences: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                {t('occurrences.messages.prev')}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -309,7 +307,7 @@ export const Occurrences: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                {t('occurrences.messages.next')}
               </button>
             </div>
           </div>
@@ -321,34 +319,33 @@ export const Occurrences: React.FC = () => {
           <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
             <FileText size={48} />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhuma ocorrência encontrada</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou cadastrar uma nova ocorrência.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('occurrences.emptyTitle')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('occurrences.emptyDesc')}</p>
         </div>
       )}
 
       {/* Information Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre Históricos de Ocorrências</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('occurrences.about.title')}</h3>
         <p className="text-blue-800 mb-4">
-          Os códigos de ocorrência são utilizados para padronizar a comunicação com transportadores via EDI (OCOREN 5.0).
-          Cada código representa um tipo de evento que pode ocorrer durante o processo de entrega.
+          {t('occurrences.about.desc')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Padrão OCOREN</p>
-            <p className="text-blue-700">Compatível com EDI OCOREN 5.0</p>
+            <p className="font-semibold text-blue-900">{t('occurrences.about.patternTitle')}</p>
+            <p className="text-blue-700">{t('occurrences.about.patternDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Rastreamento</p>
-            <p className="text-blue-700">Integração com rastreamento</p>
+            <p className="font-semibold text-blue-900">{t('occurrences.about.trackingTitle')}</p>
+            <p className="text-blue-700">{t('occurrences.about.trackingDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Códigos Padrão</p>
-            <p className="text-blue-700">Pré-configurados para uso imediato</p>
+            <p className="font-semibold text-blue-900">{t('occurrences.about.standardTitle')}</p>
+            <p className="text-blue-700">{t('occurrences.about.standardDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">Personalização</p>
-            <p className="text-blue-700">Adicione códigos específicos</p>
+            <p className="font-semibold text-blue-900">{t('occurrences.about.customTitle')}</p>
+            <p className="text-blue-700">{t('occurrences.about.customDesc')}</p>
           </div>
         </div>
       </div>
@@ -366,10 +363,10 @@ export const Occurrences: React.FC = () => {
       {confirmDialog.isOpen && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message="Tem certeza que deseja excluir este histórico de ocorrência? Esta ação não pode ser desfeita."
-          confirmText="Excluir"
-          cancelText="Cancelar"
+          title={t('occurrences.messages.confirmDeleteTitle')}
+          message={t('occurrences.messages.confirmDeleteMessage')}
+          confirmText={t('occurrences.messages.confirmDeleteBtn')}
+          cancelText={t('occurrences.messages.cancelBtn')}
           type="danger"
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}

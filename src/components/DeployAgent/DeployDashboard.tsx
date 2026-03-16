@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { deployAgentService } from '../../services/deployAgentService';
 import { DeployUploader } from './DeployUploader';
+import { useTranslation } from 'react-i18next';
 
 interface DeployDashboardProps {
   projectId: string;
@@ -12,6 +13,7 @@ interface DeployDashboardProps {
 }
 
 export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onBack }) => {
+  const { t } = useTranslation();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploader, setShowUploader] = useState(false);
@@ -48,7 +50,7 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
       await deployAgentService.approveSuggestion(id);
       loadDashboard();
     } catch (error) {
-      alert('Erro ao aprovar sugestão');
+      alert(t('implementationCenter.messages.approveSuggestionError'));
     }
   };
 
@@ -56,9 +58,9 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
     try {
       await deployAgentService.executeConfiguration(uploadId);
       loadDashboard();
-      alert('Arquivo processado e importado com sucesso!');
+      alert(t('implementationCenter.messages.executeUploadSuccess'));
     } catch (error) {
-      alert('Erro ao executar importação');
+      alert(t('implementationCenter.messages.executeUploadError'));
     }
   };
 
@@ -71,21 +73,21 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
           className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft className="w-5 h-5" />
-          Voltar para Projetos
+          {t('implementationCenter.dashboard.backToProjects')}
         </button>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{project.project_name}</h1>
-              <p className="text-gray-600 dark:text-gray-400">Cliente: {project.client_name}</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('implementationCenter.deployAgent.clientPrefix')}: {project.client_name}</p>
             </div>
             <button
               onClick={() => setShowUploader(true)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
             >
               <Upload className="w-5 h-5" />
-              Enviar Arquivos
+              {t('implementationCenter.dashboard.sendFilesBtn')}
             </button>
           </div>
         </div>
@@ -95,50 +97,50 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Progresso</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('implementationCenter.dashboard.stats.progress')}</span>
             <Clock className="w-5 h-5 text-blue-600" />
           </div>
           <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.progress}%</div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {stats.completedSteps} de {stats.totalSteps} etapas
+            {stats.completedSteps} {t('implementationCenter.dashboard.stats.of')} {stats.totalSteps} {t('implementationCenter.dashboard.stats.steps')}
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Erros</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('implementationCenter.dashboard.stats.errors')}</span>
             <AlertTriangle className="w-5 h-5 text-red-600" />
           </div>
           <div className="text-3xl font-bold text-red-600">{stats.errorsCount}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Requerem atenção</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('implementationCenter.dashboard.stats.requireAttention')}</div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Avisos</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('implementationCenter.dashboard.stats.warnings')}</span>
             <Info className="w-5 h-5 text-yellow-600" />
           </div>
           <div className="text-3xl font-bold text-yellow-600">{stats.warningsCount}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Para revisão</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('implementationCenter.dashboard.stats.forReview')}</div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Sugestões</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('implementationCenter.dashboard.stats.suggestions')}</span>
             <TrendingUp className="w-5 h-5 text-green-600" />
           </div>
           <div className="text-3xl font-bold text-green-600">{stats.suggestionsCount}</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Melhorias possíveis</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('implementationCenter.dashboard.stats.possibleImprovements')}</div>
         </div>
       </div>
 
       {/* Progress Bar */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Progresso Geral</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('implementationCenter.dashboard.overallProgress')}</h3>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Implantação</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('implementationCenter.dashboard.implementation')}</span>
               <span className="text-sm font-semibold text-gray-900 dark:text-white">{stats.progress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
@@ -153,25 +155,25 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
             <div>
               <div className="flex items-center justify-center gap-1 text-green-600 font-semibold">
                 <CheckCircle className="w-4 h-4" />
-                Coleta
+                {t('implementationCenter.dashboard.steps.collect')}
               </div>
             </div>
             <div>
               <div className={`flex items-center justify-center gap-1 ${stats.progress >= 33 ? 'text-green-600' : 'text-gray-400'} font-semibold`}>
                 <Bot className="w-4 h-4" />
-                Interpretação
+                {t('implementationCenter.dashboard.steps.interpretation')}
               </div>
             </div>
             <div>
               <div className={`flex items-center justify-center gap-1 ${stats.progress >= 66 ? 'text-green-600' : 'text-gray-400'} font-semibold`}>
                 <Zap className="w-4 h-4" />
-                Execução
+                {t('implementationCenter.dashboard.steps.execution')}
               </div>
             </div>
             <div>
               <div className={`flex items-center justify-center gap-1 ${stats.progress === 100 ? 'text-green-600' : 'text-gray-400'} font-semibold`}>
                 <CheckCircle className="w-4 h-4" />
-                Concluído
+                {t('implementationCenter.dashboard.steps.completed')}
               </div>
             </div>
           </div>
@@ -183,13 +185,13 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
         {/* Uploads */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Arquivos Enviados</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.dashboard.sentFiles.title')}</h3>
           </div>
           <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
             {uploads.length === 0 ? (
               <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                 <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                Nenhum arquivo enviado ainda
+                {t('implementationCenter.dashboard.sentFiles.empty')}
               </div>
             ) : (
               uploads.map((upload: any) => (
@@ -205,7 +207,7 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
                           onClick={() => handleExecuteUpload(upload.id)}
                           className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
                         >
-                          Efetivar Importação
+                          {t('implementationCenter.dashboard.sentFiles.submitImportBtn')}
                         </button>
                       )}
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -213,8 +215,8 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
                         upload.status === 'failed' ? 'bg-red-100 text-red-800' :
                         'bg-blue-100 text-blue-800'
                       }`}>
-                        {upload.status === 'executed' ? 'Importado (100%)' :
-                         upload.status === 'validated' ? 'Aguardando Importação' : 
+                        {upload.status === 'executed' ? t('implementationCenter.dashboard.sentFiles.statusImported') :
+                         upload.status === 'validated' ? t('implementationCenter.dashboard.sentFiles.statusWaiting') : 
                          upload.status}
                       </span>
                     </div>
@@ -228,13 +230,13 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
         {/* Validations */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Validações</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.dashboard.validations.title')}</h3>
           </div>
           <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
             {validations.length === 0 ? (
               <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                 <CheckCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                Nenhuma validação registrada
+                {t('implementationCenter.dashboard.validations.empty')}
               </div>
             ) : (
               validations.slice(0, 10).map((validation: any) => (
@@ -248,7 +250,7 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
                     <div className="flex-1">
                       <div className="font-medium text-gray-900 dark:text-white">{validation.message}</div>
                       {validation.field_name && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Campo: {validation.field_name}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('implementationCenter.dashboard.validations.field')}: {validation.field_name}</div>
                       )}
                     </div>
                   </div>
@@ -261,13 +263,13 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
         {/* Suggestions */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 lg:col-span-2">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Sugestões de Melhoria</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('implementationCenter.dashboard.suggestions.title')}</h3>
           </div>
           <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
             {suggestions.length === 0 ? (
               <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                 <TrendingUp className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                Nenhuma sugestão disponível
+                {t('implementationCenter.dashboard.suggestions.empty')}
               </div>
             ) : (
               suggestions.map((suggestion: any) => (
@@ -292,7 +294,7 @@ export const DeployDashboard: React.FC<DeployDashboardProps> = ({ projectId, onB
                         onClick={() => handleApproveSuggestion(suggestion.id)}
                         className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
                       >
-                        Aprovar
+                        {t('implementationCenter.dashboard.suggestions.approveBtn')}
                       </button>
                     )}
                   </div>

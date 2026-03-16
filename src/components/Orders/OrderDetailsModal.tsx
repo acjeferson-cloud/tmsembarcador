@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, XCircle, Clock, Eye, User, MapPin, Building, Package, ShoppingCart } from 'lucide-react';
 import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
+import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 
 interface Order {
   id: number;
@@ -16,6 +17,7 @@ interface Order {
   ufDestino: string;
   valorPedido: number;
   chaveAcesso: string;
+  freight_results?: any[];
 }
 
 interface OrderDetailsModalProps {
@@ -29,7 +31,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onClose,
   order
 }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'items'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'items' | 'freight'>('details');
   
   if (!isOpen) return null;
   
@@ -157,6 +159,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <div className="flex items-center space-x-2">
                 <Package size={16} />
                 <span>Itens do Pedido</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('freight')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'freight'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Truck size={16} />
+                <span>Custos de Frete</span>
               </div>
             </button>
           </nav>
@@ -369,7 +384,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 </div>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'items' ? (
             <div className="space-y-6">
               {/* Items Table */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -441,7 +456,21 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 </div>
               </div>
             </div>
-          )}
+          ) : activeTab === 'freight' ? (
+            <div className="space-y-6">
+              {order.freight_results && order.freight_results.length > 0 ? (
+                <QuoteResultsTable results={order.freight_results} cargoValue={order.valorPedido} />
+              ) : (
+                <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-12 text-center">
+                  <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Sem custo de frete</h3>
+                  <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                    Nenhum custo de frete calculado ou salvo para este pedido.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

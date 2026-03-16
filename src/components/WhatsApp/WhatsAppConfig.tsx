@@ -480,7 +480,7 @@ export const WhatsAppConfig: React.FC = () => {
                     <button
                       onClick={() => {
                         if (!whatsappActive) {
-                          setSaveMessage({ type: 'error', text: 'Recurso não contratado. Ative em Inovações & Sugestões.' });
+                          setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
                           return;
                         }
                         setEditingTemplate(template);

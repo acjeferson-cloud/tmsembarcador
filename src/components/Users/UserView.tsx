@@ -10,63 +10,63 @@ interface UserViewProps {
   user: UserType;
 }
 
-// Menu structure from Sidebar.tsx (simplified for display)
+// Menu structure string translation mappings
 const menuItems = [
-  { id: 'fiori', label: 'Área de trabalho' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'control-tower', label: 'Torre de Controle' },
-  { id: 'carriers', label: 'Transportadores' },
-  { id: 'calculator', label: 'Cotação de Fretes' },
+  { id: 'fiori', label: 'sidebar.dashboard' },
+  { id: 'dashboard', label: 'sidebar.dashboard' },
+  { id: 'control-tower', label: 'sidebar.controlTower' },
+  { id: 'carriers', label: 'sidebar.carriers' },
+  { id: 'calculator', label: 'sidebar.quote' },
   { 
     id: 'operational-docs', 
-    label: 'Documentos Operacionais',
+    label: 'sidebar.docs',
     hasSubmenu: true,
     submenu: [
-      { id: 'orders', label: 'Pedidos' },
-      { id: 'invoices', label: 'Notas Fiscais' },
-      { id: 'ctes', label: 'CT-es' },
-      { id: 'bills', label: 'Faturas' }
+      { id: 'orders', label: 'sidebar.sub.orders' },
+      { id: 'invoices', label: 'sidebar.sub.invoices' },
+      { id: 'ctes', label: 'sidebar.sub.ctes' },
+      { id: 'bills', label: 'sidebar.sub.bills' }
     ]
   },
-  { id: 'shipments', label: 'Rastreamento de Entregas' },
-  { id: 'reverse-logistics', label: 'Logística Reversa' },
-  { id: 'electronic-docs', label: 'Documentos Eletrônicos' },
+  { id: 'shipments', label: 'sidebar.tracking' },
+  { id: 'reverse-logistics', label: 'sidebar.reverseLogistics' },
+  { id: 'electronic-docs', label: 'sidebar.electronicDocs' },
   { 
     id: 'edi', 
-    label: 'EDI',
+    label: 'sidebar.edi',
     hasSubmenu: true,
     submenu: [
-      { id: 'edi-input', label: 'EDIs de Entrada' },
-      { id: 'edi-output', label: 'EDIs de Saída' }
+      { id: 'edi-input', label: 'sidebar.sub.ediInput' },
+      { id: 'edi-output', label: 'sidebar.sub.ediOutput' }
     ]
   },
   { 
     id: 'reports', 
-    label: 'Relatórios',
+    label: 'sidebar.reports',
     hasSubmenu: true,
     submenu: [
-      { id: 'report-cte-audit', label: 'Auditoria de CT-es' },
-      { id: 'report-invoice-reconciliation', label: 'Conciliação de Faturas' },
-      { id: 'report-deliveries-occurrences', label: 'Entregas com Ocorrências' },
-      { id: 'report-nfe-without-cte', label: 'NF-e Não Atendida' },
-      { id: 'report-rejection-history', label: 'Histórico de Reprovações' },
-      { id: 'report-carrier-efficiency', label: 'Eficiência dos Transportadores' },
-      { id: 'report-xml-download-history', label: 'Download de XMLs de CT-es' },
-      { id: 'report-tolerance-usage', label: 'Uso de Tolerância Contratual' }
+      { id: 'report-cte-audit', label: 'reports.finance.audit' },
+      { id: 'report-invoice-reconciliation', label: 'reports.finance.conciliation' },
+      { id: 'report-deliveries-occurrences', label: 'reports.operational.occurrences' },
+      { id: 'report-nfe-without-cte', label: 'reports.operational.unattendedNFe' },
+      { id: 'report-rejection-history', label: 'reports.operational.rejectionHist' },
+      { id: 'report-carrier-efficiency', label: 'reports.performance.carrierMetrics' },
+      { id: 'report-xml-download-history', label: 'reports.finance.xmlDownloadHist' },
+      { id: 'report-tolerance-usage', label: 'reports.finance.toleranceUsage' }
     ]
   },
   { 
     id: 'settings', 
-    label: 'Configurações',
+    label: 'sidebar.settings',
     hasSubmenu: true,
     submenu: [
-      { id: 'establishments', label: 'Estabelecimentos' },
-      { id: 'users', label: 'Usuários' },
-      { id: 'countries', label: 'Países' },
-      { id: 'states', label: 'Estados' },
-      { id: 'cities', label: 'Cidades' },
-      { id: 'occurrences', label: 'Históricos de Ocorrências' },
-      { id: 'rejection-reasons', label: 'Motivos de Rejeições' }
+      { id: 'establishments', label: 'sidebar.sub.establishments' },
+      { id: 'users', label: 'sidebar.sub.users' },
+      { id: 'countries', label: 'sidebar.sub.countries' },
+      { id: 'states', label: 'sidebar.sub.states' },
+      { id: 'cities', label: 'sidebar.sub.cities' },
+      { id: 'occurrences', label: 'sidebar.sub.occurrences' },
+      { id: 'rejection-reasons', label: 'sidebar.sub.rejectionReasons' }
     ]
   },
 ];
@@ -634,7 +634,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                             ) : (
                               <div className="w-[18px] mr-2"></div>
                             )}
-                            <span className="font-medium text-gray-800 dark:text-gray-200">{menu.label}</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">{t(menu.label as any, { defaultValue: menu.label })}</span>
                           </div>
                         </div>
                         <div className="col-span-4">
@@ -663,7 +663,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
                           <div key={submenu.id} className="px-4 py-2 pl-10 hover:bg-gray-100 dark:bg-gray-700">
                             <div className="grid grid-cols-12 gap-4 items-center">
                               <div className="col-span-8">
-                                <span className="text-gray-700 dark:text-gray-300">{submenu.label}</span>
+                                <span className="text-gray-700 dark:text-gray-300">{t(submenu.label as any, { defaultValue: submenu.label })}</span>
                               </div>
                               <div className="col-span-4">
                                 <div className="flex items-center text-gray-700 dark:text-gray-300">

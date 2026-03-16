@@ -219,13 +219,13 @@ export const WhatsAppExtract: React.FC = () => {
               onClick={handleApplyFilters}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              Aplicar Filtros
+              {t('whatsapp.extract.buttons.applyFilters') || 'Aplicar Filtros'}
             </button>
             <button
               onClick={handleClearFilters}
               className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300"
             >
-              Limpar
+              {t('whatsapp.extract.buttons.clearFilters') || 'Limpar'}
             </button>
           </div>
         </div>
