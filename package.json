@@ -24,6 +24,7 @@
     "test:e2e:webkit": "playwright test --project=webkit"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
     "@supabase/supabase-js": "^2.58.0",
     "date-fns": "^4.1.0",
     "i18next": "^25.7.2",

@@ -8,6 +8,7 @@ import { electronicDocumentsService } from '../../services/electronicDocumentsSe
 import { getDanfeHtml } from '../../utils/danfeGenerator';
 import { getDacteHtml } from '../../utils/dacteGenerator';
 import { generateNfeXml, generateCteXml } from '../../utils/xmlGenerator';
+import { parseXML } from '../../services/xmlService';
 import { useTranslation } from 'react-i18next';
 
 type DocumentType = 'NFe' | 'CTe';
@@ -39,34 +40,50 @@ export const ElectronicDocuments: React.FC = () => {
   const loadDocuments = async () => {
     try {
       const data = await electronicDocumentsService.getAll();
-      const mappedData = data.map(doc => ({
-        id: doc.id,
-        tipo: doc.document_type,
-        modelo: doc.model,
-        numeroDocumento: doc.document_number,
-        serie: doc.series,
-        chaveAcesso: doc.access_key,
-        protocoloAutorizacao: doc.authorization_protocol,
-        dataAutorizacao: doc.authorization_date || doc.import_date,
-        dataImportacao: doc.import_date,
-        status: doc.status,
-        emitente: {
-          razaoSocial: doc.issuer_name,
-          cnpj: doc.issuer_document,
-          endereco: doc.issuer_address
-        },
-        destinatario: doc.recipient_name ? {
-          razaoSocial: doc.recipient_name,
-          cnpj: doc.recipient_document,
-          endereco: doc.recipient_address
-        } : null,
-        valorTotal: doc.total_value,
-        valorIcms: doc.icms_value,
-        valorFrete: doc.freight_value,
-        pesoTotal: doc.total_weight,
-        modalTransporte: doc.transport_mode,
-        xmlContent: doc.xml_content
-      }));
+      const mappedData = data.map(doc => {
+        let parsedData: any = {};
+        if (doc.xml_content) {
+          try {
+            parsedData = parseXML(doc.xml_content);
+            console.log(`Parsed XML for ${doc.document_number}: dataAutorizacao=${parsedData.dataAutorizacao}, DB auth_date=${doc.authorization_date}, DB import_date=${doc.import_date}`);
+          } catch (e) {
+            console.error('Error parsing XML:', e);
+          }
+        } else {
+            console.warn(`No xml_content for ${doc.document_number}`);
+        }
+        
+        return {
+          id: doc.id,
+          tipo: doc.document_type,
+          modelo: doc.model,
+          numeroDocumento: doc.document_number,
+          serie: doc.series,
+          chaveAcesso: doc.access_key,
+          protocoloAutorizacao: doc.authorization_protocol,
+          dataAutorizacao: parsedData.dataAutorizacao || doc.authorization_date || doc.import_date,
+          dataImportacao: doc.import_date,
+          status: doc.status,
+          emitente: {
+            razaoSocial: doc.issuer_name,
+            cnpj: doc.issuer_document,
+            endereco: doc.issuer_address,
+            ...parsedData.emitente
+          },
+          destinatario: doc.recipient_name ? {
+            razaoSocial: doc.recipient_name,
+            cnpj: doc.recipient_document,
+            endereco: doc.recipient_address,
+            ...parsedData.destinatario
+          } : (parsedData.destinatario || null),
+          valorTotal: doc.total_value,
+          valorIcms: doc.icms_value,
+          valorFrete: doc.freight_value,
+          pesoTotal: doc.total_weight,
+          modalTransporte: doc.transport_mode,
+          xmlContent: doc.xml_content
+        };
+      });
       setDocumentsList(mappedData);
     } catch (error) {
       console.error('Erro ao carregar documentos:', error);

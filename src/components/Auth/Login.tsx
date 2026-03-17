@@ -326,7 +326,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           {/* Version */}
           <div className="text-center pt-1">
-            <p className="text-xs text-gray-400 dark:text-gray-600">v1.12</p>
+            <p className="text-xs text-gray-400 dark:text-gray-600">v1.13</p>
           </div>
         </div>
       </div>
