@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, XCircle, Clock, Eye, User, MapPin, Building, Package, ShoppingCart } from 'lucide-react';
-import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
+import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, Clock, User, MapPin, Package, ShoppingCart } from 'lucide-react';
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
+import { orderPdfService } from '../../services/orderPdfService';
 
 interface Order {
   id: number;
@@ -18,6 +18,7 @@ interface Order {
   valorPedido: number;
   chaveAcesso: string;
   freight_results?: any[];
+  items?: any[];
 }
 
 interface OrderDetailsModalProps {
@@ -89,18 +90,22 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     }
   };
   
-  // Generate mock items for the order
-  const mockItems = Array.from({ length: 5 }, (_, i) => ({
-    id: i + 1,
-    codigo: `SKU-${Math.floor(Math.random() * 9000) + 1000}`,
-    descricao: ['Notebook Dell Inspiron', 'Smartphone Samsung Galaxy', 'Monitor LG 24"', 'Teclado Mecânico Logitech', 'Mouse Gamer Razer'][i],
-    quantidade: Math.floor(Math.random() * 5) + 1,
-    valorUnitario: Math.floor(Math.random() * 2000) + 200,
-    valorTotal: 0
-  })).map(item => ({
-    ...item,
-    valorTotal: item.quantidade * item.valorUnitario
-  }));
+  // Use real items from order
+  const items = order.items || [];
+
+  const handlePrint = () => {
+    const pdfUrl = orderPdfService.generateOrderPDF([order] as any[], 'print');
+    const printWindow = window.open(pdfUrl, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  };
+
+  const handleDownload = () => {
+    orderPdfService.generateOrderPDF([order] as any[], 'download');
+  };
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -112,12 +117,14 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           </div>
           <div className="flex items-center space-x-3">
             <button
+              onClick={handlePrint}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Printer size={16} />
               <span>Imprimir Pedido</span>
             </button>
             <button
+              onClick={handleDownload}
               className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Download size={16} />
@@ -414,22 +421,22 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                      {mockItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                      {items.map((item, idx) => (
+                        <tr key={item.id || idx} className="hover:bg-gray-50 dark:bg-gray-900">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {item.codigo}
+                            {item.product_code || item.codigo || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {item.descricao}
+                            {item.product_description || item.descricao || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {item.quantidade}
+                            {item.quantity || item.quantidade || 0}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {formatCurrency(item.valorUnitario)}
+                            {formatCurrency(item.unit_price || item.valorUnitario || 0)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {formatCurrency(item.valorTotal)}
+                            {formatCurrency((item.total_price || item.valorTotal) || ((item.quantity || item.quantidade || 0) * (item.unit_price || item.valorUnitario || 0)))}
                           </td>
                         </tr>
                       ))}
@@ -443,15 +450,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total de Itens</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{mockItems.length}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{items.length}</p>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor dos Produtos</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(mockItems.reduce((sum, item) => sum + item.valorTotal, 0))}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor dos Itens</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {formatCurrency(items.reduce((sum, item) => sum + ((item.total_price || item.valorTotal) || ((item.quantity || item.quantidade || 0) * (item.unit_price || item.valorUnitario || 0))), 0))}
+                    </p>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Total do Pedido</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(mockItems.reduce((sum, item) => sum + item.valorTotal, 0) + order.valorFrete)}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">
+                      {formatCurrency(items.reduce((sum, item) => sum + ((item.total_price || item.valorTotal) || ((item.quantity || item.quantidade || 0) * (item.unit_price || item.valorUnitario || 0))), 0) + (order.valorFrete || 0))}
+                    </p>
                   </div>
                 </div>
               </div>

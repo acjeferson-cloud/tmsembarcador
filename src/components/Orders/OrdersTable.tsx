@@ -437,17 +437,6 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                           <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                             <div className="py-1">
                               {/* Additional actions can be added here */}
-                              <button
-                                onClick={() => {
-                                  onAction(order.id, 'view-details');
-                                  setOpenActionMenu(null);
-                                }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center space-x-2"
-                              >
-                                <Eye size={14} />
-                                <span>Visualizar Detalhes</span>
-                              </button>
 
                               {/* Edit Order */}
                               {onEdit && canEdit && canEdit(order).canEdit && (
@@ -477,19 +466,6 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                                 <span>Recalcular Pedido</span>
                               </button>
 
-                              {/* Relationship Map */}
-                              <button
-                                onClick={() => {
-                                  handleShowRelationshipMap(order);
-                                  setOpenActionMenu(null);
-                                }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center space-x-2"
-                              >
-                                <Share2 size={14} />
-                                <span>Mapa de Relações</span>
-                              </button>
-                              
                               <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                               
                               {/* Excluir Pedido */}
@@ -503,17 +479,6 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                               >
                                 <Trash2 size={14} />
                                 <span>Excluir Pedido</span>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleShowRelationshipMap(order);
-                                  setOpenActionMenu(null);
-                                }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center space-x-2"
-                              >
-                                <Share2 size={14} />
-                                <span>Mapa de Relações</span>
                               </button>
                             </div>
                           </div>

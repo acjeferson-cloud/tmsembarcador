@@ -387,7 +387,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
     }
 
     if (products.length === 0) {
-      setError('Por favor, adicione pelo menos um produto.');
+      setError('Por favor, adicione pelo menos um item.');
       setActiveTab('products');
       return;
     }
@@ -496,7 +496,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
           if (!itemsResult.success) {
             console.error('Erro ao atualizar itens:', itemsResult.error);
-            setError('Pedido atualizado, mas houve erro ao atualizar os produtos.');
+            setError('Pedido atualizado, mas houve erro ao atualizar os itens.');
             return;
           }
 
@@ -657,7 +657,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 >
                   <div className="flex items-center space-x-2">
                     <Package size={16} />
-                    <span>Produtos ({products.length})</span>
+                    <span>Itens ({products.length})</span>
                   </div>
                 </button>
                 <button
@@ -1014,27 +1014,27 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Adicione os produtos deste pedido
+                      Adicione os itens deste pedido
                     </p>
                     <button
                       onClick={addProduct}
                       className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
                       <Plus size={16} />
-                      <span>Adicionar Produto</span>
+                      <span>Adicionar Item</span>
                     </button>
                   </div>
 
                   {products.length === 0 ? (
                     <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
                       <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum produto adicionado</p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum item adicionado</p>
                       <button
                         onClick={addProduct}
                         className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         <Plus size={16} />
-                        <span>Adicionar Primeiro Produto</span>
+                        <span>Adicionar Primeiro Item</span>
                       </button>
                     </div>
                   ) : (
@@ -1070,7 +1070,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                                   value={product.product_description}
                                   onChange={(e) => updateProduct(index, 'product_description', e.target.value)}
                                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                  placeholder="Descrição do produto"
+                                  placeholder="Descrição do item"
                                 />
                               </td>
                               <td className="py-3 px-4">
@@ -1120,7 +1120,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                                 <button
                                   onClick={() => removeProduct(index)}
                                   className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  title="Remover produto"
+                                  title="Remover item"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -1131,7 +1131,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         <tfoot>
                           <tr className="border-t-2 border-gray-300 bg-gray-50 dark:bg-gray-900">
                             <td colSpan={6} className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white text-right">
-                              Total dos Produtos:
+                              Total dos Itens:
                             </td>
                             <td className="py-3 px-4 text-sm font-bold text-gray-900 dark:text-white text-right">
                               {formatCurrency(totalProductsValue)}
@@ -1161,7 +1161,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Valor dos Produtos
+                        Valor dos Itens
                       </label>
                       <input
                         type="text"

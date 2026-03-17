@@ -391,12 +391,38 @@ export const Orders: React.FC = () => {
        return;
     }
 
-    // Para visualização de detalhes usamos o objeto do cache (grid) para não bloquear
+    // Para visualização de detalhes usamos o objeto do banco para carregar os itens
     if (action === 'view-details') {
-      const order = orders.find(o => o.id === orderId);
-      if (order) {
-        setSelectedOrder(order);
-        setShowDetailsModal(true);
+      setIsLoading(true);
+      try {
+        const fullOrderData = await ordersService.getById(orderId.toString());
+        if (fullOrderData) {
+          setSelectedOrder({
+            id: fullOrderData.id || '',
+            status: fullOrderData.status,
+            numero: fullOrderData.order_number,
+            dataEmissao: fullOrderData.issue_date,
+            dataEntrada: fullOrderData.entry_date,
+            dataPrevisaoEntrega: fullOrderData.expected_delivery || '',
+            transportador: fullOrderData.carrier_name,
+            valorFrete: fullOrderData.freight_value,
+            cliente: fullOrderData.customer_name,
+            cidadeDestino: fullOrderData.destination_city,
+            ufDestino: fullOrderData.destination_state,
+            valorPedido: fullOrderData.order_value,
+            chaveAcesso: fullOrderData.tracking_code || '',
+            serie: fullOrderData.serie || '',
+            trackingCode: fullOrderData.tracking_code || '',
+            freight_results: fullOrderData.freight_results || [],
+            items: fullOrderData.items || []
+          });
+          setShowDetailsModal(true);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar detalhes do pedido', err);
+        alert('Erro ao carregar detalhes do pedido.');
+      } finally {
+        setIsLoading(false);
       }
       return;
     }
