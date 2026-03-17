@@ -4,8 +4,8 @@ import { ctesCompleteService, CTe, CTeInvoice } from '../../services/ctesComplet
 import { carriersService } from '../../services/carriersService';
 import { establishmentsService } from '../../services/establishmentsService';
 import { cteXmlService } from '../../services/cteXmlService';
-import { invoicesService } from '../../services/invoicesService';
 import { freightCostCalculator } from '../../services/freightCostCalculator';
+import { nfeService } from '../../services/nfeService';
 
 interface CTeFormProps {
   onBack: () => void;
@@ -392,16 +392,16 @@ export const CTeForm: React.FC<CTeFormProps> = ({
         if (parsedData.invoices && parsedData.invoices.length > 0) {
           const accessKeys = parsedData.invoices
             .map(inv => inv.number)
-            .filter(key => key && key.length === 44);
+            .filter((key): key is string => typeof key === 'string' && key.length === 44);
 
           if (accessKeys.length > 0) {
             try {
-              const nfesFromDB = await invoicesService.getByAccessKeys(accessKeys);
+              const nfesFromDB = await nfeService.getByAccessKeys(accessKeys);
 
               const establishmentIds = [...new Set(
                 nfesFromDB
-                  .filter(nfe => nfe.establishment_id)
-                  .map(nfe => nfe.establishment_id)
+                  .filter((nfe: any) => nfe.establishment_id)
+                  .map((nfe: any) => nfe.establishment_id)
               )];
 
               const establishments = establishmentIds.length > 0
@@ -409,7 +409,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
                 : [];
 
               const linkedInvoices = await Promise.all(parsedData.invoices.map(async inv => {
-                const nfeMatch = nfesFromDB.find(nfe => nfe.access_key === inv.number);
+                const nfeMatch = nfesFromDB.find((nfe: any) => nfe.access_key === inv.number);
 
                 if (nfeMatch) {
                   const establishment = establishments.find(
@@ -424,9 +424,9 @@ export const CTeForm: React.FC<CTeFormProps> = ({
                     cte_id: cte?.id || '',
                     establishment_code: establishmentCode,
                     invoice_type: nfeMatch.invoice_type || 'Saída',
-                    series: nfeMatch.invoice_series || inv.series || '',
-                    number: nfeMatch.invoice_number || '',
-                    cost_value: nfeMatch.freight_value || 0,
+                    series: nfeMatch.series || inv.series || '',
+                    number: nfeMatch.number || '',
+                    cost_value: nfeMatch.total_value || 0,
                     observations: `Vinculada automaticamente - Chave: ${inv.number}`
                   };
                 } else {

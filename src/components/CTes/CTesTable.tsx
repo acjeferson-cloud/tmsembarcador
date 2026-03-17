@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale, Share2 } from 'lucide-react';
 
 interface CTe {
   id: string;
@@ -377,6 +377,16 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       title="Comparar Valores"
                     >
                       <Scale size={16} />
+                    </button>
+
+                    {/* Relationship Map */}
+                    <button
+                      onClick={() => onAction(cte.id, 'relationship-map')}
+                      disabled={isLoading}
+                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50"
+                      title="Mapa de Relações"
+                    >
+                      <Share2 size={16} />
                     </button>
 
                     {/* More actions button */}

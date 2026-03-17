@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Save, User, Users, MapPin, FileText, Plus, Trash2, Map, Phone, Mail, Search, Loader, Info } from 'lucide-react';
+import { X, Save, User, Users, MapPin, FileText, Plus, Trash2, Map, Phone, Mail, Search, Loader, Info, MessageSquare } from 'lucide-react';
 import { BusinessPartner, BusinessPartnerContact, BusinessPartnerAddress } from '../../types';
 import GoogleMap from '../Maps/GoogleMap';
 import { receitaFederalService } from '../../services/receitaFederalService';
@@ -8,6 +8,7 @@ import { findOrCreateCityByCEP } from '../../services/citiesService';
 import { InlineMessage } from '../common/InlineMessage';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
+import { InteractionLogsTab } from './InteractionLogsTab';
 
 interface BusinessPartnerFormProps {
   partner: BusinessPartner | null;
@@ -420,6 +421,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     { id: 'addresses', label: t('businessPartners.form.tabs.addresses', 'Endereços'), icon: MapPin },
     { id: 'observations', label: t('businessPartners.form.tabs.observations', 'Observações'), icon: FileText }
   ];
+
+  if (partner) {
+    tabs.push({ id: 'interactions', label: 'Registros de Interações', icon: MessageSquare });
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1225,6 +1230,11 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   />
                 </div>
               </div>
+            )}
+
+            {/* Interactions Tab */}
+            {activeTab === 'interactions' && partner && (
+              <InteractionLogsTab businessPartnerId={partner.id} />
             )}
           </div>
 

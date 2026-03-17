@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Clock as ArrowClockwise, ThumbsUp, ThumbsDown, Calendar, User } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { Toast, ToastType } from '../common/Toast';
 import { BillsFilters } from './BillsFilters';
 import { BillsTable } from './BillsTable';
@@ -8,8 +8,8 @@ import { BillsActions } from './BillsActions';
 import { BillDetailsModal } from './BillDetailsModal';
 import { BillCTesModal } from './BillCTesModal';
 import { BillRejectionModal } from './BillRejectionModal';
-import { supabase } from '../../lib/supabase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { billsService } from '../../services/billsService';
 
 export const Bills: React.FC = () => {
   const breadcrumbItems = [
@@ -48,14 +48,9 @@ export const Bills: React.FC = () => {
   const loadBills = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('bills')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const data = await billsService.getAll();
 
-      if (error) throw error;
-
-      const formattedBills = (data || []).map((bill: any) => ({
+      const formattedBills = data.map((bill: any) => ({
         id: bill.id,
         status: bill.status,
         numero: bill.bill_number,
@@ -64,10 +59,10 @@ export const Bills: React.FC = () => {
         dataEntrada: bill.created_at,
         dataAprovacao: bill.updated_at,
         transportador: bill.customer_name,
-        valorCTes: parseFloat(bill.total_value || 0),
-        valorDesconto: parseFloat(bill.discount_value || 0),
-        valorCusto: parseFloat(bill.paid_value || 0),
-        cteCount: 0
+        valorCTes: parseFloat(bill.total_value?.toString() || '0'),
+        valorDesconto: parseFloat(bill.discount_value?.toString() || '0'),
+        valorCusto: parseFloat(bill.paid_value?.toString() || '0'),
+        cteCount: bill.cteCount || 0
       }));
 
       setBills(formattedBills);
@@ -144,7 +139,7 @@ export const Bills: React.FC = () => {
     }
   };
 
-  const handleSelectBill = (billId: number, isSelected: boolean) => {
+  const handleSelectBill = (billId: string | number, isSelected: boolean) => {
     if (isSelected) {
       setSelectedBills(prev => [...prev, billId]);
     } else {
@@ -152,7 +147,7 @@ export const Bills: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedBills.length === 0) {
       setToast({ message: 'Por favor, selecione pelo menos uma fatura para realizar esta ação.', type: 'warning' });
       return;
@@ -160,73 +155,51 @@ export const Bills: React.FC = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      let newStatus = '';
+      
       switch (action) {
-        case 'print':
-          setToast({ message: `Gerando DACTE para ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
-          break;
-        case 'recalculate':
-          setToast({ message: `Recalculando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
-          // Update bills status in the mock data
-          setBills(prev => prev.map(bill => 
-            selectedBills.includes(bill.id) 
-              ? { ...bill, valorCusto: Math.floor(Math.random() * 10000) + 500 }
-              : bill
-          ));
-          break;
         case 'approve':
-          setToast({ message: `Aprovando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'success' });
-          // Update bills status in the mock data
-          setBills(prev => prev.map(bill => 
-            selectedBills.includes(bill.id) 
-              ? { ...bill, status: 'auditada_aprovada', dataAprovacao: new Date().toISOString() }
-              : bill
-          ));
+          newStatus = 'auditada_aprovada';
           break;
         case 'reject':
-          setToast({ message: `Reprovando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'warning' });
-          // Update bills status in the mock data
-          setBills(prev => prev.map(bill => 
-            selectedBills.includes(bill.id) 
-              ? { ...bill, status: 'auditada_reprovada', dataAprovacao: new Date().toISOString() }
-              : bill
-          ));
+          newStatus = 'auditada_reprovada';
           break;
         case 'revert':
-          setToast({ message: `Estornando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
-          // Update bills status
-          setBills(prev => prev.map(bill =>
-            selectedBills.includes(bill.id)
-              ? { ...bill, status: 'importado', dataAprovacao: null }
-              : bill
-          ));
+          newStatus = 'importado';
           break;
-        case 'download':
-          setToast({ message: `Baixando XML de ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
-          break;
-        default:
-          break;
+        // others doesn't change state directly
       }
-      
-      setIsLoading(false);
-      // Clear selection after action
-      setSelectedBills([]);
-    }, 1000);
+
+      if (newStatus) {
+        // Update bills sequentially
+        for (const billId of selectedBills) {
+          await billsService.updateStatus(billId.toString(), newStatus);
+        }
+        setToast({ message: `Ação '${action}' executada em ${selectedBills.length} fatura(s).`, type: 'success' });
+        loadBills();
+      } else {
+         setToast({ message: `Ação suportável apenas visualmente nesta versão simulada.`, type: 'info' });
+      }
+    } catch (err: any) {
+        setToast({ message: `Falha ao processar ações em lote: ${err.message}`, type: 'error' });
+    } finally {
+        setIsLoading(false);
+        setSelectedBills([]);
+    }
   };
 
-  const handleSingleAction = (billId: number, action: string) => {
+  const handleSingleAction = async (billId: string | number, action: string) => {
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const bill = bills.find(b => b.id === billId);
-      
-      if (!bill) {
-        setIsLoading(false);
-        return;
-      }
-      
+    const bill = bills.find(b => b.id === billId);
+    
+    if (!bill) {
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
       switch (action) {
         case 'view-ctes':
           setSelectedBill(bill);
@@ -236,43 +209,19 @@ export const Bills: React.FC = () => {
           setSelectedBill(bill);
           setShowDetailsModal(true);
           break;
-        case 'print':
-          setToast({ message: `Gerando DACTE para a fatura ${bill.numero}.`, type: 'info' });
-          break;
-        case 'recalculate':
-          setToast({ message: `Recalculando a fatura ${bill.numero}.`, type: 'info' });
-          // Update bill in the mock data
-          setBills(prev => prev.map(b => 
-            b.id === billId 
-              ? { ...b, valorCusto: Math.floor(Math.random() * 10000) + 500 }
-              : b
-          ));
-          break;
         case 'approve':
+          await billsService.updateStatus(billId.toString(), 'auditada_aprovada');
           setToast({ message: `Aprovando a fatura ${bill.numero}.`, type: 'success' });
-          // Update bill in the mock data
-          setBills(prev => prev.map(b => 
-            b.id === billId 
-              ? { ...b, status: 'auditada_aprovada', dataAprovacao: new Date().toISOString() }
-              : b
-          ));
+          loadBills();
           break;
         case 'reject':
-          // Show rejection modal
           setSelectedBill(bill);
           setShowRejectionModal(true);
           break;
         case 'revert':
+          await billsService.updateStatus(billId.toString(), 'importado');
           setToast({ message: `Estornando a fatura ${bill.numero}.`, type: 'info' });
-          // Update bill status
-          setBills(prev => prev.map(b =>
-            b.id === billId
-              ? { ...b, status: 'importado', dataAprovacao: null }
-              : b
-          ));
-          break;
-        case 'download':
-          setToast({ message: `Baixando XML da fatura ${bill.numero}.`, type: 'info' });
+          loadBills();
           break;
         case 'delete':
           setConfirmDialog({
@@ -281,50 +230,44 @@ export const Bills: React.FC = () => {
             billNumber: bill.numero,
             action: 'delete'
           });
-          setIsLoading(false);
-          return;
+          break;
         default:
           break;
       }
-      
-      setIsLoading(false);
-    }, 500);
+    } catch(err) {
+        setToast({ message: 'Erro ao executar ação na fatura.', type: 'error' });
+    }
+    
+    setIsLoading(false);
   };
 
-  const handleRejectBill = (reasonId: number, observation: string) => {
+  const handleRejectBill = async (reasonId: number, _: string) => {
     if (!selectedBill) return;
-    
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Update bill in the mock data
-      setBills(prev => prev.map(b => 
-        b.id === selectedBill.id 
-          ? { ...b, status: 'auditada_reprovada', dataAprovacao: new Date().toISOString() }
-          : b
-      ));
-      
+    try {
+      await billsService.updateStatus(selectedBill.id.toString(), 'auditada_reprovada');
+      setToast({ message: `Fatura ${selectedBill.numero} reprovada com sucesso. Motivo ID: ${reasonId}`, type: 'success' });
+      loadBills();
+    } catch(err) {
+      setToast({ message: 'Erro ao reprovar a fatura.', type: 'error' });
+    } finally {
       setIsLoading(false);
       setShowRejectionModal(false);
-      setToast({ message: `Fatura ${selectedBill.numero} reprovada com sucesso. Motivo ID: ${reasonId}`, type: 'success' });
-    }, 1000);
+    }
   };
 
   const confirmDelete = async () => {
     if (confirmDialog.billId && confirmDialog.billNumber) {
       setIsLoading(true);
       try {
-        const { error } = await supabase
-          .from('bills')
-          .delete()
-          .eq('id', confirmDialog.billId);
+        const { success, error } = await billsService.delete(confirmDialog.billId);
 
-        if (!error) {
+        if (success) {
           setToast({ message: `Fatura ${confirmDialog.billNumber} excluída com sucesso!`, type: 'success' });
           loadBills();
         } else {
-          setToast({ message: `Erro ao excluir Fatura: ${error.message}`, type: 'error' });
+          setToast({ message: `Erro ao excluir Fatura: ${error}`, type: 'error' });
         }
       } catch (error: any) {
         console.error('Erro ao excluir fatura:', error);

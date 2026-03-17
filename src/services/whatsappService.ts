@@ -267,7 +267,11 @@ class WhatsAppService {
         throw new Error('Configuração do WhatsApp não encontrada. Configure em Configurações > Integrações.');
       }
 
-      const cleanPhone = params.recipientPhone.replace(/\D/g, '');
+      let cleanPhone = params.recipientPhone.replace(/\D/g, '');
+
+      if (cleanPhone.length === 10 || cleanPhone.length === 11) {
+        cleanPhone = `55${cleanPhone}`;
+      }
 
       if (!cleanPhone || cleanPhone.length < 10) {
         throw new Error('Número de telefone inválido');
@@ -356,6 +360,8 @@ class WhatsAppService {
           throw new Error('Template não existe ou não está aprovado pela Meta. Use "Mensagem livre (sem template)" ou configure um template válido.');
         } else if (errorCode === 131026) {
           throw new Error('Número de telefone inválido ou não possui WhatsApp ativo.');
+        } else if (errorCode === 131030) {
+          throw new Error('Número não autorizado. Como seu WhatsApp ainda está em ambiente de Teste (Sandbox), você só pode enviar mensagens para números cadastrados na lista de destinatários do Meta for Developers. Adicione este número lá ou conclua a configuração do app para Produção.');
         } else if (errorCode === 131047) {
           throw new Error('Não é possível enviar mensagem para este número. Verifique se o número está correto.');
         } else if (errorMessage.includes('template')) {

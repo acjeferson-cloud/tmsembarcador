@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { billsService } from '../../services/billsService';
 import { X, FileText, Download, Printer, Search, ExternalLink, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface CTe {
@@ -13,7 +14,7 @@ interface CTe {
 interface BillCTesModalProps {
   isOpen: boolean;
   onClose: () => void;
-  billId?: number;
+  billId?: string | number;
   billNumber?: string;
 }
 
@@ -24,19 +25,41 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
   billNumber
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Mock data for CT-es
-  const mockCTes: CTe[] = Array.from({ length: 10 }, (_, i) => ({
-    id: i + 1,
-    numero: (Math.floor(Math.random() * 9000) + 1000).toString(),
-    serie: Math.floor(Math.random() * 10).toString(),
-    dataEmissao: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-    valor: Math.floor(Math.random() * 2000) + 200,
-    status: ['Aprovado', 'Reprovado', 'Pendente'][Math.floor(Math.random() * 3)]
-  }));
-  
+  const [ctes, setCtes] = useState<CTe[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && billId) {
+      loadLinkedCtes();
+    } else {
+      setCtes([]);
+    }
+  }, [isOpen, billId]);
+
+  const loadLinkedCtes = async () => {
+    try {
+      setIsLoading(true);
+      const data = await billsService.getLinkedCtes(billId!.toString());
+      
+      const formattedCtes = data.map((link: any) => ({
+        id: link.id,
+        numero: link.cte_number || (link.ctes_complete ? link.ctes_complete.number : 'N/A'),
+        serie: link.ctes_complete ? link.ctes_complete.series : '-',
+        dataEmissao: link.ctes_complete?.issue_date || new Date().toISOString(),
+        valor: link.ctes_complete ? parseFloat(link.ctes_complete.total_value || 0) : 0,
+        status: link.ctes_complete ? link.ctes_complete.status : 'Desconhecido'
+      }));
+      
+      setCtes(formattedCtes);
+    } catch (error) {
+      console.error('Erro ao buscar CT-es:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Filter CT-es based on search term
-  const filteredCTes = mockCTes.filter(cte => 
+  const filteredCTes = ctes.filter(cte => 
     cte.numero.includes(searchTerm)
   );
   
@@ -55,30 +78,20 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
   
   // Get status icon
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Aprovado':
-        return <CheckCircle size={16} className="text-green-500" />;
-      case 'Reprovado':
-        return <XCircle size={16} className="text-red-500" />;
-      case 'Pendente':
-        return <Clock size={16} className="text-yellow-500" />;
-      default:
-        return null;
-    }
+    const s = status?.toLowerCase() || '';
+    if (s.includes('aprovado') || s.includes('normal')) return <CheckCircle size={16} className="text-green-500" />;
+    if (s.includes('reprovado') || s.includes('cancelado')) return <XCircle size={16} className="text-red-500" />;
+    if (s.includes('pendente')) return <Clock size={16} className="text-yellow-500" />;
+    return <CheckCircle size={16} className="text-gray-500" />; // fallback
   };
   
   // Get status color
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Aprovado':
-        return 'bg-green-100 text-green-800';
-      case 'Reprovado':
-        return 'bg-red-100 text-red-800';
-      case 'Pendente':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    const s = status?.toLowerCase() || '';
+    if (s.includes('aprovado') || s.includes('normal')) return 'bg-green-100 text-green-800';
+    if (s.includes('reprovado') || s.includes('cancelado')) return 'bg-red-100 text-red-800';
+    if (s.includes('pendente')) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-gray-100 text-gray-800';
   };
   
   if (!isOpen) return null;
@@ -145,7 +158,11 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                {filteredCTes.map((cte) => (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4">Carregando CT-es...</td>
+                  </tr>
+                ) : filteredCTes.map((cte) => (
                   <tr key={cte.id} className="hover:bg-gray-50 dark:bg-gray-900">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {cte.numero}
@@ -204,9 +221,9 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-800 font-medium">Total de CT-es: {mockCTes.length}</p>
+                <p className="text-sm text-blue-800 font-medium">Total de CT-es: {ctes.length}</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Valor total: {formatCurrency(mockCTes.reduce((sum, cte) => sum + cte.valor, 0))}
+                  Valor total: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}
                 </p>
               </div>
               <button

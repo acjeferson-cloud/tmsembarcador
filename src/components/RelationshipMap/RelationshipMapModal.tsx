@@ -244,6 +244,183 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
         }
       }
     }
+  } else if (sourceDocument.type === 'cte') {
+    const cteId = sourceDocument.id.replace('cte-', '');
+    
+    // Busca Invoices e Pedidos relacionados ao CTe na tabela ctes_invoices
+    const { data: cteInvoices } = await (supabase as any)
+      .from('ctes_invoices')
+      .select('number, observations')
+      .eq('cte_id', cteId);
+
+    if (cteInvoices && cteInvoices.length > 0) {
+      const accessKeys: string[] = [];
+      const invoiceNumbers: string[] = [];
+      
+      cteInvoices.forEach((cteInv: any) => {
+        // Se a observação conter a chave de acesso gerada na importação
+        const matchKey = cteInv.observations?.match(/Chave:\s*([0-9]{44})/);
+        if (matchKey && matchKey[1]) {
+          accessKeys.push(matchKey[1]);
+        } else if (cteInv.number) {
+          invoiceNumbers.push(cteInv.number);
+        }
+      });
+
+      // Busca por chave primeiro
+      if (accessKeys.length > 0) {
+        const { data: nfesByKey } = await (supabase as any)
+          .from('invoices_nfe')
+          .select('id, numero, data_emissao, situacao, valor_total, order_number')
+          .in('chave_acesso', accessKeys);
+          
+        if (nfesByKey && nfesByKey.length > 0) {
+          for (const nfe of nfesByKey) {
+            const invId = `invoice-${nfe.id}`;
+            documents.push({
+              id: invId,
+              type: 'invoice',
+              number: nfe.numero,
+              date: nfe.data_emissao || new Date().toISOString(),
+              status: nfe.situacao || 'Emitida',
+              value: Number(nfe.valor_total || 0)
+            });
+            relationships.push({ from: invId, to: sourceDocument.id });
+            
+            // Busca pedido
+            if (nfe.order_number) {
+              const { data: orderData } = await (supabase as any)
+                .from('orders')
+                .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+                .eq('numero_pedido', nfe.order_number)
+                .maybeSingle();
+                
+              if (orderData) {
+                const orderId = `order-${orderData.id}`;
+                if (!documents.some(d => d.id === orderId)) {
+                  documents.push({
+                    id: orderId,
+                    type: 'order',
+                    number: orderData.numero_pedido,
+                    date: orderData.data_pedido || new Date().toISOString(),
+                    status: orderData.status || 'Pendente',
+                    value: Number(orderData.valor_mercadoria || 0)
+                  });
+                }
+                relationships.push({ from: orderId, to: invId });
+              }
+            }
+          }
+        }
+      }
+      
+      // Busca por numero da Invoice para os CTes não linkados por chave
+      if (invoiceNumbers.length > 0) {
+        // Excluindo os já achados
+        const nfesAchados = documents.map(d => d.number);
+        const numerosBuscados = invoiceNumbers.filter(n => !nfesAchados.includes(n));
+        
+        if (numerosBuscados.length > 0) {
+          const { data: nfesByNum } = await (supabase as any)
+            .from('invoices_nfe')
+            .select('id, numero, data_emissao, situacao, valor_total, order_number')
+            .in('numero', numerosBuscados);
+            
+          if (nfesByNum && nfesByNum.length > 0) {
+            for (const nfe of nfesByNum) {
+              const invId = `invoice-${nfe.id}`;
+              if (!documents.some(d => d.id === invId)) {
+                documents.push({
+                  id: invId,
+                  type: 'invoice',
+                  number: nfe.numero,
+                  date: nfe.data_emissao || new Date().toISOString(),
+                  status: nfe.situacao || 'Emitida',
+                  value: Number(nfe.valor_total || 0)
+                });
+                relationships.push({ from: invId, to: sourceDocument.id });
+                
+                // Busca Pedido
+                if (nfe.order_number) {
+                  const { data: orderData } = await (supabase as any)
+                    .from('orders')
+                    .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+                    .eq('numero_pedido', nfe.order_number)
+                    .maybeSingle();
+
+                  if (orderData) {
+                    const orderId = `order-${orderData.id}`;
+                    if (!documents.some(d => d.id === orderId)) {
+                      documents.push({
+                        id: orderId,
+                        type: 'order',
+                        number: orderData.numero_pedido,
+                        date: orderData.data_pedido || new Date().toISOString(),
+                        status: orderData.status || 'Pendente',
+                        value: Number(orderData.valor_mercadoria || 0)
+                      });
+                    }
+                    relationships.push({ from: orderId, to: invId });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Se não, busca fallback onde o invoice_id pode estar diretamente no cte
+      const { data: cteDireto } = await (supabase as any)
+        .from('ctes')
+        .select('invoice_id, invoices_nfe(id, numero, data_emissao, situacao, valor_total, order_number)')
+        .eq('id', cteId)
+        .maybeSingle();
+        
+      if (cteDireto && cteDireto.invoices_nfe) {
+        const nfe = cteDireto.invoices_nfe;
+        const invId = `invoice-${nfe.id}`;
+        documents.push({
+          id: invId,
+          type: 'invoice',
+          number: nfe.numero,
+          date: nfe.data_emissao || new Date().toISOString(),
+          status: nfe.situacao || 'Emitida',
+          value: Number(nfe.valor_total || 0)
+        });
+        relationships.push({ from: invId, to: sourceDocument.id });
+      }
+    }
+
+    // Busca Coletas ligadas às Invoices encontradas para esse CT-e
+    const invIdsToCheck = documents.filter(d => d.type === 'invoice').map(d => d.id.replace('invoice-', ''));
+    if (invIdsToCheck.length > 0) {
+      const { data: pickupLinks } = await (supabase as any)
+        .from('pickup_invoices')
+        .select('invoice_id, pickup_id, pickups(numero_coleta, created_at, status, valor_total)')
+        .in('invoice_id', invIdsToCheck);
+        
+      if (pickupLinks && pickupLinks.length > 0) {
+        for (const link of pickupLinks) {
+          if (link.pickups) {
+            const pickupDocId = `pickup-${link.pickup_id}`;
+            if (!documents.some(d => d.id === pickupDocId)) {
+              documents.push({
+                id: pickupDocId,
+                type: 'pickup',
+                number: link.pickups.numero_coleta,
+                date: link.pickups.created_at || new Date().toISOString(),
+                status: link.pickups.status || 'Emitida',
+                value: Number(link.pickups.valor_total || 0)
+              });
+            }
+            const invId = `invoice-${link.invoice_id}`;
+            if (!relationships.some(r => r.from === invId && r.to === pickupDocId)) {
+              relationships.push({ from: invId, to: pickupDocId });
+            }
+          }
+        }
+      }
+    }
   }
   
   return { documents, relationships };

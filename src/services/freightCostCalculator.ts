@@ -73,24 +73,24 @@ export const freightCostCalculator = {
     const invoiceData = this.extractInvoiceData(cte);
 
     // 6. Buscar taxas adicionais aplicáveis
-    // Primeiro, buscar o city_id e state_id da cidade de destino
-    const { data: cityData, error: cityError } = await supabase
-      .from('cities')
+    let additionalFees: AdditionalFee[] = [];
+
+    // Primeiro, buscar o state_id da cidade de destino
+    const { data: stateData, error: stateError } = await supabase
+      .from('states')
       .select('id')
-      .eq('state_abbreviation', destinationState)
-      .ilike('name', destinationCity)
+      .eq('sigla', destinationState)
       .maybeSingle();
 
-    let additionalFees: AdditionalFee[] = [];
-    if (cityData) {
-      // Buscar state_id
-      const { data: stateData } = await supabase
-        .from('states')
+    if (stateData) {
+      const { data: cityData } = await supabase
+        .from('cities')
         .select('id')
-        .eq('abbreviation', destinationState)
+        .eq('state_id', stateData.id)
+        .ilike('nome', destinationCity)
         .maybeSingle();
 
-      if (stateData) {
+      if (cityData) {
         additionalFees = await this.findAdditionalFees(
           freightTable.id,
           cityData.id,
@@ -207,19 +207,27 @@ export const freightCostCalculator = {
     // Normalizar nome da cidade (remover acentos e converter para maiúsculas)
     const normalizedCityName = this.normalizeString(cityName);
 
+    // Buscar estado para pegar o state_id
+    const { data: stateData } = await supabase
+      .from('states')
+      .select('id')
+      .eq('sigla', stateAbbr)
+      .maybeSingle();
+
+    if (!stateData) return null;
+
     // Buscar cidade no cadastro usando busca case-insensitive e sem acentos
     const { data: cities, error: cityError } = await supabase
       .from('cities')
-      .select('id, name')
-      .eq('state_abbreviation', stateAbbr)
-      .in('type', ['Município', 'cidade']);
+      .select('id, nome')
+      .eq('state_id', stateData.id);
 
     if (cityError) throw cityError;
     if (!cities || cities.length === 0) return null;
 
     // Encontrar a cidade que corresponde (ignorando acentos e case)
     const city = cities.find(c =>
-      this.normalizeString(c.name) === normalizedCityName
+      this.normalizeString(c.nome) === normalizedCityName
     );
 
     if (!city) return null;

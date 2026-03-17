@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Search, Package, FileText, Truck, Calendar, CheckCircle, Clock, Box, XCircle } from 'lucide-react';
-import { ordersService, Order } from '../../services/ordersService';
+import { ordersService } from '../../services/ordersService';
 import { nfeService } from '../../services/nfeService';
-import { ctesService } from '../../services/ctesService';
+import { ctesCompleteService } from '../../services/ctesCompleteService';
 import { supabase } from '../../lib/supabase';
 
 type DocumentType = 'order' | 'nfe' | 'cte';
@@ -25,6 +25,7 @@ interface OrderTrackingData {
   invoice?: any;
   pickup?: any;
   cte?: any;
+  bill?: any;
   occurrences?: any[];
 }
 
@@ -75,11 +76,11 @@ export const DeliveryTracking: React.FC = () => {
     steps.push({
       order: 1,
       title: 'Pedido Realizado',
-      description: 'Pedido foi criado no sistema',
+      description: data.order ? 'Pedido foi criado no sistema' : 'Informações do pedido não disponíveis',
       icon: Package,
-      status: 'completed',
+      status: data.order ? 'completed' : 'pending',
       date: data.order?.created_at ? new Date(data.order.created_at).toLocaleString('pt-BR') : '-',
-      details: `Pedido Nº ${data.order?.order_number || ''}`
+      details: data.order ? `Pedido Nº ${data.order?.order_number || ''}` : undefined
     });
 
     // Etapa 2: Pedido Faturado (ativo se tem NF-e vinculada)
@@ -143,11 +144,23 @@ export const DeliveryTracking: React.FC = () => {
       details: hasOutForDelivery ? 'Ocorrência: 100 - Em rota de entrega' : undefined
     });
 
-    // Etapa 7: Entrega Realizada (ativo se tem ocorrência EDI código 001 ou 002)
+    // Etapa 7: Faturado pela Transportadora (ativo se tem Fatura vinculada ao CT-e)
+    const hasBill = !!data.bill;
+    steps.push({
+      order: 7,
+      title: 'Faturado pela Transportadora',
+      description: hasBill ? 'CT-e faturado e consolidado para cobrança' : 'Aguardando faturamento do frete',
+      icon: FileText,
+      status: hasBill ? 'completed' : 'pending',
+      date: hasBill && data.bill?.issue_date ? new Date(data.bill.issue_date).toLocaleString('pt-BR') : undefined,
+      details: hasBill ? `Fatura Nº ${data.bill?.bill_number || ''}` : undefined
+    });
+
+    // Etapa 8: Entrega Realizada (ativo se tem ocorrência EDI código 001 ou 002)
     const isDelivered = data.occurrences?.some(occ => occ.codigo === '001' || occ.codigo === '002');
     const deliveryOcc = data.occurrences?.find(occ => occ.codigo === '001' || occ.codigo === '002');
     steps.push({
-      order: 7,
+      order: 8,
       title: 'Entrega Realizada',
       description: isDelivered ? 'Mercadoria entregue ao destinatário' : 'Aguardando confirmação de entrega',
       icon: CheckCircle,
@@ -183,12 +196,198 @@ export const DeliveryTracking: React.FC = () => {
     return updatedSteps.reverse();
   };
 
-  const fetchOrderTrackingData = async (orderNumber: string): Promise<OrderTrackingData | null> => {
+  const fetchTrackingDataFromDocument = async (docType: 'nfe' | 'cte', document: any): Promise<OrderTrackingData> => {
+    let order = null;
+    let invoice = null;
+    let pickup = null;
+    let cte = null;
+    let bill = null;
+    let occurrences: any[] = [];
+
+    try {
+      if (docType === 'nfe') {
+        invoice = document;
+        
+        // Fetch pickup
+        if (invoice.id) {
+          const { data: pickupInvoices } = await (supabase as any)
+            .from('pickup_invoices')
+            .select('pickup_id')
+            .eq('invoice_id', invoice.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (pickupInvoices) {
+            const { data: pickupData } = await (supabase as any)
+              .from('pickups')
+              .select('*')
+              .eq('id', pickupInvoices.pickup_id)
+              .limit(1)
+              .maybeSingle();
+            pickup = pickupData;
+          }
+        }
+
+        // Fetch CTe
+        const invNum = invoice.number || invoice.numero;
+        if (invNum) {
+          const { data: cteData } = await (supabase as any)
+            .from('ctes_complete')
+            .select('*')
+            .eq('invoice_number', invNum)
+            .limit(1)
+            .maybeSingle();
+          cte = cteData;
+        }
+
+        if (invoice.order_number || invoice.numero_pedido) {
+           const ordNum = invoice.order_number || invoice.numero_pedido;
+           const { data: ord } = await (supabase as any).from('orders').select('*').eq('order_number', ordNum).limit(1).maybeSingle();
+           if (ord) order = ord;
+        }
+
+        if (invoice.metadata?.occurrences) {
+          occurrences = invoice.metadata.occurrences;
+        } else if (invoice.status === 'entregue' || invoice.status === 'delivered') {
+          occurrences = [
+            { codigo: '100', descricao: 'Em rota de entrega', created_at: invoice.updated_at },
+            { codigo: '001', descricao: 'Entrega realizada', created_at: invoice.updated_at }
+          ];
+        }
+
+      } else if (docType === 'cte') {
+        cte = document;
+
+        // Try to fetch invoice linked to this cte from ctes_invoices
+        if (cte.id) {
+          const { data: cteInvoices } = await (supabase as any)
+            .from('ctes_invoices')
+            .select('number, observations')
+            .eq('cte_id', cte.id);
+            
+          if (cteInvoices && cteInvoices.length > 0) {
+            for (const cteInv of cteInvoices) {
+              const matchKey = cteInv.observations?.match(/Chave:\s*([0-9]{44})/);
+              if (matchKey && matchKey[1]) {
+                const { data: n } = await (supabase as any).from('invoices_nfe').select('*').eq('chave_acesso', matchKey[1]).limit(1).maybeSingle();
+                if (n) { invoice = n; break; }
+              } else if (cteInv.number) {
+                // Number might be in different columns depending on the system's logic
+                const { data: n } = await (supabase as any)
+                   .from('invoices_nfe')
+                   .select('*')
+                   .or(`numero.eq.${cteInv.number},number.eq.${cteInv.number}`)
+                   .limit(1)
+                   .maybeSingle();
+                if (n) { invoice = n; break; }
+              }
+            }
+          }
+        }
+        
+        if (!invoice && (cte.invoice_number || cte.numero_nfe)) {
+           const invNum = cte.invoice_number || cte.numero_nfe;
+           const { data: n } = await (supabase as any)
+              .from('invoices_nfe')
+              .select('*')
+              .or(`numero.eq.${invNum},number.eq.${invNum}`)
+              .limit(1)
+              .maybeSingle();
+           if (n) { invoice = n; }
+        }
+
+        if (invoice?.order_number || invoice?.numero_pedido) {
+           const ordNum = invoice.order_number || invoice.numero_pedido;
+           const { data: ord } = await (supabase as any).from('orders').select('*').eq('order_number', ordNum).limit(1).maybeSingle();
+           if (ord) order = ord;
+        }
+
+        if (invoice) {
+          // Fetch pickup
+          let pickupInvoices = null;
+          
+          if (invoice.id) {
+            const { data: byId } = await (supabase as any)
+              .from('pickup_invoices')
+              .select('pickup_id')
+              .eq('invoice_id', invoice.id)
+              .limit(1)
+              .maybeSingle();
+            if (byId) pickupInvoices = byId;
+          }
+          
+          if (!pickupInvoices && invoice.chave_acesso) {
+            const { data: byKey } = await (supabase as any)
+              .from('pickup_invoices')
+              .select('pickup_id')
+              .eq('access_key', invoice.chave_acesso)
+              .limit(1)
+              .maybeSingle();
+            if (byKey) pickupInvoices = byKey;
+          }
+
+          if (pickupInvoices) {
+            const { data: pickupData } = await (supabase as any)
+              .from('pickups')
+              .select('*')
+              .eq('id', pickupInvoices.pickup_id)
+              .limit(1)
+              .maybeSingle();
+            pickup = pickupData;
+          }
+        }
+
+        if (cte.metadata?.occurrences) {
+          occurrences = cte.metadata.occurrences;
+        } else if (cte.status === 'entregue' || cte.status === 'delivered') {
+          occurrences = [
+            { codigo: '100', descricao: 'Em rota de entrega', created_at: cte.updated_at },
+            { codigo: '001', descricao: 'Entrega realizada', created_at: cte.updated_at }
+          ];
+        }
+      }
+
+      // Fetch Bill for CTE
+      if (cte?.id) {
+          const { data: billCte } = await (supabase as any)
+            .from('bill_ctes')
+            .select('bill_id')
+            .eq('cte_id', cte.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (billCte) {
+             const { data: billData } = await (supabase as any)
+               .from('bills')
+               .select('*')
+               .eq('id', billCte.bill_id)
+               .limit(1)
+               .maybeSingle();
+             if (billData) bill = billData;
+          }
+      }
+    } catch (err) {
+      console.error('Error fetching fallback tracking data:', err);
+    }
+
+    return {
+      order,
+      invoice,
+      pickup,
+      cte,
+      bill,
+      occurrences
+    };
+  };
+
+  const fetchOrderTrackingData = async (searchValue: string, isTrackingCode?: boolean): Promise<OrderTrackingData | null> => {
     try {
       // Buscar pedido
       const orders = await ordersService.getAll();
       const order = orders.find(o =>
-        o.order_number.toLowerCase().includes(orderNumber.toLowerCase())
+        isTrackingCode
+          ? o.tracking_code?.toLowerCase().includes(searchValue.toLowerCase())
+          : o.order_number?.toLowerCase().includes(searchValue.toLowerCase())
       );
 
       if (!order) return null;
@@ -198,22 +397,40 @@ export const DeliveryTracking: React.FC = () => {
         .from('invoices_nfe')
         .select('*')
         .eq('order_number', order.order_number)
+        .limit(1)
         .maybeSingle();
 
       // Buscar coleta vinculada à NF-e (se existir)
       let pickup = null;
       if (invoices) {
-        const { data: pickupInvoices } = await (supabase as any)
-          .from('pickups_invoices')
-          .select('pickup_id')
-          .eq('invoice_id', invoices.id)
-          .maybeSingle();
+        let pickupInvoices = null;
+        
+        if (invoices.id) {
+           const { data: byId } = await (supabase as any)
+             .from('pickup_invoices')
+             .select('pickup_id')
+             .eq('invoice_id', invoices.id)
+             .limit(1)
+             .maybeSingle();
+           if (byId) pickupInvoices = byId;
+        }
+        
+        if (!pickupInvoices && invoices.chave_acesso) {
+           const { data: byKey } = await (supabase as any)
+             .from('pickup_invoices')
+             .select('pickup_id')
+             .eq('access_key', invoices.chave_acesso)
+             .limit(1)
+             .maybeSingle();
+           if (byKey) pickupInvoices = byKey;
+        }
 
         if (pickupInvoices) {
           const { data: pickupData } = await (supabase as any)
             .from('pickups')
             .select('*')
             .eq('id', pickupInvoices.pickup_id)
+            .limit(1)
             .maybeSingle();
 
           pickup = pickupData;
@@ -223,13 +440,69 @@ export const DeliveryTracking: React.FC = () => {
       // Buscar CT-e vinculado à NF-e (se existir)
       let cte = null;
       if (invoices) {
-        const { data: cteData } = await (supabase as any)
-          .from('ctes_complete')
-          .select('*')
-          .eq('invoice_number', invoices.number)
-          .maybeSingle();
+        const invNum = invoices.number || invoices.numero;
+        if (invNum) {
+          const { data: cteData } = await (supabase as any)
+            .from('ctes_complete')
+            .select('*')
+            .or(`invoice_number.eq.${invNum},numero_nfe.eq.${invNum}`)
+            .limit(1)
+            .maybeSingle();
 
-        cte = cteData;
+          if (cteData) {
+            cte = cteData;
+          } else {
+             // Fallback to ctes_invoices mapping table
+             let { data: ctesInvoicesData } = await (supabase as any)
+               .from('ctes_invoices')
+               .select('cte_id')
+               .eq('number', invNum)
+               .limit(1)
+               .maybeSingle();
+
+             if (!ctesInvoicesData && invoices.chave_acesso) {
+                 const { data: ctesInvoicesByObs } = await (supabase as any)
+                   .from('ctes_invoices')
+                   .select('cte_id')
+                   .ilike('observations', `%${invoices.chave_acesso}%`)
+                   .limit(1)
+                   .maybeSingle();
+                 
+                 if (ctesInvoicesByObs) ctesInvoicesData = ctesInvoicesByObs;
+             }
+
+             if (ctesInvoicesData) {
+                 const { data: fallbackCte } = await (supabase as any)
+                   .from('ctes_complete')
+                   .select('*')
+                   .eq('id', ctesInvoicesData.cte_id)
+                   .limit(1)
+                   .maybeSingle();
+                 if (fallbackCte) cte = fallbackCte;
+             }
+          }
+        }
+      }
+
+      // Buscar Fatura vinculada ao CT-e (se existir)
+      let bill = null;
+      if (cte?.id) {
+          const { data: billCte } = await (supabase as any)
+            .from('bill_ctes')
+            .select('bill_id')
+            .eq('cte_id', cte.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (billCte) {
+             const { data: billData } = await (supabase as any)
+               .from('bills')
+               .select('*')
+               .eq('id', billCte.bill_id)
+               .limit(1)
+               .maybeSingle();
+             if (billData) bill = billData;
+          }
       }
 
       // Buscar ocorrências do banco
@@ -254,6 +527,7 @@ export const DeliveryTracking: React.FC = () => {
         invoice: invoices,
         pickup,
         cte,
+        bill,
         occurrences
       };
     } catch (error) {
@@ -274,7 +548,7 @@ export const DeliveryTracking: React.FC = () => {
 
     try {
       if (documentType === 'order') {
-        const data = await fetchOrderTrackingData(searchValue);
+        const data = await fetchOrderTrackingData(searchValue, searchType === 'accessKey');
 
         if (data) {
           setTrackingData(data);
@@ -285,54 +559,104 @@ export const DeliveryTracking: React.FC = () => {
         // Buscar NF-e e depois o pedido relacionado
         const invoices = await nfeService.getAll();
         let found;
+        const cleanSearchValue = searchValue.replace(/\s+/g, '');
 
         if (searchType === 'number') {
-          found = invoices.find((inv: any) => inv.number === searchValue);
+          found = invoices.find((inv: any) => inv.numero === cleanSearchValue || inv.number === cleanSearchValue);
         } else {
-          found = invoices.find((inv: any) => inv.access_key === searchValue);
+          found = invoices.find((inv: any) => inv.chave_acesso === cleanSearchValue || inv.access_key === cleanSearchValue);
         }
 
-        if (found && (found as any).order_number) {
-          const data = await fetchOrderTrackingData((found as any).order_number);
+        if (found) {
+          const orderNum = (found as any).order_number || (found as any).numero_pedido;
+          let data = null;
+          
+          if (orderNum) {
+            data = await fetchOrderTrackingData(orderNum, false);
+          }
+          
+          if (!data) {
+            data = await fetchTrackingDataFromDocument('nfe', found);
+          }
+          
           if (data) {
             setTrackingData(data);
           } else {
-            setError('Pedido vinculado à NF-e não encontrado');
+            setError('Não foi possível processar as informações de rastreamento da NF-e.');
           }
         } else {
-          setError(`NF-e não encontrada ou não possui pedido vinculado: ${searchValue}`);
+          setError(`NF-e não encontrada no sistema de acordo com os critérios informados.`);
         }
       } else if (documentType === 'cte') {
         // Buscar CT-e, depois NF-e e depois pedido
-        const ctes = await ctesService.getAll();
+        const ctes = await ctesCompleteService.getAll();
         let found;
+        const cleanSearchValue = searchValue.replace(/\s+/g, '');
 
         if (searchType === 'number') {
-          found = ctes.find((cte) => cte.cte_number === searchValue);
+          found = ctes.find((cte: any) => cte.cte_number === cleanSearchValue || cte.number === cleanSearchValue || cte.numero === cleanSearchValue);
         } else {
-          found = ctes.find((cte) => cte.access_key === searchValue);
+          found = ctes.find((cte: any) => cte.access_key === cleanSearchValue || cte.chave_acesso === cleanSearchValue);
         }
 
-        if (found && found.invoice_number) {
-          // Buscar NF-e
-          const { data: invoice } = await (supabase as any)
-            .from('invoices_nfe')
-            .select('order_number')
-            .eq('number', found.invoice_number)
-            .maybeSingle();
+        if (found) {
+          // Busca direta de order_number ou invoice_number no CT-e
+          let orderNumber = (found as any).order_number || (found as any).numero_pedido;
+          
+          if (!orderNumber && ((found as any).invoice_number || (found as any).numero_nfe)) {
+            // Buscar NF-e
+            const invNum = (found as any).invoice_number || (found as any).numero_nfe;
+            const { data: invoice } = await (supabase as any)
+              .from('invoices_nfe')
+              .select('order_number')
+              .or(`numero.eq.${invNum},number.eq.${invNum}`)
+              .maybeSingle();
 
-          if (invoice && invoice.order_number) {
-            const data = await fetchOrderTrackingData(invoice.order_number);
-            if (data) {
-              setTrackingData(data);
-            } else {
-              setError('Pedido vinculado ao CT-e não encontrado');
+            if (invoice && invoice.order_number) {
+              orderNumber = invoice.order_number;
             }
+          }
+          
+          if (!orderNumber) {
+             const { data: cteInvoices } = await (supabase as any)
+                .from('ctes_invoices')
+                .select('number, observations')
+                .eq('cte_id', found.id);
+                
+             if (cteInvoices && cteInvoices.length > 0) {
+               for (const cteInv of cteInvoices) {
+                 const matchKey = cteInv.observations?.match(/Chave:\s*([0-9]{44})/);
+                 if (matchKey && matchKey[1]) {
+                   const { data: n } = await (supabase as any).from('invoices_nfe').select('order_number').eq('chave_acesso', matchKey[1]).maybeSingle();
+                   if (n && n.order_number) { orderNumber = n.order_number; break; }
+                 } else if (cteInv.number) {
+                   const { data: n } = await (supabase as any)
+                      .from('invoices_nfe')
+                      .select('order_number')
+                      .or(`numero.eq.${cteInv.number},number.eq.${cteInv.number}`)
+                      .maybeSingle();
+                   if (n && n.order_number) { orderNumber = n.order_number; break; }
+                 }
+               }
+             }
+          }
+
+          let data = null;
+          if (orderNumber) {
+            data = await fetchOrderTrackingData(orderNumber, false);
+          }
+          
+          if (!data) {
+            data = await fetchTrackingDataFromDocument('cte', found);
+          }
+          
+          if (data) {
+            setTrackingData(data);
           } else {
-            setError('NF-e vinculada ao CT-e não possui pedido relacionado');
+            setError('Não foi possível processar as informações de rastreamento do CT-e.');
           }
         } else {
-          setError(`CT-e não encontrado ou não possui NF-e vinculada: ${searchValue}`);
+          setError(`CT-e não encontrado no sistema de acordo com os critérios informados.`);
         }
       }
     } catch (err) {
@@ -356,20 +680,22 @@ export const DeliveryTracking: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Número do Pedido</p>
-              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.order_number}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.order_number || 'Não Informado'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Cliente</p>
-              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.customer_name}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.customer_name || data.invoice?.recipient_name || data.invoice?.nome_destinatario || data.cte?.recipient_name || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Transportadora</p>
-              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.carrier_name || 'N/A'}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.carrier_name || data.cte?.carrier?.razao_social || data.cte?.sender_name || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Data de Criação</p>
               <p className="font-semibold text-gray-900 dark:text-white">
-                {data.order?.created_at ? new Date(data.order.created_at).toLocaleDateString('pt-BR') : '-'}
+                {data.order?.created_at 
+                  ? new Date(data.order.created_at).toLocaleDateString('pt-BR') 
+                  : (data.invoice?.issue_date ? new Date(data.invoice.issue_date).toLocaleDateString('pt-BR') : '-')}
               </p>
             </div>
           </div>
@@ -385,7 +711,7 @@ export const DeliveryTracking: React.FC = () => {
             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-green-500 via-blue-500 to-gray-300"></div>
 
             <div className="space-y-6 relative">
-              {timeline.map((step, index) => (
+              {timeline.map((step) => (
                 <TimelineItem
                   key={step.order}
                   icon={step.icon}
@@ -401,34 +727,54 @@ export const DeliveryTracking: React.FC = () => {
         </div>
 
         {/* Resumo de documentos vinculados */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className={`p-4 rounded-lg border-2 ${data.order ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <Package className={`w-5 h-5 ${data.order ? 'text-blue-600' : 'text-gray-400'}`} />
+              <span className="font-semibold text-gray-900 dark:text-white">Pedido</span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {data.order ? `Nº ${data.order.order_number}` : 'Não vinculado'}
+            </p>
+          </div>
+
           <div className={`p-4 rounded-lg border-2 ${data.invoice ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
               <FileText className={`w-5 h-5 ${data.invoice ? 'text-green-600' : 'text-gray-400'}`} />
               <span className="font-semibold text-gray-900 dark:text-white">Nota Fiscal</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.invoice ? `NF-e Nº ${data.invoice.number}` : 'Não vinculada'}
+              {data.invoice ? `NF-e Nº ${data.invoice.number || data.invoice.numero}` : 'Não vinculada'}
             </p>
           </div>
 
-          <div className={`p-4 rounded-lg border-2 ${data.pickup ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
+          <div className={`p-4 rounded-lg border-2 ${data.pickup ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Box className={`w-5 h-5 ${data.pickup ? 'text-green-600' : 'text-gray-400'}`} />
+              <Box className={`w-5 h-5 ${data.pickup ? 'text-purple-600' : 'text-gray-400'}`} />
               <span className="font-semibold text-gray-900 dark:text-white">Coleta</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.pickup ? `Coleta Nº ${data.pickup.pickup_number}` : 'Não vinculada'}
+              {data.pickup ? `Coleta Nº ${data.pickup.numero_coleta || data.pickup.pickup_number || data.pickup.number || data.pickup.numero || data.pickup.id.substring(0,8)}` : 'Não vinculada'}
             </p>
           </div>
 
-          <div className={`p-4 rounded-lg border-2 ${data.cte ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
+          <div className={`p-4 rounded-lg border-2 ${data.cte ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Truck className={`w-5 h-5 ${data.cte ? 'text-green-600' : 'text-gray-400'}`} />
+              <Truck className={`w-5 h-5 ${data.cte ? 'text-indigo-600' : 'text-gray-400'}`} />
               <span className="font-semibold text-gray-900 dark:text-white">CT-e</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.cte ? `CT-e Nº ${data.cte.cte_number}` : 'Não vinculado'}
+              {data.cte ? `CT-e Nº ${data.cte.number || data.cte.cte_number || data.cte.numero}` : 'Não vinculado'}
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-lg border-2 ${data.bill ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className={`w-5 h-5 ${data.bill ? 'text-orange-600' : 'text-gray-400'}`} />
+              <span className="font-semibold text-gray-900 dark:text-white">Fatura</span>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {data.bill ? `Fatura Nº ${data.bill.bill_number}` : 'Não vinculada'}
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, TestTube, CheckCircle, XCircle, AlertCircle, MessageSquare, FileText, Plus, Trash2, Edit, Receipt, Info } from 'lucide-react';
+import { Save, TestTube, CheckCircle, XCircle, AlertCircle, MessageSquare, FileText, Plus, Trash2, Edit, Receipt, Info, Send } from 'lucide-react';
 import { whatsappService, WhatsAppConfig as IWhatsAppConfig, WhatsAppTemplate } from '../../services/whatsappService';
 import { useAuth } from '../../hooks/useAuth';
 import { WhatsAppExtract } from './WhatsAppExtract';
@@ -30,6 +30,10 @@ export const WhatsAppConfig: React.FC = () => {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  const [testingTemplate, setTestingTemplate] = useState<WhatsAppTemplate | null>(null);
+  const [testPhone, setTestPhone] = useState('');
+  const [isSendingTest, setIsSendingTest] = useState(false);
 
   useEffect(() => {
     loadConfig();
@@ -115,6 +119,39 @@ export const WhatsAppConfig: React.FC = () => {
 
     setIsTesting(false);
     setTimeout(() => setTestResult(null), 5000);
+  };
+
+  const handleSendTestTemplate = async () => {
+    if (!testingTemplate || !testPhone) return;
+
+    setIsSendingTest(true);
+    setSaveMessage(null);
+
+    try {
+      // Mock some variables if the template uses variables
+      // Assuming a generic template, we will pass some mock strings for max 3 variables as fallback
+      const mockVariables = ['Cliente Teste', '12345', 'Hoje'];
+
+      const waResult = await whatsappService.sendMessage({
+        recipientPhone: testPhone,
+        recipientName: 'Teste de Template',
+        templateName: testingTemplate.template_name,
+        messageContent: testingTemplate.body_text,
+        templateVariables: testingTemplate.body_text.includes('{{1}}') ? mockVariables : undefined
+      });
+
+      if (waResult.success) {
+        setSaveMessage({ type: 'success', text: 'Template testado com sucesso! Verifique o WhatsApp.' });
+        setTestingTemplate(null);
+        setTestPhone('');
+      } else {
+        setSaveMessage({ type: 'error', text: waResult.error || 'Falha ao testar template.' });
+      }
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: err.message || 'Erro inesperado ao enviar teste.' });
+    }
+
+    setIsSendingTest(false);
   };
 
   const handleSaveTemplate = async () => {
@@ -483,6 +520,20 @@ export const WhatsAppConfig: React.FC = () => {
                           setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
                           return;
                         }
+                        setTestingTemplate(template);
+                      }}
+                      disabled={!whatsappActive || template.approval_status !== 'APPROVED'}
+                      className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Testar Envio"
+                    >
+                      <Send size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!whatsappActive) {
+                          setSaveMessage({ type: 'error', text: t('whatsapp.config.notContractedMsg') });
+                          return;
+                        }
                         setEditingTemplate(template);
                         setShowTemplateForm(true);
                       }}
@@ -504,6 +555,54 @@ export const WhatsAppConfig: React.FC = () => {
             ))
             )}
           </div>
+
+          {testingTemplate && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Testar Envio de Template
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Enviando template: <strong>{testingTemplate.template_name}</strong>
+                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Telefone de Destino (Ex: 11999998888)
+                  </label>
+                  <input
+                    type="text"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="DDD + Número"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Lembre-se: em Sandbox você só pode enviar para os números autorizados na Meta.
+                  </p>
+                </div>
+
+                <div className="flex space-x-4 pt-4">
+                  <button
+                    onClick={handleSendTestTemplate}
+                    disabled={isSendingTest || !testPhone}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {isSendingTest ? 'Enviando...' : 'Realizar Disparo'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTestingTemplate(null);
+                      setTestPhone('');
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {showTemplateForm && editingTemplate && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

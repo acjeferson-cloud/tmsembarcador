@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { deliveryNotificationHandler } from './deliveryNotificationHandler';
 
 interface NFe {
   id: string;
@@ -321,6 +322,74 @@ export const nfeService = {
     }
   },
 
+  async getByAccessKeys(accessKeys: string[]): Promise<NFeWithCustomer[]> {
+    try {
+      if (!accessKeys || accessKeys.length === 0) return [];
+
+      const { data, error } = await (supabase as any)
+        .from('invoices_nfe')
+        .select(`
+          *,
+          customer:invoices_nfe_customers(*),
+          carrier:carriers(
+            id,
+            razao_social,
+            cnpj,
+            codigo
+          ),
+          products:invoices_nfe_products(*)
+        `)
+        .in('chave_acesso', accessKeys);
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map((invoice: any) => ({
+        id: invoice.id,
+        establishment_id: invoice.establishment_id,
+        organization_id: invoice.organization_id,
+        environment_id: invoice.environment_id,
+        invoice_type: 'NFe',
+        number: invoice.numero,
+        series: invoice.serie,
+        access_key: invoice.chave_acesso,
+        issue_date: invoice.data_emissao,
+        operation_nature: invoice.natureza_operacao,
+        total_value: invoice.valor_total,
+        pis_value: invoice.valor_pis || 0,
+        cofins_value: invoice.valor_cofins || 0,
+        icms_value: invoice.valor_icms || 0,
+        status: invoice.situacao,
+        xml_data: invoice.xml_content,
+        created_at: invoice.created_at,
+        updated_at: invoice.updated_at,
+        carrier_id: invoice.carrier_id,
+        customer: invoice.customer?.[0] ? {
+          id: invoice.customer[0].id,
+          razao_social: invoice.customer[0].razao_social,
+          cnpj_cpf: invoice.customer[0].cnpj_cpf,
+          cidade: invoice.customer[0].cidade,
+          estado: invoice.customer[0].estado
+        } : undefined,
+        carrier: invoice.carrier ? {
+          id: invoice.carrier.id,
+          codigo: invoice.carrier.codigo,
+          razao_social: invoice.carrier.razao_social,
+          cnpj: invoice.carrier.cnpj
+        } : undefined,
+        products: (invoice.products || []).map((p: any) => ({
+          id: p.id,
+          description: p.descricao,
+          quantity: p.quantidade,
+          total_value: p.valor_total
+        }))
+      }));
+    } catch (error) {
+      console.error('Error fetching NFes by Access Keys:', error);
+      return [];
+    }
+  },
+
   async getByIds(ids: string[]): Promise<NFeWithCustomer[]> {
     try {
       if (!ids || ids.length === 0) return [];
@@ -393,7 +462,7 @@ export const nfeService = {
     try {
       const { data: invoice, error: fetchError } = await (supabase as any)
         .from('invoices_nfe')
-        .select('metadata, situacao, order_number')
+        .select('metadata, situacao, order_number, numero')
         .eq('id', invoiceId)
         .single();
 
@@ -449,10 +518,18 @@ export const nfeService = {
                updated_at: new Date().toISOString()
              }).eq('id', orderData.id);
            }
-         } catch (e) {
-            console.error('Erro ao atualizar status do pedido relacionado', e);
-         }
+          } catch (e) {
+             console.error('Erro ao atualizar status do pedido relacionado', e);
+          }
       }
+
+      // Disparar notificação automatizada "fire-and-forget"
+      deliveryNotificationHandler.processOccurrenceNotification(
+        invoiceId,
+        occurrenceData.codigo,
+        occurrenceData.descricao,
+        invoice?.numero || ''
+      ).catch(console.error);
 
       return { success: true };
     } catch (error: any) {

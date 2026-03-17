@@ -12,6 +12,7 @@ import { BulkCTeXmlUploadModal } from './BulkCTeXmlUploadModal';
 import { FreightRateValuesForm } from '../FreightRates/FreightRateValuesForm';
 import { DactePreview } from '../ElectronicDocuments/DactePreview';
 import { AutoDownloadStatus } from '../common/AutoDownloadStatus';
+import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import { AutoImportDebugModal } from '../common/AutoImportDebugModal';
 import { ctesCompleteService, CTeWithRelations } from '../../services/ctesCompleteService';
 import { DivergenceReportData } from '../../services/cteDivergenceReportService';
@@ -112,7 +113,9 @@ export const CTes: React.FC = () => {
   const [showReportDivergenceModal, setShowReportDivergenceModal] = useState(false);
   const [showTariffModal, setShowTariffModal] = useState(false);
   const [showDacteModal, setShowDacteModal] = useState(false);
+  const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [selectedCTeForDetails, setSelectedCTeForDetails] = useState<CTeWithRelations | null>(null);
+  const [selectedCteForMap, setSelectedCteForMap] = useState<any>(null);
   const [selectedCTeForComparison, setSelectedCTeForComparison] = useState<CTeWithRelations | null>(null);
   const [selectedCTeForDacte, setSelectedCTeForDacte] = useState<ElectronicDocument | null>(null);
   const [divergenceReportData, setDivergenceReportData] = useState<DivergenceReportData | null>(null);
@@ -642,6 +645,19 @@ export const CTes: React.FC = () => {
       return;
     }
 
+    if (action === 'relationship-map') {
+      setSelectedCteForMap({
+        id: `cte-${cte.id}`,
+        type: 'cte',
+        number: cte.numero,
+        date: cte.dataEmissao,
+        status: cte.status,
+        value: cte.valorCTe
+      });
+      setShowRelationshipMap(true);
+      return;
+    }
+
     setIsLoading(true);
 
     // Simulate API call
@@ -989,6 +1005,14 @@ export const CTes: React.FC = () => {
         }}
         cte={selectedCTeForDetails}
       />
+
+      {showRelationshipMap && selectedCteForMap && (
+        <RelationshipMapModal
+          isOpen={showRelationshipMap}
+          onClose={() => setShowRelationshipMap(false)}
+          sourceDocument={selectedCteForMap}
+        />
+      )}
 
       {/* CT-e Values Comparison Modal */}
       {showComparisonModal && selectedCTeForComparison && (

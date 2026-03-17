@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Upload, FileText, CheckCircle, AlertCircle, X, Info, RefreshCw, FileUp, Database, Filter } from 'lucide-react';
+import { doccobImportService } from '../../services/doccobImportService';
 
 // EDI Layout types
 type EDILayoutType = 'NOTFIS' | 'CONEMB' | 'OCOREN' | 'DOCCOB';
@@ -157,7 +158,7 @@ export const EDIInput: React.FC = () => {
         clearInterval(interval);
         
         // Perform basic layout validation
-        const isValid = validateLayout(content, selectedLayout);
+        const isValid = validateLayout(content, selectedLayout as EDILayoutType);
         
         // Update file status based on validation result
         setFiles(prev => 
@@ -169,7 +170,7 @@ export const EDIInput: React.FC = () => {
                   message: isValid 
                     ? `Arquivo ${selectedLayout} válido` 
                     : `Arquivo não corresponde ao layout ${selectedLayout}`,
-                  layout: selectedLayout
+                  layout: selectedLayout as EDILayoutType
                 } 
               : f
           )
@@ -191,7 +192,7 @@ export const EDIInput: React.FC = () => {
       case 'OCOREN':
         return firstLine.includes('OCOREN') || firstLine.includes('OCOR') || firstLine.includes('ENTREGA');
       case 'DOCCOB':
-        return firstLine.includes('DOCCOB') || firstLine.includes('FATURA') || firstLine.includes('COBRANCA');
+        return firstLine.includes('DOCCOB') || firstLine.includes('FATURA') || firstLine.includes('COB');
       default:
         return false;
     }
@@ -243,7 +244,7 @@ export const EDIInput: React.FC = () => {
     }
   };
 
-  const handleProcessAll = () => {
+  const handleProcessAll = async () => {
     if (files.length === 0) {
       alert('Não há arquivos para processar');
       return;
@@ -256,14 +257,40 @@ export const EDIInput: React.FC = () => {
     
     setIsProcessing(true);
     
-    // Simulate processing
-    setTimeout(() => {
-      alert(`Processamento concluído: ${successCount} arquivo(s) importado(s) com sucesso e ${errorCount} com erro(s).`);
+    const validFiles = files.filter(f => f.status === 'success');
+    if (validFiles.length === 0) {
+      alert('Não há arquivos válidos para processar');
       setIsProcessing(false);
-      
-      // In a real implementation, you would send the files to the server here
-      // and handle the response
-    }, 2000);
+      return;
+    }
+    
+    if (selectedLayout === 'DOCCOB') {
+      let totalProcessed = 0;
+      let totalCTesLinked = 0;
+      let allErrors: string[] = [];
+
+      for (const file of validFiles) {
+        const result = await doccobImportService.processFile(file.content);
+        totalProcessed += result.billsProcessed;
+        totalCTesLinked += result.ctesLinked;
+        if (result.errors && result.errors.length > 0) {
+          allErrors = [...allErrors, ...result.errors];
+        }
+      }
+
+      setIsProcessing(false);
+      if (allErrors.length === 0) {
+        alert(`Processamento concluído: ${totalProcessed} fatura(s) importada(s) com sucesso e ${totalCTesLinked} CT-e(s) vinculado(s).`);
+      } else {
+        alert(`Processamento com avisos: ${totalProcessed} fatura(s) importada(s).\nErros encontrados:\n${allErrors.join('\n')}`);
+      }
+    } else {
+      // Simulate processing for other layout types
+      setTimeout(() => {
+        alert(`Processamento de ${selectedLayout} concluído (Simulado)`);
+        setIsProcessing(false);
+      }, 2000);
+    }
   };
 
   const exportErrorReport = () => {

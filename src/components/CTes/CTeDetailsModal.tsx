@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, User, MapPin, Building, Package } from 'lucide-react';
-
+import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, User, MapPin, Building, Package, Loader2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { DactePreview } from '../ElectronicDocuments/DactePreview';
 interface CTeDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -13,7 +14,94 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
   cte
 }) => {
   const [activeTab, setActiveTab] = useState<'basic' | 'values' | 'parties' | 'invoices'>('basic');
+  const [enrichedInvoices, setEnrichedInvoices] = useState<any[]>([]);
+  const [enriching, setEnriching] = useState(false);
+  const [showDacte, setShowDacte] = useState(false);
 
+  React.useEffect(() => {
+    const enrichInvoices = async () => {
+      if (isOpen && cte?.invoices && cte.invoices.length > 0) {
+        setEnriching(true);
+        const enriched = [...cte.invoices];
+        
+        for (let i = 0; i < enriched.length; i++) {
+          const inv = enriched[i];
+          const matchKey = inv.observations?.match(/Chave:\s*([0-9]{44})/);
+          let nfeData = null;
+          
+          if (matchKey && matchKey[1]) {
+            inv.access_key = matchKey[1]; // fallback
+            const { data } = await (supabase as any).from('invoices_nfe').select('numero, data_emissao, valor_total, chave_acesso').eq('chave_acesso', matchKey[1]).maybeSingle();
+            if (data) nfeData = data;
+          } else if (inv.number) {
+            const { data } = await (supabase as any).from('invoices_nfe').select('numero, data_emissao, valor_total, chave_acesso').eq('numero', inv.number).maybeSingle();
+            if (data) nfeData = data;
+          }
+          
+          if (nfeData) {
+            inv.issue_date = (nfeData as any).data_emissao;
+            inv.value = Number((nfeData as any).valor_total || 0);
+            inv.access_key = (nfeData as any).chave_acesso;
+          } else {
+            inv.value = Number(inv.cost_value || 0);
+          }
+        }
+        
+        setEnrichedInvoices(enriched);
+        setEnriching(false);
+      } else {
+        setEnrichedInvoices([]);
+      }
+    };
+    
+    enrichInvoices();
+  }, [cte, isOpen]);
+
+  const handleDownloadXml = () => {
+    const xmlContent = cte?.xml_data?.original || cte?.xml_data;
+    if (!xmlContent || typeof xmlContent !== 'string') {
+      alert('XML não disponível para este CT-e');
+      return;
+    }
+    const blob = new Blob([xmlContent], { type: 'text/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CTE_${cte.access_key || cte.number || 'xml'}.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const dacteDoc: any = {
+    tipo: 'CTe',
+    modelo: '57',
+    numeroDocumento: cte?.number || '',
+    serie: cte?.series || '',
+    chaveAcesso: cte?.access_key || '',
+    dataAutorizacao: cte?.issue_date || new Date().toISOString(),
+    protocoloAutorizacao: cte?.observations?.match(/Protocolo:\s*([0-9]+)/)?.[1] || '',
+    emitente: {
+      razaoSocial: cte?.carrier?.razao_social || cte?.sender_name || 'Emitente',
+      cnpj: cte?.carrier_document || cte?.sender_document || '',
+      endereco: '',
+      cidade: cte?.sender_city || '',
+      uf: cte?.sender_state || '',
+      cep: ''
+    },
+    destinatario: {
+      razaoSocial: cte?.recipient_name || '',
+      cnpjCpf: cte?.recipient_document || '',
+      endereco: '',
+      cidade: cte?.recipient_city || '',
+      uf: cte?.recipient_state || '',
+      cep: ''
+    },
+    valorTotal: cte?.total_value || 0,
+    valorFrete: cte?.freight_weight_value || cte?.total_value || 0,
+    pesoTotal: 0
+  };
   if (!isOpen || !cte) return null;
 
   const formatDate = (dateString: string | null) => {
@@ -59,12 +147,14 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
           </div>
           <div className="flex items-center space-x-3">
             <button
+              onClick={() => setShowDacte(true)}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Printer size={16} />
               <span>Imprimir DACTE</span>
             </button>
             <button
+              onClick={handleDownloadXml}
               className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Download size={16} />
@@ -494,7 +584,12 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Notas Fiscais Vinculadas</h4>
                 </div>
 
-                {cte.invoices && cte.invoices.length > 0 ? (
+                {enriching ? (
+                  <div className="p-8 flex flex-col items-center text-center text-gray-500 dark:text-gray-400">
+                    <Loader2 size={48} className="mx-auto mb-4 text-blue-500 animate-spin" />
+                    <p>Carregando informações das notas fiscais...</p>
+                  </div>
+                ) : enrichedInvoices.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50 dark:bg-gray-900">
@@ -517,7 +612,7 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                        {cte.invoices.map((invoice: any, index: number) => (
+                        {enrichedInvoices.map((invoice: any, index: number) => (
                           <tr key={index} className="hover:bg-gray-50 dark:bg-gray-900">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {invoice.number || '-'}
@@ -547,24 +642,24 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
                 )}
               </div>
 
-              {cte.invoices && cte.invoices.length > 0 && (
+              {!enriching && enrichedInvoices.length > 0 && (
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total de NF-es</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-white">{cte.invoices.length}</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{enrichedInvoices.length}</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Total</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">
-                        {formatCurrency(cte.invoices.reduce((sum: number, inv: any) => sum + (inv.value || 0), 0))}
+                        {formatCurrency(enrichedInvoices.reduce((sum: number, inv: any) => sum + (inv.value || 0), 0))}
                       </p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Médio</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">
                         {formatCurrency(
-                          cte.invoices.reduce((sum: number, inv: any) => sum + (inv.value || 0), 0) / cte.invoices.length
+                          enrichedInvoices.reduce((sum: number, inv: any) => sum + (inv.value || 0), 0) / enrichedInvoices.length
                         )}
                       </p>
                     </div>
@@ -575,6 +670,13 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
           )}
         </div>
       </div>
+      
+      {showDacte && (
+        <DactePreview
+          document={dacteDoc}
+          onClose={() => setShowDacte(false)}
+        />
+      )}
     </div>
   );
 };
