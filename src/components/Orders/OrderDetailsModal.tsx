@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, Clock, User, MapPin, Package, ShoppingCart } from 'lucide-react';
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { orderPdfService } from '../../services/orderPdfService';
+import { ordersService } from '../../services/ordersService';
 
 interface Order {
   id: number;
@@ -33,6 +34,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'items' | 'freight'>('details');
+  const [isProcessing, setIsProcessing] = useState(false);
   
   if (!isOpen) return null;
   
@@ -93,19 +95,31 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   // Use real items from order
   const items = order.items || [];
 
-  const handlePrint = () => {
-    const pdfUrl = orderPdfService.generateOrderPDF([order] as any[], 'print');
-    const printWindow = window.open(pdfUrl, '_blank');
-    if (printWindow) {
-      printWindow.onload = () => {
-        printWindow.print();
-      };
+  const handleDocumentAction = async (action: 'print' | 'download') => {
+    setIsProcessing(true);
+    try {
+      const fullOrderData = await ordersService.getById(order.id.toString());
+      if (!fullOrderData) throw new Error('Falha ao obter dados completos do pedido.');
+
+      if (action === 'download') {
+        orderPdfService.generateOrderPDF([fullOrderData] as any[], 'download');
+      } else {
+        const pdfUrl = orderPdfService.generateOrderPDF([fullOrderData] as any[], 'print');
+        const printWindow = window.open(pdfUrl, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao gerar PDF do pedido:', error);
+      alert('Erro ao gerar documento do pedido.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleDownload = () => {
-    orderPdfService.generateOrderPDF([order] as any[], 'download');
-  };
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -117,18 +131,20 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={handlePrint}
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
+              onClick={() => handleDocumentAction('print')}
+              disabled={isProcessing}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
             >
               <Printer size={16} />
-              <span>Imprimir Pedido</span>
+              <span>{isProcessing ? 'Processando...' : 'Imprimir Pedido'}</span>
             </button>
             <button
-              onClick={handleDownload}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
+              onClick={() => handleDocumentAction('download')}
+              disabled={isProcessing}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
             >
               <Download size={16} />
-              <span>Download Pedido</span>
+              <span>{isProcessing ? 'Baixando...' : 'Download Pedido'}</span>
             </button>
             <button
               onClick={onClose}
