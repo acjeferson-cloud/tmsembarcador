@@ -187,6 +187,181 @@
       }
     }
   },
+  "electronicDocs": {
+    "title": "Documentos Eletrônicos",
+    "subtitle": "Gestão de notas fiscais e conhecimentos de transporte eletrônicos",
+    "importXmls": "Importar XMLs",
+    "searchPlaceholder": "Buscar por número, chave, remetente...",
+    "filterType": "Tipo de Documento",
+    "filterStatus": "Status SEFAZ",
+    "allTypes": "Todos os Tipos",
+    "allStatuses": "Todos os Status",
+    "noDocuments": "Nenhum documento encontrado",
+    "loading": "Carregando documentos...",
+    "deleteConfirmTitle": "Excluir Documento",
+    "deleteConfirmText": "Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita.",
+    "documentDetails": "Detalhes do Documento",
+    "status": {
+      "authorized": "Autorizado",
+      "cancelled": "Cancelado",
+      "canceled": "Cancelado",
+      "denied": "Rejeitado",
+      "rejected": "Rejeitado",
+      "processing": "Processando"
+    },
+    "card": {
+      "model": "Modelo",
+      "sender": "Emissor",
+      "recipient": "Destinatário",
+      "accessKey": "Chave de Acesso",
+      "authorizedAt": "Autorizado",
+      "importedAt": "Importado",
+      "totalValue": "Valor Total",
+      "weight": "Peso",
+      "printDanfe": "Imprimir DANFE",
+      "printDacte": "Imprimir DACTE",
+      "downloadXml": "Download XML",
+      "view": "Visualizar",
+      "delete": "Excluir"
+    },
+    "view": {
+      "title": "Visualizar Documento",
+      "model": "Modelo",
+      "series": "Série",
+      "status": "Status",
+      "generalInfo": "Informações Gerais",
+      "accessKeyLabel": "Chave de Acesso",
+      "sefazProtocol": "Protocolo SEFAZ",
+      "cfop": "CFOP Geral",
+      "natureOfOperation": "Natureza da Operação",
+      "dates": "Datas",
+      "issueDate": "Data de Emissão",
+      "authorizationDate": "Data de Autorização",
+      "senderData": "Dados do Emitente",
+      "cnpj": "CNPJ",
+      "ie": "Inscrição Estadual",
+      "address": "Endereço",
+      "city": "Cidade",
+      "uf": "UF",
+      "cep": "CEP",
+      "recipientData": "Dados do Destinatário",
+      "totals": "Totais do Documento",
+      "totalProducts": "Total em Produtos",
+      "discount": "Desconto",
+      "freight": "Frete",
+      "totalDocument": "Total da Nota/Documento",
+      "viewXml": "Ver XML Completo",
+      "hideXml": "Ocultar XML",
+      "back": "Voltar",
+      "print": "Imprimir Documento",
+      "companyName": "Razão Social",
+      "transportInfo": "Informações de Transporte (CTe)",
+      "totalWeight": "Peso Total",
+      "transportMode": "Modal de Transporte",
+      "xmlContent": "Conteúdo XML",
+      "showXml": "Mostrar XML",
+      "clickShowXml": "Clique em \"Mostrar XML\" para visualizar o conteúdo completo do XML"
+    },
+    "upload": {
+      "title": "Importar Arquivos XML",
+      "subtitle": "Selecione e importe os arquivos XML de notas fiscais e conhecimentos de transporte. O sistema extrairá e criará os documentos automaticamente.",
+      "dragDrop": "Arraste e solte arquivos XML aqui",
+      "or": "ou",
+      "selectFiles": "Selecione os arquivos",
+      "supportedFormat": "Apenas arquivos .xml são suportados",
+      "validating": "Validando...",
+      "processing": "Processando...",
+      "success": "Processamento concluído com sucesso!",
+      "documentsImported": "Documentos importados com sucesso",
+      "validationError": "Erro na validação do XML",
+      "finishImport": "Concluir Importação",
+      "status": {
+        "uploading": "Enviando...",
+        "processing": "Processando...",
+        "success": "Processado com sucesso",
+        "error": "Erro no processamento",
+        "waiting": "Aguardando"
+      },
+      "alerts": {
+        "noFiles": "Nenhum arquivo foi processado com sucesso para importação.",
+        "success": "documento(s) importado(s) com sucesso!"
+      },
+      "back": "Voltar para Documentos Eletrônicos",
+      "limitLabel": "Apenas arquivos XML são aceitos. Tamanho máximo: 10MB por arquivo.",
+      "stats": {
+        "title": "Status do Processamento",
+        "total": "Total de Arquivos",
+        "processing": "Processando",
+        "success": "Processados",
+        "error": "Com Erro"
+      },
+      "filesTitle": "Arquivos Enviados",
+      "instructions": {
+        "title": "Instruções de Importação",
+        "formats": "Formatos aceitos",
+        "formatsDesc": "Apenas arquivos XML de NFe (modelo 55) e CTe (modelo 57)",
+        "validation": "Validação",
+        "validationDesc": "Os XMLs são validados automaticamente com a SEFAZ",
+        "processing": "Processamento",
+        "processingDesc": "Extração automática de dados fiscais e logísticos",
+        "integration": "Integração",
+        "integrationDesc": "Documentos processados ficam disponíveis para vinculação com entregas",
+        "generation": "Geração",
+        "generationDesc": "DANFE e DACTE podem ser gerados automaticamente após o processamento",
+        "storage": "Armazenamento",
+        "storageDesc": "O conteúdo XML completo é armazenado para consultas futuras"
+      }
+    },
+    "types": {
+      "nfe": "NFe (Modelo 55)",
+      "cte": "CTe (Modelo 57)"
+    },
+    "filterDate": {
+      "all": "Todas as Datas",
+      "today": "Hoje",
+      "week": "Última Semana",
+      "month": "Último Mês"
+    },
+    "stats": {
+      "documents": "documentos",
+      "page": "Página",
+      "of": "de",
+      "showing": "Mostrando",
+      "to": "a",
+      "totalDocuments": "Total de Documentos"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Próximo"
+    },
+    "integration": {
+      "title": "Integração com SEFAZ",
+      "description": "O sistema processa automaticamente XMLs de NFe (modelo 55) e CTe (modelo 57), validando as informações com a SEFAZ e extraindo todos os dados fiscais relevantes para controle logístico.",
+      "validation": {
+        "title": "Validação SEFAZ",
+        "desc": "Chaves de acesso verificadas"
+      },
+      "generation": {
+        "title": "Geração DANFE/DACTE",
+        "desc": "PDFs automáticos dos documentos"
+      },
+      "control": {
+        "title": "Controle Fiscal",
+        "desc": "Rastreamento completo"
+      },
+      "storage": {
+        "title": "Armazenamento XML",
+        "desc": "Conteúdo completo preservado"
+      }
+    },
+    "preview": {
+      "printTitle": "Visualização de Impressão",
+      "print": "Imprimir",
+      "downloadHtml": "Download HTML",
+      "danfeSuccess": "O modelo oficial do DANFE foi gerado com sucesso. Clique no botão Imprimir acima para visualizar o formulário estruturado de acordo com o padrão nacional da nota fiscal eletrônica ou gerar o seu PDF.",
+      "dacteSuccess": "O modelo oficial do DACTE foi gerado com sucesso. Clique no botão Imprimir acima para visualizar o formulário estruturado de acordo com o padrão nacional do conhecimento de transporte ou gerar o seu PDF."
+    }
+  },
   "login": {
     "title": "TMS Embarcador Log Axis",
     "subtitle": "Um único sistema. Todos os seus embarques!",

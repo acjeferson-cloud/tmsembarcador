@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { TenantContextHelper } from '../utils/tenantContext';
+import { findOrCreateCityByCEP } from './citiesService';
+import { freightQuoteService } from './freightQuoteService';
+import { electronicDocumentsService } from './electronicDocumentsService';
 
 export interface NFeXmlData {
   invoiceType: string;
@@ -40,6 +42,8 @@ export interface NFeXmlData {
     unit: string;
     unitValue: number;
     totalValue: number;
+    weight?: number;
+    cubicMeters?: number;
     ncm?: string;
     ean?: string;
   }>;
@@ -51,6 +55,11 @@ export interface NFeXmlData {
     city: string;
     state: string;
   };
+  emitter?: {
+    name: string;
+    cnpj: string;
+  };
+  rawXml?: string;
   xmlData: any;
 }
 
@@ -58,12 +67,16 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
   try {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+    
+    if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+      throw new Error('Erro ao fazer parse: XML inválido');
+    }
 
     const getNFeElement = (tagName: string): Element | null => {
       return xmlDoc.getElementsByTagName(tagName)[0] || null;
     };
 
-    const getTextContent = (element: Element | null, tagName: string, defaultValue: string = ''): string => {
+    const getTextContent = (element: Element | null | undefined, tagName: string, defaultValue: string = ''): string => {
       if (!element) return defaultValue;
       const el = element.getElementsByTagName(tagName)[0];
       return el?.textContent || defaultValue;
@@ -71,8 +84,8 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
 
     const infNFe = getNFeElement('infNFe');
     const ide = getNFeElement('ide');
-    const emit = getNFeElement('emit');
     const dest = getNFeElement('dest');
+    const emit = getNFeElement('emit');
     const enderDest = dest?.getElementsByTagName('enderDest')[0];
     const transp = getNFeElement('transp');
     const transporta = transp?.getElementsByTagName('transporta')[0];
@@ -83,6 +96,11 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
     const dup = cobr?.getElementsByTagName('dup');
 
     const accessKey = infNFe?.getAttribute('Id')?.replace('NFe', '') || '';
+
+    const mod = getTextContent(ide, 'mod');
+    if (mod && mod !== '55') {
+      throw new Error('Apenas XML do modelo 55 (NF-e) é permitido.');
+    }
 
     const tpNF = getTextContent(ide, 'tpNF');
     const invoiceType = tpNF === '0' ? 'Entrada' : 'Saída';
@@ -107,6 +125,8 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
       unit: string;
       unitValue: number;
       totalValue: number;
+      weight?: number;
+      cubicMeters?: number;
       ncm?: string;
       ean?: string;
     }> = [];
@@ -125,11 +145,21 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
           unit: getTextContent(prod, 'uCom'),
           unitValue: parseFloat(getTextContent(prod, 'vUnCom', '0')),
           totalValue: parseFloat(getTextContent(prod, 'vProd', '0')),
+          weight: 0,
+          cubicMeters: 0,
           ncm: getTextContent(prod, 'NCM'),
           ean: getTextContent(prod, 'cEAN')
         });
       }
     }
+
+    const totalWeight = parseFloat(getTextContent(vol, 'pesoB', '0'));
+    const totalQtd = products.reduce((acc, p) => acc + p.quantity, 0);
+
+    products.forEach(p => {
+      p.weight = totalQtd > 0 ? (p.quantity / totalQtd) * totalWeight : (products.length > 0 ? totalWeight / products.length : 0);
+      p.cubicMeters = 0;
+    });
 
     const infAdic = getNFeElement('infAdic');
     const infCpl = getTextContent(infAdic, 'infCpl');
@@ -156,7 +186,7 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
       pisValue: parseFloat(getTextContent(icmsTot, 'vPIS', '0')),
       cofinsValue: parseFloat(getTextContent(icmsTot, 'vCOFINS', '0')),
       icmsValue: parseFloat(getTextContent(icmsTot, 'vICMS', '0')) + parseFloat(getTextContent(icmsTot, 'vST', '0')),
-      status: 'nfe_emitida',
+      status: 'emitida',
       customer: {
         name: getTextContent(dest, 'xNome'),
         cnpj: getTextContent(dest, 'CNPJ'),
@@ -173,6 +203,11 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
         email: getTextContent(dest, 'email') || undefined
       },
       products,
+      emitter: {
+        name: getTextContent(emit, 'xNome'),
+        cnpj: getTextContent(emit, 'CNPJ')
+      },
+      rawXml: xmlString,
       xmlData: xmlDoc
     };
 
@@ -188,9 +223,8 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
     }
 
     return nfeData;
-  } catch (error) {
-
-    return null;
+  } catch (error: any) {
+    throw new Error(error.message || 'Erro ao processar o arquivo XML.');
   }
 };
 
@@ -206,7 +240,7 @@ export const importNFeToDatabase = async (
       throw new Error('Contexto de organização/ambiente não encontrado');
     }
 
-    const { data: existingInvoice, error: searchError } = await supabase
+    const { data: existingInvoice, error: searchError } = await (supabase as any)
       .from('invoices_nfe')
       .select('id')
       .eq('chave_acesso', nfeData.accessKey)
@@ -214,7 +248,73 @@ export const importNFeToDatabase = async (
 
     if (searchError) throw searchError;
 
+    let finalCarrierId = carrierId;
+    if (!finalCarrierId && nfeData.carrier?.cnpj) {
+      const cleanCnpj = nfeData.carrier.cnpj.replace(/\D/g, '');
+      const { data: foundCarrier } = await (supabase as any)
+        .from('carriers')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .like('cnpj', `%${cleanCnpj}%`)
+        .limit(1)
+        .maybeSingle();
+      if (foundCarrier) {
+        finalCarrierId = foundCarrier.id;
+      }
+    }
+
+    let destinatarioNome = nfeData.customer.name;
+    if (nfeData.customer.cnpj) {
+      const cleanCnpj = nfeData.customer.cnpj.replace(/\D/g, '');
+      const { data: foundPartner } = await (supabase as any)
+        .from('business_partners')
+        .select('razao_social')
+        .eq('organization_id', organizationId)
+        .like('cpf_cnpj', `%${cleanCnpj}%`)
+        .limit(1)
+        .maybeSingle();
+      if (foundPartner && foundPartner.razao_social) {
+        destinatarioNome = foundPartner.razao_social;
+      }
+    }
+
+    let cidadeDestino = nfeData.customer.city;
+    let ufDestino = nfeData.customer.state;
+
+    if (nfeData.customer.zipCode) {
+      try {
+        const cityData = await findOrCreateCityByCEP(nfeData.customer.zipCode);
+        if (cityData) {
+          cidadeDestino = cityData.name;
+          ufDestino = cityData.stateAbbreviation;
+        }
+      } catch (err) {
+        // Fallback to XML values on failure
+      }
+    }
+
     let invoiceId: string;
+
+    // Cálculo de 'Valor Custo' na importação (Frete)
+    let freightResults: any[] = [];
+    const destZipCode = nfeData.customer.zipCode ? nfeData.customer.zipCode.replace(/\D/g, '') : undefined;
+    const weight = Number(nfeData.weight) || 100;
+    const value = Number(nfeData.totalValue) || 0;
+
+    try {
+      if (destZipCode) {
+        freightResults = await freightQuoteService.calculateQuote({
+          destinationZipCode: destZipCode,
+          weight,
+          volumeQty: Number(nfeData.volumes) || 1,
+          cargoValue: value,
+          cubicMeters: 0,
+          establishmentId: establishmentId
+        });
+      }
+    } catch (e) {
+      console.error('Error calculating freight on NFe import', e);
+    }
 
     if (existingInvoice) {
       invoiceId = existingInvoice.id;
@@ -230,12 +330,16 @@ export const importNFeToDatabase = async (
           natureza_operacao: nfeData.operationNature,
           modelo: '55',
           destinatario_cnpj: nfeData.customer.cnpj,
-          destinatario_nome: nfeData.customer.name,
+          destinatario_nome: destinatarioNome,
           valor_total: nfeData.totalValue,
           valor_produtos: nfeData.totalValue - nfeData.icmsValue,
           valor_icms: nfeData.icmsValue,
-          carrier_id: carrierId,
-          establishment_id: establishmentId
+          peso_total: nfeData.weight,
+          quantidade_volumes: nfeData.volumes,
+          cubagem_total: 0,
+          carrier_id: finalCarrierId,
+          establishment_id: establishmentId,
+          freight_results: freightResults
         })
         .eq('id', invoiceId);
         
@@ -254,14 +358,18 @@ export const importNFeToDatabase = async (
           natureza_operacao: nfeData.operationNature,
           modelo: '55',
           destinatario_cnpj: nfeData.customer.cnpj,
-          destinatario_nome: nfeData.customer.name,
+          destinatario_nome: destinatarioNome,
           valor_total: nfeData.totalValue,
           valor_produtos: nfeData.totalValue - nfeData.icmsValue,
           valor_icms: nfeData.icmsValue,
-          situacao: 'pendente',
-          xml_content: '', // O XML raw idealmente seria salvo aqui caso houvesse na sourceData.
-          carrier_id: carrierId,
-          establishment_id: establishmentId
+          peso_total: nfeData.weight,
+          quantidade_volumes: nfeData.volumes,
+          cubagem_total: 0,
+          situacao: 'emitida',
+          xml_content: nfeData.rawXml || '',
+          carrier_id: finalCarrierId,
+          establishment_id: establishmentId,
+          freight_results: freightResults
         })
         .select()
         .single();
@@ -281,14 +389,14 @@ export const importNFeToDatabase = async (
         organization_id: organizationId,
         environment_id: environmentId,
         cnpj_cpf: nfeData.customer.cnpj,
-        razao_social: nfeData.customer.name,
+        razao_social: destinatarioNome,
         inscricao_estadual: nfeData.customer.stateRegistration,
         logradouro: nfeData.customer.address,
         numero: nfeData.customer.number,
         complemento: nfeData.customer.complement,
         bairro: nfeData.customer.neighborhood,
-        cidade: nfeData.customer.city,
-        estado: nfeData.customer.state,
+        cidade: cidadeDestino,
+        estado: ufDestino,
         cep: nfeData.customer.zipCode,
         telefone: nfeData.customer.phone,
         email: nfeData.customer.email
@@ -309,6 +417,8 @@ export const importNFeToDatabase = async (
             descricao: product.description,
             quantidade: product.quantity,
             unidade: product.unit,
+            peso: product.weight || 0,
+            cubagem: product.cubicMeters || 0,
             valor_unitario: product.unitValue,
             valor_total: product.totalValue,
             ncm: product.ncm
@@ -319,6 +429,29 @@ export const importNFeToDatabase = async (
     }
 
     // XML já está salvo em invoices_nfe.xml_data
+    if (!existingInvoice) {
+      try {
+        await electronicDocumentsService.create({
+          document_type: 'NFe',
+          model: '55',
+          document_number: nfeData.number,
+          series: nfeData.series,
+          access_key: nfeData.accessKey,
+          status: 'authorized',
+          issuer_name: nfeData.emitter?.name || '',
+          issuer_document: nfeData.emitter?.cnpj || '',
+          recipient_name: nfeData.customer?.name || '',
+          recipient_document: nfeData.customer?.cnpj || '',
+          total_value: nfeData.totalValue,
+          icms_value: nfeData.icmsValue,
+          total_weight: nfeData.weight,
+          transport_mode: 'Rodoviário',
+          xml_content: nfeData.rawXml || ''
+        });
+      } catch (e) {
+        console.error('Failed copying NFe to electronic_documents', e);
+      }
+    }
 
     return { success: true, invoiceId: invoiceId };
   } catch (error: any) {

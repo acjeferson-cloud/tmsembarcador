@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { TenantContextHelper } from '../utils/tenantContext';
+import { electronicDocumentsService } from './electronicDocumentsService';
 
 export interface CTe {
   id?: string;
@@ -282,7 +283,28 @@ export const ctesCompleteService = {
 
       // XML já está salvo em xml_data do CT-e
       if (cte.xml_data && cte.xml_data.original) {
-
+        try {
+          await electronicDocumentsService.create({
+            document_type: 'CTe',
+            model: '57',
+            document_number: cte.number,
+            series: cte.series || '0',
+            access_key: cleanAccessKey || '',
+            status: 'authorized',
+            issuer_name: cte.sender_name || '',
+            issuer_document: cte.sender_document || '',
+            recipient_name: cte.recipient_name || '',
+            recipient_document: cte.recipient_document || '',
+            total_value: cte.total_value,
+            icms_value: cte.icms_value,
+            freight_value: cte.freight_value_value || cte.total_value,
+            total_weight: cte.cargo_weight_for_calculation || cte.cargo_weight || 0,
+            transport_mode: 'Rodoviário',
+            xml_content: cte.xml_data.original
+          });
+        } catch (e) {
+          console.error('Failed copying CTe to electronic_documents', e);
+        }
       }
 
       // CÁLCULO AUTOMÁTICO: Executar cálculo de custos após importação
@@ -363,15 +385,47 @@ export const ctesCompleteService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Get CTE data first so we can remove its electronic_documents counterpart by access_key
+      const cte = await this.getById(id);
+
+      // 1. Apagar itens associados (invoices vinculadas)
+      const { error: invoicesError } = await (supabase as any)
+        .from('ctes_invoices')
+        .delete()
+        .eq('cte_id', id);
+
+      if (invoicesError && invoicesError.code !== 'PGRST116') {
+         return { success: false, error: 'Erro ao excluir faturas vinculadas ao CT-e' };
+      }
+
+      // 2. Apagar custos associados ao transportador
+      const { error: costsError } = await (supabase as any)
+        .from('ctes_carrier_costs')
+        .delete()
+        .eq('cte_id', id);
+
+      if (costsError && costsError.code !== 'PGRST116') {
+         return { success: false, error: 'Erro ao excluir custos vinculados ao CT-e' };
+      }
+
+      // 3. Apagar CT-e
       const { error } = await supabase
         .from('ctes_complete')
         .delete()
         .eq('id', id);
 
       if (error) return { success: false, error: error.message };
+
+      // 4. Delete XML document in electronic_documents by access_key
+      if (cte?.access_key) {
+        await (supabase as any)
+          .from('electronic_documents')
+          .delete()
+          .eq('access_key', cte.access_key);
+      }
+
       return { success: true };
     } catch (error: any) {
-
       return { success: false, error: error.message };
     }
   },

@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Info, DollarSign, Users, FileText, Package, Upload, CheckCircle, AlertCircle, Save } from 'lucide-react';
 import { parseNFeXml, importNFeToDatabase, NFeXmlData } from '../../services/nfeXmlService';
 import { carriersService } from '../../services/carriersService';
+import { freightQuoteService } from '../../services/freightQuoteService';
 import { TenantContextHelper } from '../../utils/tenantContext';
 import { normalizarCNPJ } from '../../utils/cnpj';
+import { useAuth } from '../../hooks/useAuth';
 
 interface InvoiceFormProps {
+  invoice?: any;
   onBack: () => void;
   onSave: () => void;
   establishmentId: string;
@@ -13,11 +16,13 @@ interface InvoiceFormProps {
 }
 
 export const InvoiceForm: React.FC<InvoiceFormProps> = ({
+  invoice,
   onBack,
   onSave,
   establishmentId,
   establishmentName
 }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'basic' | 'customer' | 'products' | 'values'>('basic');
   const [carriers, setCarriers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,42 +32,44 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   const [formData, setFormData] = useState({
     establishment_id: establishmentId,
-    carrier_id: '',
-    invoice_type: 'Saída',
-    number: '',
-    series: '',
-    access_key: '',
-    issue_date: '',
-    entry_date: new Date().toISOString().split('T')[0],
-    delivery_forecast_date: '',
-    operation_nature: '',
-    order_number: '',
-    weight: 0,
-    volumes: 0,
-    total_value: 0,
-    invoice_value: 0,
+    carrier_id: invoice?.carrier_id || '',
+    invoice_type: invoice?.invoice_type || 'Saída',
+    number: invoice?.number || invoice?.numero || '',
+    series: invoice?.series || invoice?.serie || '',
+    access_key: invoice?.access_key || invoice?.chave_acesso || '',
+    issue_date: invoice?.issue_date ? new Date(invoice.issue_date).toISOString().split('T')[0] : (invoice?.data_emissao ? new Date(invoice.data_emissao).toISOString().split('T')[0] : ''),
+    entry_date: invoice?.created_at ? new Date(invoice.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    delivery_forecast_date: invoice?.data_prevista_entrega ? invoice.data_prevista_entrega.split('T')[0] : '',
+    operation_nature: invoice?.operation_nature || invoice?.natureza_operacao || '',
+    order_serie: invoice?.order_serie || '',
+    order_number: invoice?.order_number || invoice?.numero_pedido || '',
+    weight: invoice?.weight || 0,
+    volumes: invoice?.volumes || 1,
+    cubic_meters: invoice?.cubic_meters || 0,
+    total_value: invoice?.total_value || invoice?.valor_total || 0,
+    invoice_value: invoice?.invoice_value || invoice?.valor_produtos || 0,
     freight_value: 0,
-    pis_value: 0,
-    cofins_value: 0,
-    icms_value: 0,
-    status: 'Validada',
-    observations: ''
+    pis_value: invoice?.pis_value || invoice?.valor_pis || 0,
+    cofins_value: invoice?.cofins_value || invoice?.valor_cofins || 0,
+    icms_value: invoice?.icms_value || invoice?.valor_icms || 0,
+    status: invoice?.status || invoice?.situacao || 'Emitida',
+    observations: invoice?.observations || invoice?.observacoes || ''
   });
 
   const [customerData, setCustomerData] = useState({
-    name: '',
-    cnpj: '',
-    state_registration: '',
-    address: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    zip_code: '',
+    name: invoice?.customer?.razao_social || '',
+    cnpj: invoice?.customer?.cnpj_cpf || '',
+    state_registration: invoice?.customer?.inscricao_estadual || '',
+    address: invoice?.customer?.logradouro || '',
+    number: invoice?.customer?.numero || '',
+    complement: invoice?.customer?.complemento || '',
+    neighborhood: invoice?.customer?.bairro || '',
+    city: invoice?.customer?.cidade || '',
+    state: invoice?.customer?.estado || '',
+    zip_code: invoice?.customer?.cep || '',
     country: 'Brasil',
-    phone: '',
-    email: ''
+    phone: invoice?.customer?.telefone || '',
+    email: invoice?.customer?.email || ''
   });
 
   const [products, setProducts] = useState<Array<{
@@ -75,7 +82,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     total_value: number;
     ncm: string;
     ean: string;
-  }>>([]);
+  }>>(invoice?.products ? invoice.products.map((p: any, idx: number) => ({
+    item_order: idx + 1,
+    product_code: p.product_code || p.codigo_produto || '',
+    description: p.description || p.descricao || '',
+    quantity: p.quantity || p.quantidade || 0,
+    unit: p.unit || p.unidade || '',
+    unit_value: p.unit_value || p.valor_unitario || 0,
+    total_value: p.total_value || p.valor_total || 0,
+    weight: p.weight || p.peso || 0,
+    cubic_meters: p.cubic_meters || p.cubagem || 0,
+    ncm: '',
+    ean: ''
+  })) : []);
 
   useEffect(() => {
     loadCarriers();
@@ -112,16 +131,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         entry_date: new Date().toISOString().split('T')[0],
         delivery_forecast_date: xmlData.deliveryForecastDate ? xmlData.deliveryForecastDate.split('T')[0] : '',
         operation_nature: xmlData.operationNature,
+        order_serie: '',
         order_number: xmlData.orderNumber || '',
         weight: xmlData.weight,
         volumes: xmlData.volumes,
+        cubic_meters: 0,
         total_value: xmlData.totalValue,
         invoice_value: xmlData.totalValue,
         freight_value: 0,
         pis_value: xmlData.pisValue,
         cofins_value: xmlData.cofinsValue,
         icms_value: xmlData.icmsValue,
-        status: xmlData.status,
+        status: xmlData.status || 'Emitida',
         observations: ''
       });
 
@@ -149,11 +170,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         unit: p.unit,
         unit_value: p.unitValue,
         total_value: p.totalValue,
+        weight: p.weight || 0,
+        cubic_meters: p.cubicMeters || 0,
         ncm: p.ncm || '',
         ean: p.ean || ''
       })));
     }
-  }, [xmlData, establishmentId]);
+  }, [xmlData, establishmentId, carriers]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -162,15 +185,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const xmlString = e.target?.result as string;
-      const parsed = parseNFeXml(xmlString);
-
-      if (parsed) {
-        setXmlData(parsed);
-        setSuccess('XML importado com sucesso!');
-        setError('');
-        setActiveTab('basic');
-      } else {
-        setError('Erro ao importar XML. Verifique o formato do arquivo.');
+      try {
+        const parsed = parseNFeXml(xmlString);
+        if (parsed) {
+          setXmlData(parsed);
+          setSuccess('XML importado com sucesso!');
+          setError('');
+          setActiveTab('basic');
+        } else {
+          setError('Erro ao importar XML. Verifique o formato do arquivo.');
+          setSuccess('');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Erro ao importar XML. Verifique o formato do arquivo.');
         setSuccess('');
       }
     };
@@ -184,9 +211,44 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }));
   };
 
+  const addProduct = () => {
+    setProducts([...products, {
+      item_order: products.length + 1,
+      product_code: '',
+      description: '',
+      quantity: 1,
+      unit: 'UN',
+      weight: 0,
+      cubic_meters: 0,
+      unit_value: 0,
+      total_value: 0,
+      ncm: '',
+      ean: ''
+    } as any]);
+  };
+
+  const removeProduct = (index: number) => {
+    const newProducts = products.filter((_, i) => i !== index);
+    setProducts(newProducts);
+  };
+
+  const updateProduct = (index: number, field: string, value: any) => {
+    const newProducts = [...products];
+    const product = { ...newProducts[index], [field]: value };
+    
+    if (field === 'quantity' || field === 'unit_value') {
+      const quantity = field === 'quantity' ? Number(value) : Number(product.quantity || 0);
+      const unitValue = field === 'unit_value' ? Number(value) : Number(product.unit_value || 0);
+      product.total_value = quantity * unitValue;
+    }
+    
+    newProducts[index] = product;
+    setProducts(newProducts);
+  };
+
   const handleSubmit = async () => {
-    if (!xmlData) {
-      setError('Por favor, importe um XML antes de salvar.');
+    if (!xmlData && !invoice) {
+      setError('Por favor, importe um XML ou edite uma nota existente antes de salvar.');
       return;
     }
 
@@ -199,19 +261,149 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         throw new Error('Você perdeu o acesso à sessão atual. Atualize a página e tente novamente.');
       }
 
-      const result = await importNFeToDatabase(
-        xmlData, 
-        establishmentId, 
-        context.organizationId, 
-        context.environmentId,
-        formData.carrier_id || undefined
-      );
+      if (invoice) {
+        // Modo Edição
+        const { supabase } = await import('../../lib/supabase');
+        
+        const updateData: any = {};
+        if (formData.status !== invoice.situacao && formData.status !== invoice.status) {
+            updateData.situacao = formData.status;
+            updateData.status = formData.status;
+        }
+        if (formData.carrier_id !== invoice.carrier_id) {
+            updateData.carrier_id = formData.carrier_id || null;
+        }
+        if (formData.delivery_forecast_date) {
+            updateData.data_prevista_entrega = formData.delivery_forecast_date;
+            updateData.expected_delivery_date = formData.delivery_forecast_date;
+        }
+        if (formData.order_serie !== invoice.order_serie) {
+            updateData.order_serie = formData.order_serie || null;
+        }
+        if (formData.order_number !== invoice.order_number) {
+            updateData.order_number = formData.order_number || null;
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+            const { error: updateError } = await (supabase as any)
+              .from('invoices_nfe')
+              .update(updateData)
+              .eq('id', invoice.id);
+              
+            if (updateError) throw updateError;
+        }
 
-      if (result.success) {
-        setSuccess('Nota Fiscal importada com sucesso!');
+        // Recalcular frete se houver produtos e peso (apenas se peso ou valores mudaram, mas faremos sempre no save conforme Pedidos)
+        let finalFreightValue = formData.freight_value || 0;
+        let bestCarrierId = formData.carrier_id || null;
+        let finalFreightResults = invoice.freight_results || [];
+        
+        const invoiceTotalValue = Number(formData.invoice_value) || Number(formData.total_value) || 0;
+        const totalWeight = parseFloat(formData.weight as any) || 0;
+        const totalVolume = parseInt(formData.volumes as any) || 1;
+        
+        if (totalWeight > 0 && products.length > 0) {
+          try {
+            const results = await freightQuoteService.calculateQuote(
+              {
+                destinationZipCode: customerData.zip_code ? customerData.zip_code.replace(/\D/g, '') : undefined,
+                weight: totalWeight,
+                volumeQty: totalVolume,
+                cubicMeters: (formData as any).cubic_meters || 0,
+                cargoValue: invoiceTotalValue,
+                establishmentId: establishmentId,
+                selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+              },
+              user?.supabaseUser?.id,
+              user?.name || user?.email,
+              user?.email
+            );
+            
+            if (results && results.length > 0) {
+              finalFreightResults = results;
+              bestCarrierId = results[0].carrierId;
+              finalFreightValue = results[0].totalValue;
+              
+              const { error: fError } = await (supabase as any)
+                .from('invoices_nfe')
+                .update({ 
+                  carrier_id: bestCarrierId, 
+                  valor_frete: finalFreightValue,
+                  freight_results: finalFreightResults
+                })
+                .eq('id', invoice.id);
+                
+              if (fError) console.error('Error updating freight:', fError);
+            }
+          } catch (freightError) {
+             console.error('Freight calc error:', freightError);
+          }
+        }
+
+        // Atualizar produtos
+        if (products.length > 0) {
+          // Deleta antigos
+          await (supabase as any).from('invoices_nfe_products').delete().eq('invoice_nfe_id', invoice.id);
+          // Insere novos
+          const productsToInsert = products.map((p, idx) => ({
+            invoice_nfe_id: invoice.id,
+            organization_id: invoice.organization_id || context.organizationId,
+            environment_id: invoice.environment_id || context.environmentId,
+            numero_item: idx + 1,
+            codigo_produto: p.product_code,
+            descricao: p.description,
+            quantidade: p.quantity,
+            unidade: p.unit,
+            peso: Number((p as any).weight) || 0,
+            cubagem: Number((p as any).cubic_meters) || 0,
+            valor_unitario: Number(p.unit_value) || 0,
+            valor_total: p.total_value
+          }));
+          const { error: prodError } = await (supabase as any).from('invoices_nfe_products').insert(productsToInsert);
+          if (prodError) throw prodError;
+        }
+
+        // Atualizar Cliente
+        if (invoice.customer && invoice.customer.id) {
+          const { error: custError } = await (supabase as any)
+            .from('invoices_nfe_customers')
+            .update({
+              razao_social: customerData.name,
+              cnpj_cpf: customerData.cnpj,
+              inscricao_estadual: customerData.state_registration,
+              logradouro: customerData.address,
+              numero: customerData.number,
+              complemento: customerData.complement,
+              bairro: customerData.neighborhood,
+              cidade: customerData.city,
+              estado: customerData.state,
+              cep: customerData.zip_code,
+              telefone: customerData.phone,
+              email: customerData.email
+            })
+            .eq('id', invoice.customer.id);
+            
+          if (custError) throw custError;
+        }
+
+        setSuccess('Nota Fiscal atualizada com sucesso!');
         setTimeout(() => onSave(), 1500);
-      } else {
-        setError(result.error || 'Erro ao salvar nota fiscal.');
+      } else if (xmlData) {
+        // Modo Nova (Importação)
+        const result = await importNFeToDatabase(
+          xmlData, 
+          establishmentId, 
+          context.organizationId, 
+          context.environmentId,
+          formData.carrier_id || undefined
+        );
+
+        if (result.success) {
+          setSuccess('Nota Fiscal importada com sucesso!');
+          setTimeout(() => onSave(), 1500);
+        } else {
+          setError(result.error || 'Erro ao salvar nota fiscal.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar nota fiscal.');
@@ -238,16 +430,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Nova Nota Fiscal</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {invoice ? `Editar Nota Fiscal ${invoice.numero || ''}` : 'Nova Nota Fiscal'}
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{establishmentName}</p>
           </div>
         </div>
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || !xmlData}
-          className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={isSubmitting || (!xmlData && !invoice)}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
-          <Save className="w-4 h-4" />
+          <Save className="w-5 h-5" />
           <span>{isSubmitting ? 'Salvando...' : 'Salvar Nota Fiscal'}</span>
         </button>
       </div>
@@ -350,13 +544,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <div className="p-6">
               {activeTab === 'basic' && (
                 <div className="space-y-6">
-                  {!xmlData && (
+                  {!xmlData && !invoice && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                       <p className="text-sm text-blue-800">
                         <strong>Aguardando importação do XML:</strong> Faça upload do arquivo XML da NF-e acima para preencher automaticamente os campos.
                       </p>
                     </div>
                   )}
+                  {(xmlData || invoice) && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="col-span-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -449,8 +644,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="date"
                         value={formData.delivery_forecast_date}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('delivery_forecast_date', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -468,13 +663,27 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Série do Pedido
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.order_serie}
+                        onChange={(e) => handleInputChange('order_serie', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
+                        placeholder="Ex: 1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Número do Pedido
                       </label>
                       <input
                         type="text"
                         value={formData.order_number}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('order_number', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
+                        placeholder="Ex: 123456"
                       />
                     </div>
 
@@ -506,12 +715,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Status
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.status}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
-                      />
+                        onChange={(e) => handleInputChange('status', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="Emitida">Emitida</option>
+                        <option value="Coletada">Coletada</option>
+                        <option value="Em trânsito">Em trânsito</option>
+                        <option value="Saiu p/ Entrega">Saiu p/ Entrega</option>
+                        <option value="Entregue">Entregue</option>
+                        <option value="Cancelada">Cancelada</option>
+                      </select>
                     </div>
 
                     <div className="col-span-2">
@@ -545,28 +760,31 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       />
                     </div>
                   </div>
+                  )}
                 </div>
               )}
 
               {activeTab === 'customer' && (
                 <div className="space-y-6">
-                  {!xmlData && (
+                  {!xmlData && !invoice && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                       <p className="text-sm text-blue-800">
                         <strong>Aguardando importação do XML:</strong> Os dados do cliente serão preenchidos automaticamente após o upload do XML.
                       </p>
                     </div>
                   )}
+                  {(xmlData || invoice) && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Nome / Razão Social
+                        Nome / Razão Social *
                       </label>
                       <input
                         type="text"
                         value={customerData.name}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, name: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nome ou Razão Social"
                       />
                     </div>
 
@@ -577,8 +795,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.cnpj}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, cnpj: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="00.000.000/0000-00"
                       />
                     </div>
 
@@ -589,8 +808,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.state_registration}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, state_registration: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -601,8 +820,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.address}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, address: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -613,8 +832,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.number}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, number: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -625,8 +844,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.complement}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, complement: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -637,8 +856,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.neighborhood}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, neighborhood: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -649,8 +868,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.city}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, city: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -661,8 +880,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.state}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, state: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -673,8 +892,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.zip_code}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, zip_code: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -685,8 +904,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.country}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, country: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -697,8 +916,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.phone}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, phone: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
 
@@ -709,48 +928,133 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={customerData.email}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => setCustomerData({...customerData, email: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   </div>
+                  )}
                 </div>
               )}
 
               {activeTab === 'products' && (
                 <div className="space-y-4">
-                  {!xmlData ? (
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione os produtos desta nota fiscal
+                    </p>
+                    <button
+                      onClick={addProduct}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <span>+ Adicionar Produto</span>
+                    </button>
+                  </div>
+
+                  {!xmlData && !invoice && products.length === 0 ? (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
                         <strong>Aguardando importação do XML:</strong> A lista de produtos será exibida após o upload do XML da NF-e.
                       </p>
+                    </div>
+                  ) : products.length === 0 ? (
+                    <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
+                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum produto adicionado</p>
+                      <button
+                        onClick={addProduct}
+                        className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <span>+ Adicionar Primeiro Produto</span>
+                      </button>
                     </div>
                   ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Ordem</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Código</th>
-                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição</th>
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Qtd</th>
-                          <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Unid.</th>
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Valor Unit.</th>
-                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Valor Total</th>
-                          <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">NCM</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-32">Código</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 min-w-[250px]">Descrição</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-24">Qtd</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-24">Peso (kg)</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-28">Cubagem (m³)</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-32">Valor Unit.</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-32">Valor Total</th>
+                          <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 w-16">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
                         {products.map((product, index) => (
-                          <tr key={index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:bg-gray-900">
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">{product.item_order}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">{product.product_code}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">{product.description}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white text-right">{product.quantity}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white text-center">{product.unit}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white text-right">{formatCurrency(product.unit_value)}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white font-semibold text-right">{formatCurrency(product.total_value)}</td>
-                            <td className="py-3 px-4 text-sm text-gray-900 dark:text-white text-center">{product.ncm}</td>
+                          <tr key={index} className="border-b border-gray-100 dark:border-gray-700">
+                            <td className="py-3 px-4">
+                              <input
+                                type="text"
+                                value={product.product_code}
+                                onChange={(e) => updateProduct(index, 'product_code', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                placeholder="Código"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <input
+                                type="text"
+                                value={product.description}
+                                onChange={(e) => updateProduct(index, 'description', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                placeholder="Descrição do produto"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <input
+                                type="number"
+                                value={product.quantity}
+                                onChange={(e) => updateProduct(index, 'quantity', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                min="0"
+                                step="1"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <input
+                                type="number"
+                                value={(product as any).weight || 0}
+                                onChange={(e) => updateProduct(index, 'weight', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                min="0"
+                                step="0.001"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <input
+                                type="number"
+                                value={(product as any).cubic_meters || 0}
+                                onChange={(e) => updateProduct(index, 'cubic_meters', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                min="0"
+                                step="0.0001"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <input
+                                type="number"
+                                value={product.unit_value}
+                                onChange={(e) => updateProduct(index, 'unit_value', e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                min="0"
+                                step="0.01"
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-sm font-semibold text-right">
+                              {formatCurrency(product.total_value)}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <button
+                                onClick={() => removeProduct(index)}
+                                className="text-red-600 hover:text-red-800 transition-colors"
+                              >
+                                🗑️
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -773,21 +1077,22 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
               {activeTab === 'values' && (
                 <div className="space-y-6">
-                  {!xmlData && (
+                  {!xmlData && !invoice && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                       <p className="text-sm text-blue-800">
                         <strong>Aguardando importação do XML:</strong> Os valores e impostos da NF-e serão preenchidos após o upload do XML.
                       </p>
                     </div>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="col-span-3">
+                  {(xmlData || invoice) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="col-span-2">
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <label className="block text-sm font-medium text-blue-900 mb-2">
                           Valor Total da NF-e
                         </label>
                         <div className="text-3xl font-bold text-blue-900">
-                          {formatCurrency(formData.total_value)}
+                          {formatCurrency((Number(formData.total_value) || Number(formData.invoice_value) || 0) + Number(formData.freight_value))}
                         </div>
                       </div>
                     </div>
@@ -798,10 +1103,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       </label>
                       <input
                         type="text"
-                        value={formatCurrency(formData.invoice_value)}
+                        value={formatCurrency(products.reduce((sum, p) => sum + p.total_value, 0))}
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
                       />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Calculado automaticamente</p>
                     </div>
 
                     <div>
@@ -816,20 +1122,47 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Peso Total (kg)
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.weight}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
-                      />
+                    <div className="col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Dados da Carga (para cálculo de frete automático)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Peso Total (kg)
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.weight || 0}
+                            onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Quantidade de Volumes
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.volumes || 1}
+                            onChange={(e) => handleInputChange('volumes', parseInt(e.target.value) || 1)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Cubagem (m³)
+                          </label>
+                          <input
+                            type="text"
+                            value={(formData as any).cubic_meters || 0}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="col-span-3">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 mt-4">Impostos</h4>
+                    <div className="col-span-2 mt-4 mb-2 border-t border-gray-200 pt-4">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Impostos</h4>
                     </div>
 
                     <div>
@@ -868,6 +1201,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       />
                     </div>
                   </div>
+                  )}
                 </div>
               )}
             </div>

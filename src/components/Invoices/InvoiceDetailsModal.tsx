@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, XCircle, Clock, Eye, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, User, MapPin, Building, Receipt, Loader, Package, Hash, Scale } from 'lucide-react';
-import { invoicesCostService, InvoiceCarrierCost } from '../../services/invoicesCostService';
-import { carriersService } from '../../services/carriersService';
+import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { supabase } from '../../lib/supabase';
 
 interface Invoice {
@@ -28,6 +27,7 @@ interface Invoice {
   icmsValue?: number;
   tipoNota?: string;
   previsaoEntrega?: string;
+  freight_results?: any[];
 }
 
 interface InvoiceDetailsModalProps {
@@ -42,20 +42,13 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   invoice
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'costs' | 'ctes'>('details');
-  const [carrierCosts, setCarrierCosts] = useState<InvoiceCarrierCost[]>([]);
-  const [isLoadingCosts, setIsLoadingCosts] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [customer, setCustomer] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      if (activeTab === 'details') {
-        loadInvoiceDetails();
-      } else if (activeTab === 'costs') {
-        loadCosts();
-      }
+    if (isOpen && activeTab === 'details') {
+      loadInvoiceDetails();
     }
   }, [isOpen, activeTab, invoice.id]);
 
@@ -85,170 +78,6 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
     }
   };
 
-  const loadCosts = async () => {
-    setIsLoadingCosts(true);
-    try {
-      const costs = await invoicesCostService.getInvoiceCosts(invoice.id.toString());
-
-      if (costs.length === 0) {
-        // Se não há custos, calcular automaticamente para todos os transportadores
-        await calculateCostsForAllCarriers();
-      } else {
-        // Ordenar por menor valor
-        const sortedCosts = costs.sort((a, b) => a.total_value - b.total_value);
-        setCarrierCosts(sortedCosts);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar custos:', error);
-    } finally {
-      setIsLoadingCosts(false);
-    }
-  };
-
-  const calculateCostsForAllCarriers = async () => {
-    setIsCalculating(true);
-    try {
-      console.log('=== INICIANDO CÁLCULO DE CUSTOS PARA TODOS OS TRANSPORTADORES ===');
-      console.log('Invoice ID:', invoice.id);
-      console.log('Destino:', invoice.cidadeDestino, invoice.ufDestino);
-      console.log('Invoice completa:', invoice);
-
-      if (!invoice.cidadeDestino || !invoice.ufDestino) {
-        alert('Erro: Cidade ou UF de destino não informados na nota fiscal.');
-        return;
-      }
-
-      // Buscar tabelas de frete ativas com seus transportadores
-      const { data: freightRateTables, error: tablesError } = await supabase
-        .from('freight_rate_tables')
-        .select(`
-          id,
-          nome,
-          transportador_id,
-          carriers:transportador_id(id, codigo, razao_social, fantasia, cnpj)
-        `)
-        .eq('status', 'ativo');
-
-      if (tablesError) throw tablesError;
-
-      console.log('Tabelas de frete ativas:', freightRateTables?.length || 0);
-
-      if (!freightRateTables || freightRateTables.length === 0) {
-        alert('Nenhuma tabela de frete ativa encontrada.');
-        return;
-      }
-
-      // Buscar cidades atendidas para cada tabela de frete
-      const { data: rateCities, error: citiesError } = await supabase
-        .from('freight_rate_cities')
-        .select(`
-          freight_rate_id,
-          city_id,
-          cities!inner(name, state_abbreviation),
-          freight_rates!inner(freight_rate_table_id)
-        `)
-        .eq('cities.name', invoice.cidadeDestino)
-        .eq('cities.state_abbreviation', invoice.ufDestino);
-
-      if (citiesError) {
-        console.error('Erro ao buscar cidades:', citiesError);
-        throw citiesError;
-      }
-
-      console.log('Cidades encontradas:', rateCities?.length || 0);
-      if (rateCities && rateCities.length > 0) {
-        console.log('Primeira cidade encontrada:', rateCities[0]);
-      }
-
-      // Obter IDs das tabelas que atendem a cidade
-      const attendingTableIds = new Set(
-        rateCities?.map(city => city.freight_rates.freight_rate_table_id) || []
-      );
-
-      console.log('IDs das tabelas que atendem:', Array.from(attendingTableIds));
-
-      // Filtrar tabelas que atendem a cidade
-      const attendingTables = freightRateTables.filter(table =>
-        attendingTableIds.has(table.id)
-      );
-
-      console.log('Transportadores que atendem a cidade:', attendingTables.length);
-
-      if (attendingTables.length === 0) {
-        console.error('❌ NENHUM TRANSPORTADOR ENCONTRADO');
-        console.error('Cidade buscada:', invoice.cidadeDestino);
-        console.error('UF buscada:', invoice.ufDestino);
-        console.error('Total de tabelas de frete ativas:', freightRateTables?.length || 0);
-        console.error('Total de cidades cadastradas nas tabelas:', rateCities?.length || 0);
-        alert(`Nenhum transportador configurado atende a cidade: ${invoice.cidadeDestino}/${invoice.ufDestino}\n\nVerifique se a cidade está cadastrada nas tabelas de frete.`);
-        return;
-      }
-
-      // Dados da nota fiscal
-      const invoiceData = {
-        weight: invoice.peso || 100,
-        value: invoice.valorNFe,
-        volume: invoice.volumes || 1,
-        m3: 0,
-        destinationCity: invoice.cidadeDestino,
-        destinationState: invoice.ufDestino,
-        issueDate: invoice.dataEmissao
-      };
-
-      console.log('Dados da nota fiscal:', invoiceData);
-
-      const calculatedCosts: InvoiceCarrierCost[] = [];
-
-      // Calcular para cada transportador
-      for (const table of attendingTables) {
-        try {
-          const carrier = table.carriers;
-          console.log(`Calculando para: ${carrier.codigo} - ${carrier.fantasia || carrier.razao_social}`);
-
-          const calculation = await invoicesCostService.calculateInvoiceCost(
-            invoiceData,
-            table.transportador_id,
-            invoice.dataEmissao
-          );
-
-          // Salvar no banco
-          await invoicesCostService.saveCostsToInvoice(
-            invoice.id.toString(),
-            table.transportador_id,
-            calculation,
-            carrier,
-            'CIF'
-          );
-
-          calculatedCosts.push({
-            id: `temp-${table.transportador_id}`,
-            invoice_id: invoice.id.toString(),
-            carrier_id: table.transportador_id,
-            carrier_name: `${carrier.codigo} - ${carrier.fantasia || carrier.razao_social}`,
-            carrier_document: carrier.cnpj,
-            freight_type: 'CIF',
-            ...calculation
-          } as InvoiceCarrierCost);
-
-          console.log(`✅ Custo calculado: ${formatCurrency(calculation.total_value)}`);
-        } catch (error) {
-          console.error(`Erro ao calcular para ${table.carriers.codigo}:`, error);
-        }
-      }
-
-      // Ordenar por menor valor
-      calculatedCosts.sort((a, b) => a.total_value - b.total_value);
-      setCarrierCosts(calculatedCosts);
-
-      console.log(`=== CÁLCULO FINALIZADO: ${calculatedCosts.length} transportadores ===`);
-    } catch (error: any) {
-      console.error('❌ ERRO AO CALCULAR CUSTOS:', error);
-      alert(`Erro ao calcular custos: ${error?.message || 'Erro desconhecido'}`);
-    } finally {
-      setIsCalculating(false);
-    }
-  };
-
   if (!isOpen) return null;
   
   // Format date
@@ -258,8 +87,9 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   };
   
   // Format currency
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', {
+  const formatCurrency = (value: number | undefined | null) => {
+    if (value == null || isNaN(value)) return 'R$ 0,00';
+    return Number(value).toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     });
@@ -343,9 +173,6 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
     status: ['Aprovado', 'Reprovado', 'Pendente'][Math.floor(Math.random() * 3)]
   }));
 
-  // Calculate total costs
-  const totalFreightCosts = carrierCosts.reduce((sum, cost) => sum + cost.total_value, 0);
-  
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
@@ -702,7 +529,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">{product.product_code}</td>
                             <td className="px-4 py-3 text-sm text-gray-900 dark:text-white max-w-xs">{product.description}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white font-medium">
-                              {product.quantity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                              {Number(product.quantity || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-600 dark:text-gray-400">{product.unit}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
@@ -814,263 +641,13 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                       </div>
                     ))}
                   </div>
+```
                 </div>
               </div>
             </div>
           ) : activeTab === 'costs' ? (
             <div className="space-y-6">
-              {/* Loading State */}
-              {(isLoadingCosts || isCalculating) && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Loader size={48} className="animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {isCalculating ? 'Calculando custos...' : 'Carregando custos...'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Costs Content */}
-              {!isLoadingCosts && !isCalculating && carrierCosts.length > 0 && (
-                <>
-                  {/* Costs Summary */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-lg text-white shadow-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-blue-100 text-sm font-medium">Transportadores</p>
-                        <Truck size={24} className="text-blue-200" />
-                      </div>
-                      <p className="text-3xl font-bold">{carrierCosts.length}</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-lg text-white shadow-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-green-100 text-sm font-medium">Total de Custos</p>
-                        <DollarSign size={24} className="text-green-200" />
-                      </div>
-                      <p className="text-3xl font-bold">{formatCurrency(totalFreightCosts)}</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-lg text-white shadow-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-purple-100 text-sm font-medium">Custo Médio</p>
-                        <Receipt size={24} className="text-purple-200" />
-                      </div>
-                      <p className="text-3xl font-bold">{formatCurrency(totalFreightCosts / carrierCosts.length)}</p>
-                    </div>
-                  </div>
-
-                  {/* Carrier Costs Detail */}
-                  {carrierCosts.map((cost, index) => (
-                <div key={cost.id} className={`bg-white rounded-lg border-2 overflow-hidden ${
-                  index === 0 ? 'border-green-500 shadow-lg' : 'border-gray-200'
-                }`}>
-                  {/* Carrier Header */}
-                  <div className={`px-6 py-4 border-b ${
-                    index === 0
-                      ? 'bg-gradient-to-r from-green-50 to-green-100 border-green-200'
-                      : 'bg-gradient-to-r from-blue-50 to-blue-100 border-gray-200'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`text-white p-2 rounded-lg ${
-                          index === 0 ? 'bg-green-600' : 'bg-blue-600'
-                        }`}>
-                          <Truck size={20} />
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{cost.carrier_name}</h3>
-                            {index === 0 && (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-600 text-white animate-pulse">
-                                <ThumbsUp size={12} className="mr-1" />
-                                TRANSPORTADOR NOMEADO
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ: {cost.carrier_document}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tipo de Frete</p>
-                        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${
-                          cost.freight_type === 'CIF' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {cost.freight_type}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Cost Details Grid */}
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {/* Column 1: Freight Values */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-2">Valores de Frete</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Frete Peso</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.freight_weight_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Frete Valor</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.freight_value_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 border-t">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Subtotal Frete</span>
-                            <span className="text-sm font-bold text-blue-600">
-                              {formatCurrency(cost.freight_weight_value + cost.freight_value_value)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-2 mt-6">Taxas e Componentes</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">SECCAT</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.seccat_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Despacho</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.dispatch_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">GRIS</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.ademe_gris_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">ITR</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.itr_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">TAS</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.tas_value)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Column 2: Additional Costs */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-2">Custos Adicionais</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Coleta/Entrega</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.collection_delivery_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Outras Taxas</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.other_tax_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Pedágio</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.toll_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Outros</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.other_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 border-t">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Subtotal Taxas</span>
-                            <span className="text-sm font-bold text-orange-600">
-                              {formatCurrency(
-                                cost.seccat_value + cost.dispatch_value + cost.ademe_gris_value +
-                                cost.itr_value + cost.tas_value + cost.collection_delivery_value +
-                                cost.other_tax_value + cost.toll_value + cost.other_value
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Column 3: Taxes and Total */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b pb-2">Impostos</h4>
-                        <div className="space-y-3">
-                          <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">Alíquota ICMS</span>
-                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{cost.icms_rate.toFixed(2)}%</span>
-                            </div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">Base ICMS</span>
-                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{formatCurrency(cost.icms_base)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">ICMS</span>
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.icms_value)}</span>
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">PIS</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.pis_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">COFINS</span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(cost.cofins_value)}</span>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 border-t">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Subtotal Impostos</span>
-                            <span className="text-sm font-bold text-red-600">
-                              {formatCurrency(cost.icms_value + cost.pis_value + cost.cofins_value)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Total */}
-                        <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border-2 border-green-200 mt-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-base font-bold text-gray-900 dark:text-white">TOTAL</span>
-                            <span className="text-2xl font-bold text-green-700">{formatCurrency(cost.total_value)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-                  {/* Overall Summary */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border-2 border-gray-300 p-6">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Resumo Consolidado</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Frete</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          {formatCurrency(carrierCosts.reduce((sum, c) => sum + c.freight_weight_value + c.freight_value_value, 0))}
-                        </p>
-                      </div>
-                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Taxas</p>
-                        <p className="text-lg font-bold text-orange-600">
-                          {formatCurrency(carrierCosts.reduce((sum, c) =>
-                            sum + c.seccat_value + c.dispatch_value + c.ademe_gris_value + c.itr_value +
-                            c.tas_value + c.collection_delivery_value + c.other_tax_value + c.toll_value + c.other_value, 0
-                          ))}
-                        </p>
-                      </div>
-                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Total Impostos</p>
-                        <p className="text-lg font-bold text-red-600">
-                          {formatCurrency(carrierCosts.reduce((sum, c) => sum + c.icms_value + c.pis_value + c.cofins_value, 0))}
-                        </p>
-                      </div>
-                      <div className="bg-gradient-to-br from-green-500 to-green-600 p-4 rounded-lg border-2 border-green-700">
-                        <p className="text-xs text-green-100 uppercase tracking-wider mb-1">TOTAL GERAL</p>
-                        <p className="text-2xl font-bold text-white">{formatCurrency(totalFreightCosts)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Empty State */}
-              {!isLoadingCosts && !isCalculating && carrierCosts.length === 0 && (
-                <div className="text-center py-12">
-                  <Receipt size={64} className="mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Nenhum custo calculado</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">Não há custos de frete calculados para esta nota fiscal.</p>
-                </div>
-              )}
+              <QuoteResultsTable results={invoice.freight_results || []} />
             </div>
           ) : (
             <div className="space-y-6">

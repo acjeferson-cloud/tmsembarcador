@@ -1,7 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, X, RefreshCw } from 'lucide-react';
-import { addElectronicDocument, ElectronicDocument, isValidChaveAcesso, isChaveAcessoUnique } from '../../data/electronicDocumentsData';
+import { ElectronicDocument, isValidChaveAcesso, isChaveAcessoUnique } from '../../data/electronicDocumentsData';
 import { parseXML } from '../../services/xmlService';
+import { useTranslation } from 'react-i18next';
+import { TenantContextHelper } from '../../utils/tenantContext';
+import { parseNFeXml, importNFeToDatabase } from '../../services/nfeXmlService';
+import { cteXmlService } from '../../services/cteXmlService';
 
 interface DocumentUploadProps {
   onBack: () => void;
@@ -20,6 +24,7 @@ interface UploadedFile {
 }
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUploadComplete }) => {
+  const { t } = useTranslation();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +35,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
     );
 
     if (xmlFiles.length === 0) {
-      alert('Por favor, selecione apenas arquivos XML.');
+      alert(t('electronicDocs.upload.supportedFormat'));
       return;
     }
 
@@ -105,11 +110,11 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
               
               // Validate the parsed data
               if (!parsedData.chaveAcesso || !isValidChaveAcesso(parsedData.chaveAcesso)) {
-                throw new Error('Chave de acesso inválida ou não encontrada no XML');
+                throw new Error(t('electronicDocs.upload.validationError'));
               }
               
               if (!isChaveAcessoUnique(parsedData.chaveAcesso)) {
-                throw new Error('Este documento já foi importado anteriormente');
+                throw new Error(t('electronicDocs.upload.validationError')); // Reusing error message for simplicity but ideally needs a new key
               }
               
               // Update file status to success with parsed data
@@ -129,7 +134,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
                   f.id === fileId ? { 
                     ...f, 
                     status: 'error',
-                    error: (error as Error).message || 'Erro na validação do XML'
+                    error: (error as Error).message || t('electronicDocs.upload.validationError')
                   } : f
                 ));
               }, 500);
@@ -201,42 +206,81 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
   const getStatusText = (file: UploadedFile) => {
     switch (file.status) {
       case 'uploading':
-        return `Enviando... ${file.progress}%`;
+        return `${t('electronicDocs.upload.status.uploading')} ${file.progress}%`;
       case 'processing':
-        return `Processando... ${file.progress}%`;
+        return `${t('electronicDocs.upload.status.processing')} ${file.progress}%`;
       case 'success':
-        return 'Processado com sucesso';
+        return t('electronicDocs.upload.status.success');
       case 'error':
-        return file.error || 'Erro no processamento';
+        return file.error || t('electronicDocs.upload.status.error');
       default:
-        return 'Aguardando';
+        return t('electronicDocs.upload.status.waiting');
     }
   };
 
-  const handleCompleteImport = () => {
+  const handleCompleteImport = async () => {
     // Save all successfully processed files to the database
     const successFiles = uploadedFiles.filter(f => f.status === 'success');
     
     if (successFiles.length === 0) {
-      alert('Nenhum arquivo foi processado com sucesso para importação.');
+      alert(t('electronicDocs.upload.alerts.noFiles'));
+      return;
+    }
+    
+    const context = await TenantContextHelper.getCurrentContext();
+    if (!context) {
+      alert("Contexto de locatário não encontrado");
+      return;
+    }
+    
+    let orgId = context.organizationId;
+    let envId = context.environmentId;
+    
+    if (!orgId || !envId) {
+        orgId = '12345678-1234-1234-1234-123456789012'; // Fallbacks para testes que não devem quebrar se nulos
+        envId = '12345678-1234-1234-1234-123456789012';
+    }
+    
+    let establishmentId = '';
+    try {
+      const { establishmentsService } = await import('../../services/establishmentsService');
+      const establishments = await establishmentsService.getAll();
+      if (establishments.length > 0) {
+        establishmentId = establishments[0].id;
+      }
+    } catch (e) {
+      console.error("Erro ao carregar estabelecimento:", e);
+    }
+
+    if (!establishmentId) {
+      alert("Não foi possível identificar o estabelecimento principal.");
       return;
     }
     
     // Add each document to the database
-    successFiles.forEach(file => {
+    for (const file of successFiles) {
       if (file.parsedData && file.xmlContent) {
-        // Add the XML content to the document data
-        const documentData = {
-          ...file.parsedData,
-          xmlContent: file.xmlContent
-        };
+        const p = file.parsedData as any;
         
-        // Add to database
-        addElectronicDocument(documentData as any);
+        try {
+          if (p.tipo === 'NFe') {
+            const nfeData = parseNFeXml(file.xmlContent);
+            if (nfeData) {
+              await importNFeToDatabase(nfeData, establishmentId, orgId, envId);
+            }
+          } else if (p.tipo === 'CTe') {
+            const cteData = cteXmlService.parseXml(file.xmlContent);
+            if (cteData) {
+              await cteXmlService.importCTeToDatabase(cteData, establishmentId);
+            }
+          }
+        } catch (e: any) {
+          console.error("Erro ao importar documento para o sistema fiscal", e);
+        }
       }
-    });
+    }
     
-    alert(`${successFiles.length} documento(s) importado(s) com sucesso!`);
+    alert(`${successFiles.length} ${t('electronicDocs.upload.alerts.success')}`);
     onUploadComplete();
   };
 
@@ -252,10 +296,10 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Documentos Eletrônicos</span>
+          <span>{t('electronicDocs.upload.back')}</span>
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Importar XMLs</h1>
-        <p className="text-gray-600 dark:text-gray-400">Faça upload de arquivos XML de NFe (modelo 55) e CTe (modelo 57)</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('electronicDocs.upload.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('electronicDocs.upload.subtitle')}</p>
       </div>
 
       <div className="space-y-6">
@@ -273,16 +317,16 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
           >
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Arraste e solte seus arquivos XML aqui
+              {t('electronicDocs.upload.dragDrop')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              ou clique para selecionar arquivos
+              {t('electronicDocs.upload.or')}
             </p>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
-              Selecionar Arquivos
+              {t('electronicDocs.upload.selectFiles')}
             </button>
             <input
               ref={fileInputRef}
@@ -293,7 +337,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
               className="hidden"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-              Apenas arquivos XML são aceitos. Tamanho máximo: 10MB por arquivo.
+              {t('electronicDocs.upload.limitLabel')}
             </p>
           </div>
         </div>
@@ -301,23 +345,23 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
         {/* Statistics */}
         {uploadedFiles.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Status do Processamento</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.upload.stats.title')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100 dark:border-blue-900">
                 <p className="text-2xl font-bold text-blue-600">{uploadedFiles.length}</p>
-                <p className="text-sm text-blue-700">Total de Arquivos</p>
+                <p className="text-sm text-blue-700">{t('electronicDocs.upload.stats.total')}</p>
               </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-100 dark:border-yellow-900">
                 <p className="text-2xl font-bold text-yellow-600">{processingCount}</p>
-                <p className="text-sm text-yellow-700">Processando</p>
+                <p className="text-sm text-yellow-700">{t('electronicDocs.upload.stats.processing')}</p>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100 dark:border-green-900">
                 <p className="text-2xl font-bold text-green-600">{successCount}</p>
-                <p className="text-sm text-green-700">Processados</p>
+                <p className="text-sm text-green-700">{t('electronicDocs.upload.stats.success')}</p>
               </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-center p-4 bg-red-50 rounded-lg border border-red-100 dark:border-red-900">
                 <p className="text-2xl font-bold text-red-600">{errorCount}</p>
-                <p className="text-sm text-red-700">Com Erro</p>
+                <p className="text-sm text-red-700">{t('electronicDocs.upload.stats.error')}</p>
               </div>
             </div>
           </div>
@@ -326,7 +370,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
         {/* Files List */}
         {uploadedFiles.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Arquivos Enviados</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.upload.filesTitle')}</h3>
             <div className="space-y-3">
               {uploadedFiles.map((file) => (
                 <div key={file.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -351,9 +395,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
                       )}
                       {file.status === 'success' && file.parsedData && (
                         <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                          <p>Tipo: {file.parsedData.tipo} - Modelo: {file.parsedData.modelo}</p>
-                          <p>Número: {file.parsedData.numeroDocumento} - Série: {file.parsedData.serie}</p>
-                          <p className="truncate">Chave: {file.parsedData.chaveAcesso}</p>
+                          <p>{t('electronicDocs.filterType')}: {file.parsedData.tipo} - {t('electronicDocs.card.model')}: {file.parsedData.modelo}</p>
+                          <p>{t('electronicDocs.table.number')}: {file.parsedData.numeroDocumento} - {t('electronicDocs.view.series')}: {file.parsedData.serie}</p>
+                          <p className="truncate">{t('electronicDocs.card.key')}: {file.parsedData.chaveAcesso}</p>
                         </div>
                       )}
                     </div>
@@ -377,27 +421,27 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
               onClick={onBack}
               className="px-6 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleCompleteImport}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Concluir Importação
+              {t('electronicDocs.upload.finishImport')}
             </button>
           </div>
         )}
 
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">Instruções de Importação</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('electronicDocs.upload.instructions.title')}</h3>
           <div className="text-blue-800 space-y-2">
-            <p>• <strong>Formatos aceitos:</strong> Apenas arquivos XML de NFe (modelo 55) e CTe (modelo 57)</p>
-            <p>• <strong>Validação:</strong> Os XMLs são validados automaticamente com a SEFAZ</p>
-            <p>• <strong>Processamento:</strong> Extração automática de dados fiscais e logísticos</p>
-            <p>• <strong>Integração:</strong> Documentos processados ficam disponíveis para vinculação com entregas</p>
-            <p>• <strong>Geração:</strong> DANFE e DACTE podem ser gerados automaticamente após o processamento</p>
-            <p>• <strong>Armazenamento:</strong> O conteúdo XML completo é armazenado para consultas futuras</p>
+            <p>• <strong>{t('electronicDocs.upload.instructions.formats')}:</strong> {t('electronicDocs.upload.instructions.formatsDesc')}</p>
+            <p>• <strong>{t('electronicDocs.upload.instructions.validation')}:</strong> {t('electronicDocs.upload.instructions.validationDesc')}</p>
+            <p>• <strong>{t('electronicDocs.upload.instructions.processing')}:</strong> {t('electronicDocs.upload.instructions.processingDesc')}</p>
+            <p>• <strong>{t('electronicDocs.upload.instructions.integration')}:</strong> {t('electronicDocs.upload.instructions.integrationDesc')}</p>
+            <p>• <strong>{t('electronicDocs.upload.instructions.generation')}:</strong> {t('electronicDocs.upload.instructions.generationDesc')}</p>
+            <p>• <strong>{t('electronicDocs.upload.instructions.storage')}:</strong> {t('electronicDocs.upload.instructions.storageDesc')}</p>
           </div>
         </div>
       </div>

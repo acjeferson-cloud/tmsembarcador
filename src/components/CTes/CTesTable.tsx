@@ -497,20 +497,18 @@ export const CTesTable = React.memo<CTesTableProps>(({
                               </button>
                             )}
                             
-                            {/* Delete - Only for System Administrator */}
-                            {userProfile === 'administrador' && (
-                              <button
-                                onClick={() => {
-                                  onAction(cte.id, 'delete');
-                                  setOpenActionMenu(null);
-                                }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
-                              >
-                                <Trash2 size={14} />
-                                <span>Excluir CT-e</span>
-                              </button>
-                            )}
+                            {/* Delete - Available for all */}
+                            <button
+                              onClick={() => {
+                                onAction(cte.id, 'delete');
+                                setOpenActionMenu(null);
+                              }}
+                              disabled={isLoading}
+                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                            >
+                              <Trash2 size={14} />
+                              <span>Excluir CT-e</span>
+                            </button>
 
                             {/* Download XML - Available for all statuses */}
                             <button

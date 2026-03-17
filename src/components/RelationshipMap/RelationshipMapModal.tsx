@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, FileText, Package, Truck, CreditCard, ExternalLink, ZoomIn, ZoomOut, RefreshCw, PackageCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, FileText, Package, Truck, CreditCard, ExternalLink, RefreshCw, PackageCheck } from 'lucide-react';
 import ReactFlow, { 
   Node, 
   Edge, 
@@ -8,7 +8,8 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
-  Position
+  Position,
+  Handle
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -45,12 +46,13 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
   if (sourceDocument.type === 'order') {
     // Busca Invoices e CTes relacionados a esse pedido
     const orderId = sourceDocument.id.replace('order-', '');
+    const orderNumber = sourceDocument.number;
     
-    // Invoices by order_id
-    const { data: invoicesData } = await supabase
-      .from('invoices')
-      .select('id, numero, data_emissao, status, valor_total')
-      .eq('order_id', orderId);
+    // Invoices by order_number no invoices_nfe
+    const { data: invoicesData } = await (supabase as any)
+      .from('invoices_nfe')
+      .select('id, numero, data_emissao, situacao, valor_total')
+      .eq('order_number', orderNumber);
 
     if (invoicesData && invoicesData.length > 0) {
       for (const inv of invoicesData) {
@@ -60,13 +62,13 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
           type: 'invoice',
           number: inv.numero,
           date: inv.data_emissao || new Date().toISOString(),
-          status: inv.status || 'Emitida',
+          status: inv.situacao || 'Emitida',
           value: Number(inv.valor_total || 0)
         });
         relationships.push({ from: sourceDocument.id, to: invId });
         
-        // E procura CTes conectados a essa Invoice
-        const { data: ctesData } = await supabase
+        // E procura CTes conectados a essa Invoice (tabela ctes via invoice_id)
+        const { data: ctesData } = await (supabase as any)
           .from('ctes')
           .select('id, numero, data_emissao, status, valor_total')
           .eq('invoice_id', inv.id);
@@ -88,7 +90,7 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
       }
     } else {
       // Se não tem invoice, tenta achar CTe direto pelo order_id
-      const { data: ctesDirect } = await supabase
+      const { data: ctesDirect } = await (supabase as any)
         .from('ctes')
         .select('id, numero, data_emissao, status, valor_total')
         .eq('order_id', orderId);
@@ -108,10 +110,141 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
         }
       }
     }
-  }
+  } else if (sourceDocument.type === 'invoice') {
+    // A partir daqui pode-se expandir os fluxos reversos (abre mapa pela Invoice)
+    const invoiceId = sourceDocument.id.replace('invoice-', '');
+    
+    // Busca Pedido relacionado a essa invoice
+    const { data: invoiceData } = await (supabase as any)
+      .from('invoices_nfe')
+      .select('order_number')
+      .eq('id', invoiceId)
+      .maybeSingle();
 
-  // A partir daqui pode-se expandir os fluxos reversos (quando abre mapa pela Invoice, por exempo)
-  // Como a tela em que estamos está listando a partir dos Pedidos, esse foi o foco:
+    if (invoiceData && invoiceData.order_number) {
+      const { data: orderData } = await (supabase as any)
+        .from('orders')
+        .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+        .eq('numero_pedido', invoiceData.order_number)
+        .maybeSingle();
+
+      if (orderData) {
+        const orderId = `order-${orderData.id}`;
+        documents.push({
+          id: orderId,
+          type: 'order',
+          number: orderData.numero_pedido,
+          date: orderData.data_pedido || new Date().toISOString(),
+          status: orderData.status || 'Pendente',
+          value: Number(orderData.valor_mercadoria || 0)
+        });
+        relationships.push({ from: orderId, to: sourceDocument.id });
+      }
+    }
+    
+    // Procura CTes conectados a essa Invoice
+    const { data: ctesData } = await (supabase as any)
+      .from('ctes')
+      .select('id, numero, data_emissao, status, valor_total')
+      .eq('invoice_id', invoiceId);
+      
+    if (ctesData && ctesData.length > 0) {
+      for (const cte of ctesData) {
+        const cteId = `cte-${cte.id}`;
+        documents.push({
+          id: cteId,
+          type: 'cte',
+          number: cte.numero,
+          date: cte.data_emissao || new Date().toISOString(),
+          status: cte.status || 'Emitido',
+          value: Number(cte.valor_total || 0)
+        });
+        relationships.push({ from: sourceDocument.id, to: cteId });
+      }
+    }
+
+    // Busca Coletas ligadas a essa Invoice
+    const { data: pickupLink } = await (supabase as any)
+      .from('pickup_invoices')
+      .select('pickup_id, pickups(numero_coleta, created_at, status, valor_total)')
+      .eq('invoice_id', invoiceId);
+      
+    if (pickupLink && pickupLink.length > 0) {
+      for (const link of pickupLink) {
+        if (link.pickups) {
+          const pickupDocId = `pickup-${link.pickup_id}`;
+          documents.push({
+            id: pickupDocId,
+            type: 'pickup',
+            number: link.pickups.numero_coleta,
+            date: link.pickups.created_at || new Date().toISOString(),
+            status: link.pickups.status || 'Emitida',
+            value: Number(link.pickups.valor_total || 0)
+          });
+          relationships.push({ from: sourceDocument.id, to: pickupDocId });
+        }
+      }
+    }
+  } else if (sourceDocument.type === 'pickup') {
+    const pickupId = sourceDocument.id.replace('pickup-', '');
+    
+    // Busca links na tabela-ponte
+    const { data: invoiceLinks } = await (supabase as any)
+      .from('pickup_invoices')
+      .select('invoice_id')
+      .eq('pickup_id', pickupId);
+      
+    if (invoiceLinks && invoiceLinks.length > 0) {
+      const ids = invoiceLinks.map((l: any) => l.invoice_id);
+      
+      // Procura no invoices_nfe
+      const { data: nfes } = await (supabase as any)
+        .from('invoices_nfe')
+        .select('id, numero, data_emissao, situacao, valor_total, order_number')
+        .in('id', ids);
+        
+      if (nfes && nfes.length > 0) {
+        for (const nfe of nfes) {
+          const invId = `invoice-${nfe.id}`;
+          documents.push({
+            id: invId,
+            type: 'invoice',
+            number: nfe.numero,
+            date: nfe.data_emissao || new Date().toISOString(),
+            status: nfe.situacao || 'Emitida',
+            value: Number(nfe.valor_total || 0)
+          });
+          // Seta saindo da Nota para a Coleta
+          relationships.push({ from: invId, to: sourceDocument.id });
+          
+          // Busca Pedido upstream dessa invoice se houver
+          if (nfe.order_number) {
+            const { data: orderData } = await (supabase as any)
+              .from('orders')
+              .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+              .eq('numero_pedido', nfe.order_number)
+              .maybeSingle();
+
+            if (orderData) {
+              const orderId = `order-${orderData.id}`;
+              // previne duplicatas caso múltiplas notas venham do mesmo pedido
+              if (!documents.some(d => d.id === orderId)) {
+                documents.push({
+                  id: orderId,
+                  type: 'order',
+                  number: orderData.numero_pedido,
+                  date: orderData.data_pedido || new Date().toISOString(),
+                  status: orderData.status || 'Pendente',
+                  value: Number(orderData.valor_mercadoria || 0)
+                });
+              }
+              relationships.push({ from: orderId, to: invId });
+            }
+          }
+        }
+      }
+    }
+  }
   
   return { documents, relationships };
 };
@@ -187,11 +320,14 @@ const DocumentNode: React.FC<{
   const { document, onClick } = data;
   const colors = getDocumentColor(document.type);
   
+  const displayStatus = document.status === 'processando' ? 'Emitido' : document.status.charAt(0).toUpperCase() + document.status.slice(1);
+  
   return (
     <div 
-      className={`p-3 rounded-lg shadow-md border ${colors.border} ${colors.bg} max-w-xs`}
+      className={`p-3 rounded-lg shadow-md border ${colors.border} ${colors.bg} min-w-[12rem] cursor-pointer hover:shadow-lg transition-shadow bg-white/80 backdrop-blur-sm`}
       onClick={() => onClick && onClick(document)}
     >
+      <Handle type="target" position={Position.Left} className="w-1.5 h-1.5 !bg-gray-400 rounded-full" />
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           {getDocumentIcon(document.type)}
@@ -208,16 +344,17 @@ const DocumentNode: React.FC<{
       </div>
       <div className="space-y-1">
         <p className="text-gray-900 dark:text-white font-medium">{document.number}</p>
-        <div className="flex justify-between text-xs">
+        <div className="flex justify-between text-xs space-x-4">
           <span className="text-gray-500 dark:text-gray-400">{formatDate(document.date)}</span>
           <span className="font-medium text-gray-700 dark:text-gray-300">{formatCurrency(document.value)}</span>
         </div>
         <div className="mt-1">
-          <span className="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-            {document.status}
+          <span className="inline-block px-2 py-0.5 text-xs rounded-full bg-white/50 border border-black/5 dark:bg-black/20 dark:border-white/10 text-gray-800 dark:text-gray-200">
+            {displayStatus}
           </span>
         </div>
       </div>
+      <Handle type="source" position={Position.Right} className="w-1.5 h-1.5 !bg-gray-400 rounded-full" />
     </div>
   );
 };

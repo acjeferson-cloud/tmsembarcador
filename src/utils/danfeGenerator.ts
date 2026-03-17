@@ -1,18 +1,7 @@
-import React from 'react';
-import { X, Download, Printer, FileText } from 'lucide-react';
-import { ElectronicDocument } from '../../data/electronicDocumentsData';
-import { formatCurrency, formatAccessKey } from '../../utils/formatters';
+import { ElectronicDocument } from '../data/electronicDocumentsData';
+import { formatCurrency, formatAccessKey } from './formatters';
 
-import { useTranslation } from 'react-i18next';
-
-interface DanfePreviewProps {
-  document: ElectronicDocument;
-  onClose: () => void;
-}
-
-export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose }) => {
-  const { t } = useTranslation();
-  const getHtmlContent = () => `
+export const getDanfeHtml = (document: ElectronicDocument) => `
     <html>
       <head>
         <title>DANFE - ${document.chaveAcesso}</title>
@@ -160,8 +149,8 @@ export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose })
               <span class="val">${document.destinatario?.cnpjCpf || ''}</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
-              <span class="lbl">DATA DE EMISSÃO</span>
-              <span class="val">${new Date(document.dataAutorizacao).toLocaleDateString('pt-BR')}</span>
+              <span class="lbl">DATA DA EMISSÃO</span>
+              <span class="val">${new Date(document.dataImportacao).toLocaleDateString('pt-BR')}</span>
             </div>
           </div>
           <div class="row">
@@ -171,7 +160,7 @@ export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose })
             </div>
             <div class="box" style="width: 25%; flex: none;">
               <span class="lbl">BAIRRO/DISTRITO</span>
-              <span class="val"> - </span>
+              <span class="val"></span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">CEP</span>
@@ -179,7 +168,7 @@ export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose })
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">DATA DE SAÍDA/ENTRADA</span>
-              <span class="val"></span>
+              <span class="val">${new Date(document.dataImportacao).toLocaleDateString('pt-BR')}</span>
             </div>
           </div>
           <div class="row">
@@ -187,105 +176,114 @@ export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose })
               <span class="lbl">MUNICÍPIO</span>
               <span class="val">${document.destinatario?.cidade || ''}</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="width: 20%; flex: none;">
               <span class="lbl">FONE/FAX</span>
               <span class="val"></span>
             </div>
-            <div class="box" style="width: 10%; flex: none;">
+            <div class="box" style="width: 5%; flex: none;">
               <span class="lbl">UF</span>
               <span class="val">${document.destinatario?.uf || ''}</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">INSCRIÇÃO ESTADUAL</span>
-              <span class="val"></span>
+              <span class="val">ISENTO</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">HORA DE SAÍDA</span>
               <span class="val"></span>
             </div>
           </div>
-          
-          <!-- TRIBUTOS -->
-          <div class="section-title">CÁLCULO DO IMPOSTO</div>
+
+          <!-- FATURA -->
+          <div class="section-title">FATURA</div>
           <div class="row">
             <div class="box">
-              <span class="lbl">BASE DE CÁLCULO DO ICMS</span>
+              <span class="lbl">DADOS DA FATURA</span>
+              <span class="val">Número: ${document.numeroDocumento} - Valor Original: ${formatCurrency(document.valorTotal)} - Valor Desconto: R$ 0,00 - Valor Líquido: ${formatCurrency(document.valorTotal)}</span>
+            </div>
+          </div>
+
+          <!-- IMPOSTOS -->
+          <div class="section-title">CÁLCULO DO IMPOSTO</div>
+          <div class="row">
+            <div class="box" style="width: 16.6%; flex: none;">
+              <span class="lbl">BASE DE CÁLCULO DE ICMS</span>
               <span class="val text-right" style="display:block;">${formatCurrency(document.valorIcms ? document.valorTotal : 0)}</span>
             </div>
-            <div class="box">
+            <div class="box" style="width: 16.6%; flex: none;">
               <span class="lbl">VALOR DO ICMS</span>
               <span class="val text-right" style="display:block;">${formatCurrency(document.valorIcms || 0)}</span>
             </div>
-            <div class="box">
-              <span class="lbl">BASE DE CÁLC. ICMS ST</span>
-              <span class="val text-right" style="display:block;">R$ 0,00</span>
+            <div class="box" style="width: 16.6%; flex: none;">
+              <span class="lbl">BASE DE CÁLCULO ICMS ST</span>
+              <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box">
-              <span class="lbl">VALOR DO ICMS ST</span>
-              <span class="val text-right" style="display:block;">R$ 0,00</span>
+            <div class="box" style="width: 16.6%; flex: none;">
+              <span class="lbl">VALOR DO ICMS SUBSTITUIÇÃO</span>
+              <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box" style="background:#eee;">
+            <div class="box" style="width: 33.6%; flex: none;">
               <span class="lbl">VALOR TOTAL DOS PRODUTOS</span>
               <span class="val text-right" style="display:block;">${formatCurrency(document.valorTotal)}</span>
             </div>
           </div>
           <div class="row">
-            <div class="box">
+            <div class="box" style="width: 16.6%; flex: none;">
               <span class="lbl">VALOR DO FRETE</span>
               <span class="val text-right" style="display:block;">${formatCurrency(document.valorFrete || 0)}</span>
             </div>
-            <div class="box">
+            <div class="box" style="width: 16.6%; flex: none;">
               <span class="lbl">VALOR DO SEGURO</span>
-              <span class="val text-right" style="display:block;">R$ 0,00</span>
+              <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box">
+            <div class="box" style="width: 16.6%; flex: none;">
               <span class="lbl">DESCONTO</span>
-              <span class="val text-right" style="display:block;">R$ 0,00</span>
+              <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box">
-              <span class="lbl">OUTRAS DESP. ACESS.</span>
-              <span class="val text-right" style="display:block;">R$ 0,00</span>
+            <div class="box" style="width: 16.6%; flex: none;">
+              <span class="lbl">OUTRAS DESPESAS ACESSÓRIAS</span>
+              <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box">
+            <div class="box" style="width: 16.6%; flex: none;">
               <span class="lbl">VALOR DO IPI</span>
-              <span class="val text-right" style="display:block;">R$ 0,00</span>
+              <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box" style="background:#eee;">
+            <div class="box" style="width: 17%; flex: none;">
               <span class="lbl">VALOR TOTAL DA NOTA</span>
-              <span class="val text-right" style="display:block;">${formatCurrency(document.valorTotal)}</span>
+              <span class="val text-right" style="display:block;">${formatCurrency(document.valorTotal + (document.valorFrete || 0))}</span>
             </div>
           </div>
-          
+
           <!-- TRANSPORTADOR -->
-          <div class="section-title">TRANSPORTADOR / VOLUMES TRANSPORTADOS</div>
+          <div class="section-title">TRANSPORTADOR/VOLUMES TRANSPORTADOS</div>
           <div class="row">
-            <div class="box" style="width: 40%; flex: none;">
+            <div class="box" style="width: 45%; flex: none;">
               <span class="lbl">RAZÃO SOCIAL</span>
-              <span class="val">O MESMO</span>
+              <span class="val text-center" style="display:block; margin-top:2px;">O MESMO</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">FRETE POR CONTA</span>
-              <span class="val">0-Emitente</span>
+              <span class="val text-center" style="display:block;">0-Emitente</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">CÓDIGO ANTT</span>
               <span class="val"></span>
             </div>
             <div class="box" style="width: 10%; flex: none;">
-              <span class="lbl">PLACA DO VEÍC</span>
+              <span class="lbl">PLACA DO VEÍCULO</span>
               <span class="val"></span>
             </div>
             <div class="box" style="width: 5%; flex: none;">
               <span class="lbl">UF</span>
               <span class="val"></span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="width: 10%; flex: none;">
               <span class="lbl">CNPJ/CPF</span>
               <span class="val"></span>
             </div>
           </div>
           <div class="row">
-            <div class="box" style="width: 40%; flex: none;">
+            <div class="box" style="width: 45%; flex: none;">
               <span class="lbl">ENDEREÇO</span>
               <span class="val"></span>
             </div>
@@ -293,7 +291,7 @@ export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose })
               <span class="lbl">MUNICÍPIO</span>
               <span class="val"></span>
             </div>
-            <div class="box" style="width: 10%; flex: none;">
+            <div class="box" style="width: 5%; flex: none;">
               <span class="lbl">UF</span>
               <span class="val"></span>
             </div>
@@ -394,75 +392,3 @@ export const DanfePreview: React.FC<DanfePreviewProps> = ({ document, onClose })
       </body>
     </html>
   `;
-
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(getHtmlContent());
-      printWindow.document.close();
-      printWindow.onload = function() { printWindow.print(); printWindow.close(); }
-    }
-  };
-
-  const handleDownload = () => {
-    const html = getHtmlContent();
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `DANFE_${document.chaveAcesso}.html`;
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-
-
-
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
-          <div className="flex items-center space-x-2">
-            <FileText size={24} className="text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">DANFE - Documento Auxiliar da Nota Fiscal Eletrônica</h2>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handlePrint}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <Printer size={16} />
-              <span>{t('electronicDocs.preview.print')}</span>
-            </button>
-            <button
-              onClick={handleDownload}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <Download size={16} />
-              <span>{t('electronicDocs.preview.downloadHtml')}</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Simplified on-screen placeholder (true DANFE is seen on print) */}
-          <div id="danfe-content" className="border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center p-12 text-center">
-            <FileText size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
-            <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">{t('electronicDocs.preview.printTitle')}</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md" dangerouslySetInnerHTML={{ __html: t('electronicDocs.preview.danfeSuccess') }}>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};

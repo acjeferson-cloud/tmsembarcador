@@ -1,18 +1,7 @@
-import React from 'react';
-import { X, Download, Printer, FileText } from 'lucide-react';
-import { ElectronicDocument } from '../../data/electronicDocumentsData';
-import { formatCurrency, formatAccessKey } from '../../utils/formatters';
+import { ElectronicDocument } from '../data/electronicDocumentsData';
+import { formatCurrency, formatAccessKey } from './formatters';
 
-import { useTranslation } from 'react-i18next';
-
-interface DactePreviewProps {
-  document: ElectronicDocument;
-  onClose: () => void;
-}
-
-export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose }) => {
-  const { t } = useTranslation();
-  const getHtmlContent = () => `
+export const getDacteHtml = (document: ElectronicDocument) => `
     <html>
       <head>
         <title>DACTE - ${document.chaveAcesso}</title>
@@ -170,10 +159,10 @@ export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose })
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">INSCRIÇÃO ESTADUAL</span>
-              <span class="val"></span>
+              <span class="val">ISENTO</span>
             </div>
           </div>
-
+          
           <!-- REMETENTE -->
           <div class="section-title">REMETENTE</div>
           <div class="row">
@@ -194,7 +183,7 @@ export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose })
               <span class="val">${document.emitente.cnpj || ''}</span>
             </div>
           </div>
-
+          
           <!-- DESTINATÁRIO -->
           <div class="section-title">DESTINATÁRIO</div>
           <div class="row">
@@ -215,48 +204,17 @@ export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose })
               <span class="val">${document.destinatario?.cnpjCpf || ''}</span>
             </div>
           </div>
-
-          <!-- INFORMAÇÕES DA CARGA -->
-          <div class="section-title">INFORMAÇÕES DA CARGA</div>
-          <div class="row">
-            <div class="box" style="width: 25%; flex: none;">
-              <span class="lbl">PRODUTO PREDOMINANTE</span>
-              <span class="val">DIVERSOS</span>
-            </div>
-            <div class="box" style="width: 25%; flex: none;">
-              <span class="lbl">OUTRAS CARACTERÍSTICAS</span>
-              <span class="val"></span>
-            </div>
-            <div class="box" style="width: 25%; flex: none;">
-              <span class="lbl">VALOR TOTAL DA MERCADORIA</span>
-              <span class="val font-bold text-right" style="display:block;">${formatCurrency(document.valorTotal)}</span>
-            </div>
-            <div class="box" style="width: 25%; flex: none;">
-              <span class="lbl">PESO BRUTO TOTAL (KG)</span>
-              <span class="val text-right" style="display:block;">${document.pesoTotal || '0,000'}</span>
-            </div>
-          </div>
           
-          <div class="row" style="margin-top:5px;">
-             <div class="box" style="width:50%;">
-                <div style="font-size:7px; font-weight:bold; border-bottom:1px solid #000; margin:-2px -4px 2px -4px; padding:2px; text-align:center; background:#eee;">COMPONENTES DO VALOR DA PRESTAÇÃO</div>
-                <div class="row" style="border:none; margin:0;">
-                   <div style="width:50%; font-size:8px;">FRETE PESO<br/>FRETE VALOR<br/>PEDÁGIO / OUTROS</div>
-                   <div style="width:50%; font-size:8px; text-align:right;">${formatCurrency(document.valorFrete || 0)}<br/>R$ 0,00<br/>R$ 0,00</div>
-                </div>
-             </div>
-             <div class="box" style="width:50%; background:#f9f9f9;">
-                <span class="lbl text-center" style="font-size:8px;">VALOR TOTAL DA PRESTAÇÃO DO SERVIÇO</span>
-                <span class="val text-center" style="display:block; font-size:14px; margin-top:5px;">${formatCurrency(document.valorFrete || 0)}</span>
-             </div>
-          </div>
-
-          <!-- TRIBUTOS ICMS -->
-          <div class="section-title">INFORMAÇÕES RELATIVAS AOS IMPOSTOS</div>
+          <!-- VALORES -->
+          <div class="section-title">VALORES DA PRESTAÇÃO DE SERVIÇO / IMPOSTOS</div>
           <div class="row">
             <div class="box text-center" style="width: 20%; flex: none;">
-              <span class="lbl">SITUAÇÃO TRIBUTÁRIA</span>
-              <span class="val">00-Tributação Normal</span>
+              <span class="lbl">VALOR TOTAL DA PRESTAÇÃO</span>
+              <span class="val" style="font-size: 11px;">${formatCurrency(document.valorTotal)}</span>
+            </div>
+            <div class="box text-center" style="width: 20%; flex: none;">
+              <span class="lbl">VALOR RECEBER</span>
+              <span class="val" style="font-size: 11px;">${formatCurrency(document.valorTotal)}</span>
             </div>
             <div class="box text-center" style="width: 20%; flex: none;">
               <span class="lbl">BASE DE CÁLCULO</span>
@@ -264,38 +222,54 @@ export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose })
             </div>
             <div class="box text-center" style="width: 20%; flex: none;">
               <span class="lbl">ALÍQUOTA ICMS</span>
-              <span class="val">${document.valorIcms ? '12,00%' : '0,00%'}</span>
+              <span class="val">${document.valorIcms ? ((document.valorIcms / (document.valorFrete || 1)) * 100).toFixed(2) + '%' : '0,00%'}</span>
             </div>
             <div class="box text-center" style="width: 20%; flex: none;">
               <span class="lbl">VALOR DO ICMS</span>
               <span class="val">${formatCurrency(document.valorIcms || 0)}</span>
             </div>
-            <div class="box text-center" style="width: 20%; flex: none;">
-              <span class="lbl">% RED. BASE CÁLC.</span>
-              <span class="val">0,00%</span>
+          </div>
+          <div class="row">
+            <div class="box" style="width: 100%;">
+               <span class="lbl">COMPONENTES DO VALOR DA PRESTAÇÃO</span>
+               <div style="font-size: 8px;">
+                 FRETE VALOR: ${formatCurrency(document.valorFrete || document.valorTotal)}&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;PEDÁGIO: R$ 0,00&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;OUTROS: R$ 0,00
+               </div>
             </div>
           </div>
           
-          <!-- DOCS ORIGINARIOS -->
-          <div class="section-title">DOCUMENTOS ORIGINÁRIOS</div>
+          <!-- CARGA -->
+          <div class="section-title">INFORMAÇÕES DA CARGA</div>
           <div class="row">
-            <div class="box" style="height: 60px;">
-              <span class="lbl">CHAVES DE ACESSO DAS NF-e VINCULADAS</span>
-              <span class="val font-sm" style="font-weight: normal;">
-                (Exibição de NF-e vinculadas ao transporte)
-              </span>
+            <div class="box" style="width: 50%; flex: none;">
+              <span class="lbl">PRODUTO PREDOMINANTE</span>
+              <span class="val">MERCADORIAS DIVERSAS</span>
+            </div>
+            <div class="box" style="width: 50%; flex: none;">
+              <span class="lbl">VALOR TOTAL DA CARGA</span>
+              <span class="val">${formatCurrency(document.valorTotal * 1.5)}</span> <!-- Simulado base NFe -->
             </div>
           </div>
-          
-          <!-- OBSERVAÇÕES -->
-          <div class="section-title text-center" style="margin-top: 10px;">OBSERVAÇÕES / USO ADUANEIRO</div>
           <div class="row">
-            <div class="box" style="height: 80px;">
-              <span class="lbl">OBSERVAÇÕES DO CONTRIBUINTE</span>
+            <div class="box text-center" style="width: 33.3%; flex: none;">
+              <span class="lbl">PESO BRUTO (KG)</span>
+              <span class="val text-center" style="display:block;">${document.pesoTotal?.toFixed(3) || '0,000'}</span>
+            </div>
+            <div class="box text-center" style="width: 33.3%; flex: none;">
+              <span class="lbl">PESO CUBADO (KG)</span>
+              <span class="val text-center" style="display:block;">0,000</span>
+            </div>
+            <div class="box text-center" style="width: 33.4%; flex: none;">
+              <span class="lbl">QTD. VOLUMES</span>
+              <span class="val text-center" style="display:block;">1</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="box" style="width: 100%; height: 50px;">
+              <span class="lbl">INFORMAÇÕES ADICIONAIS</span>
               <span class="val font-sm" style="font-weight: normal;">
-                O ICMS ESTÁ INCLUIDO NO VALOR DO FRETE.<br/>
-                PROCON ESTADUAL.<br/>
-                DACTE Impresso pelo TMS Embarcador Log Axis.
+                CT-e emitido de acordo com a NFe vinculada.<br/>
+                Isento de PIS/COFINS.<br/>
               </span>
             </div>
           </div>
@@ -304,70 +278,3 @@ export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose })
       </body>
     </html>
   `;
-
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(getHtmlContent());
-      printWindow.document.close();
-      printWindow.onload = function() { printWindow.print(); printWindow.close(); }
-    }
-  };
-
-  const handleDownload = () => {
-    const html = getHtmlContent();
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `DACTE_${document.chaveAcesso}.html`;
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
-          <div className="flex items-center space-x-2">
-            <FileText size={24} className="text-orange-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">DACTE - Documento Auxiliar do Conhecimento de Transporte Eletrônico</h2>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handlePrint}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <Printer size={16} />
-              <span>{t('electronicDocs.preview.print')}</span>
-            </button>
-            <button
-              onClick={handleDownload}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            >
-              <Download size={16} />
-              <span>{t('electronicDocs.preview.downloadHtml')}</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div id="dacte-content" className="border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center p-12 text-center">
-            <FileText size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
-            <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">{t('electronicDocs.preview.printTitle')}</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md" dangerouslySetInnerHTML={{ __html: t('electronicDocs.preview.dacteSuccess') }}>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};

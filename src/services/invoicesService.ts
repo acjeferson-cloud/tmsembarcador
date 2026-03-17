@@ -102,12 +102,35 @@ export const invoicesService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Pegar os dados da nota/CTe para ter a chave de acesso e poder excluir o XML depois
+      const invoice = await this.getById(id);
+
+      // 1. Delete associated items
+      const { error: errorItems } = await supabase
+        .from('invoice_items')
+        .delete()
+        .eq('invoice_id', id);
+
+      if (errorItems && errorItems.code !== 'PGRST116') {
+        return { success: false, error: 'Erro ao excluir itens da nota: ' + errorItems.message };
+      }
+
+      // 2. Delete parent
       const { error } = await supabase
         .from('invoices')
         .delete()
         .eq('id', id);
 
       if (error) return { success: false, error: error.message };
+
+      // 3. Delete XML document in electronic_documents by access_key
+      if (invoice?.access_key) {
+        await supabase
+          .from('electronic_documents')
+          .delete()
+          .eq('access_key', invoice.access_key);
+      }
+
       return { success: true };
     } catch (error) {
 

@@ -42,6 +42,7 @@ export interface NFeWithCustomer extends NFe {
     quantidade: number;
     valor_total: number;
   }>;
+  freight_results?: any[];
 }
 
 export const nfeService = {
@@ -100,10 +101,10 @@ export const nfeService = {
         carrier_id: invoice.carrier_id,
         customer: invoice.customer?.[0] ? {
           id: invoice.customer[0].id,
-          name: invoice.customer[0].razao_social,
-          cnpj: invoice.customer[0].cnpj_cpf,
-          city: invoice.customer[0].cidade,
-          state: invoice.customer[0].estado
+          razao_social: invoice.customer[0].razao_social,
+          cnpj_cpf: invoice.customer[0].cnpj_cpf,
+          cidade: invoice.customer[0].cidade,
+          estado: invoice.customer[0].estado
         } : undefined,
         carrier: invoice.carrier ? {
           id: invoice.carrier.id,
@@ -116,7 +117,8 @@ export const nfeService = {
           description: p.descricao,
           quantity: p.quantidade,
           total_value: p.valor_total
-        }))
+        })),
+        freight_results: invoice.freight_results || []
       }));
     } catch (error) {
 
@@ -157,6 +159,11 @@ export const nfeService = {
         access_key: data.chave_acesso,
         issue_date: data.data_emissao,
         operation_nature: data.natureza_operacao,
+        order_serie: data.order_serie,
+        order_number: data.order_number,
+        weight: data.peso_total || 0,
+        volumes: data.quantidade_volumes || 1,
+        cubic_meters: data.cubagem_total || 0,
         total_value: data.valor_total,
         pis_value: data.valor_pis || 0,
         cofins_value: data.valor_cofins || 0,
@@ -168,10 +175,18 @@ export const nfeService = {
         carrier_id: data.carrier_id,
         customer: data.customer?.[0] ? {
           id: data.customer[0].id,
-          name: data.customer[0].razao_social,
-          cnpj: data.customer[0].cnpj_cpf,
-          city: data.customer[0].cidade,
-          state: data.customer[0].estado
+          razao_social: data.customer[0].razao_social,
+          cnpj_cpf: data.customer[0].cnpj_cpf,
+          inscricao_estadual: data.customer[0].inscricao_estadual,
+          logradouro: data.customer[0].logradouro,
+          numero: data.customer[0].numero,
+          complemento: data.customer[0].complemento,
+          bairro: data.customer[0].bairro,
+          cidade: data.customer[0].cidade,
+          estado: data.customer[0].estado,
+          cep: data.customer[0].cep,
+          telefone: data.customer[0].telefone,
+          email: data.customer[0].email
         } : undefined,
         carrier: data.carrier ? {
           id: data.carrier.id,
@@ -181,9 +196,15 @@ export const nfeService = {
         } : undefined,
         products: (data.products || []).map((p: any) => ({
           id: p.id,
+          product_code: p.codigo_produto,
           description: p.descricao,
           quantity: p.quantidade,
-          total_value: p.valor_total
+          unit: p.unidade,
+          unit_value: p.valor_unitario,
+          total_value: p.valor_total,
+          weight: p.peso,
+          cubic_meters: p.cubagem,
+          ncm: p.ncm
         }))
       } as any;
     } catch (error) {
@@ -207,9 +228,15 @@ export const nfeService = {
           ),
           products:invoices_nfe_products(
             id,
+            codigo_produto,
             descricao,
             quantidade,
-            valor_total
+            unidade,
+            valor_unitario,
+            valor_total,
+            peso,
+            cubagem,
+            ncm
           )
         `)
         .or(`numero.eq.${searchTerm},chave_acesso.eq.${searchTerm}`)
@@ -231,6 +258,11 @@ export const nfeService = {
         access_key: invoice.chave_acesso,
         issue_date: invoice.data_emissao,
         operation_nature: invoice.natureza_operacao,
+        order_serie: invoice.order_serie,
+        order_number: invoice.order_number,
+        weight: invoice.peso_total || 0,
+        volumes: invoice.quantidade_volumes || 1,
+        cubic_meters: invoice.cubagem_total || 0,
         total_value: invoice.valor_total,
         pis_value: invoice.valor_pis || 0,
         cofins_value: invoice.valor_cofins || 0,
@@ -242,16 +274,22 @@ export const nfeService = {
         carrier_id: invoice.carrier_id,
         customer: invoice.customer?.[0] ? {
           id: invoice.customer[0].id,
-          name: invoice.customer[0].razao_social,
-          cnpj: invoice.customer[0].cnpj_cpf,
-          city: invoice.customer[0].cidade,
-          state: invoice.customer[0].estado
+          razao_social: invoice.customer[0].razao_social,
+          cnpj_cpf: invoice.customer[0].cnpj_cpf,
+          cidade: invoice.customer[0].cidade,
+          estado: invoice.customer[0].estado
         } : undefined,
         products: (invoice.products || []).map((p: any) => ({
           id: p.id,
+          product_code: p.codigo_produto,
           description: p.descricao,
           quantity: p.quantidade,
-          total_value: p.valor_total
+          unit: p.unidade,
+          unit_value: p.valor_unitario,
+          total_value: p.valor_total,
+          weight: p.peso,
+          cubic_meters: p.cubagem,
+          ncm: p.ncm
         }))
       })) as any[];
     } catch (error) {
@@ -322,10 +360,10 @@ export const nfeService = {
         carrier_id: invoice.carrier_id,
         customer: invoice.customer?.[0] ? {
           id: invoice.customer[0].id,
-          name: invoice.customer[0].razao_social,
-          cnpj: invoice.customer[0].cnpj_cpf,
-          city: invoice.customer[0].cidade,
-          state: invoice.customer[0].estado
+          razao_social: invoice.customer[0].razao_social,
+          cnpj_cpf: invoice.customer[0].cnpj_cpf,
+          cidade: invoice.customer[0].cidade,
+          estado: invoice.customer[0].estado
         } : undefined,
         carrier: invoice.carrier ? {
           id: invoice.carrier.id,
@@ -348,12 +386,31 @@ export const nfeService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // Pegar os dados da NFe para ter a chave de acesso e poder excluir o XML depois
+      const nfe = await this.getById(id);
+
+      // 1. Apagar produtos vinculados
+      await (supabase as any).from('invoices_nfe_products').delete().eq('nfe_id', id);
+
+      // 2. Apagar clientes/destinatarios vinculados
+      await (supabase as any).from('invoices_nfe_customers').delete().eq('nfe_id', id);
+
+      // 3. Excluir a NFe principal
       const { error } = await (supabase as any)
         .from('invoices_nfe')
         .delete()
         .eq('id', id);
 
       if (error) return { success: false, error: error.message };
+
+      // 4. Delete XML document in electronic_documents by access_key
+      if (nfe?.access_key) {
+        await (supabase as any)
+          .from('electronic_documents')
+          .delete()
+          .eq('access_key', nfe.access_key);
+      }
+
       return { success: true };
     } catch (error: any) {
 

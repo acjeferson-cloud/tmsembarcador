@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit, Calculator } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit, Calculator, Trash2 } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 import { formatCurrency } from '../../utils/formatters';
 import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
@@ -478,6 +478,32 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                               </button>
 
                               {/* Relationship Map */}
+                              <button
+                                onClick={() => {
+                                  handleShowRelationshipMap(order);
+                                  setOpenActionMenu(null);
+                                }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center space-x-2"
+                              >
+                                <Share2 size={14} />
+                                <span>Mapa de Relações</span>
+                              </button>
+                              
+                              <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                              
+                              {/* Excluir Pedido */}
+                              <button
+                                onClick={() => {
+                                  onAction(order.id, 'delete');
+                                  setOpenActionMenu(null);
+                                }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"
+                              >
+                                <Trash2 size={14} />
+                                <span>Excluir Pedido</span>
+                              </button>
                               <button
                                 onClick={() => {
                                   handleShowRelationshipMap(order);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, Package, Calendar, User, RefreshCw, Send } from 'lucide-react';
+import { CheckCircle, XCircle, Package, RefreshCw, Send } from 'lucide-react';
 import { PickupsFilters } from './PickupsFilters';
 import { PickupsTable } from './PickupsTable';
 import { PickupsActions } from './PickupsActions';
@@ -97,13 +97,13 @@ export const Pickups: React.FC = () => {
 
   const handleSelectAll = (isSelected: boolean) => {
     if (isSelected) {
-      setSelectedPickups(filteredPickups.map(pickup => pickup.id));
+      setSelectedPickups(filteredPickups.map(pickup => String(pickup.id)));
     } else {
       setSelectedPickups([]);
     }
   };
 
-  const handleSelectPickup = (pickupId: number, isSelected: boolean) => {
+  const handleSelectPickup = (pickupId: string, isSelected: boolean) => {
     if (isSelected) {
       setSelectedPickups(prev => [...prev, pickupId]);
     } else {
@@ -176,6 +176,18 @@ export const Pickups: React.FC = () => {
             ));
           }
           break;
+        case 'delete':
+          if (confirm(`Tem certeza que deseja excluir a coleta ${pickup.numeroColeta}? Esta ação removerá a coleta e o vínculo com todas as respectivas Notas Fiscais.`)) {
+            pickupsService.delete(pickup.id).then(res => {
+              if (res.success) {
+                alert(`Coleta ${pickup.numeroColeta} excluída com sucesso.`);
+                refreshData();
+              } else {
+                alert(`Erro ao excluir coleta: ${res.error}`);
+              }
+            });
+          }
+          break;
         default:
           break;
       }
@@ -197,7 +209,7 @@ export const Pickups: React.FC = () => {
         dataCriacao: pickup.created_at,
         usuarioResponsavel: pickup.contact_name || 'N/A',
         enderecoColeta: `${pickup.pickup_city} - ${pickup.pickup_state}`,
-        valorTotal: 0,
+        valorTotal: pickup.total_volume || 0,
         dataSolicitacao: pickup.requested_at || pickup.scheduled_date,
         dataRealizacao: pickup.actual_pickup_date || pickup.completed_at,
         observacoes: pickup.observations || ''

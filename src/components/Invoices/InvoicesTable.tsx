@@ -1,31 +1,32 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2 } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 
 interface Invoice {
-  id: number;
+  id: string;
   status: string;
-  baseCusto: string;
+  baseCusto?: string;
   serie: string;
   numero: string;
   dataEmissao: string;
   dataEntrada: string;
+  previsaoEntrega: string | null;
   transportador: string;
+  valorNFe: number;
+  valorCusto: number;
   cliente: string;
   cidadeDestino: string;
   ufDestino: string;
-  valorNFe: number;
-  chaveAcesso: string;
+  chaveAcesso?: string;
 }
 
 interface InvoicesTableProps {
   invoices: Invoice[];
-  selectedInvoices: number[];
+  selectedInvoices: string[];
   onSelectAll: (isSelected: boolean) => void;
-  onSelectInvoice: (invoiceId: number, isSelected: boolean) => void;
-  onAction: (invoiceId: number, action: string) => void;
+  onSelectInvoice: (invoiceId: string, isSelected: boolean) => void;
+  onAction: (invoiceId: string, action: string) => void;
   isLoading: boolean;
-  userProfile?: string;
 }
 
 export const InvoicesTable = React.memo<InvoicesTableProps>(({
@@ -34,14 +35,13 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
   onSelectAll,
   onSelectInvoice,
   onAction,
-  isLoading,
-  userProfile
+  isLoading
 }) => {
   const [sortField, setSortField] = useState<keyof Invoice>('dataEmissao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [selectedInvoiceForMap, setSelectedInvoiceForMap] = useState<any>(null);
 
@@ -72,6 +72,11 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
       bValue = Number(bValue);
     }
     
+    // Null checks for accurate sorting
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
+    if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
@@ -100,78 +105,63 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
 
   // Get status color
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'nfe_emitida':
+    switch (status?.toLowerCase()) {
       case 'emitida':
-        return 'bg-gray-400 text-gray-900 dark:bg-gray-600 dark:text-gray-100';
-      case 'coletado_transportadora':
-        return 'bg-blue-200 text-blue-900 dark:bg-blue-700 dark:text-blue-100';
-      case 'em_transito':
-        return 'bg-blue-700 text-white dark:bg-blue-800 dark:text-blue-50';
-      case 'saiu_entrega':
-        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
-      case 'entregue':
-        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
-      case 'disponivel_coleta':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
-      case 'coleta_realizada':
+      case 'nfe_emitida':
+        return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
       case 'coletada':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'coletado_transportadora':
+      case 'coleta_realizada':
+        return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400';
+      case 'em trânsito':
+      case 'em_transito':
       case 'em_transito_origem':
-        return 'bg-blue-200 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
       case 'em_transito_rota':
-        return 'bg-blue-300 text-blue-800 dark:bg-blue-900/70 dark:text-blue-300';
+        return 'bg-blue-100 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'saiu p/ entrega':
+      case 'saiu_entrega':
+        return 'bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'entregue':
       case 'chegada_destino':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+        return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400';
       case 'cancelada':
-        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
+        return 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
     }
   };
 
   // Get status label
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'nfe_emitida':
-        return 'Nota Fiscal Emitida';
-      case 'coletado_transportadora':
-        return 'Coletado pela Transportadora';
-      case 'em_transito':
-        return 'Em Trânsito';
-      case 'saiu_entrega':
-        return 'Saiu para Entrega';
-      case 'entregue':
-        return 'Entregue';
+    switch (status?.toLowerCase()) {
       case 'emitida':
+      case 'nfe_emitida':
         return 'Emitida';
-      case 'disponivel_coleta':
-        return 'Disponível p/ Coleta';
-      case 'coleta_realizada':
-        return 'Coleta Realizada';
       case 'coletada':
+      case 'coletado_transportadora':
+      case 'coleta_realizada':
         return 'Coletada';
+      case 'em trânsito':
+      case 'em_transito':
       case 'em_transito_origem':
-        return 'Em Trânsito - Origem';
       case 'em_transito_rota':
-        return 'Em Trânsito - Rota';
+        return 'Em trânsito';
+      case 'saiu p/ entrega':
+      case 'saiu_entrega':
+        return 'Saiu p/ Entrega';
+      case 'entregue':
       case 'chegada_destino':
-        return 'Chegada Destino';
+        return 'Entregue';
       case 'cancelada':
         return 'Cancelada';
       default:
-        return status;
+        return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Emitida';
     }
   };
 
-  // Format chave de acesso for display
-  const formatChaveAcesso = (chave: string) => {
-    if (chave.length <= 20) return chave;
-    return `${chave.substring(0, 20)}...`;
-  };
 
   // Toggle action menu
-  const toggleActionMenu = (invoiceId: number) => {
+  const toggleActionMenu = (invoiceId: string) => {
     setOpenActionMenu(openActionMenu === invoiceId ? null : invoiceId);
   };
 
@@ -210,30 +200,22 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                     />
                   </div>
                 </th>
+                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                  Ações
+                </th>
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Status NF-e</span>
+                    <span>STATUS</span>
                     {sortField === 'status' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
                   </div>
                 </th>
-                <th 
-                  scope="col" 
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('baseCusto')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Base p/ Custo</span>
-                    {sortField === 'baseCusto' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
-                  </div>
-                </th>
+
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -285,11 +267,47 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('previsaoEntrega')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Previsão Entrega</span>
+                    {sortField === 'previsaoEntrega' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('transportador')}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Transportador</span>
                     {sortField === 'transportador' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('valorNFe')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Valor NF-e</span>
+                    {sortField === 'valorNFe' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('valorCusto')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Valor Custo</span>
+                    {sortField === 'valorCusto' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
                   </div>
@@ -330,24 +348,7 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                     )}
                   </div>
                 </th>
-                <th 
-                  scope="col" 
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('valorNFe')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Valor NF-e</span>
-                    {sortField === 'valorNFe' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
-                  </div>
-                </th>
-                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Chave de Acesso
-                </th>
-                <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ações
-                </th>
+
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -362,46 +363,8 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
                     />
                   </td>
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
-                      {getStatusLabel(invoice.status)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {invoice.baseCusto === 'tabela' ? 'Tabela de Frete' : 'Negociação Individual'}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {invoice.serie}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {invoice.numero}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(invoice.dataEmissao)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(invoice.dataEntrada)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {invoice.transportador}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {invoice.cliente}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {invoice.cidadeDestino}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {invoice.ufDestino}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                    {formatCurrency(invoice.valorNFe)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
-                    {formatChaveAcesso(invoice.chaveAcesso)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                    <div className="flex items-center justify-end space-x-1">
+                  <td className="px-3 py-4 whitespace-nowrap text-left text-sm font-medium relative">
+                    <div className="flex items-center justify-start space-x-1">
                       {/* View Details */}
                       <button
                         onClick={() => onAction(invoice.id, 'view-details')}
@@ -411,7 +374,8 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                       >
                         <Eye size={16} />
                       </button>
-                      
+
+
                       {/* Relationship Map */}
                       <button
                         onClick={() => handleShowRelationshipMap(invoice)}
@@ -435,7 +399,7 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                         
                         {/* Dropdown menu */}
                         {openActionMenu === invoice.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                          <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                             <div className="py-1">
                               {/* View CT-es */}
                               <button
@@ -448,6 +412,19 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                               >
                                 <Eye size={14} />
                                 <span>Ver CT-es Vinculados</span>
+                              </button>
+
+                              {/* Edit Invoice */}
+                              <button
+                                onClick={() => {
+                                  onAction(invoice.id, 'edit');
+                                  setOpenActionMenu(null);
+                                }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center space-x-2 border-t border-gray-100 dark:border-gray-700"
+                              >
+                                <Edit2 size={14} />
+                                <span>Editar Nota Fiscal</span>
                               </button>
                               
                               {/* Relationship Map */}
@@ -463,26 +440,63 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                                 <span>Mapa de Relações</span>
                               </button>
 
-                              {/* Delete - Only for System Administrator */}
-                              {userProfile === 'administrador' && (
-                                <button
-                                  onClick={() => {
-                                    onAction(invoice.id, 'delete');
-                                    setOpenActionMenu(null);
-                                  }}
-                                  disabled={isLoading}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
-                                >
-                                  <Trash2 size={14} />
-                                  <span>Excluir Nota Fiscal</span>
-                                </button>
-                              )}
+                              {/* Delete */}
+                              <button
+                                onClick={() => {
+                                  onAction(invoice.id, 'delete');
+                                  setOpenActionMenu(null);
+                                }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                              >
+                                <Trash2 size={14} />
+                                <span>Excluir Nota Fiscal</span>
+                              </button>
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
+                      {getStatusLabel(invoice.status)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {invoice.serie}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {invoice.numero}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(invoice.dataEmissao)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(invoice.dataEntrada)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(invoice.previsaoEntrega)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {invoice.transportador}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                    {formatCurrency(invoice.valorNFe)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                    {formatCurrency(invoice.valorCusto)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white" title={invoice.cliente}>
+                    {invoice.cliente.length > 30 ? `${invoice.cliente.substring(0, 30)}...` : invoice.cliente}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {invoice.cidadeDestino}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {invoice.ufDestino}
+                  </td>
+
                 </tr>
               ))}
             </tbody>

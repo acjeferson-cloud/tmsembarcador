@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Clock as ArrowClockwise, ThumbsUp, ThumbsDown, Calendar, User, Upload, Bug } from 'lucide-react';
+import { Plus, FileText, CheckCircle, XCircle, AlertCircle, Truck, Upload, Bug, RefreshCw } from 'lucide-react';
 import { InvoicesFilters } from './InvoicesFilters';
 import { InvoicesTable } from './InvoicesTable';
 import { InvoicesActions } from './InvoicesActions';
@@ -14,28 +14,33 @@ import { AutoImportDebugModal } from '../common/AutoImportDebugModal';
 import { establishmentsService } from '../../services/establishmentsService';
 import { nfeService, NFeWithCustomer } from '../../services/nfeService';
 import { pickupsService } from '../../services/pickupsService';
-import { invoicesService } from '../../services/invoicesService';
 import { useAuth } from '../../hooks/useAuth';
+import { freightQuoteService } from '../../services/freightQuoteService';
+import { supabase } from '../../lib/supabase';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 
 const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   id: nfe.id,
-  status: nfe.status || 'nfe_emitida',
-  baseCusto: 'tabela',
+  status: nfe.status || 'emitida',
   serie: nfe.series,
   numero: nfe.number,
   dataEmissao: nfe.issue_date,
   dataEntrada: nfe.created_at,
+  previsaoEntrega: (nfe as any).expected_delivery_date || (nfe as any).data_prevista_entrega || null,
   transportador: nfe.carrier
-    ? `${nfe.carrier.codigo} - ${nfe.carrier.fantasia || nfe.carrier.razao_social}`
+    ? `${nfe.carrier.codigo} - ${nfe.carrier.razao_social}`
     : '',
-  cliente: nfe.customer?.name || 'Cliente não especificado',
-  cidadeDestino: nfe.customer?.city || '',
-  ufDestino: nfe.customer?.state || '',
   valorNFe: parseFloat(nfe.total_value.toString()),
+  valorCusto: Array.isArray(nfe.freight_results) && nfe.freight_results.length > 0
+    ? parseFloat(nfe.freight_results[0].totalValue.toString())
+    : 0,
+  cliente: nfe.customer?.razao_social || 'Cliente não especificado',
+  cidadeDestino: nfe.customer?.cidade || '',
+  ufDestino: nfe.customer?.estado || '',
   chaveAcesso: nfe.access_key,
-  cteCount: 0
+  cteCount: 0,
+  freight_results: nfe.freight_results || []
 });
 
 export const Invoices: React.FC = () => {
@@ -51,6 +56,7 @@ export const Invoices: React.FC = () => {
   const [showBulkXmlUploadModal, setShowBulkXmlUploadModal] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
   const [currentEstablishment, setCurrentEstablishment] = useState<{id: string, name: string} | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -187,7 +193,7 @@ export const Invoices: React.FC = () => {
     }
   };
 
-  const handleSelectInvoice = (invoiceId: number, isSelected: boolean) => {
+  const handleSelectInvoice = (invoiceId: string, isSelected: boolean) => {
     if (isSelected) {
       setSelectedInvoices(prev => [...prev, invoiceId]);
     } else {
@@ -195,7 +201,7 @@ export const Invoices: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedInvoices.length === 0) {
       setToast({ message: 'Por favor, selecione pelo menos uma nota fiscal para realizar esta ação.', type: 'warning' });
       return;
@@ -208,6 +214,49 @@ export const Invoices: React.FC = () => {
 
     if (action === 'schedule-pickup') {
       setShowSchedulePickupModal(true);
+      return;
+    }
+
+    if (action === 'recalculate') {
+      setIsLoading(true);
+      try {
+        let successCount = 0;
+        for (const invoiceId of selectedInvoices) {
+          const nfeData = await nfeService.getById(invoiceId);
+          if (!nfeData || !nfeData.id) continue;
+          
+          const weight = Number(nfeData.products?.reduce((acc, p) => acc + (p.quantidade || 0), 0)) || 100;
+          const volume_qty = 1;
+          const m3 = 0;
+          const value = Number(nfeData.total_value) || 0;
+          
+          if (weight === 0 || value === 0) continue;
+          
+          // Get destination zip if possible or pass undefined
+          let destZipCode = undefined;
+          
+          const results = await freightQuoteService.calculateQuote({
+            destinationZipCode: destZipCode,
+            weight,
+            volumeQty: volume_qty,
+            cargoValue: value,
+            cubicMeters: m3
+          });
+          
+          // Using supabase directly since nfeService.update is pending implementation
+          await (supabase as any).from('invoices_nfe').update({ freight_results: results }).eq('id', invoiceId);
+          successCount++;
+        }
+        
+        setToast({ message: `${successCount} nota(s) fiscal(is) recalculada(s) com sucesso!`, type: 'success' });
+        refreshData();
+      } catch (error) {
+        console.error('Erro ao recalcular frete:', error);
+        setToast({ message: 'Erro ao recalcular frete. Tente novamente.', type: 'error' });
+      } finally {
+        setIsLoading(false);
+      }
+      setSelectedInvoices([]);
       return;
     }
 
@@ -311,11 +360,10 @@ export const Invoices: React.FC = () => {
     };
   };
 
-  const handleSingleAction = (invoiceId: number, action: string) => {
+  const handleSingleAction = async (invoiceId: string, action: string) => {
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
       const invoice = invoices.find(i => i.id === invoiceId);
       
       if (!invoice) {
@@ -324,6 +372,16 @@ export const Invoices: React.FC = () => {
       }
       
       switch (action) {
+        case 'edit': {
+          const fullInvoice = await nfeService.getById(invoice.id);
+          if (fullInvoice) {
+            setEditingInvoice(fullInvoice);
+            setShowInvoiceForm(true);
+          } else {
+            setToast({ message: 'Erro ao carregar dados completos da nota fiscal.', type: 'error' });
+          }
+          break;
+        }
         case 'view-ctes':
           setSelectedInvoice(invoice);
           setShowCTesModal(true);
@@ -345,14 +403,14 @@ export const Invoices: React.FC = () => {
             invoiceNumber: invoice.numero,
             action: 'delete'
           });
-          setIsLoading(false);
-          return;
-        default:
           break;
       }
-
+    } catch (error) {
+      console.error('Action error:', error);
+      setToast({ message: 'Ocorreu um erro ao executar a ação.', type: 'error' });
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const refreshData = async () => {
@@ -407,9 +465,11 @@ export const Invoices: React.FC = () => {
     return (
       <div className="p-6">
         <InvoiceForm
-          onBack={() => setShowInvoiceForm(false)}
+          invoice={editingInvoice}
+          onBack={() => { setShowInvoiceForm(false); setEditingInvoice(null); }}
           onSave={() => {
             setShowInvoiceForm(false);
+            setEditingInvoice(null);
             refreshData();
           }}
           establishmentId={currentEstablishment.id}
@@ -446,7 +506,7 @@ export const Invoices: React.FC = () => {
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setShowInvoiceForm(true)}
+            onClick={() => { setEditingInvoice(null); setShowInvoiceForm(true); }}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
@@ -478,20 +538,6 @@ export const Invoices: React.FC = () => {
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de NF-es</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{invoices.length}</p>
             </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <FileText size={20} className="text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Emitidas</p>
-              <p className="text-2xl font-semibold text-gray-600 dark:text-gray-400 mt-1">
-                {invoices.filter(invoice => invoice.status === 'nfe_emitida' || invoice.status === 'emitida').length}
-              </p>
-            </div>
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
               <FileText size={20} className="text-gray-600 dark:text-gray-400" />
             </div>
@@ -501,13 +547,27 @@ export const Invoices: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Coletadas</p>
-              <p className="text-2xl font-semibold text-blue-400 mt-1">
-                {invoices.filter(invoice => invoice.status === 'coletado_transportadora').length}
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Emitidas</p>
+              <p className="text-2xl font-semibold text-gray-500 mt-1">
+                {invoices.filter(invoice => ['emitida', 'Emitida'].includes(invoice.status)).length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Truck size={20} className="text-blue-400" />
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <FileText size={20} className="text-gray-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Coletadas</p>
+              <p className="text-2xl font-semibold text-indigo-600 mt-1">
+                {invoices.filter(invoice => ['coletada', 'Coletada'].includes(invoice.status)).length}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Truck size={20} className="text-indigo-600" />
             </div>
           </div>
         </div>
@@ -516,12 +576,12 @@ export const Invoices: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Trânsito</p>
-              <p className="text-2xl font-semibold text-blue-600 mt-1">
-                {invoices.filter(invoice => invoice.status === 'em_transito').length}
+              <p className="text-2xl font-semibold text-blue-500 mt-1">
+                {invoices.filter(invoice => ['em trânsito', 'Em trânsito', 'em_transito'].includes(invoice.status)).length}
               </p>
             </div>
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Truck size={20} className="text-blue-600" />
+              <Truck size={20} className="text-blue-500" />
             </div>
           </div>
         </div>
@@ -530,12 +590,12 @@ export const Invoices: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Saiu p/ Entrega</p>
-              <p className="text-2xl font-semibold text-orange-600 mt-1">
-                {invoices.filter(invoice => invoice.status === 'saiu_entrega').length}
+              <p className="text-2xl font-semibold text-orange-500 mt-1">
+                {invoices.filter(invoice => ['saiu p/ entrega', 'Saiu p/ Entrega', 'saiu_entrega'].includes(invoice.status)).length}
               </p>
             </div>
             <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Truck size={20} className="text-orange-600" />
+              <Truck size={20} className="text-orange-500" />
             </div>
           </div>
         </div>
@@ -545,7 +605,7 @@ export const Invoices: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Entregues</p>
               <p className="text-2xl font-semibold text-green-600 mt-1">
-                {invoices.filter(invoice => invoice.status === 'entregue').length}
+                {invoices.filter(invoice => ['entregue', 'Entregue'].includes(invoice.status)).length}
               </p>
             </div>
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -559,7 +619,7 @@ export const Invoices: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
               <p className="text-2xl font-semibold text-red-600 mt-1">
-                {invoices.filter(invoice => invoice.status === 'cancelada').length}
+                {invoices.filter(invoice => ['cancelada', 'Cancelada'].includes(invoice.status)).length}
               </p>
             </div>
             <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
@@ -590,7 +650,6 @@ export const Invoices: React.FC = () => {
         onSelectInvoice={handleSelectInvoice}
         onAction={handleSingleAction}
         isLoading={isLoading}
-        userProfile={user?.perfil}
       />
 
       {/* No Results */}

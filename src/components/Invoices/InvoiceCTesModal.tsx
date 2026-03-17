@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import { X, FileText, Download, Printer, Search, ExternalLink, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface CTe {
@@ -25,18 +26,46 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Mock data for CT-es
-  const mockCTes: CTe[] = Array.from({ length: 5 }, (_, i) => ({
-    id: i + 1,
-    numero: (Math.floor(Math.random() * 9000) + 1000).toString(),
-    serie: Math.floor(Math.random() * 10).toString(),
-    dataEmissao: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-    valor: Math.floor(Math.random() * 2000) + 200,
-    status: ['Aprovado', 'Reprovado', 'Pendente'][Math.floor(Math.random() * 3)]
-  }));
+  const [ctes, setCtes] = useState<CTe[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && invoiceId) {
+      loadCTes();
+    } else {
+      setCtes([]);
+    }
+  }, [isOpen, invoiceId]);
+
+  const loadCTes = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('ctes')
+        .select('*')
+        .eq('invoice_id', invoiceId);
+        
+      if (error) throw error;
+      
+      if (data) {
+        setCtes(data.map((item: any) => ({
+          id: item.id,
+          numero: item.numero || '',
+          serie: item.serie || '',
+          dataEmissao: item.data_emissao || new Date().toISOString(),
+          valor: Number(item.valor_total || 0),
+          status: item.status || 'Pendente'
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching CT-es:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Filter CT-es based on search term
-  const filteredCTes = mockCTes.filter(cte => 
+  const filteredCTes = ctes.filter(cte => 
     cte.numero.includes(searchTerm)
   );
   
@@ -145,9 +174,16 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                {filteredCTes.map((cte) => (
-                  <tr key={cte.id} className="hover:bg-gray-50 dark:bg-gray-900">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      Carregando CT-es...
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCTes.map((cte) => (
+                    <tr key={cte.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {cte.numero}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -188,12 +224,12 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
           
-          {filteredCTes.length === 0 && (
+          {!isLoading && filteredCTes.length === 0 && (
             <div className="text-center py-8">
               <FileText size={48} className="mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600 dark:text-gray-400">Nenhum CT-e encontrado.</p>
@@ -204,9 +240,9 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-800 font-medium">Total de CT-es: {mockCTes.length}</p>
+                <p className="text-sm text-blue-800 font-medium">Total de CT-es: {ctes.length}</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Valor total: {formatCurrency(mockCTes.reduce((sum, cte) => sum + cte.valor, 0))}
+                  Valor total: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}
                 </p>
               </div>
               <button

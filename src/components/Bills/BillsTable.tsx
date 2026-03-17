@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2 } from 'lucide-react';
 
 interface Bill {
   id: string | number;
@@ -453,6 +453,19 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               </button>
                             )}
                             
+                            {/* Delete - Available for all */}
+                            <button
+                              onClick={() => {
+                                onAction(bill.id, 'delete');
+                                setOpenActionMenu(null);
+                              }}
+                              disabled={isLoading}
+                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                            >
+                              <Trash2 size={14} />
+                              <span>Excluir Fatura</span>
+                            </button>
+
                             {/* Download XML - Available for all statuses */}
                             <button
                               onClick={() => {
@@ -460,7 +473,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                                 setOpenActionMenu(null);
                               }}
                               disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center space-x-2"
+                              className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                             >
                               <Download size={14} />
                               <span>Download XML</span>

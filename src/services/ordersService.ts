@@ -378,6 +378,23 @@ export const ordersService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // 1. Delete associated items
+      const { error: errorItems } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', id);
+        
+      if (errorItems) return { success: false, error: 'Erro ao excluir itens do pedido: ' + errorItems.message };
+
+      // 2. Delete associated delivery status traces
+      const { error: errorStatus } = await supabase
+        .from('order_delivery_status')
+        .delete()
+        .eq('order_id', id);
+
+      if (errorStatus) return { success: false, error: 'Erro ao excluir status de entrega: ' + errorStatus.message };
+
+      // 3. Delete the parent order
       const { error } = await supabase
         .from('orders')
         .delete()
@@ -386,8 +403,8 @@ export const ordersService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-
-      return { success: false, error: 'Erro ao excluir pedido' };
+      console.error('Excessão ao deletar pedido:', error);
+      return { success: false, error: 'Erro interno ao excluir pedido' };
     }
   },
 

@@ -82,7 +82,8 @@ export const pickupsService = {
         .from('pickups')
         .select(`
           *,
-          carrier:carriers(id, razao_social)
+          carrier:carriers(id, razao_social, codigo),
+          pickup_invoices(count)
         `)
         .order('created_at', { ascending: false });
 
@@ -95,6 +96,7 @@ export const pickupsService = {
         customer_name: p.contato_nome || '',
         carrier_id: p.carrier_id,
         carrier_name: p.carrier?.razao_social || '',
+        transportador: p.carrier ? `${p.carrier.codigo ? p.carrier.codigo + ' - ' : ''}${p.carrier.razao_social}` : 'N/A',
         scheduled_date: p.data_agendada || p.data_solicitacao,
         pickup_address: p.logradouro || '',
         pickup_city: p.cidade || '',
@@ -102,7 +104,8 @@ export const pickupsService = {
         pickup_zip: p.cep || '',
         contact_name: p.contato_nome || '',
         contact_phone: p.contato_telefone || '',
-        packages_quantity: p.quantidade_volumes || 0,
+        usuarioResponsavel: p.contato_nome || 'Usuário Sistema',
+        packages_quantity: p.pickup_invoices?.[0]?.count || 0,
         total_weight: p.peso_total || 0,
         total_volume: p.valor_total || 0,
         status: p.status,
@@ -121,7 +124,8 @@ export const pickupsService = {
         .from('pickups')
         .select(`
           *,
-          carrier:carriers(id, razao_social)
+          carrier:carriers(id, razao_social, codigo),
+          pickup_invoices(count)
         `)
         .eq('id', id)
         .maybeSingle();
@@ -136,6 +140,7 @@ export const pickupsService = {
         customer_name: data.contato_nome || '',
         carrier_id: data.carrier_id,
         carrier_name: data.carrier?.razao_social || '',
+        transportador: data.carrier ? `${data.carrier.codigo ? data.carrier.codigo + ' - ' : ''}${data.carrier.razao_social}` : 'N/A',
         scheduled_date: data.data_agendada || data.data_solicitacao,
         pickup_address: data.logradouro || '',
         pickup_city: data.cidade || '',
@@ -143,13 +148,14 @@ export const pickupsService = {
         pickup_zip: data.cep || '',
         contact_name: data.contato_nome || '',
         contact_phone: data.contato_telefone || '',
-        packages_quantity: data.quantidade_volumes || 0,
+        usuarioResponsavel: data.contato_nome || 'Usuário Sistema',
+        packages_quantity: data.pickup_invoices?.[0]?.count || 0,
         total_weight: data.peso_total || 0,
         total_volume: data.valor_total || 0,
         status: data.status,
         created_at: data.created_at,
         observations: data.observacoes || ''
-      } as Pickup;
+      } as unknown as Pickup;
     } catch (error) {
       console.error('Error in getById:', error);
       return null;
@@ -234,6 +240,14 @@ export const pickupsService = {
       const carrierGroups = Object.values(invoicesByCarrier) as any[];
       const multipleCarriers = carrierGroups.length > 1;
 
+      // Calculate pickupNumber iteratively
+      const { data: lastPickup } = await (supabase as any).from('pickups').select('numero_coleta').order('created_at', { ascending: false }).limit(1);
+      let nextNum = 1;
+      if (lastPickup && lastPickup.length > 0 && lastPickup[0].numero_coleta) {
+        const match = lastPickup[0].numero_coleta.match(/COL-(\d+)/);
+        if (match) nextNum = parseInt(match[1], 10) + 1;
+      }
+
       const createdPickups = [];
 
       for (const group of carrierGroups) {
@@ -245,8 +259,10 @@ export const pickupsService = {
         const totalWeight = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.peso) || 0), 0);
         const totalVolume = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.metros_cubicos) || 0), 0);
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.quantidade_volumes) || 0), 0);
+        const totalValue = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.valor_total) || 0), 0);
 
-        const pickupNumber = `COL-${Date.now().toString().slice(-6)}`;
+        const pickupNumber = `COL-${String(nextNum).padStart(4, '0')}`;
+        nextNum++;
 
         const pickupData = {
           establishment_id: establishmentId,
@@ -262,8 +278,8 @@ export const pickupsService = {
           contato_telefone: dest.telefone || '',
           quantidade_volumes: totalPackages,
           peso_total: totalWeight,
-          valor_total: 0,
-          status: 'solicitada',
+          valor_total: totalValue,
+          status: 'emitida',
           observacoes: `Coleta criada automaticamente a partir de ${group.invoices.length} NFe(s)`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -272,7 +288,7 @@ export const pickupsService = {
         const { data: pickup, error: pickupError } = await (supabase as any)
           .from('pickups')
           .insert(pickupData as any)
-          .select('id')
+          .select('id, numero_coleta')
           .single();
 
         if (pickupError || !pickup) {
@@ -283,9 +299,6 @@ export const pickupsService = {
         const pickupInvoices = group.invoices.map((invoice: any) => ({
           pickup_id: pickup.id,
           invoice_id: invoice.id,
-          // nfe_invoice doesn't have freight_table out of the box so setting null or mock
-          freight_table_name: null,
-          freight_rate_value: null,
           created_at: new Date().toISOString()
         }));
 
@@ -295,7 +308,7 @@ export const pickupsService = {
 
         createdPickups.push({
           pickupId: pickup.id,
-          pickupNumber,
+          pickupNumber: pickup.numero_coleta,
           carrierName: group.carrierName,
           invoiceCount: group.invoices.length
         });
@@ -327,7 +340,7 @@ export const pickupsService = {
         return { success: false, error: 'Nenhuma nota fiscal selecionada' };
       }
 
-      const { data: invoices, error: invoicesError } = await supabase
+      const { data: invoices, error: invoicesError } = await (supabase as any)
         .from('invoices')
         .select('*')
         .in('id', invoiceIds);
@@ -354,6 +367,14 @@ export const pickupsService = {
       const carrierGroups = Object.values(invoicesByCarrier) as any[];
       const multipleCarriers = carrierGroups.length > 1;
 
+      // Calculate pickupNumber iteratively
+      const { data: lastPickup } = await (supabase as any).from('pickups').select('numero_coleta').order('created_at', { ascending: false }).limit(1);
+      let nextNum = 1;
+      if (lastPickup && lastPickup.length > 0 && lastPickup[0].numero_coleta) {
+        const match = lastPickup[0].numero_coleta.match(/COL-(\d+)/);
+        if (match) nextNum = parseInt(match[1], 10) + 1;
+      }
+
       const createdPickups = [];
 
       for (const group of carrierGroups) {
@@ -362,8 +383,10 @@ export const pickupsService = {
         const totalWeight = group.invoices.reduce((sum: number, inv: any) => sum + (inv.peso || 0), 0);
         const totalVolume = group.invoices.reduce((sum: number, inv: any) => sum + (inv.metros_cubicos || 0), 0);
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (inv.quantidade_volumes || 0), 0);
+        const totalValue = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.valor_total) || 0), 0);
 
-        const pickupNumber = `COL-${Date.now().toString().slice(-6)}`;
+        const pickupNumber = `COL-${String(nextNum).padStart(4, '0')}`;
+        nextNum++;
 
         const pickupData = {
           establishment_id: establishmentId,
@@ -379,8 +402,8 @@ export const pickupsService = {
           contato_telefone: firstInvoice.remetente_telefone || '',
           quantidade_volumes: totalPackages,
           peso_total: totalWeight,
-          valor_total: 0,
-          status: 'solicitada',
+          valor_total: totalValue,
+          status: 'emitida',
           observacoes: `Coleta criada automaticamente a partir de ${group.invoices.length} nota(s) fiscal(is)`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -389,7 +412,7 @@ export const pickupsService = {
         const { data: pickup, error: pickupError } = await (supabase as any)
           .from('pickups')
           .insert(pickupData)
-          .select('id')
+          .select('id, numero_coleta')
           .single();
 
         if (pickupError || !pickup) {
@@ -400,18 +423,16 @@ export const pickupsService = {
         const pickupInvoices = group.invoices.map((invoice: any) => ({
           pickup_id: pickup.id,
           invoice_id: invoice.id,
-          freight_table_name: invoice.tabela_frete || null,
-          freight_rate_value: invoice.tarifa_frete || null,
           created_at: new Date().toISOString()
         }));
 
-        await supabase
+        await (supabase as any)
           .from('pickup_invoices')
           .insert(pickupInvoices);
 
         createdPickups.push({
           pickupId: pickup.id,
-          pickupNumber,
+          pickupNumber: pickup.numero_coleta,
           carrierName: group.carrierName,
           invoiceCount: group.invoices.length
         });
@@ -455,6 +476,17 @@ export const pickupsService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // 1. Delete associated invoice links
+      const { error: invoiceError } = await (supabase as any)
+        .from('pickup_invoices')
+        .delete()
+        .eq('pickup_id', id);
+
+      if (invoiceError && invoiceError.code !== 'PGRST116') {
+        return { success: false, error: 'Erro ao excluir itens vinculados à coleta desativada' };
+      }
+
+      // 2. Delete parent pickup
       const { error } = await (supabase as any)
         .from('pickups')
         .delete()
@@ -463,7 +495,6 @@ export const pickupsService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-
       return { success: false, error: 'Erro ao excluir coleta' };
     }
   },
@@ -474,7 +505,8 @@ export const pickupsService = {
         .from('pickups')
         .select(`
           *,
-          carrier:carriers(id, razao_social)
+          carrier:carriers(id, razao_social, codigo),
+          pickup_invoices(count)
         `)
         .gte('data_agendada', startDate)
         .lte('data_agendada', endDate)
@@ -489,6 +521,7 @@ export const pickupsService = {
         customer_name: p.contato_nome || '',
         carrier_id: p.carrier_id,
         carrier_name: p.carrier?.razao_social || '',
+        transportador: p.carrier ? `${p.carrier.codigo ? p.carrier.codigo + ' - ' : ''}${p.carrier.razao_social}` : 'N/A',
         scheduled_date: p.data_agendada || p.data_solicitacao,
         pickup_address: p.logradouro || '',
         pickup_city: p.cidade || '',
@@ -496,7 +529,8 @@ export const pickupsService = {
         pickup_zip: p.cep || '',
         contact_name: p.contato_nome || '',
         contact_phone: p.contato_telefone || '',
-        packages_quantity: p.quantidade_volumes || 0,
+        usuarioResponsavel: p.contato_nome || 'Usuário Sistema',
+        packages_quantity: p.pickup_invoices?.[0]?.count || 0,
         total_weight: p.peso_total || 0,
         total_volume: p.valor_total || 0,
         status: p.status,

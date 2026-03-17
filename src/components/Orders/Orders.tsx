@@ -427,6 +427,17 @@ export const Orders: React.FC = () => {
         case 'download':
           orderPdfService.generateOrderPDF([order] as any, 'download');
           break;
+        case 'delete':
+          if (window.confirm(`Tem certeza que deseja excluir o Pedido ${order.order_number || order.numero}? Esta ação também excluirá todos os itens e históricos de status vinculados.`)) {
+            const result = await ordersService.delete(order.id.toString());
+            if (result.success) {
+              alert('Pedido excluído com sucesso!');
+              await loadOrders();
+            } else {
+              alert(result.error || 'Erro ao excluir pedido.');
+            }
+          }
+          break;
         default:
           break;
       }

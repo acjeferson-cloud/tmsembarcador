@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, Upload, FileText, Eye, FileCheck, Calendar, Clock, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Search, Download, Upload, FileText, FileCheck, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { DocumentCard } from './DocumentCard';
 import { DocumentView } from './DocumentView';
 import { DocumentUpload } from './DocumentUpload';
 import { electronicDocumentsService } from '../../services/electronicDocumentsService';
-import { generatePDF } from '../../services/pdfService';
+import { getDanfeHtml } from '../../utils/danfeGenerator';
+import { getDacteHtml } from '../../utils/dacteGenerator';
+import { generateNfeXml, generateCteXml } from '../../utils/xmlGenerator';
+import { useTranslation } from 'react-i18next';
 
 type DocumentType = 'NFe' | 'CTe';
 type DocumentStatus = 'processing' | 'authorized' | 'cancelled' | 'denied';
 
 export const ElectronicDocuments: React.FC = () => {
+  const { t } = useTranslation();
   const breadcrumbItems = [
-    { label: 'Documentos Eletrônicos', current: true }
+    { label: t('electronicDocs.title'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,10 +27,8 @@ export const ElectronicDocuments: React.FC = () => {
   const [showView, setShowView] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [documentsList, setDocumentsList] = useState<any[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [loading, setLoading] = useState(false);
   const itemsPerPage = 12;
 
   // Load documents from database
@@ -35,7 +37,6 @@ export const ElectronicDocuments: React.FC = () => {
   }, [refreshKey]);
 
   const loadDocuments = async () => {
-    setLoading(true);
     try {
       const data = await electronicDocumentsService.getAll();
       const mappedData = data.map(doc => ({
@@ -69,8 +70,6 @@ export const ElectronicDocuments: React.FC = () => {
       setDocumentsList(mappedData);
     } catch (error) {
       console.error('Erro ao carregar documentos:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -126,22 +125,41 @@ export const ElectronicDocuments: React.FC = () => {
     setViewingDocument(null);
   };
 
-  const handleProcessDocument = async (documentId: number, action: 'danfe' | 'dacte') => {
-    setIsProcessing(true);
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const document = documentsList.find(d => d.id === documentId);
-    if (document) {
-      const actionName = action === 'danfe' ? 'DANFE' : 'DACTE';
+  const handlePrintDocument = (document: any) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const htmlContent = document.tipo === 'NFe' 
+        ? getDanfeHtml(document) 
+        : getDacteHtml(document);
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
       
-      // Gerar o PDF e abrir em nova aba
-      const pdfUrl = generatePDF(document, action);
-      window.open(pdfUrl, '_blank');
+      // We give the browser a small tick for the font/CSS rendering of the DOM
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  };
+
+  const handleDownloadXml = (document: any) => {
+    let xmlContent = '';
+    
+    if (document.tipo === 'NFe') {
+      xmlContent = generateNfeXml(document);
+    } else {
+      xmlContent = generateCteXml(document);
     }
     
-    setIsProcessing(false);
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${document.tipo}_${document.chaveAcesso}.xml`;
+    window.document.body.appendChild(a);
+    a.click();
+    window.document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   const handleExport = () => {
@@ -205,8 +223,7 @@ export const ElectronicDocuments: React.FC = () => {
       <DocumentView
         onBack={handleBackToList}
         document={viewingDocument}
-        onProcessDocument={handleProcessDocument}
-        isProcessing={isProcessing}
+        onPrint={handlePrintDocument}
       />
     );
   }
@@ -216,15 +233,15 @@ export const ElectronicDocuments: React.FC = () => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Documentos Eletrônicos</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie XMLs de NFe (modelo 55) e CTe (modelo 57)</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('electronicDocs.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('electronicDocs.subtitle')}</p>
         </div>
         <button 
           onClick={() => setShowUpload(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
           <Upload size={20} />
-          <span>Importar XMLs</span>
+          <span>{t('electronicDocs.importXmls')}</span>
         </button>
       </div>
 
@@ -233,7 +250,7 @@ export const ElectronicDocuments: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Documentos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('electronicDocs.stats.totalDocuments')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -245,7 +262,7 @@ export const ElectronicDocuments: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Autorizados</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('electronicDocs.status.authorized')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.autorizado}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -257,7 +274,7 @@ export const ElectronicDocuments: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">NFe (Modelo 55)</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('electronicDocs.types.nfe')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{typeStats.nfe}</p>
             </div>
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -269,7 +286,7 @@ export const ElectronicDocuments: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">CTe (Modelo 57)</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('electronicDocs.types.cte')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{typeStats.cte}</p>
             </div>
             <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -281,7 +298,7 @@ export const ElectronicDocuments: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Processando</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('electronicDocs.status.processing')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{stats.processando}</p>
             </div>
             <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -298,7 +315,7 @@ export const ElectronicDocuments: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por chave de acesso, número, emitente ou CNPJ..."
+              placeholder={t('electronicDocs.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -310,9 +327,9 @@ export const ElectronicDocuments: React.FC = () => {
             onChange={(e) => setTypeFilter(e.target.value as any)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">Todos os Tipos</option>
-            <option value="NFe">NFe (Modelo 55)</option>
-            <option value="CTe">CTe (Modelo 57)</option>
+            <option value="all">{t('electronicDocs.allTypes')}</option>
+            <option value="NFe">{t('electronicDocs.types.nfe')}</option>
+            <option value="CTe">{t('electronicDocs.types.cte')}</option>
           </select>
 
           <select
@@ -320,11 +337,11 @@ export const ElectronicDocuments: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value as any)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">Todos os Status</option>
-            <option value="autorizado">Autorizado</option>
-            <option value="cancelado">Cancelado</option>
-            <option value="rejeitado">Rejeitado</option>
-            <option value="processando">Processando</option>
+            <option value="all">{t('electronicDocs.allStatuses')}</option>
+            <option value="autorizado">{t('electronicDocs.status.authorized')}</option>
+            <option value="cancelado">{t('electronicDocs.status.canceled')}</option>
+            <option value="rejeitado">{t('electronicDocs.status.rejected')}</option>
+            <option value="processando">{t('electronicDocs.status.processing')}</option>
           </select>
 
           <select
@@ -332,10 +349,10 @@ export const ElectronicDocuments: React.FC = () => {
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">Todas as Datas</option>
-            <option value="today">Hoje</option>
-            <option value="week">Última Semana</option>
-            <option value="month">Último Mês</option>
+            <option value="all">{t('electronicDocs.filterDate.all')}</option>
+            <option value="today">{t('electronicDocs.filterDate.today')}</option>
+            <option value="week">{t('electronicDocs.filterDate.week')}</option>
+            <option value="month">{t('electronicDocs.filterDate.month')}</option>
           </select>
           
           <button 
@@ -343,22 +360,22 @@ export const ElectronicDocuments: React.FC = () => {
             className="border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Download size={18} />
-            <span>Exportar</span>
+            <span>{t('common.export')}</span>
           </button>
         </div>
 
         {/* Stats */}
         <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-          <span>Total: {filteredDocuments.length} documentos</span>
-          <span>Página {currentPage} de {totalPages}</span>
+          <span>Total: {filteredDocuments.length} {t('electronicDocs.stats.documents')}</span>
+          <span>{t('electronicDocs.stats.page')} {currentPage} {t('electronicDocs.stats.of')} {totalPages}</span>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <CheckCircle size={14} className="text-green-600" />
-              <span>{stats.autorizado} autorizados</span>
+              <span>{stats.autorizado} {t('electronicDocs.status.authorized').toLowerCase()}s</span>
             </div>
             <div className="flex items-center space-x-1">
               <AlertCircle size={14} className="text-red-600" />
-              <span>{stats.rejeitado} rejeitados</span>
+              <span>{stats.rejeitado} {t('electronicDocs.status.denied').toLowerCase()}s</span>
             </div>
           </div>
         </div>
@@ -371,8 +388,8 @@ export const ElectronicDocuments: React.FC = () => {
             key={`${document.id}-${refreshKey}`}
             document={document}
             onView={handleViewDocument}
-            onProcessDocument={handleProcessDocument}
-            isProcessing={isProcessing}
+            onPrint={handlePrintDocument}
+            onDownloadXml={handleDownloadXml}
           />
         ))}
       </div>
@@ -382,7 +399,7 @@ export const ElectronicDocuments: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredDocuments.length)} de {filteredDocuments.length} documentos
+              {t('electronicDocs.stats.showing')} {startIndex + 1} {t('electronicDocs.stats.to')} {Math.min(startIndex + itemsPerPage, filteredDocuments.length)} {t('electronicDocs.stats.of')} {filteredDocuments.length} {t('electronicDocs.stats.documents')}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -390,7 +407,7 @@ export const ElectronicDocuments: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anterior
+                {t('electronicDocs.pagination.previous')}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -417,7 +434,7 @@ export const ElectronicDocuments: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                {t('electronicDocs.pagination.next')}
               </button>
             </div>
           </div>
@@ -429,37 +446,37 @@ export const ElectronicDocuments: React.FC = () => {
           <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
             <FileText size={48} />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum documento encontrado</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou importar novos XMLs.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('electronicDocs.noDocuments')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('electronicDocs.subtitle')}</p>
         </div>
       )}
 
       {/* Integration Info */}
       <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-green-900 mb-2">Integração com SEFAZ</h3>
+        <h3 className="text-lg font-semibold text-green-900 mb-2">{t('electronicDocs.integration.title')}</h3>
         <p className="text-green-800 mb-4">
-          O sistema processa automaticamente XMLs de NFe (modelo 55) e CTe (modelo 57), validando as informações 
-          com a SEFAZ e extraindo todos os dados fiscais relevantes para controle logístico.
+          {t('electronicDocs.integration.description')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-green-900">Validação SEFAZ</p>
-            <p className="text-green-700">Chaves de acesso verificadas</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-100 dark:border-green-900">
+            <p className="font-semibold text-green-900">{t('electronicDocs.integration.validation.title')}</p>
+            <p className="text-green-700">{t('electronicDocs.integration.validation.desc')}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-green-900">Geração DANFE/DACTE</p>
-            <p className="text-green-700">PDFs automáticos dos documentos</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-100 dark:border-green-900">
+            <p className="font-semibold text-green-900">{t('electronicDocs.integration.generation.title')}</p>
+            <p className="text-green-700">{t('electronicDocs.integration.generation.desc')}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-green-900">Controle Fiscal</p>
-            <p className="text-green-700">Rastreamento completo</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-100 dark:border-green-900">
+            <p className="font-semibold text-green-900">{t('electronicDocs.integration.control.title')}</p>
+            <p className="text-green-700">{t('electronicDocs.integration.control.desc')}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-green-900">Armazenamento XML</p>
-            <p className="text-green-700">Conteúdo completo preservado</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-100 dark:border-green-900">
+            <p className="font-semibold text-green-900">{t('electronicDocs.integration.storage.title')}</p>
+            <p className="text-green-700">{t('electronicDocs.integration.storage.desc')}</p>
           </div>
         </div>
       </div>
+
     </div>
   );
 };

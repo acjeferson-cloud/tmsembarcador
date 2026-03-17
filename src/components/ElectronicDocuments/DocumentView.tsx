@@ -1,23 +1,44 @@
 import React, { useState } from 'react';
-import { ArrowLeft, FileText, Download, Calendar, Clock, Building, MapPin, Hash, DollarSign, Package, Truck, RefreshCw, Code, ChevronDown, ChevronUp, Printer } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Clock, Building, MapPin, Hash, Package, Truck, Code, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import { ElectronicDocument } from '../../data/electronicDocumentsData';
-import { DanfePreview } from './DanfePreview';
-import { DactePreview } from './DactePreview';
 import { formatCurrency } from '../../utils/formatters';
-import { generatePDF } from '../../services/pdfService';
+import { parseXML } from '../../services/xmlService';
+import { useTranslation } from 'react-i18next';
 
 interface DocumentViewProps {
   onBack: () => void;
   document: ElectronicDocument;
-  onProcessDocument: (documentId: number, action: 'danfe' | 'dacte') => void;
-  isProcessing: boolean;
+  onPrint: (document: any) => void;
 }
 
-export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, onProcessDocument, isProcessing }) => {
+export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, onPrint }) => {
+  const { t } = useTranslation();
   const [showXml, setShowXml] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  let richDoc = document as any;
+  if (document.xmlContent) {
+    try {
+      const parsed = parseXML(document.xmlContent) as any;
+      richDoc = { ...document, ...parsed, emitente: { ...document.emitente, ...parsed.emitente }, destinatario: { ...document.destinatario, ...parsed.destinatario } };
+    } catch (e) {
+      console.error('Error parsing XML in view:', e);
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'authorized' || s === 'autorizado') return t('electronicDocs.status.authorized');
+    if (s === 'canceled' || s === 'cancelled' || s === 'cancelado') return t('electronicDocs.status.canceled');
+    if (s === 'denied' || s === 'rejeitado') return t('electronicDocs.status.rejected');
+    if (s === 'processing' || s === 'processando') return t('electronicDocs.status.processing');
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
 
   const getStatusColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'authorized') return 'bg-green-100 text-green-800';
+    if (s === 'canceled' || s === 'cancelled') return 'bg-gray-100 text-gray-800';
+    if (s === 'denied' || s === 'rejeitado') return 'bg-red-100 text-red-800';
+    if (s === 'processing') return 'bg-yellow-100 text-yellow-800';
     switch (status) {
       case 'autorizado': return 'bg-green-100 text-green-800';
       case 'cancelado': return 'bg-gray-100 text-gray-800';
@@ -36,19 +57,28 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
+    if (!dateString) return '';
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const seconds = String(d.getSeconds()).padStart(2, '0');
+      return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+    } catch {
+      return dateString;
+    }
   };
 
   const getActionButtonText = () => {
-    return document.tipo === 'NFe' ? 'Gerar DANFE' : 'Gerar DACTE';
+    return document.tipo === 'NFe' ? t('electronicDocs.card.printDanfe') : t('electronicDocs.card.printDacte');
   };
 
-  const getActionType = (): 'danfe' | 'dacte' => {
-    return document.tipo === 'NFe' ? 'danfe' : 'dacte';
-  };
-
-  const handleProcessDocument = () => {
-    onProcessDocument(document.id, getActionType());
+  const handlePrint = () => {
+    onPrint(document);
   };
 
   return (
@@ -60,24 +90,19 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
             className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
           >
             <ArrowLeft size={20} />
-            <span>Voltar para Documentos Eletrônicos</span>
+            <span>{t('electronicDocs.view.back')}</span>
           </button>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Visualizar Documento</h1>
-              <p className="text-gray-600 dark:text-gray-400">Detalhes completos do documento eletrônico</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('electronicDocs.view.title')}</h1>
+              <p className="text-gray-600 dark:text-gray-400">{t('electronicDocs.subtitle')}</p>
             </div>
             {document.status === 'autorizado' && (
               <button
-                onClick={handleProcessDocument}
-                disabled={isProcessing}
-                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                onClick={handlePrint}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
               >
-                {isProcessing ? (
-                  <RefreshCw size={20} className="animate-spin" />
-                ) : (
-                  <Printer size={20} />
-                )}
+                <Printer size={20} />
                 <span>{getActionButtonText()}</span>
               </button>
             )}
@@ -98,28 +123,28 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
               {/* Basic Info */}
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{document.numeroDocumento}</h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">{document.tipo} - Modelo {document.modelo}</p>
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">{document.tipo} - {t('electronicDocs.view.model')} {document.modelo}</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Série</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.series')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{document.serie}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.status')}</p>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(document.status)}`}>
-                      {document.status.charAt(0).toUpperCase() + document.status.slice(1)}
+                      {getStatusLabel(document.status)}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Tipo</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.filterType')}</p>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(document.tipo)}`}>
                       {document.tipo}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Protocolo SEFAZ</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{document.protocoloAutorizacao}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.sefazProtocol')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{richDoc.protocoloAutorizacao || 'Não disponível'}</p>
                   </div>
                 </div>
               </div>
@@ -128,7 +153,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
               <div className="text-center">
                 <div className="bg-green-50 rounded-lg p-4">
                   <p className="text-2xl font-bold text-green-600">{formatCurrency(document.valorTotal)}</p>
-                  <p className="text-sm text-green-700">Valor Total</p>
+                  <p className="text-sm text-green-700">{t('electronicDocs.view.totalDocument')}</p>
                 </div>
               </div>
             </div>
@@ -136,7 +161,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
 
           {/* Access Key */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Chave de Acesso</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.view.accessKeyLabel')}</h3>
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
               <p className="font-mono text-lg text-gray-900 dark:text-white break-all">{document.chaveAcesso}</p>
             </div>
@@ -144,13 +169,13 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
 
           {/* Emitente Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dados do Emitente</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.view.senderData')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Building className="text-blue-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Razão Social</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.companyName')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{document.emitente.razaoSocial}</p>
                   </div>
                 </div>
@@ -158,7 +183,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
                 <div className="flex items-center space-x-3">
                   <Hash className="text-green-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.cnpj')}</p>
                     <p className="font-medium text-gray-900 dark:text-white">{document.emitente.cnpj}</p>
                   </div>
                 </div>
@@ -167,7 +192,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
                   <div className="flex items-center space-x-3">
                     <FileText className="text-purple-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Inscrição Estadual</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.ie')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{document.emitente.inscricaoEstadual}</p>
                     </div>
                   </div>
@@ -178,24 +203,24 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
                 <div className="flex items-center space-x-3">
                   <MapPin className="text-red-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Endereço</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{document.emitente.endereco}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.address')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{richDoc.emitente.endereco}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
                   <MapPin className="text-orange-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Cidade/UF</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{document.emitente.cidade} - {document.emitente.uf}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.city')} / {t('electronicDocs.view.uf')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{richDoc.emitente.cidade} - {richDoc.emitente.uf}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
                   <MapPin className="text-teal-500" size={20} />
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">CEP</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{document.emitente.cep}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.cep')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{richDoc.emitente.cep}</p>
                   </div>
                 </div>
               </div>
@@ -205,13 +230,13 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
           {/* Destinatário Information (if exists) */}
           {document.destinatario && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dados do Destinatário</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.view.recipientData')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <Building className="text-blue-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Razão Social</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.companyName')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{document.destinatario.razaoSocial}</p>
                     </div>
                   </div>
@@ -219,7 +244,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
                   <div className="flex items-center space-x-3">
                     <Hash className="text-green-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ/CPF</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.cnpj')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{document.destinatario.cnpjCpf}</p>
                     </div>
                   </div>
@@ -229,16 +254,24 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
                   <div className="flex items-center space-x-3">
                     <MapPin className="text-red-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Endereço</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{document.destinatario.endereco}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.address')}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{richDoc.destinatario?.endereco || '-'}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-3">
                     <MapPin className="text-orange-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Cidade/UF</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{document.destinatario.cidade} - {document.destinatario.uf}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.city')} / {t('electronicDocs.view.uf')}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{(richDoc.destinatario?.cidade && richDoc.destinatario?.uf) ? `${richDoc.destinatario.cidade} - ${richDoc.destinatario.uf}` : '-'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="text-teal-500" size={20} />
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.cep')}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{richDoc.destinatario?.cep || '-'}</p>
                     </div>
                   </div>
                 </div>
@@ -248,11 +281,11 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
 
           {/* Financial Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Financeiras</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.view.totals')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(document.valorTotal)}</p>
-                <p className="text-sm text-green-700">Valor Total</p>
+                <p className="text-sm text-green-700">{t('electronicDocs.view.totalDocument')}</p>
               </div>
               
               {document.valorIcms && (
@@ -265,7 +298,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
               {document.valorFrete && (
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <p className="text-2xl font-bold text-purple-600">{formatCurrency(document.valorFrete)}</p>
-                  <p className="text-sm text-purple-700">Frete</p>
+                  <p className="text-sm text-purple-700">{t('electronicDocs.view.freight')}</p>
                 </div>
               )}
             </div>
@@ -274,13 +307,13 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
           {/* CTe Specific Information */}
           {document.tipo === 'CTe' && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Transporte (CTe)</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.view.transportInfo')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {document.pesoTotal && (
                   <div className="flex items-center space-x-3">
                     <Package className="text-orange-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Peso Total</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.totalWeight')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{document.pesoTotal} kg</p>
                     </div>
                   </div>
@@ -290,7 +323,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
                   <div className="flex items-center space-x-3">
                     <Truck className="text-blue-500" size={20} />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Modal de Transporte</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.transportMode')}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{document.modalTransporte}</p>
                     </div>
                   </div>
@@ -301,20 +334,20 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
 
           {/* Timestamps */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Controle de Datas</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('electronicDocs.view.dates')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center space-x-3">
                 <Calendar className="text-green-500" size={20} />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Data/Hora de Autorização SEFAZ</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(document.dataAutorizacao)}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.view.authorizationDate')}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(richDoc.dataAutorizacao)}</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-3">
                 <Clock className="text-blue-500" size={20} />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Data/Hora de Importação no Sistema</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('electronicDocs.card.importedAt')}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{formatDateTime(document.dataImportacao)}</p>
                 </div>
               </div>
@@ -325,12 +358,12 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
           {document.xmlContent && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Conteúdo XML</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('electronicDocs.view.xmlContent')}</h3>
                 <button
                   onClick={() => setShowXml(!showXml)}
                   className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  <span>{showXml ? 'Ocultar XML' : 'Mostrar XML'}</span>
+                  <span>{showXml ? t('electronicDocs.view.hideXml') : t('electronicDocs.view.showXml')}</span>
                   {showXml ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </button>
               </div>
@@ -346,28 +379,13 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
               {!showXml && (
                 <div className="flex items-center justify-center space-x-2 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg text-gray-500 dark:text-gray-400">
                   <Code size={24} />
-                  <span>Clique em "Mostrar XML" para visualizar o conteúdo completo do XML</span>
+                  <span>{t('electronicDocs.view.clickShowXml')}</span>
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
-
-      {/* DANFE/DACTE Preview Modal */}
-      {showPreview && document.tipo === 'NFe' && (
-        <DanfePreview 
-          document={document} 
-          onClose={() => setShowPreview(false)} 
-        />
-      )}
-
-      {showPreview && document.tipo === 'CTe' && (
-        <DactePreview 
-          document={document} 
-          onClose={() => setShowPreview(false)} 
-        />
-      )}
     </>
   );
 };

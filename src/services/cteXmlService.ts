@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 interface ParsedCTeData {
   // Dados básicos
   number: string;
@@ -429,6 +431,113 @@ export const cteXmlService = {
       return infCte !== null;
     } catch (error) {
       return false;
+    }
+  },
+
+  async importCTeToDatabase(parsedData: ParsedCTeData, establishmentId: string) {
+    try {
+      const { data: cteData, error: cteError } = await (supabase as any)
+        .from('ctes_complete')
+        .insert({
+          establishment_id: establishmentId,
+          number: parsedData.number,
+          series: parsedData.series,
+          access_key: parsedData.access_key,
+          issue_date: parsedData.issue_date,
+          freight_type: parsedData.freight_type,
+          status: parsedData.status,
+          freight_weight_value: parsedData.freight_weight_value,
+          freight_value_value: parsedData.freight_value_value,
+          seccat_value: parsedData.seccat_value,
+          dispatch_value: parsedData.dispatch_value,
+          ademe_gris_value: parsedData.ademe_gris_value,
+          itr_value: parsedData.itr_value,
+          tas_value: parsedData.tas_value,
+          collection_delivery_value: parsedData.collection_delivery_value,
+          other_tax_value: parsedData.other_tax_value,
+          toll_value: parsedData.toll_value,
+          icms_rate: parsedData.icms_rate,
+          icms_base: parsedData.icms_base,
+          icms_value: parsedData.icms_value,
+          pis_value: parsedData.pis_value,
+          cofins_value: parsedData.cofins_value,
+          other_value: parsedData.other_value,
+          total_value: parsedData.total_value,
+          sender_name: parsedData.sender_name,
+          sender_document: parsedData.sender_document,
+          sender_city: parsedData.sender_city,
+          sender_state: parsedData.sender_state,
+          recipient_name: parsedData.recipient_name,
+          recipient_document: parsedData.recipient_document,
+          recipient_city: parsedData.recipient_city,
+          recipient_state: parsedData.recipient_state,
+          shipper_name: parsedData.shipper_name,
+          shipper_document: parsedData.shipper_document,
+          receiver_name: parsedData.receiver_name,
+          receiver_document: parsedData.receiver_document,
+          payer_name: parsedData.payer_name,
+          payer_document: parsedData.payer_document,
+          cargo_weight: parsedData.cargo_weight,
+          cargo_value: parsedData.cargo_value,
+          cargo_volume: parsedData.cargo_volume,
+          cargo_m3: parsedData.cargo_m3,
+          cargo_weight_cubed: parsedData.cargo_weight_cubed,
+          cargo_weight_for_calculation: parsedData.cargo_weight_for_calculation,
+          cubing_factor: parsedData.cubing_factor,
+          xml_data: parsedData.xml_data
+        })
+        .select()
+        .single();
+
+      if (cteError) throw cteError;
+
+      if (parsedData.invoices && parsedData.invoices.length > 0) {
+        const { error: invoicesError } = await (supabase as any)
+          .from('ctes_invoices')
+          .insert(
+            parsedData.invoices.map(invoice => ({
+              cte_id: cteData.id,
+              establishment_code: invoice.establishment_code,
+              invoice_type: invoice.invoice_type,
+              series: invoice.series,
+              number: invoice.number,
+              cost_value: invoice.cost_value
+            }))
+          );
+
+        if (invoicesError) {
+          console.error('Erro ao inserir notas fiscais do CT-e:', invoicesError);
+        }
+      }
+
+      // Also copy to electronic_documents for unified view
+      try {
+        const { electronicDocumentsService } = await import('./electronicDocumentsService');
+        await electronicDocumentsService.create({
+          document_type: 'CTe',
+          model: '57',
+          document_number: parsedData.number,
+          series: parsedData.series,
+          access_key: parsedData.access_key,
+          status: 'authorized',
+          issuer_name: parsedData.emitter_name || '',
+          issuer_document: parsedData.emitter_cnpj || '',
+          recipient_name: parsedData.recipient_name || parsedData.sender_name || '',
+          recipient_document: parsedData.recipient_document || parsedData.sender_document || '',
+          total_value: parsedData.total_value,
+          icms_value: parsedData.icms_value,
+          freight_value: parsedData.total_value, // CTe total implies freight
+          total_weight: parsedData.cargo_weight,
+          transport_mode: 'Rodoviário',
+          xml_content: parsedData.xml_data?.original || ''
+        });
+      } catch (e) {
+        console.error('Failed copying CTe to electronic_documents', e);
+      }
+
+      return { success: true, cteId: cteData.id };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Unknown error' };
     }
   }
 };

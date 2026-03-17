@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Package, Weight, Ruler, DollarSign, Calendar, Hash, Key } from 'lucide-react';
+import { FileText, Package, Weight, Ruler, DollarSign, Calendar, Key } from 'lucide-react';
 import { pickupsService } from '../../services/pickupsService';
 
 interface PickupInvoicesTabProps {
@@ -71,34 +71,25 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
                 Número NF
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Série
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 Chave NF-e
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 Data Emissão
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Nº Pedido
+                Qtd
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Volumes
+                Peso (kg)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                m³
+                Cubagem (m³)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Peso
+                Valor Unit.
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 Valor Total
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Mercadoria
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Tabela/Tarifa
               </th>
             </tr>
           </thead>
@@ -112,17 +103,14 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                     <div className="flex items-center">
                       <FileText className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.numero_nota}
+                      {invoice.numero_nota || '-'} {invoice.serie && `- ${invoice.serie}`}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    {invoice.serie || '-'}
                   </td>
                   <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">
                     <div className="flex items-center">
                       <Key className="w-3 h-3 mr-1 text-gray-400" />
-                      <span className="truncate max-w-xs" title={invoice.chave_nfe}>
-                        {invoice.chave_nfe ? `${invoice.chave_nfe.substring(0, 20)}...` : '-'}
+                      <span className="truncate max-w-[150px]" title={invoice.chave_nfe}>
+                        {invoice.chave_nfe ? `${invoice.chave_nfe}` : '-'}
                       </span>
                     </div>
                   </td>
@@ -134,14 +122,14 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                     <div className="flex items-center">
-                      <Hash className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.numero_pedido || '-'}
+                      <Package className="w-4 h-4 mr-2 text-gray-400" />
+                      {invoice.quantidade_volumes || 0}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                     <div className="flex items-center">
-                      <Package className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.quantidade_volumes || 0}
+                      <Weight className="w-4 h-4 mr-2 text-gray-400" />
+                      {invoice.peso ? `${invoice.peso.toFixed(3)}` : '-'}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
@@ -152,30 +140,16 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                     <div className="flex items-center">
-                      <Weight className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.peso ? `${invoice.peso} kg` : '-'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
                       <DollarSign className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.valor_total ? formatCurrency(invoice.valor_total) : '-'}
+                      {invoice.valor_total && invoice.quantidade_volumes && invoice.quantidade_volumes > 0 
+                        ? formatCurrency(invoice.valor_total / invoice.quantidade_volumes) 
+                        : formatCurrency(0)}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <span className="truncate max-w-xs block" title={invoice.mercadoria}>
-                      {invoice.mercadoria || '-'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                    {item.freight_table_name && item.freight_rate_value ? (
-                      <div className="space-y-1">
-                        <div className="text-xs">{item.freight_table_name}</div>
-                        <div className="font-medium">{formatCurrency(item.freight_rate_value)}</div>
-                      </div>
-                    ) : (
-                      '-'
-                    )}
+                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-semibold">
+                    <div className="flex items-center">
+                      {invoice.valor_total ? formatCurrency(invoice.valor_total) : formatCurrency(0)}
+                    </div>
                   </td>
                 </tr>
               );

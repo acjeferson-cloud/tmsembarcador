@@ -187,6 +187,181 @@
       }
     }
   },
+  "electronicDocs": {
+    "title": "Electronic Documents",
+    "subtitle": "Management of electronic invoices and transport documents",
+    "importXmls": "Import XMLs",
+    "searchPlaceholder": "Search by number, key, sender...",
+    "filterType": "Document Type",
+    "filterStatus": "SEFAZ Status",
+    "allTypes": "All Types",
+    "allStatuses": "All Statuses",
+    "noDocuments": "No documents found",
+    "loading": "Loading documents...",
+    "deleteConfirmTitle": "Delete Document",
+    "deleteConfirmText": "Are you sure you want to delete this document? This action cannot be undone.",
+    "documentDetails": "Document Details",
+    "status": {
+      "authorized": "Authorized",
+      "cancelled": "Cancelled",
+      "canceled": "Canceled",
+      "denied": "Rejected",
+      "rejected": "Rejected",
+      "processing": "Processing"
+    },
+    "card": {
+      "model": "Model",
+      "sender": "Sender",
+      "recipient": "Recipient",
+      "accessKey": "Access Key",
+      "authorizedAt": "Authorized",
+      "importedAt": "Imported",
+      "totalValue": "Total Value",
+      "weight": "Weight",
+      "printDanfe": "Print DANFE",
+      "printDacte": "Print DACTE",
+      "downloadXml": "Download XML",
+      "view": "View",
+      "delete": "Delete"
+    },
+    "view": {
+      "title": "View Document",
+      "model": "Model",
+      "series": "Series",
+      "status": "Status",
+      "generalInfo": "General Information",
+      "accessKeyLabel": "Access Key",
+      "sefazProtocol": "SEFAZ Protocol",
+      "cfop": "General CFOP",
+      "natureOfOperation": "Nature of Operation",
+      "dates": "Dates",
+      "issueDate": "Issue Date",
+      "authorizationDate": "Authorization Date",
+      "senderData": "Sender Data",
+      "cnpj": "Tax ID",
+      "ie": "State Registration",
+      "address": "Address",
+      "city": "City",
+      "uf": "State",
+      "cep": "ZIP Code",
+      "recipientData": "Recipient Data",
+      "totals": "Document Totals",
+      "totalProducts": "Products Total",
+      "discount": "Discount",
+      "freight": "Freight",
+      "totalDocument": "Invoice/Document Total",
+      "viewXml": "View Full XML",
+      "hideXml": "Hide XML",
+      "back": "Back",
+      "print": "Print Document",
+      "companyName": "Company Name",
+      "transportInfo": "Transport Information (CTe)",
+      "totalWeight": "Total Weight",
+      "transportMode": "Transport Mode",
+      "xmlContent": "XML Content",
+      "showXml": "Show XML",
+      "clickShowXml": "Click \"Show XML\" to view the complete XML content"
+    },
+    "upload": {
+      "title": "Import XML Files",
+      "subtitle": "Select and import the XML files of invoices and transport documents. The system will extract and create the documents automatically.",
+      "dragDrop": "Drag and drop XML files here",
+      "or": "or",
+      "selectFiles": "Select files",
+      "supportedFormat": "Only .xml files are supported",
+      "validating": "Validating...",
+      "processing": "Processing...",
+      "success": "Processing completed successfully!",
+      "documentsImported": "Documents imported successfully",
+      "validationError": "XML validation error",
+      "finishImport": "Finish Import",
+      "status": {
+        "uploading": "Uploading...",
+        "processing": "Processing...",
+        "success": "Processed successfully",
+        "error": "Processing error",
+        "waiting": "Waiting"
+      },
+      "alerts": {
+        "noFiles": "No files were successfully processed for import.",
+        "success": "document(s) imported successfully!"
+      },
+      "back": "Back to Electronic Documents",
+      "limitLabel": "Only XML files are accepted. Max size: 10MB per file.",
+      "stats": {
+        "title": "Processing Status",
+        "total": "Total Files",
+        "processing": "Processing",
+        "success": "Processed",
+        "error": "With Error"
+      },
+      "filesTitle": "Uploaded Files",
+      "instructions": {
+        "title": "Import Instructions",
+        "formats": "Accepted formats",
+        "formatsDesc": "Only NFe (model 55) and CTe (model 57) XML files",
+        "validation": "Validation",
+        "validationDesc": "XMLs are automatically validated with SEFAZ",
+        "processing": "Processing",
+        "processingDesc": "Automatic extraction of tax and logistical data",
+        "integration": "Integration",
+        "integrationDesc": "Processed documents become available for linking with deliveries",
+        "generation": "Generation",
+        "generationDesc": "DANFE and DACTE can be generated automatically after processing",
+        "storage": "Storage",
+        "storageDesc": "The complete XML content is stored for future queries"
+      }
+    },
+    "types": {
+      "nfe": "NFe (Model 55)",
+      "cte": "CTe (Model 57)"
+    },
+    "filterDate": {
+      "all": "All Dates",
+      "today": "Today",
+      "week": "Last Week",
+      "month": "Last Month"
+    },
+    "stats": {
+      "documents": "documents",
+      "page": "Page",
+      "of": "of",
+      "showing": "Showing",
+      "to": "to",
+      "totalDocuments": "Total Documents"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "integration": {
+      "title": "SEFAZ Integration",
+      "description": "The system automatically processes NFe (model 55) and CTe (model 57) XMLs, validating information with SEFAZ and extracting all relevant tax data for logistical control.",
+      "validation": {
+        "title": "SEFAZ Validation",
+        "desc": "Verified access keys"
+      },
+      "generation": {
+        "title": "DANFE/DACTE Generation",
+        "desc": "Automatic PDFs of documents"
+      },
+      "control": {
+        "title": "Tax Control",
+        "desc": "Complete tracking"
+      },
+      "storage": {
+        "title": "XML Storage",
+        "desc": "Complete content preserved"
+      }
+    },
+    "preview": {
+      "printTitle": "Print Preview",
+      "print": "Print",
+      "downloadHtml": "Download HTML",
+      "danfeSuccess": "The official DANFE model was generated successfully. Click the Print button above to view the structured form according to the national electronic invoice standard or generate its PDF.",
+      "dacteSuccess": "The official DACTE model was generated successfully. Click the Print button above to view the structured form according to the national transport document standard or generate its PDF."
+    }
+  },
   "login": {
     "title": "TMS Shipper Log Axis",
     "subtitle": "One system. All your shipments!",

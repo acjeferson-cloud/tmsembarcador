@@ -8,6 +8,7 @@ import { BillDetailsModal } from './BillDetailsModal';
 import { BillCTesModal } from './BillCTesModal';
 import { BillRejectionModal } from './BillRejectionModal';
 import { supabase } from '../../lib/supabase';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 export const Bills: React.FC = () => {
   const breadcrumbItems = [
@@ -23,6 +24,12 @@ export const Bills: React.FC = () => {
   const [showCTesModal, setShowCTesModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState<any>(null);
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    billId: '',
+    billNumber: '',
+    action: ''
+  });
   const [filters, setFilters] = useState({
     transportador: '',
     periodoEmissao: { start: '', end: '' },
@@ -265,6 +272,15 @@ export const Bills: React.FC = () => {
         case 'download':
           alert(`Baixando XML da fatura ${bill.numero}.`);
           break;
+        case 'delete':
+          setConfirmDialog({
+            isOpen: true,
+            billId: billId.toString(),
+            billNumber: bill.numero,
+            action: 'delete'
+          });
+          setIsLoading(false);
+          return;
         default:
           break;
       }
@@ -291,6 +307,31 @@ export const Bills: React.FC = () => {
       setShowRejectionModal(false);
       alert(`Fatura ${selectedBill.numero} reprovada com sucesso. Motivo ID: ${reasonId}`);
     }, 1000);
+  };
+
+  const confirmDelete = async () => {
+    if (confirmDialog.billId && confirmDialog.billNumber) {
+      setIsLoading(true);
+      try {
+        const { error } = await supabase
+          .from('bills')
+          .delete()
+          .eq('id', confirmDialog.billId);
+
+        if (!error) {
+          alert(`Fatura ${confirmDialog.billNumber} excluída com sucesso!`);
+          loadBills();
+        } else {
+          alert(`Erro ao excluir Fatura: ${error.message}`);
+        }
+      } catch (error: any) {
+        console.error('Erro ao excluir fatura:', error);
+        alert('Erro ao excluir fatura.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    setConfirmDialog({ isOpen: false, billId: '', billNumber: '', action: '' });
   };
 
   const refreshData = () => {
@@ -483,6 +524,17 @@ export const Bills: React.FC = () => {
           onConfirm={handleRejectBill}
           billId={selectedBill.id}
           billNumber={selectedBill.numero}
+        />
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog.isOpen && confirmDialog.billNumber && (
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title="Confirmar Exclusão"
+          message={`Tem certeza que deseja excluir a fatura ${confirmDialog.billNumber}? Esta ação não pode ser desfeita.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmDialog({ isOpen: false, billId: '', billNumber: '', action: '' })}
         />
       )}
     </div>

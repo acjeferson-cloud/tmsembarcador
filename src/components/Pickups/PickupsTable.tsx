@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, MoreHorizontal, Send, XCircle, Network } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, MoreHorizontal, Send, XCircle, Network, Trash2 } from 'lucide-react';
 
 interface Pickup {
   id: string;
@@ -37,7 +37,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   // Handle sorting
   const handleSort = (field: keyof Pickup) => {
@@ -64,6 +64,9 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
     if (typeof aValue === 'number') {
       return sortDirection === 'asc' ? aValue - (bValue as number) : (bValue as number) - aValue;
     }
+
+    if (aValue === undefined || aValue === null) return sortDirection === 'asc' ? -1 : 1;
+    if (bValue === undefined || bValue === null) return sortDirection === 'asc' ? 1 : -1;
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -95,13 +98,13 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'emitida':
-        return 'bg-gray-400 text-gray-900 dark:bg-gray-600 dark:text-gray-100';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700';
       case 'solicitada':
-        return 'bg-blue-200 text-blue-900 dark:bg-blue-700 dark:text-blue-100';
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
       case 'realizada':
-        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'cancelada':
-        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -123,8 +126,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
     }
   };
 
-  // Toggle action menu
-  const toggleActionMenu = (pickupId: number) => {
+  const toggleActionMenu = (pickupId: string) => {
     setOpenActionMenu(openActionMenu === pickupId ? null : pickupId);
   };
 
@@ -138,7 +140,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -148,6 +150,9 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
                     />
                   </div>
+                </th>
+                <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
+                  Ações
                 </th>
                 <th
                   scope="col"
@@ -176,11 +181,35 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                 <th
                   scope="col"
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('dataCriacao')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Data Emissão</span>
+                    {sortField === 'dataCriacao' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('quantidadeNotas')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Qtd. Notas</span>
+                    <span>Qtd. NF-e(s)</span>
                     {sortField === 'quantidadeNotas' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('valorTotal')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Valor NF-e(s)</span>
+                    {sortField === 'valorTotal' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
                   </div>
@@ -200,53 +229,14 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                 <th
                   scope="col"
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('dataCriacao')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Data Criação</span>
-                    {sortField === 'dataCriacao' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
-                  </div>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('usuarioResponsavel')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Usuário Responsável</span>
+                    <span>Usuário criador</span>
                     {sortField === 'usuarioResponsavel' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
                   </div>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('enderecoColeta')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Endereço Coleta</span>
-                    {sortField === 'enderecoColeta' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
-                  </div>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('valorTotal')}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Valor Total</span>
-                    {sortField === 'valorTotal' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
-                  </div>
-                </th>
-                <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ações
                 </th>
               </tr>
             </thead>
@@ -262,35 +252,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
                     />
                   </td>
-                  <td className="px-3 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(pickup.status)}`}>
-                      {getStatusLabel(pickup.status)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {pickup.numeroColeta}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-center">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-semibold">
-                      {pickup.quantidadeNotas}
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {pickup.transportador}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(pickup.dataCriacao)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {pickup.usuarioResponsavel}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {pickup.enderecoColeta}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {formatCurrency(pickup.valorTotal)}
-                  </td>
-                  <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-3 py-4 whitespace-nowrap text-center">
                     <div className="relative inline-block text-left">
                       <button
                         onClick={() => toggleActionMenu(pickup.id)}
@@ -300,7 +262,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                       </button>
 
                       {openActionMenu === pickup.id && (
-                        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                        <div className="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
                           <div className="py-1">
                             <button
                               onClick={() => {
@@ -324,7 +286,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                               <span>Mapa de Relação</span>
                             </button>
 
-                            {pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
+                            {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
                               <button
                                 onClick={() => {
                                   onAction(pickup.id, 'cancelar');
@@ -336,10 +298,47 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                                 <span>Cancelar Coleta</span>
                               </button>
                             )}
+                            
+                            {/* Delete Action */}
+                            <button
+                              onClick={() => {
+                                onAction(pickup.id, 'delete');
+                                setOpenActionMenu(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                            >
+                              <Trash2 size={16} />
+                              <span>Excluir Coleta</span>
+                            </button>
                           </div>
                         </div>
                       )}
                     </div>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${getStatusColor(pickup.status)}`}>
+                      {getStatusLabel(pickup.status)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {pickup.numeroColeta}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDate(pickup.dataCriacao)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-center">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-semibold">
+                      {pickup.quantidadeNotas}
+                    </span>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {formatCurrency(pickup.valorTotal)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white truncate max-w-[250px]" title={pickup.transportador}>
+                    {pickup.transportador}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {pickup.usuarioResponsavel}
                   </td>
                 </tr>
               ))}
