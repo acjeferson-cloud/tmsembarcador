@@ -36,17 +36,44 @@ export const billsService = {
         .from('bills')
         .select(`
           *,
-          bill_ctes:bill_ctes(count)
+          bill_ctes (
+            id,
+            ctes_complete (
+              carrier_costs:ctes_carrier_costs(cost_type, cost_value)
+            )
+          )
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Map to add cteCount correctly depending on postgrest count syntax
-      return (data || []).map((b: any) => ({
-        ...b,
-        cteCount: b.bill_ctes && b.bill_ctes[0] ? b.bill_ctes[0].count : (Array.isArray(b.bill_ctes) ? b.bill_ctes.length : 0)
-      }));
+      // Map to add cteCount correctly and sum up all costs from linked CT-es
+      return (data || []).map((b: any) => {
+        let totalCost = 0;
+        let cteCount = 0;
+        
+        if (b.bill_ctes && Array.isArray(b.bill_ctes)) {
+          cteCount = b.bill_ctes.length;
+          b.bill_ctes.forEach((link: any) => {
+            if (link.ctes_complete && link.ctes_complete.carrier_costs) {
+              const costs = link.ctes_complete.carrier_costs;
+              if (Array.isArray(costs)) {
+                const icmsBaseCost = costs.find((c: any) => c.cost_type === 'icms_base');
+                if (icmsBaseCost) {
+                  const val = parseFloat(icmsBaseCost.cost_value || '0');
+                  if (!isNaN(val)) totalCost += val;
+                }
+              }
+            }
+          });
+        }
+
+        return {
+          ...b,
+          calculated_cost: totalCost,
+          cteCount: b.bill_ctes && b.bill_ctes[0] && b.bill_ctes[0].count !== undefined ? b.bill_ctes[0].count : cteCount
+        };
+      });
     } catch (error) {
       console.error('Erro ao buscar faturas:', error);
       return [];
@@ -76,13 +103,18 @@ export const billsService = {
         .select(`
           id,
           cte_number,
+          cte_series,
           ctes_complete (
              id,
              number,
              series,
              issue_date,
              total_value,
-             status
+             status,
+             carrier_costs:ctes_carrier_costs (
+               cost_type,
+               cost_value
+             )
           )
         `)
         .eq('bill_id', billId);

@@ -8,6 +8,7 @@ interface CTe {
   serie: string;
   dataEmissao: string;
   valor: number;
+  valorCusto: number;
   status: string;
 }
 
@@ -41,14 +42,28 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
       setIsLoading(true);
       const data = await billsService.getLinkedCtes(billId!.toString());
       
-      const formattedCtes = data.map((link: any) => ({
-        id: link.id,
-        numero: link.cte_number || (link.ctes_complete ? link.ctes_complete.number : 'N/A'),
-        serie: link.ctes_complete ? link.ctes_complete.series : '-',
-        dataEmissao: link.ctes_complete?.issue_date || new Date().toISOString(),
-        valor: link.ctes_complete ? parseFloat(link.ctes_complete.total_value || 0) : 0,
-        status: link.ctes_complete ? link.ctes_complete.status : 'Desconhecido'
-      }));
+      const formattedCtes = data.map((link: any) => {
+        const cte = link.ctes_complete;
+        
+        // Calcula o Valor Custo da mesma forma que a tela principal de CT-es
+        let valorCustoCalculado = 0;
+        if (cte && cte.carrier_costs && cte.carrier_costs.length > 0) {
+          const icmsBaseCost = cte.carrier_costs.find((c: any) => c.cost_type === 'icms_base');
+          if (icmsBaseCost) {
+            valorCustoCalculado = parseFloat(icmsBaseCost.cost_value || '0');
+          }
+        }
+
+        return {
+          id: link.id,
+          numero: link.cte_number || (cte ? cte.number : 'N/A'),
+          serie: link.cte_series || (cte ? cte.series : '-'),
+          dataEmissao: cte?.issue_date || new Date().toISOString(),
+          valor: cte ? parseFloat(cte.total_value || 0) : 0,
+          valorCusto: valorCustoCalculado,
+          status: cte ? cte.status : 'Desconhecido'
+        };
+      });
       
       setCtes(formattedCtes);
     } catch (error) {
@@ -92,6 +107,24 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
     if (s.includes('reprovado') || s.includes('cancelado')) return 'bg-red-100 text-red-800';
     if (s.includes('pendente')) return 'bg-yellow-100 text-yellow-800';
     return 'bg-gray-100 text-gray-800';
+  };
+  
+  // Calculate difference percentage
+  const calculateDifference = (cte: CTe) => {
+    if (cte.valor === 0 || cte.valorCusto === 0) return 0;
+    return ((cte.valor - cte.valorCusto) / cte.valorCusto) * 100;
+  };
+
+  // Get value comparison color
+  const getValueComparisonColor = (cte: CTe) => {
+    if (cte.valor === cte.valorCusto) return 'text-green-600';
+    
+    const diff = calculateDifference(cte);
+    if (diff === 0) return 'text-green-600';
+    
+    // Assuming a tolerance of ±5%
+    if (Math.abs(diff) <= 5) return 'text-yellow-600';
+    return 'text-red-600 dark:text-red-400';
   };
   
   if (!isOpen) return null;
@@ -147,7 +180,10 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
                     Data Emissão
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Valor
+                    Valor CT-e
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Valor Custo
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
@@ -173,8 +209,20 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(cte.dataEmissao)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {formatCurrency(cte.valor)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex flex-col">
+                        <span className={`font-medium ${getValueComparisonColor(cte)}`}>
+                          {formatCurrency(cte.valorCusto)}
+                        </span>
+                        {cte.valorCusto > 0 && (
+                          <span className={`text-xs ${getValueComparisonColor(cte)}`}>
+                            {calculateDifference(cte) > 0 ? '+' : ''}{calculateDifference(cte).toFixed(2)}%
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusColor(cte.status)}`}>
@@ -220,11 +268,19 @@ export const BillCTesModal: React.FC<BillCTesModalProps> = ({
           {/* Summary */}
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-800 font-medium">Total de CT-es: {ctes.length}</p>
-                <p className="text-xs text-blue-700 mt-1">
-                  Valor total: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}
-                </p>
+              <div className="flex items-center space-x-12">
+                <div>
+                  <p className="text-sm text-blue-800 font-medium dark:text-blue-300">Total de CT-es: {ctes.length}</p>
+                  <p className="text-sm font-bold text-blue-700 mt-1 dark:text-blue-400">
+                    Valor CT-e: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-blue-800 font-medium opacity-0">Espacador</p>
+                  <p className="text-sm font-bold text-green-700 mt-1 dark:text-green-400">
+                    Valor Custo: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valorCusto, 0))}
+                  </p>
+                </div>
               </div>
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

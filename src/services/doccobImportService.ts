@@ -49,25 +49,30 @@ export const doccobImportService = {
           billsProcessed++;
 
           // 2. Link the CT-es
-          if (parsedBill.ctes_numbers && parsedBill.ctes_numbers.length > 0) {
+          if (parsedBill.ctes_data && parsedBill.ctes_data.length > 0) {
             
+            // Extract just the numbers for the IN query
+            const numbersList = parsedBill.ctes_data.map(cte => cte.number);
+
             // Search internally for these CTEs using the 'ctes_complete' table
             const { data: matchedCtes, error: searchError } = await (supabase as any)
                 .from('ctes_complete')
-                .select('id, number')
-                .in('number', parsedBill.ctes_numbers);
+                .select('id, number, series')
+                .in('number', numbersList);
                 
             if (searchError) {
                 errors.push(`Erro ao buscar CT-es para a fatura ${parsedBill.bill_number}: ${searchError.message}`);
                 continue;
             }
 
+            // Improve matching by number+series if both present, but typically number is enough
             const ctesMap = new Map((matchedCtes || []).map((cte: any) => [cte.number, cte.id]));
 
-            const linksToInsert = parsedBill.ctes_numbers.map(cteNum => ({
+            const linksToInsert = parsedBill.ctes_data.map(cteData => ({
                 bill_id: billData.id,
-                cte_id: ctesMap.get(cteNum) || null,
-                cte_number: cteNum
+                cte_id: ctesMap.get(cteData.number) || null,
+                cte_number: cteData.number,
+                cte_series: cteData.series
             }));
 
             // Insert links sequentially to avoid duplicates since we 'upsert' bills, 

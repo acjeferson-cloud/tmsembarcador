@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { FileText, Download, RefreshCw, Calendar, Filter, Search, CheckCircle, AlertCircle, Clock, X, Database, Truck, User, Building, MapPin, FileUp, Plus } from 'lucide-react';
+import { FileText, RefreshCw, Search, CheckCircle, AlertCircle, Clock, X, Plus } from 'lucide-react';
 import { carriers } from '../../data/mockData';
 import { establishments } from '../../data/establishmentsData';
 import { brazilianStates } from '../../data/statesData';
 import { getCurrentSessionContext } from '../../lib/sessionContext';
 import { isDemoOrganizationSync } from '../../utils/organizationHelpers';
+import { Toast, ToastType } from '../common/Toast';
 
 // EDI Layout types
 type EDILayoutType = 'NOTFIS' | 'CONEMB' | 'OCOREN' | 'DOCCOB';
@@ -46,6 +47,7 @@ export const EDIOutput: React.FC = () => {
   });
   const [previewData, setPreviewData] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   // EDI output files - Mostra dados de exemplo APENAS para organization de demonstração
   const [mockFiles, setMockFiles] = useState<EDIOutputFile[]>([]);
@@ -263,7 +265,7 @@ export const EDIOutput: React.FC = () => {
     const file = mockFiles.find(f => f.id === fileId);
     if (!file) return;
     
-    alert(`Baixando arquivo ${file.name}`);
+    setToast({ message: `Baixando arquivo ${file.name}`, type: 'success' });
   };
 
   // Handle input change for generation form
@@ -279,12 +281,12 @@ export const EDIOutput: React.FC = () => {
   const handleGeneratePreview = () => {
     // Validate required fields
     if (!generationData.transportador) {
-      alert('Por favor, selecione um transportador');
+      setToast({ message: 'Por favor, selecione um transportador', type: 'warning' });
       return;
     }
     
     if (!generationData.periodoInicio || !generationData.periodoFim) {
-      alert('Por favor, informe o período');
+      setToast({ message: 'Por favor, informe o período', type: 'warning' });
       return;
     }
     
@@ -350,7 +352,7 @@ export const EDIOutput: React.FC = () => {
       setShowGenerateForm(false);
       setIsGenerating(false);
       
-      alert(`Arquivo ${newFile.name} gerado com sucesso!`);
+      setToast({ message: `Arquivo ${newFile.name} gerado com sucesso!`, type: 'success' });
     }, 2000);
   };
 
@@ -365,6 +367,13 @@ export const EDIOutput: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       <Breadcrumbs items={breadcrumbItems} />
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">EDIs de Saída</h1>

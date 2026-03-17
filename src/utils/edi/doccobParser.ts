@@ -10,7 +10,7 @@ export interface DoccobBill {
   issue_date: Date;
   due_date?: Date;
   total_value: number;
-  ctes_numbers: string[];
+  ctes_data: { number: string; series: string }[];
 }
 
 /**
@@ -46,10 +46,13 @@ export const parseDoccob = (content: string): DoccobBill[] => {
         bills.push(currentBill as DoccobBill);
       }
       
-      const billNumber = line.substring(18, 28).trim();
+      // Número da fatura (pos 18-27 => indices 17-27, length 10)
+      let billNumber = line.substring(17, 27).trim().replace(/^0+/, '');
+      if (billNumber === '') billNumber = '0';
       
       // Datas no formato DDMMAAAA
-      const issueDateStr = line.substring(28, 36); 
+      // Data de Emissão (pos 28-35 => indices 27-35, length 8)
+      const issueDateStr = line.substring(27, 35); 
       let issueDate = new Date();
       if (issueDateStr && issueDateStr.length === 8) {
         const day = parseInt(issueDateStr.substring(0, 2), 10);
@@ -58,7 +61,8 @@ export const parseDoccob = (content: string): DoccobBill[] => {
         issueDate = new Date(year, month, day);
       }
 
-      const dueDateStr = line.substring(36, 44);
+      // Data de Vencimento (pos 36-43 => indices 35-43, length 8)
+      const dueDateStr = line.substring(35, 43);
       let dueDate: Date | undefined;
       if (dueDateStr && dueDateStr.length === 8 && dueDateStr.trim() !== '00000000') {
         const day = parseInt(dueDateStr.substring(0, 2), 10);
@@ -67,8 +71,8 @@ export const parseDoccob = (content: string): DoccobBill[] => {
         dueDate = new Date(year, month, day);
       }
 
-      // Valor total (pos 44-59 => length 15)
-      const valueStr = line.substring(44, 59).trim() || '0';
+      // Valor total (pos 44-58 => length 15 => indices 43-58)
+      const valueStr = line.substring(43, 58).trim() || '0';
       const totalValue = parseInt(valueStr, 10) / 100;
       
       currentBill = {
@@ -78,16 +82,25 @@ export const parseDoccob = (content: string): DoccobBill[] => {
         total_value: totalValue,
         customer_document: generalCustomerDoc,
         customer_name: generalCustomerName,
-        ctes_numbers: []
+        ctes_data: []
       };
     }
     
     // Registro 353 - Documentos do Frete (CTE)
     else if (regType === '353') {
       if (currentBill) {
-        const cteNumber = line.substring(15, 24).trim();
-        if (cteNumber) {
-          currentBill.ctes_numbers!.push(cteNumber);
+        // Posição x (O usuário disse 710126 inves de 7101267, quebrando no 15 size 9.
+        // Se 14, 5 é a serie, então o CT-e numero é 19...
+        // O layout DOCCOB 3.1 diz: Serie pos 13 size 5 (index 12-17). Numero pos 18 size 12 (index 17-29)
+        // Corrigindo para os indices reais da fita 353 (Pos 14 = index 13, Pos 19 = index 18)
+        const realCteSeries = line.substring(13, 18).trim().replace(/^0+/, '') || '0'; 
+        const realCteNumber = line.substring(18, 30).trim().replace(/^0+/, '');
+        
+        if (realCteNumber) {
+          currentBill.ctes_data!.push({
+             number: realCteNumber,
+             series: realCteSeries
+          });
         }
       }
     }

@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Upload, FileText, CheckCircle, AlertCircle, X, Info, RefreshCw, FileUp, Database, Filter } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, X, Info, RefreshCw, FileUp, Database } from 'lucide-react';
 import { doccobImportService } from '../../services/doccobImportService';
+import { Toast, ToastType } from '../common/Toast';
 
 // EDI Layout types
 type EDILayoutType = 'NOTFIS' | 'CONEMB' | 'OCOREN' | 'DOCCOB';
@@ -29,6 +30,7 @@ export const EDIInput: React.FC = () => {
   const [observations, setObservations] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stats
@@ -46,7 +48,7 @@ export const EDIInput: React.FC = () => {
     const newFiles = Array.from(e.target.files).filter(file => file.type === 'text/plain' || file.name.endsWith('.txt'));
     
     if (newFiles.length === 0) {
-      alert('Por favor, selecione apenas arquivos .txt');
+      setToast({ message: 'Por favor, selecione apenas arquivos .txt', type: 'error' });
       return;
     }
     
@@ -68,7 +70,7 @@ export const EDIInput: React.FC = () => {
     setIsDragActive(false);
     
     if (!selectedLayout) {
-      alert('Por favor, selecione um tipo de importação primeiro');
+      setToast({ message: 'Por favor, selecione um tipo de importação primeiro', type: 'warning' });
       return;
     }
     
@@ -77,7 +79,7 @@ export const EDIInput: React.FC = () => {
     );
     
     if (droppedFiles.length === 0) {
-      alert('Por favor, arraste apenas arquivos .txt');
+      setToast({ message: 'Por favor, arraste apenas arquivos .txt', type: 'error' });
       return;
     }
     
@@ -246,12 +248,12 @@ export const EDIInput: React.FC = () => {
 
   const handleProcessAll = async () => {
     if (files.length === 0) {
-      alert('Não há arquivos para processar');
+      setToast({ message: 'Não há arquivos para processar', type: 'warning' });
       return;
     }
     
     if (files.some(f => f.status === 'uploading' || f.status === 'validating')) {
-      alert('Aguarde o término do processamento de todos os arquivos');
+      setToast({ message: 'Aguarde o término do processamento de todos os arquivos', type: 'warning' });
       return;
     }
     
@@ -259,7 +261,7 @@ export const EDIInput: React.FC = () => {
     
     const validFiles = files.filter(f => f.status === 'success');
     if (validFiles.length === 0) {
-      alert('Não há arquivos válidos para processar');
+      setToast({ message: 'Não há arquivos válidos para processar', type: 'error' });
       setIsProcessing(false);
       return;
     }
@@ -280,14 +282,14 @@ export const EDIInput: React.FC = () => {
 
       setIsProcessing(false);
       if (allErrors.length === 0) {
-        alert(`Processamento concluído: ${totalProcessed} fatura(s) importada(s) com sucesso e ${totalCTesLinked} CT-e(s) vinculado(s).`);
+        setToast({ message: `Processamento concluído: ${totalProcessed} fatura(s) importada(s) com sucesso e ${totalCTesLinked} CT-e(s) vinculado(s).`, type: 'success' });
       } else {
-        alert(`Processamento com avisos: ${totalProcessed} fatura(s) importada(s).\nErros encontrados:\n${allErrors.join('\n')}`);
+        setToast({ message: `Processamento com avisos: ${totalProcessed} fatura(s) importada(s).\nErros encontrados:\n${allErrors.join('\n')}`, type: 'warning' });
       }
     } else {
       // Simulate processing for other layout types
       setTimeout(() => {
-        alert(`Processamento de ${selectedLayout} concluído (Simulado)`);
+        setToast({ message: `Processamento de ${selectedLayout} concluído (Simulado)`, type: 'success' });
         setIsProcessing(false);
       }, 2000);
     }
@@ -296,7 +298,7 @@ export const EDIInput: React.FC = () => {
   const exportErrorReport = () => {
     const errorFiles = files.filter(f => f.status === 'error');
     if (errorFiles.length === 0) {
-      alert('Não há erros para exportar');
+      setToast({ message: 'Não há erros para exportar', type: 'warning' });
       return;
     }
     
@@ -317,6 +319,13 @@ export const EDIInput: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       <Breadcrumbs items={breadcrumbItems} />
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">EDIs de Entrada</h1>

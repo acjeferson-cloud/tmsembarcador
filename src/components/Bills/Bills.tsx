@@ -57,11 +57,11 @@ export const Bills: React.FC = () => {
         dataEmissao: bill.issue_date,
         dataVencimento: bill.due_date,
         dataEntrada: bill.created_at,
-        dataAprovacao: bill.updated_at,
+        dataAprovacao: (bill.status !== 'importada' && bill.status !== 'cancelada') ? bill.updated_at : null,
         transportador: bill.customer_name,
         valorCTes: parseFloat(bill.total_value?.toString() || '0'),
         valorDesconto: parseFloat(bill.discount_value?.toString() || '0'),
-        valorCusto: parseFloat(bill.paid_value?.toString() || '0'),
+        valorCusto: bill.calculated_cost || parseFloat(bill.paid_value?.toString() || '0'),
         cteCount: bill.cteCount || 0
       }));
 
@@ -166,7 +166,7 @@ export const Bills: React.FC = () => {
           newStatus = 'auditada_reprovada';
           break;
         case 'revert':
-          newStatus = 'importado';
+          newStatus = 'importada';
           break;
         // others doesn't change state directly
       }
@@ -219,7 +219,7 @@ export const Bills: React.FC = () => {
           setShowRejectionModal(true);
           break;
         case 'revert':
-          await billsService.updateStatus(billId.toString(), 'importado');
+          await billsService.updateStatus(billId.toString(), 'importada');
           setToast({ message: `Estornando a fatura ${bill.numero}.`, type: 'info' });
           loadBills();
           break;
@@ -334,7 +334,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Importadas</p>
               <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-1">
-                {bills.filter(bill => bill.status === 'importado').length}
+                {bills.filter(bill => bill.status === 'importada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -348,7 +348,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auditadas e Aprovadas</p>
               <p className="text-2xl font-semibold text-green-600 mt-1">
-                {bills.filter(bill => bill.status === 'auditado_aprovado').length}
+                {bills.filter(bill => bill.status === 'auditada_aprovada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -362,7 +362,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auditadas e Reprovadas</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                {bills.filter(bill => bill.status === 'auditado_reprovado').length}
+                {bills.filter(bill => bill.status === 'auditada_reprovada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
@@ -390,7 +390,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
               <p className="text-2xl font-semibold text-red-600 mt-1">
-                {bills.filter(bill => bill.status === 'cancelado').length}
+                {bills.filter(bill => bill.status === 'cancelada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">

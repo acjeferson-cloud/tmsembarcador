@@ -65,7 +65,10 @@ export const BillsTable = React.memo<BillsTableProps>(({
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
-    
+    // Handle null values
+    if (aValue === null) aValue = '';
+    if (bValue === null) bValue = '';
+
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
@@ -101,34 +104,34 @@ export const BillsTable = React.memo<BillsTableProps>(({
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'importado':
-        return 'bg-white text-gray-800 border border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600';
-      case 'auditado_aprovado':
-        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
-      case 'auditado_reprovado':
+      case 'importada':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      case 'auditada_aprovada':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'auditada_reprovada':
         return 'bg-gray-900 text-white dark:bg-black dark:text-gray-100';
       case 'com_nfe_referenciada':
-        return 'bg-yellow-400 text-gray-900 dark:bg-yellow-500 dark:text-gray-900';
-      case 'cancelado':
-        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'cancelada':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        return 'bg-white text-gray-800 border border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600';
     }
   };
 
   // Get status label
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'importado':
-        return 'Importado';
-      case 'auditado_aprovado':
+      case 'importada':
+        return 'Importada';
+      case 'auditada_aprovada':
         return 'Auditada e Aprovada';
-      case 'auditado_reprovado':
+      case 'auditada_reprovada':
         return 'Auditada e Reprovada';
       case 'com_nfe_referenciada':
         return 'Com NF-e Referenciada';
-      case 'cancelado':
-        return 'Cancelado';
+      case 'cancelada':
+        return 'Cancelada';
       default:
         return status;
     }
@@ -147,7 +150,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
   };
 
   // Toggle action menu
-  const toggleActionMenu = (billId: number) => {
+  const toggleActionMenu = (billId: string | number) => {
     setOpenActionMenu(openActionMenu === billId ? null : billId);
   };
 
@@ -171,6 +174,11 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   />
                 </div>
               </th>
+              
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Ações
+              </th>
+
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -183,6 +191,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
+              
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -195,6 +204,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
+              
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -207,18 +217,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
-              <th 
-                scope="col" 
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSort('dataVencimento')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>Data Vencimento</span>
-                  {sortField === 'dataVencimento' && (
-                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
-                </div>
-              </th>
+              
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -231,6 +230,20 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
+
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('dataVencimento')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Data Vencimento</span>
+                  {sortField === 'dataVencimento' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </th>
+              
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -243,6 +256,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
+              
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -255,30 +269,20 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
+              
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                 onClick={() => handleSort('valorCTes')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Valor CT-e(s)</span>
+                  <span>Valor Fatura</span>
                   {sortField === 'valorCTes' && (
                     sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                   )}
                 </div>
               </th>
-              <th 
-                scope="col" 
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSort('valorDesconto')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>Valor Desconto</span>
-                  {sortField === 'valorDesconto' && (
-                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
-                </div>
-              </th>
+
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -291,14 +295,25 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   )}
                 </div>
               </th>
-              <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Ações
+              
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('valorDesconto')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Valor Desconto</span>
+                  {sortField === 'valorDesconto' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
               </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
             {paginatedBills.map((bill) => (
               <tr key={bill.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                {/* CHECKBOX */}
                 <td className="px-3 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
@@ -308,58 +323,24 @@ export const BillsTable = React.memo<BillsTableProps>(({
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(bill.status)}`}>
-                    {getStatusLabel(bill.status)}
-                  </span>
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {bill.numero}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(bill.dataEmissao)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(bill.dataVencimento)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(bill.dataEntrada)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(bill.dataAprovacao)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {bill.transportador}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                  {formatCurrency(bill.valorCTes)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                  {formatCurrency(bill.valorDesconto)}
-                </td>
-                <td className={`px-3 py-4 whitespace-nowrap text-sm font-medium ${getValueComparisonColor(bill)}`}>
-                  {formatCurrency(bill.valorCusto)}
-                  <span className="text-xs ml-1">
-                    ({calculateDifference(bill).toFixed(2)}%)
-                  </span>
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                  <div className="flex items-center justify-end space-x-1">
-                    {/* View CT-es - Available for all statuses */}
+
+                <td className="px-3 py-4 whitespace-nowrap text-left text-sm font-medium relative">
+                  <div className="flex items-center justify-start space-x-1">
+                    {/* View CT-es */}
                     <button
                       onClick={() => onAction(bill.id, 'view-ctes')}
                       disabled={isLoading}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/50"
                       title={`Consultar CT-es (${bill.cteCount})`}
                     >
                       <Eye size={16} />
                     </button>
                     
-                    {/* View Details - Available for all statuses */}
+                    {/* View Details */}
                     <button
                       onClick={() => onAction(bill.id, 'view-details')}
                       disabled={isLoading}
-                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50"
+                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/50"
                       title="Visualizar Detalhes"
                     >
                       <Eye size={16} />
@@ -370,7 +351,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                       <button
                         onClick={() => toggleActionMenu(bill.id)}
                         disabled={isLoading}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white p-1 rounded hover:bg-gray-50 dark:bg-gray-900"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
                         title="Mais ações"
                       >
                         <MoreHorizontal size={16} />
@@ -378,111 +359,114 @@ export const BillsTable = React.memo<BillsTableProps>(({
                       
                       {/* Dropdown menu */}
                       {openActionMenu === bill.id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                           <div className="py-1">
-                            {/* Print DACTE - Available for all statuses */}
                             <button
-                              onClick={() => {
-                                onAction(bill.id, 'print');
-                                setOpenActionMenu(null);
-                              }}
+                              onClick={() => { onAction(bill.id, 'print'); setOpenActionMenu(null); }}
                               disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 flex items-center space-x-2"
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                             >
-                              <Printer size={14} />
-                              <span>Imprimir DACTE</span>
+                              <Printer size={14} /><span>Imprimir DACTE</span>
                             </button>
                             
-                            {/* Recalculate - Not for approved */}
                             {bill.status !== 'auditada_aprovada' && (
                               <button
-                                onClick={() => {
-                                  onAction(bill.id, 'recalculate');
-                                  setOpenActionMenu(null);
-                                }}
+                                onClick={() => { onAction(bill.id, 'recalculate'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-700 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                               >
-                                <RefreshCw size={14} />
-                                <span>Recalcular Fatura</span>
+                                <RefreshCw size={14} /><span>Recalcular Fatura</span>
                               </button>
                             )}
                             
-                            {/* Approve - Not for approved */}
                             {bill.status !== 'auditada_aprovada' && (
                               <button
-                                onClick={() => {
-                                  onAction(bill.id, 'approve');
-                                  setOpenActionMenu(null);
-                                }}
+                                onClick={() => { onAction(bill.id, 'approve'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center space-x-2"
                               >
-                                <ThumbsUp size={14} />
-                                <span>Aprovar Fatura</span>
+                                <ThumbsUp size={14} /><span>Aprovar Fatura</span>
                               </button>
                             )}
                             
-                            {/* Reject - Not for approved */}
                             {bill.status !== 'auditada_aprovada' && (
                               <button
-                                onClick={() => {
-                                  onAction(bill.id, 'reject');
-                                  setOpenActionMenu(null);
-                                }}
+                                onClick={() => { onAction(bill.id, 'reject'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2"
                               >
-                                <ThumbsDown size={14} />
-                                <span>Reprovar Fatura</span>
+                                <ThumbsDown size={14} /><span>Reprovar Fatura</span>
                               </button>
                             )}
                             
-                            {/* Revert - Only for approved or rejected */}
                             {(bill.status === 'auditada_aprovada' || bill.status === 'auditada_reprovada') && (
                               <button
-                                onClick={() => {
-                                  onAction(bill.id, 'revert');
-                                  setOpenActionMenu(null);
-                                }}
+                                onClick={() => { onAction(bill.id, 'revert'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 flex items-center space-x-2"
                               >
-                                <ArrowClockwise size={14} />
-                                <span>Estornar Fatura</span>
+                                <ArrowClockwise size={14} /><span>Estornar Fatura</span>
                               </button>
                             )}
                             
-                            {/* Delete - Available for all */}
                             <button
-                              onClick={() => {
-                                onAction(bill.id, 'delete');
-                                setOpenActionMenu(null);
-                              }}
+                              onClick={() => { onAction(bill.id, 'delete'); setOpenActionMenu(null); }}
                               disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                             >
-                              <Trash2 size={14} />
-                              <span>Excluir Fatura</span>
+                              <Trash2 size={14} /><span>Excluir Fatura</span>
                             </button>
 
-                            {/* Download XML - Available for all statuses */}
                             <button
-                              onClick={() => {
-                                onAction(bill.id, 'download');
-                                setOpenActionMenu(null);
-                              }}
+                              onClick={() => { onAction(bill.id, 'download'); setOpenActionMenu(null); }}
                               disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                              className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                             >
-                              <Download size={14} />
-                              <span>Download XML</span>
+                              <Download size={14} /><span>Download XML</span>
                             </button>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
+                </td>
+
+                {/* STATUS */}
+                <td className="px-3 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(bill.status)}`}>
+                    {getStatusLabel(bill.status)}
+                  </span>
+                </td>
+
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {bill.numero}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(bill.dataEmissao)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(bill.dataEntrada)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(bill.dataVencimento)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(bill.dataAprovacao)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {bill.transportador && bill.transportador.trim() !== '' ? `0001 - ${bill.transportador}` : 'N/A'}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                  {formatCurrency(bill.valorCTes)}
+                </td>
+                <td className={`px-3 py-4 whitespace-nowrap text-sm font-medium ${getValueComparisonColor(bill)}`}>
+                  {formatCurrency(bill.valorCusto)}
+                  <span className="text-xs ml-1">
+                    ({calculateDifference(bill).toFixed(2)}%)
+                  </span>
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                  {formatCurrency(bill.valorDesconto)}
                 </td>
               </tr>
             ))}
