@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Package, Weight, Ruler, DollarSign, Calendar, Key } from 'lucide-react';
+import { Package, Weight, Box } from 'lucide-react';
 import { pickupsService } from '../../services/pickupsService';
 
 interface PickupInvoicesTabProps {
@@ -26,17 +26,6 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -49,143 +38,84 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
   if (invoices.length === 0) {
     return (
       <div className="text-center py-12">
-        <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-600 dark:text-gray-400">Nenhuma nota fiscal vinculada a esta coleta</p>
       </div>
     );
   }
 
+  const parseInvoice = (item: any) => {
+    const inv = item.invoices_nfe || item.invoices;
+    if (!inv) return null;
+
+    const cubic_meters = inv.cubagem_total || (inv.products || []).reduce((acc: number, p: any) => acc + (Number(p.cubagem) || 0), 0);
+
+    return {
+      id: inv.id || item.id,
+      numero: inv.numero || inv.numero_nota || '-',
+      cliente: inv.customer?.[0]?.razao_social || 'NÃO IDENTIFICADO',
+      pesoTotal: inv.peso_total || inv.peso || 0,
+      volumes: inv.quantidade_volumes || 1,
+      metros_cubicos: cubic_meters || inv.metros_cubicos || 0,
+    };
+  };
+
+  const formattedInvoices = invoices.map(parseInvoice).filter(Boolean);
+  
+  const totals = {
+    volumes: formattedInvoices.reduce((sum, inv) => sum + (inv?.volumes || 0), 0),
+    peso: formattedInvoices.reduce((sum, inv) => sum + (inv?.pesoTotal || 0), 0),
+    cubagem: formattedInvoices.reduce((sum, inv) => sum + (inv?.metros_cubicos || 0), 0),
+  };
+
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-300">
-          <strong>{invoices.length}</strong> nota{invoices.length > 1 ? 's' : ''} fiscal{invoices.length > 1 ? 'is' : ''} vinculada{invoices.length > 1 ? 's' : ''} a esta coleta
-        </p>
+      {/* Resumo */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between">
+         <div className="flex-1">
+           <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 flex items-center gap-1"><Package size={14} /> Volumes</p>
+           <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{totals.volumes}</p>
+         </div>
+         <div className="flex-1">
+           <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 flex items-center gap-1"><Weight size={14} /> Peso Total</p>
+           <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{totals.peso.toFixed(2)} kg</p>
+         </div>
+         <div className="flex-1">
+           <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 flex items-center gap-1"><Package size={14} /> NFs</p>
+           <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{formattedInvoices.length}</p>
+         </div>
+         <div className="flex-1 text-right">
+           <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1 flex items-center justify-end gap-1"><Box size={14} /> Metragem Cúbica</p>
+           <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{totals.cubagem.toFixed(4)} m³</p>
+         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      {/* Lista de Notas Fiscais */}
+      <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Número NF
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Chave NF-e
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Data Emissão
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Qtd
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Peso (kg)
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Cubagem (m³)
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Valor Unit.
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                Valor Total
-              </th>
+              <th className="px-4 py-3 font-medium">Nota Fiscal</th>
+              <th className="px-4 py-3 font-medium">Destinatário</th>
+              <th className="px-4 py-3 font-medium text-right">Peso</th>
+              <th className="px-4 py-3 font-medium text-right">Volumes</th>
+              <th className="px-4 py-3 font-medium text-right">Metragem Cub.</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {invoices.map((item) => {
-              const invoice = item.invoices;
-              if (!invoice) return null;
-
-              return (
-                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
-                      <FileText className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.numero_nota || '-'} {invoice.serie && `- ${invoice.serie}`}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center">
-                      <Key className="w-3 h-3 mr-1 text-gray-400" />
-                      <span className="truncate max-w-[150px]" title={invoice.chave_nfe}>
-                        {invoice.chave_nfe ? `${invoice.chave_nfe}` : '-'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.data_emissao ? formatDate(invoice.data_emissao) : '-'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
-                      <Package className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.quantidade_volumes || 0}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
-                      <Weight className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.peso ? `${invoice.peso.toFixed(3)}` : '-'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
-                      <Ruler className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.metros_cubicos ? invoice.metros_cubicos.toFixed(3) : '-'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div className="flex items-center">
-                      <DollarSign className="w-4 h-4 mr-2 text-gray-400" />
-                      {invoice.valor_total && invoice.quantidade_volumes && invoice.quantidade_volumes > 0 
-                        ? formatCurrency(invoice.valor_total / invoice.quantidade_volumes) 
-                        : formatCurrency(0)}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-semibold">
-                    <div className="flex items-center">
-                      {invoice.valor_total ? formatCurrency(invoice.valor_total) : formatCurrency(0)}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
+            {formattedInvoices.map((invoice: any) => (
+              <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{invoice.numero}</td>
+                <td className="px-4 py-3 truncate max-w-[200px]" title={invoice.cliente}>
+                  {invoice.cliente}
+                </td>
+                <td className="px-4 py-3 text-right">{invoice.pesoTotal.toFixed(2)} kg</td>
+                <td className="px-4 py-3 text-right">{invoice.volumes}</td>
+                <td className="px-4 py-3 text-right">{invoice.metros_cubicos.toFixed(4)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
-      </div>
-
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Totais da Coleta</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total de Volumes</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {invoices.reduce((sum, item) => sum + (item.invoices?.quantidade_volumes || 0), 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Peso Total</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {invoices.reduce((sum, item) => sum + (item.invoices?.peso || 0), 0).toFixed(2)} kg
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">m³ Total</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {invoices.reduce((sum, item) => sum + (item.invoices?.metros_cubicos || 0), 0).toFixed(3)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Valor Total</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {formatCurrency(invoices.reduce((sum, item) => sum + (item.invoices?.valor_total || 0), 0))}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

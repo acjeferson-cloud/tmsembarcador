@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, Download, XCircle, Send } from 'lucide-react';
+import { Printer, Download, XCircle, Send, CheckCircle } from 'lucide-react';
 
 interface PickupsActionsProps {
   selectedCount: number;
@@ -28,12 +28,12 @@ export const PickupsActions: React.FC<PickupsActionsProps> = ({ selectedCount, o
         </button>
 
         <button
-          onClick={() => onAction('cancelar')}
+          onClick={() => onAction('realizar')}
           disabled={selectedCount === 0 || isLoading}
-          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+          className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
         >
-          <XCircle size={16} />
-          <span>Cancelar</span>
+          <CheckCircle size={16} />
+          <span>Marcar como Realizada</span>
         </button>
 
         <button
@@ -52,6 +52,15 @@ export const PickupsActions: React.FC<PickupsActionsProps> = ({ selectedCount, o
         >
           <Download size={16} />
           <span>Exportar</span>
+        </button>
+
+        <button
+          onClick={() => onAction('cancelar')}
+          disabled={selectedCount === 0 || isLoading}
+          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+        >
+          <XCircle size={16} />
+          <span>Cancelar</span>
         </button>
       </div>
     </div>

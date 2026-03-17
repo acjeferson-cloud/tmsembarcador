@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { usersService } from './usersService';
 
 interface Pickup {
   id?: string;
@@ -9,6 +10,7 @@ interface Pickup {
   customer_name: string;
   carrier_id?: string;
   carrier_name: string;
+  carrier_email?: string;
   scheduled_date: string;
   scheduled_time_start?: string;
   scheduled_time_end?: string;
@@ -32,35 +34,10 @@ interface Pickup {
   updated_by?: number;
 }
 
-interface PickupInvoice {
-  id?: string;
-  pickup_id: string;
-  invoice_id: string;
-  freight_table_name?: string;
-  freight_rate_value?: number;
-  created_at?: string;
-}
-
-interface Invoice {
-  id: string;
-  numero_nota: string;
-  serie: string;
-  chave_nfe: string;
-  data_emissao: string;
-  numero_pedido?: string;
-  quantidade_volumes: number;
-  metros_cubicos?: number;
-  peso: number;
-  valor_total: number;
-  mercadoria?: string;
-  transportador_nome?: string;
-  transportador_id?: string;
-}
-
 interface CreatePickupFromInvoicesParams {
   invoiceIds: string[];
   establishmentId: string;
-  userId: number;
+  userId?: number;
 }
 
 interface CreatePickupResult {
@@ -89,7 +66,7 @@ export const pickupsService = {
 
       if (error) throw error;
       
-      return (data || []).map((p: any) => ({
+      const mappedPickups = (data || []).map((p: any) => ({
         id: p.id,
         pickup_number: p.numero_coleta,
         establishment_id: p.establishment_id,
@@ -110,8 +87,27 @@ export const pickupsService = {
         total_volume: p.valor_total || 0,
         status: p.status,
         created_at: p.created_at,
+        created_by: p.metadata?.created_by,
         observations: p.observacoes || ''
       })) as Pickup[];
+
+      try {
+        const users = await usersService.getAll();
+        // Since `created_by` numeric IDs match the `useAuth` user.id (which is `u.codigo` as integer),
+        // we map the users list by `Number(u.codigo)` or fallback to direct numeric conversion.
+        const userMap = new Map(users.map(u => {
+          const numericId = Number(u.codigo) || (typeof u.id === 'number' ? u.id : parseInt(String(u.id), 10));
+          return [!isNaN(numericId) ? numericId : u.id, u.nome];
+        }));
+
+        return mappedPickups.map(p => ({
+            ...p,
+            usuarioResponsavel: (p.created_by ? userMap.get(p.created_by) : null) || p.contact_name || 'Usuário Sistema'
+        }));
+      } catch (err) {
+        console.warn('Could not map users, falling back to contact_name', err);
+        return mappedPickups;
+      }
     } catch (error) {
       console.error('Error fetching pickups:', error);
       return [];
@@ -124,7 +120,7 @@ export const pickupsService = {
         .from('pickups')
         .select(`
           *,
-          carrier:carriers(id, razao_social, codigo),
+          carrier:carriers(id, razao_social, codigo, email),
           pickup_invoices(count)
         `)
         .eq('id', id)
@@ -133,13 +129,14 @@ export const pickupsService = {
       if (error) throw error;
       if (!data) return null;
 
-      return {
+      const pickupData: any = {
         id: data.id,
         pickup_number: data.numero_coleta,
         establishment_id: data.establishment_id,
         customer_name: data.contato_nome || '',
         carrier_id: data.carrier_id,
         carrier_name: data.carrier?.razao_social || '',
+        carrier_email: data.carrier?.email || '',
         transportador: data.carrier ? `${data.carrier.codigo ? data.carrier.codigo + ' - ' : ''}${data.carrier.razao_social}` : 'N/A',
         scheduled_date: data.data_agendada || data.data_solicitacao,
         pickup_address: data.logradouro || '',
@@ -154,8 +151,22 @@ export const pickupsService = {
         total_volume: data.valor_total || 0,
         status: data.status,
         created_at: data.created_at,
+        created_by: data.metadata?.created_by,
         observations: data.observacoes || ''
       } as unknown as Pickup;
+
+      try {
+        if (pickupData.created_by) {
+          const user = await usersService.getByCodigo(pickupData.created_by.toString());
+          if (user && user.nome) {
+            pickupData.usuarioResponsavel = user.nome;
+          }
+        }
+      } catch (err) {
+        // Fallback to initial value
+      }
+
+      return pickupData;
     } catch (error) {
       console.error('Error in getById:', error);
       return null;
@@ -168,19 +179,22 @@ export const pickupsService = {
         .from('pickup_invoices')
         .select(`
           *,
-          invoices (
+          invoices_nfe (
             id,
-            numero_nota,
+            numero,
             serie,
-            chave_nfe,
+            chave_acesso,
             data_emissao,
-            numero_pedido,
             quantidade_volumes,
-            metros_cubicos,
-            peso,
+            peso_total,
+            cubagem_total,
             valor_total,
-            mercadoria,
-            transportador_nome
+            customer:invoices_nfe_customers(
+              razao_social
+            ),
+            products:invoices_nfe_products(
+              cubagem
+            )
           )
         `)
         .eq('pickup_id', pickupId);
@@ -257,7 +271,6 @@ export const pickupsService = {
         // In XML NFe imported, we didn't strictly map total weight and volume globally in the DB schema, 
         // we map it if present or leave it 0
         const totalWeight = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.peso) || 0), 0);
-        const totalVolume = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.metros_cubicos) || 0), 0);
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.quantidade_volumes) || 0), 0);
         const totalValue = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.valor_total) || 0), 0);
 
@@ -282,7 +295,8 @@ export const pickupsService = {
           status: 'emitida',
           observacoes: `Coleta criada automaticamente a partir de ${group.invoices.length} NFe(s)`,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          metadata: userId ? { created_by: userId } : {}
         };
 
         const { data: pickup, error: pickupError } = await (supabase as any)
@@ -305,6 +319,12 @@ export const pickupsService = {
         await (supabase as any)
           .from('pickup_invoices')
           .insert(pickupInvoices as any);
+
+        // Update the status of these invoices to "coletada"
+        await (supabase as any)
+          .from('invoices_nfe')
+          .update({ situacao: 'coletada', updated_at: new Date().toISOString() })
+          .in('id', group.invoices.map((inv: any) => inv.id));
 
         createdPickups.push({
           pickupId: pickup.id,
@@ -381,7 +401,6 @@ export const pickupsService = {
         const firstInvoice = group.invoices[0];
 
         const totalWeight = group.invoices.reduce((sum: number, inv: any) => sum + (inv.peso || 0), 0);
-        const totalVolume = group.invoices.reduce((sum: number, inv: any) => sum + (inv.metros_cubicos || 0), 0);
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (inv.quantidade_volumes || 0), 0);
         const totalValue = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.valor_total) || 0), 0);
 
@@ -406,7 +425,8 @@ export const pickupsService = {
           status: 'emitida',
           observacoes: `Coleta criada automaticamente a partir de ${group.invoices.length} nota(s) fiscal(is)`,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          metadata: userId ? { created_by: userId } : {}
         };
 
         const { data: pickup, error: pickupError } = await (supabase as any)
@@ -471,6 +491,20 @@ export const pickupsService = {
     } catch (error) {
 
       return { success: false, error: 'Erro ao atualizar coleta' };
+    }
+  },
+
+  async updateStatus(id: string, newStatus: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await (supabase as any)
+        .from('pickups')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Erro ao atualizar status da coleta' };
     }
   },
 

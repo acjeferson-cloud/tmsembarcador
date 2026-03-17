@@ -522,7 +522,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 >
                   <div className="flex items-center space-x-2">
                     <Package size={16} />
-                    <span>Produtos ({products.length})</span>
+                    <span>Itens ({products.length})</span>
                   </div>
                 </button>
                 <button
@@ -572,8 +572,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={formData.invoice_type}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('invoice_type', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -584,8 +584,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={formData.number}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('number', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -596,8 +596,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={formData.series}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('series', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -608,8 +608,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={formData.access_key}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-mono text-sm"
+                        onChange={(e) => handleInputChange('access_key', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 font-mono text-sm"
                       />
                     </div>
 
@@ -620,8 +620,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="date"
                         value={formData.issue_date}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('issue_date', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -656,8 +656,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="text"
                         value={formData.operation_nature}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('operation_nature', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -694,8 +694,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="number"
                         value={formData.weight}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('weight', Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -706,8 +706,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <input
                         type="number"
                         value={formData.volumes}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900"
+                        onChange={(e) => handleInputChange('volumes', Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800"
                       />
                     </div>
 
@@ -721,7 +721,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="Emitida">Emitida</option>
-                        <option value="Coletada">Coletada</option>
+                        <option value="Coletada">Em Coleta</option>
                         <option value="Em trânsito">Em trânsito</option>
                         <option value="Saiu p/ Entrega">Saiu p/ Entrega</option>
                         <option value="Entregue">Entregue</option>
@@ -939,33 +939,33 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
               {activeTab === 'products' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Adicione os produtos desta nota fiscal
-                    </p>
+                  {!xmlData && !invoice && products.length === 0 ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <p className="text-sm text-blue-800">
+                        <strong>Aguardando importação do XML:</strong> Os itens serão extraídos automaticamente após o upload do XML.
+                      </p>
+                    </div>
+                  ) : (
+                  <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Itens da Nota Fiscal</h3>
                     <button
                       onClick={addProduct}
-                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
                     >
-                      <span>+ Adicionar Produto</span>
+                      <span>+ Adicionar Item</span>
                     </button>
                   </div>
 
-                  {!xmlData && !invoice && products.length === 0 ? (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-800">
-                        <strong>Aguardando importação do XML:</strong> A lista de produtos será exibida após o upload do XML da NF-e.
-                      </p>
-                    </div>
-                  ) : products.length === 0 ? (
+                  {products.length === 0 ? (
                     <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
                       <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum produto adicionado</p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum item adicionado</p>
                       <button
                         onClick={addProduct}
                         className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        <span>+ Adicionar Primeiro Produto</span>
+                        <span>+ Adicionar Primeiro Item</span>
                       </button>
                     </div>
                   ) : (
@@ -1001,7 +1001,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 value={product.description}
                                 onChange={(e) => updateProduct(index, 'description', e.target.value)}
                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                placeholder="Descrição do produto"
+                                placeholder="Descrição do item"
                               />
                             </td>
                             <td className="py-3 px-4">
@@ -1061,7 +1061,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <tfoot>
                         <tr className="border-t-2 border-gray-300 bg-gray-50 dark:bg-gray-900">
                           <td colSpan={6} className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white text-right">
-                            Total dos Produtos:
+                            Total dos Itens:
                           </td>
                           <td className="py-3 px-4 text-sm font-bold text-gray-900 dark:text-white text-right">
                             {formatCurrency(products.reduce((sum, p) => sum + p.total_value, 0))}
@@ -1071,6 +1071,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       </tfoot>
                     </table>
                   </div>
+                  )}
+                  </>
                   )}
                 </div>
               )}

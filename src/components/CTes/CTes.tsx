@@ -40,7 +40,10 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
     dataEntrada: cte.entry_date || '',
     dataAprovacao: cte.created_at || '',
     tipoFrete: cte.freight_type,
-    transportador: cte.carrier ? `${cte.carrier.codigo} - ${cte.carrier.razao_social}` : '',
+    transportador: cte.carrier && cte.carrier.codigo ? `${String(cte.carrier.codigo).padStart(4, '0')} - ${cte.carrier.razao_social}` : (cte.carrier?.razao_social || ''),
+    previsaoEntrega: (cte as any).estimated_delivery_date || (cte as any).previsao_entrega || '',
+    cliente: cte.recipient_name || cte.sender_name || '',
+    cidadeDestino: cte.recipient_city || '',
     ufDestino: cte.recipient_state || '',
     valorCTe: parseFloat(cte.total_value.toString()),
     valorCusto: valorCustoCalculado,
@@ -588,8 +591,8 @@ export const CTes: React.FC = () => {
     }, 1000);
   };
 
-  const handleSingleAction = async (cteId: number, action: string) => {
-    const cte = ctes.find(c => c.id === cteId);
+  const handleSingleAction = async (cteId: string, action: string) => {
+    const cte = ctes.find(c => c.id.toString() === cteId.toString());
 
     if (!cte) {
       return;
@@ -669,7 +672,7 @@ export const CTes: React.FC = () => {
           setToast({ message: `CT-e ${cte.numero} aprovado com sucesso!`, type: 'success' });
           // Update CT-e in the mock data
           setCTes(prev => prev.map(c =>
-            c.id === cteId
+            c.id.toString() === cteId.toString()
               ? { ...c, status: 'aprovado', dataAprovacao: new Date().toISOString() }
               : c
           ));
@@ -681,7 +684,7 @@ export const CTes: React.FC = () => {
             setToast({ message: `CT-e ${cte.numero} reprovado com sucesso!`, type: 'success' });
             // Update CT-e in the mock data
             setCTes(prev => prev.map(c =>
-              c.id === cteId
+              c.id.toString() === cteId.toString()
                 ? { ...c, status: 'reprovado', dataAprovacao: new Date().toISOString() }
                 : c
             ));
@@ -691,7 +694,7 @@ export const CTes: React.FC = () => {
           setToast({ message: `CT-e ${cte.numero} estornado com sucesso!`, type: 'success' });
           // Update CT-e in the mock data
           setCTes(prev => prev.map(c =>
-            c.id === cteId
+            c.id.toString() === cteId.toString()
               ? { ...c, status: 'somente_importado', dataAprovacao: null }
               : c
           ));
@@ -956,7 +959,6 @@ export const CTes: React.FC = () => {
         onSelectCTe={handleSelectCTe}
         onAction={handleSingleAction}
         isLoading={isLoading}
-        userProfile={user?.perfil}
       />
 
       {/* No Results */}
@@ -1010,7 +1012,7 @@ export const CTes: React.FC = () => {
           cteData={divergenceReportData}
           establishmentId={currentEstablishment.id}
           establishmentName={currentEstablishment.name}
-          userId={user.id}
+          userId={user.id.toString()}
         />
       )}
 

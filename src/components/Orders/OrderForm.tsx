@@ -731,7 +731,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="emitido">Emitido</option>
-                        <option value="coletado">Coletado</option>
+                        <option value="coletado">Em Coleta</option>
                         <option value="em_transito">Em Trânsito</option>
                         <option value="saiu_entrega">Saiu p/Entrega</option>
                         <option value="entregue">Entregue</option>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, XCircle, Clock, Eye, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, User, MapPin, Building, Receipt, Loader, Package, Hash, Scale } from 'lucide-react';
+import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, Clock, User, MapPin, Building, Receipt, Loader, Package, Hash, Scale } from 'lucide-react';
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { supabase } from '../../lib/supabase';
 
@@ -34,28 +34,63 @@ interface InvoiceDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   invoice: Invoice;
+  onPrint?: () => void;
+  onDownload?: () => void;
 }
 
 export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   isOpen,
   onClose,
-  invoice
+  invoice,
+  onPrint,
+  onDownload
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'costs' | 'ctes'>('details');
   const [customer, setCustomer] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [ctes, setCtes] = useState<any[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isLoadingCtes, setIsLoadingCtes] = useState(false);
 
   useEffect(() => {
     if (isOpen && activeTab === 'details') {
       loadInvoiceDetails();
+    } else if (isOpen && activeTab === 'ctes') {
+      loadCTes();
     }
   }, [isOpen, activeTab, invoice.id]);
+
+  const loadCTes = async () => {
+    setIsLoadingCtes(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('ctes')
+        .select('*')
+        .eq('invoice_id', invoice.id);
+        
+      if (error) throw error;
+      
+      if (data) {
+        setCtes(data.map((item: any) => ({
+          id: item.id,
+          numero: item.numero || '',
+          serie: item.serie || '',
+          dataEmissao: item.data_emissao || new Date().toISOString(),
+          valor: Number(item.valor_total || 0),
+          status: item.status || 'Pendente'
+        })));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar CT-es vinculados:', error);
+    } finally {
+      setIsLoadingCtes(false);
+    }
+  };
 
   const loadInvoiceDetails = async () => {
     setIsLoadingDetails(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('invoices_nfe')
         .select(`
           *,
@@ -123,7 +158,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
       case 'emitida':
         return 'Emitida';
       case 'coletada':
-        return 'Coletada';
+        return 'Em Coleta';
       case 'em_transito_origem':
         return 'Em Trânsito - Origem';
       case 'em_transito_rota':
@@ -162,16 +197,6 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
         return statusColeta;
     }
   };
-  
-  // Generate mock CT-es for the invoice
-  const mockCTes = Array.from({ length: 3 }, (_, i) => ({
-    id: i + 1,
-    numero: (Math.floor(Math.random() * 9000) + 1000).toString(),
-    serie: Math.floor(Math.random() * 10).toString(),
-    dataEmissao: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-    valor: Math.floor(Math.random() * 2000) + 200,
-    status: ['Aprovado', 'Reprovado', 'Pendente'][Math.floor(Math.random() * 3)]
-  }));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -183,12 +208,14 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           </div>
           <div className="flex items-center space-x-3">
             <button
+              onClick={onPrint}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Printer size={16} />
               <span>Imprimir DANFE</span>
             </button>
             <button
+              onClick={onDownload}
               className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Download size={16} />
@@ -459,25 +486,25 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Razão Social / Nome</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.name}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.razao_social || customer.name || 'Não informado'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.cnpj}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ/CPF</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.cnpj_cpf || customer.cnpj || 'Não informado'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">CEP</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.zip_code}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.cep || customer.zip_code || 'Não informado'}</p>
                     </div>
                     <div className="md:col-span-2">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Endereço</p>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {customer.address}, {customer.number} - {customer.neighborhood}
+                        {customer.logradouro || customer.address || ''}{customer.numero || customer.number ? `, ${customer.numero || customer.number}` : ''}{customer.bairro || customer.neighborhood ? ` - ${customer.bairro || customer.neighborhood}` : ''}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Cidade / UF</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.city} / {customer.state}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.cidade || customer.city || ''} / {customer.estado || customer.state || ''}</p>
                     </div>
                     {customer.phone && (
                       <div>
@@ -505,7 +532,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                       <Package className="mr-2 text-blue-600" size={20} />
-                      Produtos da Nota Fiscal ({products.length} {products.length === 1 ? 'item' : 'itens'})
+                      Itens da Nota Fiscal ({products.length} {products.length === 1 ? 'item' : 'itens'})
                     </h4>
                   </div>
                   <div className="overflow-x-auto">
@@ -523,20 +550,20 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                         </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                        {products.map((product) => (
-                          <tr key={product.id} className="hover:bg-gray-50 dark:bg-gray-900 transition-colors">
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{product.item_order}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">{product.product_code}</td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white max-w-xs">{product.description}</td>
+                        {products.map((product, index) => (
+                          <tr key={product.id || index} className="hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{product.item_order || (index + 1)}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">{product.product_code || product.codigo || 'N/A'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white max-w-xs">{product.description || product.descricao || '-'}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white font-medium">
-                              {Number(product.quantity || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                              {Number(product.quantity || product.quantidade || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-600 dark:text-gray-400">{product.unit}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-600 dark:text-gray-400">{product.unit || product.unidade || 'UN'}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
-                              {formatCurrency(product.unit_value)}
+                              {formatCurrency(product.unit_value || product.valor_unitario)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900 dark:text-white">
-                              {formatCurrency(product.total_value)}
+                              {formatCurrency(product.total_value || product.valor_total)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-600 dark:text-gray-400 font-mono">
                               {product.ncm || '-'}
@@ -547,10 +574,10 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                       <tfoot className="bg-gray-50 dark:bg-gray-900">
                         <tr>
                           <td colSpan={6} className="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">
-                            Total dos Produtos:
+                            Total dos Itens:
                           </td>
                           <td className="px-4 py-3 text-right text-lg font-bold text-green-600">
-                            {formatCurrency(products.reduce((sum, p) => sum + p.total_value, 0))}
+                            {formatCurrency(products.reduce((sum, p) => sum + (p.total_value || p.valor_total || 0), 0))}
                           </td>
                           <td></td>
                         </tr>
@@ -563,8 +590,8 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   <div className="flex items-center space-x-3">
                     <Package className="text-yellow-600" size={24} />
                     <div>
-                      <p className="text-sm font-medium text-yellow-800">Nenhum produto encontrado</p>
-                      <p className="text-xs text-yellow-600 mt-1">Esta nota fiscal não possui produtos cadastrados.</p>
+                      <p className="text-sm font-medium text-yellow-800">Nenhum item encontrado</p>
+                      <p className="text-xs text-yellow-600 mt-1">Esta nota fiscal não possui itens cadastrados.</p>
                     </div>
                   </div>
                 </div>
@@ -580,7 +607,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   <div className="space-y-6">
                     {[
                       { status: 'emitida', label: 'Nota Fiscal Emitida', date: '15/01/2025 08:30', active: invoice.status === 'emitida', completed: true },
-                      { status: 'coletada', label: 'Coletada pela Transportadora', date: '15/01/2025 14:45', active: invoice.status === 'coletada', completed: ['coletada', 'em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
+                      { status: 'coletada', label: 'Em Coleta', date: '15/01/2025 14:45', active: invoice.status === 'coletada', completed: ['coletada', 'em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
                       { status: 'em_transito_origem', label: 'Em Trânsito - Saindo da Origem', date: '15/01/2025 16:20', active: invoice.status === 'em_transito_origem', completed: ['em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
                       { status: 'em_transito_rota', label: 'Em Trânsito na Rodovia', date: '16/01/2025 08:15', active: invoice.status === 'em_transito_rota', completed: ['em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
                       { status: 'chegada_destino', label: 'Chegada na Cidade de Destino', date: '17/01/2025 10:30', active: invoice.status === 'chegada_destino', completed: ['chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
@@ -682,64 +709,81 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                      {mockCTes.map((cte) => (
-                        <tr key={cte.id} className="hover:bg-gray-50 dark:bg-gray-900">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {cte.numero}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {cte.serie}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {formatDate(cte.dataEmissao)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {formatCurrency(cte.valor)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              cte.status === 'Aprovado' ? 'bg-green-100 text-green-800' : 
-                              cte.status === 'Reprovado' ? 'bg-red-100 text-red-800' : 
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {cte.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end space-x-2">
-                              <button
-                                className="text-blue-600 hover:text-blue-900"
-                              >
-                                Visualizar
-                              </button>
-                            </div>
+                      {isLoadingCtes ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                            Carregando CT-es...
                           </td>
                         </tr>
-                      ))}
+                      ) : ctes.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                            <Truck size={48} className="mx-auto text-gray-400 mb-4" />
+                            <p className="text-gray-600 dark:text-gray-400">Nenhum CT-e vinculado encontrado.</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        ctes.map((cte) => (
+                          <tr key={cte.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {cte.numero}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {cte.serie}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {formatDate(cte.dataEmissao)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {formatCurrency(cte.valor)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                cte.status === 'Autorizado' || cte.status === 'Aprovado' ? 'bg-green-100 text-green-800' : 
+                                cte.status === 'Reprovado' || cte.status === 'Cancelado' ? 'bg-red-100 text-red-800' : 
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {cte.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end space-x-2">
+                                <button
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  Visualizar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
               
               {/* Summary */}
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total de CT-es</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{mockCTes.length}</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Total</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(mockCTes.reduce((sum, cte) => sum + cte.valor, 0))}</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Médio</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {formatCurrency(mockCTes.reduce((sum, cte) => sum + cte.valor, 0) / mockCTes.length)}
-                    </p>
+              {!isLoadingCtes && ctes.length > 0 && (
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total de CT-es</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{ctes.length}</p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Total</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}</p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Médio</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0) / ctes.length)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>

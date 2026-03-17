@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Plus, FileText, CheckCircle, XCircle, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Toast, ToastType } from '../common/Toast';
 import { OrdersFilters } from './OrdersFilters';
 import { OrdersTable } from './OrdersTable';
 import { OrdersActions } from './OrdersActions';
@@ -42,6 +43,7 @@ export const Orders: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
@@ -222,7 +224,7 @@ export const Orders: React.FC = () => {
 
   const handleBulkAction = async (action: string) => {
     if (selectedOrders.length === 0) {
-      alert('Por favor, selecione pelo menos um pedido para realizar esta ação.');
+      setToast({ message: 'Por favor, selecione pelo menos um pedido para realizar esta ação.', type: 'warning' });
       return;
     }
     
@@ -272,14 +274,14 @@ export const Orders: React.FC = () => {
                }
            }
            if (successCount > 0) {
-               alert(`Custo de frete recalculado para ${successCount} pedido(s) com sucesso!`);
+               setToast({ message: `Custo de frete recalculado para ${successCount} pedido(s) com sucesso!`, type: 'success' });
                await loadOrders();
            } else {
-               alert('Não foi possível recalcular. Verifique pesos e CEPs de destino.');
+               setToast({ message: 'Não foi possível recalcular. Verifique pesos e CEPs de destino.', type: 'error' });
            }
         } catch (error) {
             console.error('Erro ao recalcular em massa:', error);
-            alert('Erro ao recalcular custos de frete.');
+            setToast({ message: 'Erro ao recalcular custos de frete.', type: 'error' });
         }
         setIsLoading(false);
         setSelectedOrders([]);
@@ -302,7 +304,7 @@ export const Orders: React.FC = () => {
             const validOrders = fullOrdersToPrint.filter(o => !!(o && o.id));
             
             if (validOrders.length === 0) {
-                 alert('Não foi possível recuperar os dados completos dos pedidos selecionados.');
+                 setToast({ message: 'Não foi possível recuperar os dados completos dos pedidos selecionados.', type: 'error' });
                  setIsLoading(false);
                  setSelectedOrders([]);
                  return;
@@ -321,7 +323,7 @@ export const Orders: React.FC = () => {
             }
         } catch (error) {
             console.error('Erro ao gerar PDF:', error);
-            alert('Erro ao processar impressão/download dos pedidos.');
+            setToast({ message: 'Erro ao processar impressão/download dos pedidos.', type: 'error' });
         }
         
         setIsLoading(false);
@@ -331,7 +333,6 @@ export const Orders: React.FC = () => {
     
     // Default mock response for unmapped actions
     setTimeout(() => {
-        alert(`Ação "${action}" executada para ${selectedOrders.length} pedidos.`);
         setIsLoading(false);
         setSelectedOrders([]);
     }, 500);
@@ -560,7 +561,7 @@ export const Orders: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Coletados</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Coleta</p>
               <p className="text-2xl font-semibold text-blue-400 mt-1">
                 {orders.filter(order => order.status === 'coletado').length}
               </p>
@@ -695,6 +696,14 @@ export const Orders: React.FC = () => {
           }}
           userId={user.id}
           order={editingOrder}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

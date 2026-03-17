@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, Download, PackagePlus, Calendar } from 'lucide-react';
+import { Printer, Download, PackagePlus } from 'lucide-react';
 
 interface InvoicesActionsProps {
   selectedCount: number;
@@ -10,13 +10,13 @@ interface InvoicesActionsProps {
 export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount, onAction, isLoading }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {selectedCount} Nota{selectedCount !== 1 ? 's' : ''} Fiscal{selectedCount !== 1 ? 'is' : ''} selecionada{selectedCount !== 1 ? 's' : ''}
         </span>
 
-        <div className="flex-1"></div>
-
+        <div className="flex flex-wrap items-center gap-2">
+        {/* Botão ocultado temporariamente a pedido do usuário
         <button
           onClick={() => onAction('schedule-pickup')}
           disabled={selectedCount === 0 || isLoading}
@@ -25,6 +25,7 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
           <Calendar size={18} />
           <span>Agendar Coleta</span>
         </button>
+        */}
 
         <button
           onClick={() => onAction('create-pickup')}
@@ -52,6 +53,7 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
           <Download size={16} />
           <span>Download XMLs</span>
         </button>
+        </div>
       </div>
     </div>
   );

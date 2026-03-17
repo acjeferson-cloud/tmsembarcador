@@ -17,6 +17,7 @@ interface TimelineStep {
   status: 'completed' | 'current' | 'pending';
   date?: string;
   details?: string;
+  imageUrl?: string;
 }
 
 interface OrderTrackingData {
@@ -138,8 +139,8 @@ export const DeliveryTracking: React.FC = () => {
       description: hasOutForDelivery ? 'Mercadoria em rota de entrega' : 'Aguardando saída para entrega',
       icon: Truck,
       status: hasOutForDelivery ? 'completed' : 'pending',
-      date: hasOutForDelivery && outForDeliveryOcc?.created_at ? new Date(outForDeliveryOcc.created_at).toLocaleString('pt-BR') : undefined,
-      details: hasOutForDelivery ? 'Ocorrência EDI: 100 - Em rota de entrega' : undefined
+      date: hasOutForDelivery && (outForDeliveryOcc?.data_ocorrencia || outForDeliveryOcc?.created_at) ? new Date(outForDeliveryOcc.data_ocorrencia || outForDeliveryOcc.created_at).toLocaleString('pt-BR') : undefined,
+      details: hasOutForDelivery ? 'Ocorrência: 100 - Em rota de entrega' : undefined
     });
 
     // Etapa 7: Entrega Realizada (ativo se tem ocorrência EDI código 001 ou 002)
@@ -151,8 +152,9 @@ export const DeliveryTracking: React.FC = () => {
       description: isDelivered ? 'Mercadoria entregue ao destinatário' : 'Aguardando confirmação de entrega',
       icon: CheckCircle,
       status: isDelivered ? 'completed' : 'pending',
-      date: isDelivered && deliveryOcc?.created_at ? new Date(deliveryOcc.created_at).toLocaleString('pt-BR') : undefined,
-      details: isDelivered ? `Ocorrência EDI: ${deliveryOcc?.codigo} - ${deliveryOcc?.descricao || 'Entrega realizada'}` : undefined
+      date: isDelivered && (deliveryOcc?.data_ocorrencia || deliveryOcc?.created_at) ? new Date(deliveryOcc.data_ocorrencia || deliveryOcc.created_at).toLocaleString('pt-BR') : undefined,
+      details: isDelivered ? `Ocorrência: ${deliveryOcc?.codigo} - ${deliveryOcc?.descricao || 'Entrega realizada'}` : undefined,
+      imageUrl: isDelivered ? deliveryOcc?.foto_url : undefined
     });
 
     // NOVA LÓGICA: Determinar a etapa mais avançada concluída e marcar todas anteriores como concluídas
@@ -192,7 +194,7 @@ export const DeliveryTracking: React.FC = () => {
       if (!order) return null;
 
       // Buscar NF-e vinculada ao pedido
-      const { data: invoices } = await supabase
+      const { data: invoices } = await (supabase as any)
         .from('invoices_nfe')
         .select('*')
         .eq('order_number', order.order_number)
@@ -201,14 +203,14 @@ export const DeliveryTracking: React.FC = () => {
       // Buscar coleta vinculada à NF-e (se existir)
       let pickup = null;
       if (invoices) {
-        const { data: pickupInvoices } = await supabase
+        const { data: pickupInvoices } = await (supabase as any)
           .from('pickups_invoices')
           .select('pickup_id')
           .eq('invoice_id', invoices.id)
           .maybeSingle();
 
         if (pickupInvoices) {
-          const { data: pickupData } = await supabase
+          const { data: pickupData } = await (supabase as any)
             .from('pickups')
             .select('*')
             .eq('id', pickupInvoices.pickup_id)
@@ -221,7 +223,7 @@ export const DeliveryTracking: React.FC = () => {
       // Buscar CT-e vinculado à NF-e (se existir)
       let cte = null;
       if (invoices) {
-        const { data: cteData } = await supabase
+        const { data: cteData } = await (supabase as any)
           .from('ctes_complete')
           .select('*')
           .eq('invoice_number', invoices.number)
@@ -230,15 +232,18 @@ export const DeliveryTracking: React.FC = () => {
         cte = cteData;
       }
 
-      // Buscar ocorrências EDI (simuladas - você pode implementar uma tabela de ocorrências EDI real)
-      // Por enquanto, vamos simular baseado no status do pedido
+      // Buscar ocorrências do banco
       let occurrences: any[] = [];
-      if (order.status === 'delivered' || order.status === 'entregue') {
+      if (invoices?.metadata?.occurrences) {
+        occurrences = invoices.metadata.occurrences;
+      } else if ((order as any).metadata?.occurrences) {
+        occurrences = (order as any).metadata.occurrences;
+      } else if (order.status === 'delivered' || (order as any).status === 'entregue') {
         occurrences = [
           { codigo: '100', descricao: 'Em rota de entrega', created_at: order.updated_at },
           { codigo: '001', descricao: 'Entrega realizada', created_at: order.updated_at }
         ];
-      } else if (order.status === 'in_transit' || order.status === 'em_transito') {
+      } else if (order.status === 'in_transit' || (order as any).status === 'em_transito') {
         occurrences = [
           { codigo: '100', descricao: 'Em rota de entrega', created_at: order.updated_at }
         ];
@@ -278,17 +283,17 @@ export const DeliveryTracking: React.FC = () => {
         }
       } else if (documentType === 'nfe') {
         // Buscar NF-e e depois o pedido relacionado
-        const invoices = await nfeService.getInvoicesWithCustomers();
+        const invoices = await nfeService.getAll();
         let found;
 
         if (searchType === 'number') {
-          found = invoices.find((inv) => inv.number === searchValue);
+          found = invoices.find((inv: any) => inv.number === searchValue);
         } else {
-          found = invoices.find((inv) => inv.access_key === searchValue);
+          found = invoices.find((inv: any) => inv.access_key === searchValue);
         }
 
-        if (found && found.order_number) {
-          const data = await fetchOrderTrackingData(found.order_number);
+        if (found && (found as any).order_number) {
+          const data = await fetchOrderTrackingData((found as any).order_number);
           if (data) {
             setTrackingData(data);
           } else {
@@ -310,7 +315,7 @@ export const DeliveryTracking: React.FC = () => {
 
         if (found && found.invoice_number) {
           // Buscar NF-e
-          const { data: invoice } = await supabase
+          const { data: invoice } = await (supabase as any)
             .from('invoices_nfe')
             .select('order_number')
             .eq('number', found.invoice_number)
@@ -621,10 +626,11 @@ interface TimelineItemProps {
   description: string;
   date?: string;
   details?: string;
+  imageUrl?: string;
   status: 'completed' | 'current' | 'pending';
 }
 
-const TimelineItem: React.FC<TimelineItemProps> = ({ icon: Icon, title, description, date, details, status }) => {
+const TimelineItem: React.FC<TimelineItemProps> = ({ icon: Icon, title, description, date, details, status, imageUrl }) => {
   const getStatusStyles = () => {
     switch (status) {
       case 'completed':
@@ -645,7 +651,12 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ icon: Icon, title, descript
         <h4 className="font-semibold text-gray-900 dark:text-white">{title}</h4>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{description}</p>
         {details && (
-          <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-400 mt-1 italic">{details}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">{details}</p>
+        )}
+        {imageUrl && (
+          <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
+            <img src={imageUrl} alt="Comprovante de entrega" className="h-24 object-contain bg-white dark:bg-gray-800" />
+          </a>
         )}
         {date && (
           <div className="flex items-center gap-2 mt-2">

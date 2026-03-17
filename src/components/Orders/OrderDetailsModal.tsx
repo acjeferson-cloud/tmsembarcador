@@ -78,7 +78,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
       case 'emitido':
         return 'Emitido';
       case 'coletado':
-        return 'Coletado';
+        return 'Em Coleta';
       case 'em_transito':
         return 'Em Trânsito';
       case 'saiu_entrega':
@@ -345,7 +345,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   <div className="space-y-6">
                     {[
                       { status: 'emitido', label: 'Pedido Emitido', date: '15/01/2025 08:30', active: order.status === 'emitido', completed: ['coletado', 'em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'coletado', label: 'Coletado', date: '15/01/2025 14:45', active: order.status === 'coletado', completed: ['em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
+                      { status: 'coletado', label: 'Em Coleta', date: '15/01/2025 14:45', active: order.status === 'coletado', completed: ['em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
                       { status: 'em_transito', label: 'Em Trânsito', date: '16/01/2025 08:15', active: order.status === 'em_transito', completed: ['saiu_entrega', 'entregue'].includes(order.status) },
                       { status: 'saiu_entrega', label: 'Saiu p/Entrega', date: '17/01/2025 14:00', active: order.status === 'saiu_entrega', completed: ['entregue'].includes(order.status) },
                       { status: 'entregue', label: 'Entregue', date: '17/01/2025 16:45', active: order.status === 'entregue', completed: order.status === 'entregue' }

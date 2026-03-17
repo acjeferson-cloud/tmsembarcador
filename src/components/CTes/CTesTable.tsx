@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale } from 'lucide-react';
 
 interface CTe {
-  id: number;
+  id: string;
   status: string;
   serie: string;
   numero: string;
@@ -11,6 +11,9 @@ interface CTe {
   dataAprovacao: string | null;
   tipoFrete: string;
   transportador: string;
+  previsaoEntrega: string;
+  cliente: string;
+  cidadeDestino: string;
   ufDestino: string;
   valorCTe: number;
   valorCusto: number;
@@ -22,12 +25,11 @@ interface CTe {
 
 interface CTesTableProps {
   ctes: CTe[];
-  selectedCTes: number[];
+  selectedCTes: string[];
   onSelectAll: (isSelected: boolean) => void;
-  onSelectCTe: (cteId: number, isSelected: boolean) => void;
-  onAction: (cteId: number, action: string) => void;
+  onSelectCTe: (cteId: string, isSelected: boolean) => void;
+  onAction: (cteId: string, action: string) => void;
   isLoading: boolean;
-  userProfile?: string;
 }
 
 export const CTesTable = React.memo<CTesTableProps>(({
@@ -36,14 +38,13 @@ export const CTesTable = React.memo<CTesTableProps>(({
   onSelectAll,
   onSelectCTe,
   onAction,
-  isLoading,
-  userProfile
+  isLoading
 }) => {
   const [sortField, setSortField] = useState<keyof CTe>('dataEmissao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
 
   // Handle sorting
   const handleSort = (field: keyof CTe) => {
@@ -57,13 +58,13 @@ export const CTesTable = React.memo<CTesTableProps>(({
 
   // Apply sorting to data
   const sortedCTes = [...ctes].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
-    
+    let aValue: any = a[sortField] ?? '';
+    let bValue: any = b[sortField] ?? '';
+
     // Special handling for dates
-    if (typeof aValue === 'string' && (sortField.includes('data') || sortField.includes('Data'))) {
-      aValue = new Date(aValue).getTime();
-      bValue = new Date(bValue || '').getTime();
+    if (typeof aValue === 'string' && (sortField.includes('data') || sortField.includes('Data') || sortField.includes('previsaoEntrega'))) {
+      aValue = aValue ? new Date(aValue).getTime() : 0;
+      bValue = bValue ? new Date(bValue).getTime() : 0;
     }
     
     // Special handling for numbers stored as strings
@@ -108,15 +109,15 @@ export const CTesTable = React.memo<CTesTableProps>(({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'importado':
-        return 'bg-white text-gray-800 border border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600';
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
       case 'auditado_aprovado':
-        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
       case 'auditado_reprovado':
         return 'bg-gray-900 text-white dark:bg-black dark:text-gray-100';
       case 'com_nfe_referenciada':
-        return 'bg-yellow-400 text-gray-900 dark:bg-yellow-500 dark:text-gray-900';
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
       case 'cancelado':
-        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -140,6 +141,12 @@ export const CTesTable = React.memo<CTesTableProps>(({
     }
   };
 
+  // Format Cliente to max 30 chars
+  const formatCliente = (cliente: string) => {
+    if (!cliente) return '-';
+    return cliente.length > 30 ? `${cliente.substring(0, 30)}...` : cliente;
+  };
+
   // Get value comparison color
   const getValueComparisonColor = (cte: CTe) => {
     if (cte.valorCTe === cte.valorCusto) return 'text-green-600';
@@ -153,18 +160,14 @@ export const CTesTable = React.memo<CTesTableProps>(({
   };
 
   // Toggle action menu
-  const toggleActionMenu = (cteId: number) => {
+  const toggleActionMenu = (cteId: string) => {
     setOpenActionMenu(openActionMenu === cteId ? null : cteId);
   };
 
   // Check if all items on current page are selected
   const areAllSelected = paginatedCTes.length > 0 && paginatedCTes.every(cte => selectedCTes.includes(cte.id));
 
-  // Format chave de acesso for display
-  const formatChaveAcesso = (chave: string) => {
-    if (chave.length <= 20) return chave;
-    return `${chave.substring(0, 20)}...`;
-  };
+  // Format chave de acesso for display - Unused, removed or kept commented.
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -182,6 +185,9 @@ export const CTesTable = React.memo<CTesTableProps>(({
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </div>
+              </th>
+              <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Ações
               </th>
               <th 
                 scope="col" 
@@ -246,11 +252,11 @@ export const CTesTable = React.memo<CTesTableProps>(({
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSort('tipoFrete')}
+                onClick={() => handleSort('previsaoEntrega')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Tipo</span>
-                  {sortField === 'tipoFrete' && (
+                  <span>Previsão Entrega</span>
+                  {sortField === 'previsaoEntrega' && (
                     sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                   )}
                 </div>
@@ -263,18 +269,6 @@ export const CTesTable = React.memo<CTesTableProps>(({
                 <div className="flex items-center space-x-1">
                   <span>Transportador</span>
                   {sortField === 'transportador' && (
-                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                  )}
-                </div>
-              </th>
-              <th 
-                scope="col" 
-                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSort('ufDestino')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>UF Destino</span>
-                  {sortField === 'ufDestino' && (
                     sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                   )}
                 </div>
@@ -303,23 +297,41 @@ export const CTesTable = React.memo<CTesTableProps>(({
                   )}
                 </div>
               </th>
-              <th
-                scope="col"
+              <th 
+                scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSort('tarifaCalculo')}
+                onClick={() => handleSort('cliente')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Tarifa de Cálculo</span>
-                  {sortField === 'tarifaCalculo' && (
+                  <span>Cliente</span>
+                  {sortField === 'cliente' && (
                     sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                   )}
                 </div>
               </th>
-              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Chave de Acesso
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('cidadeDestino')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Cidade Destino</span>
+                  {sortField === 'cidadeDestino' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
               </th>
-              <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Ações
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('ufDestino')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>UF Destino</span>
+                  {sortField === 'ufDestino' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
               </th>
             </tr>
           </thead>
@@ -335,63 +347,8 @@ export const CTesTable = React.memo<CTesTableProps>(({
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(cte.status)}`}>
-                    {getStatusLabel(cte.status)}
-                  </span>
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {cte.serie}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {cte.numero}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(cte.dataEmissao)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {formatDate(cte.dataEntrada)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {cte.tipoFrete}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {cte.transportador}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {cte.ufDestino}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                  {formatCurrency(cte.valorCTe)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm">
-                  <div className="flex flex-col">
-                    <span className={`font-medium ${getValueComparisonColor(cte)}`}>
-                      {formatCurrency(cte.valorCusto)}
-                    </span>
-                    <span className={`text-xs ${getValueComparisonColor(cte)}`}>
-                      {calculateDifference(cte) > 0 ? '+' : ''}{calculateDifference(cte).toFixed(2)}%
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 py-4 text-sm">
-                  {cte.tarifaCalculo ? (
-                    <button
-                      onClick={() => onAction(cte.id, 'view-tariff')}
-                      className="text-blue-600 hover:text-blue-800 hover:underline text-left transition-colors"
-                      title="Clique para visualizar a tarifa"
-                    >
-                      {cte.tarifaCalculo}
-                    </button>
-                  ) : (
-                    <span className="text-gray-400 italic">-</span>
-                  )}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
-                  {formatChaveAcesso(cte.chaveAcesso)}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                  <div className="flex items-center justify-end space-x-1">
+                <td className="px-3 py-4 whitespace-nowrap text-center text-sm font-medium relative">
+                  <div className="flex items-center justify-center space-x-1">
                     {/* View NF-es - Available for all statuses */}
                     <button
                       onClick={() => onAction(cte.id, 'view-nfes')}
@@ -435,7 +392,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       
                       {/* Dropdown menu */}
                       {openActionMenu === cte.id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                           <div className="py-1">
                             {/* Recalculate - Not for approved */}
                             {cte.status !== 'aprovado' && (
@@ -527,6 +484,51 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       )}
                     </div>
                   </div>
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(cte.status)}`}>
+                    {getStatusLabel(cte.status)}
+                  </span>
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {cte.serie}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {cte.numero}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(cte.dataEmissao)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(cte.dataEntrada)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(cte.previsaoEntrega)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {cte.transportador}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                  {formatCurrency(cte.valorCTe)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm">
+                  <div className="flex flex-col">
+                    <span className={`font-medium ${getValueComparisonColor(cte)}`}>
+                      {formatCurrency(cte.valorCusto)}
+                    </span>
+                    <span className={`text-xs ${getValueComparisonColor(cte)}`}>
+                      {calculateDifference(cte) > 0 ? '+' : ''}{calculateDifference(cte).toFixed(2)}%
+                    </span>
+                  </div>
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white" title={cte.cliente}>
+                  {formatCliente(cte.cliente)}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {cte.cidadeDestino}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {cte.ufDestino}
                 </td>
               </tr>
             ))}

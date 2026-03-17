@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Search, Plus, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Clock as ArrowClockwise, ThumbsUp, ThumbsDown, Calendar, User } from 'lucide-react';
+import { Toast, ToastType } from '../common/Toast';
 import { BillsFilters } from './BillsFilters';
 import { BillsTable } from './BillsTable';
 import { BillsActions } from './BillsActions';
@@ -24,6 +25,7 @@ export const Bills: React.FC = () => {
   const [showCTesModal, setShowCTesModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState<any>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     billId: '',
@@ -152,7 +154,7 @@ export const Bills: React.FC = () => {
 
   const handleBulkAction = (action: string) => {
     if (selectedBills.length === 0) {
-      alert('Por favor, selecione pelo menos uma fatura para realizar esta ação.');
+      setToast({ message: 'Por favor, selecione pelo menos uma fatura para realizar esta ação.', type: 'warning' });
       return;
     }
     
@@ -162,10 +164,10 @@ export const Bills: React.FC = () => {
     setTimeout(() => {
       switch (action) {
         case 'print':
-          alert(`Gerando DACTE para ${selectedBills.length} fatura(s) selecionada(s).`);
+          setToast({ message: `Gerando DACTE para ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
           break;
         case 'recalculate':
-          alert(`Recalculando ${selectedBills.length} fatura(s) selecionada(s).`);
+          setToast({ message: `Recalculando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
           // Update bills status in the mock data
           setBills(prev => prev.map(bill => 
             selectedBills.includes(bill.id) 
@@ -174,7 +176,7 @@ export const Bills: React.FC = () => {
           ));
           break;
         case 'approve':
-          alert(`Aprovando ${selectedBills.length} fatura(s) selecionada(s).`);
+          setToast({ message: `Aprovando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'success' });
           // Update bills status in the mock data
           setBills(prev => prev.map(bill => 
             selectedBills.includes(bill.id) 
@@ -183,7 +185,7 @@ export const Bills: React.FC = () => {
           ));
           break;
         case 'reject':
-          alert(`Reprovando ${selectedBills.length} fatura(s) selecionada(s).`);
+          setToast({ message: `Reprovando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'warning' });
           // Update bills status in the mock data
           setBills(prev => prev.map(bill => 
             selectedBills.includes(bill.id) 
@@ -192,7 +194,7 @@ export const Bills: React.FC = () => {
           ));
           break;
         case 'revert':
-          alert(`Estornando ${selectedBills.length} fatura(s) selecionada(s).`);
+          setToast({ message: `Estornando ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
           // Update bills status
           setBills(prev => prev.map(bill =>
             selectedBills.includes(bill.id)
@@ -201,7 +203,7 @@ export const Bills: React.FC = () => {
           ));
           break;
         case 'download':
-          alert(`Baixando XML de ${selectedBills.length} fatura(s) selecionada(s).`);
+          setToast({ message: `Baixando XML de ${selectedBills.length} fatura(s) selecionada(s).`, type: 'info' });
           break;
         default:
           break;
@@ -235,10 +237,10 @@ export const Bills: React.FC = () => {
           setShowDetailsModal(true);
           break;
         case 'print':
-          alert(`Gerando DACTE para a fatura ${bill.numero}.`);
+          setToast({ message: `Gerando DACTE para a fatura ${bill.numero}.`, type: 'info' });
           break;
         case 'recalculate':
-          alert(`Recalculando a fatura ${bill.numero}.`);
+          setToast({ message: `Recalculando a fatura ${bill.numero}.`, type: 'info' });
           // Update bill in the mock data
           setBills(prev => prev.map(b => 
             b.id === billId 
@@ -247,7 +249,7 @@ export const Bills: React.FC = () => {
           ));
           break;
         case 'approve':
-          alert(`Aprovando a fatura ${bill.numero}.`);
+          setToast({ message: `Aprovando a fatura ${bill.numero}.`, type: 'success' });
           // Update bill in the mock data
           setBills(prev => prev.map(b => 
             b.id === billId 
@@ -261,7 +263,7 @@ export const Bills: React.FC = () => {
           setShowRejectionModal(true);
           break;
         case 'revert':
-          alert(`Estornando a fatura ${bill.numero}.`);
+          setToast({ message: `Estornando a fatura ${bill.numero}.`, type: 'info' });
           // Update bill status
           setBills(prev => prev.map(b =>
             b.id === billId
@@ -270,7 +272,7 @@ export const Bills: React.FC = () => {
           ));
           break;
         case 'download':
-          alert(`Baixando XML da fatura ${bill.numero}.`);
+          setToast({ message: `Baixando XML da fatura ${bill.numero}.`, type: 'info' });
           break;
         case 'delete':
           setConfirmDialog({
@@ -305,7 +307,7 @@ export const Bills: React.FC = () => {
       
       setIsLoading(false);
       setShowRejectionModal(false);
-      alert(`Fatura ${selectedBill.numero} reprovada com sucesso. Motivo ID: ${reasonId}`);
+      setToast({ message: `Fatura ${selectedBill.numero} reprovada com sucesso. Motivo ID: ${reasonId}`, type: 'success' });
     }, 1000);
   };
 
@@ -319,14 +321,14 @@ export const Bills: React.FC = () => {
           .eq('id', confirmDialog.billId);
 
         if (!error) {
-          alert(`Fatura ${confirmDialog.billNumber} excluída com sucesso!`);
+          setToast({ message: `Fatura ${confirmDialog.billNumber} excluída com sucesso!`, type: 'success' });
           loadBills();
         } else {
-          alert(`Erro ao excluir Fatura: ${error.message}`);
+          setToast({ message: `Erro ao excluir Fatura: ${error.message}`, type: 'error' });
         }
       } catch (error: any) {
         console.error('Erro ao excluir fatura:', error);
-        alert('Erro ao excluir fatura.');
+        setToast({ message: 'Erro ao excluir fatura.', type: 'error' });
       } finally {
         setIsLoading(false);
       }
@@ -535,6 +537,14 @@ export const Bills: React.FC = () => {
           message={`Tem certeza que deseja excluir a fatura ${confirmDialog.billNumber}? Esta ação não pode ser desfeita.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false, billId: '', billNumber: '', action: '' })}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2, ClipboardCheck } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 
 interface Invoice {
@@ -79,6 +79,14 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    
+    // Tie-breaker: sort by numero desc if the primary field is the same
+    if (a.numero !== b.numero) {
+      const aNum = Number(a.numero) || 0;
+      const bNum = Number(b.numero) || 0;
+      return bNum - aNum; // always descending for the secondary sort
+    }
+    
     return 0;
   });
 
@@ -140,7 +148,7 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
       case 'coletada':
       case 'coletado_transportadora':
       case 'coleta_realizada':
-        return 'Coletada';
+        return 'Em Coleta';
       case 'em trânsito':
       case 'em_transito':
       case 'em_transito_origem':
@@ -427,19 +435,19 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                                 <span>Editar Nota Fiscal</span>
                               </button>
                               
-                              {/* Relationship Map */}
+                              {/* Launch Occurrence */}
                               <button
                                 onClick={() => {
-                                  handleShowRelationshipMap(invoice);
+                                  onAction(invoice.id, 'lancar-ocorrencia');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center space-x-2 border-t border-gray-100 dark:border-gray-700"
                               >
-                                <Share2 size={14} />
-                                <span>Mapa de Relações</span>
+                                <ClipboardCheck size={14} />
+                                <span>Lançar Ocorrência</span>
                               </button>
-
+                              
                               {/* Delete */}
                               <button
                                 onClick={() => {

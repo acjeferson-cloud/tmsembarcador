@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
 import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, X, RefreshCw } from 'lucide-react';
+import { Toast, ToastType } from '../common/Toast';
 import { ElectronicDocument, isValidChaveAcesso, isChaveAcessoUnique } from '../../data/electronicDocumentsData';
 import { parseXML } from '../../services/xmlService';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +28,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const handleFileSelect = (files: FileList) => {
     const xmlFiles = Array.from(files).filter(file => 
@@ -35,7 +36,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
     );
 
     if (xmlFiles.length === 0) {
-      alert(t('electronicDocs.upload.supportedFormat'));
+      setToast({ message: t('electronicDocs.upload.supportedFormat'), type: 'warning' });
       return;
     }
 
@@ -223,13 +224,13 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
     const successFiles = uploadedFiles.filter(f => f.status === 'success');
     
     if (successFiles.length === 0) {
-      alert(t('electronicDocs.upload.alerts.noFiles'));
+      setToast({ message: t('electronicDocs.upload.alerts.noFiles'), type: 'warning' });
       return;
     }
     
     const context = await TenantContextHelper.getCurrentContext();
     if (!context) {
-      alert("Contexto de locatário não encontrado");
+      setToast({ message: "Contexto de locatário não encontrado", type: 'error' });
       return;
     }
     
@@ -253,7 +254,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
     }
 
     if (!establishmentId) {
-      alert("Não foi possível identificar o estabelecimento principal.");
+      setToast({ message: "Não foi possível identificar o estabelecimento principal.", type: 'error' });
       return;
     }
     
@@ -280,8 +281,10 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
       }
     }
     
-    alert(`${successFiles.length} ${t('electronicDocs.upload.alerts.success')}`);
-    onUploadComplete();
+    setToast({ message: `${successFiles.length} ${t('electronicDocs.upload.alerts.success')}`, type: 'success' });
+    setTimeout(() => {
+      onUploadComplete();
+    }, 1500);
   };
 
   const successCount = uploadedFiles.filter(f => f.status === 'success').length;
@@ -445,6 +448,14 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
           </div>
         </div>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

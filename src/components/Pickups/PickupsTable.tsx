@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, MoreHorizontal, Send, XCircle, Network, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, MoreHorizontal, XCircle, Share2, Trash2, CheckCircle } from 'lucide-react';
 
 interface Pickup {
   id: string;
@@ -102,8 +102,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
       case 'solicitada':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
       case 'realizada':
+      case 'coleta_realizada':
         return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'cancelada':
+      case 'coleta_cancelada':
         return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
@@ -118,8 +120,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
       case 'solicitada':
         return 'Solicitada';
       case 'realizada':
+      case 'coleta_realizada':
         return 'Realizada';
       case 'cancelada':
+      case 'coleta_cancelada':
         return 'Cancelada';
       default:
         return status;
@@ -135,8 +139,8 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 min-h-[400px]">
+        <div className="overflow-visible">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
@@ -232,7 +236,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('usuarioResponsavel')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Usuário criador</span>
+                    <span>USUÁRIO CRIADOR</span>
                     {sortField === 'usuarioResponsavel' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -253,40 +257,36 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                     />
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-center">
-                    <div className="relative inline-block text-left">
+                    <div className="flex items-center justify-center space-x-3">
                       <button
-                        onClick={() => toggleActionMenu(pickup.id)}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        onClick={() => onAction(pickup.id, 'view-details')}
+                        title="Ver Detalhes"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       >
-                        <MoreHorizontal size={20} />
+                        <Eye size={18} />
                       </button>
 
-                      {openActionMenu === pickup.id && (
-                        <div className="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
-                          <div className="py-1">
-                            <button
-                              onClick={() => {
-                                onAction(pickup.id, 'view-details');
-                                setOpenActionMenu(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                            >
-                              <Eye size={16} />
-                              <span>Ver Detalhes</span>
-                            </button>
+                      <button
+                        onClick={() => onAction(pickup.id, 'view-relationship-map')}
+                        title="Mapa de Relações"
+                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                      >
+                        <Share2 size={18} />
+                      </button>
 
-                            <button
-                              onClick={() => {
-                                onAction(pickup.id, 'view-relationship-map');
-                                setOpenActionMenu(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                            >
-                              <Network size={16} />
-                              <span>Mapa de Relação</span>
-                            </button>
+                      <div className="relative inline-block text-left">
+                        <button
+                          onClick={() => toggleActionMenu(pickup.id)}
+                          title="Mais Ações"
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <MoreHorizontal size={20} />
+                        </button>
 
-                            {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
+                        {openActionMenu === pickup.id && (
+                          <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                            <div className="py-1">
+                              {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
                               <button
                                 onClick={() => {
                                   onAction(pickup.id, 'cancelar');
@@ -296,6 +296,19 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                               >
                                 <XCircle size={16} />
                                 <span>Cancelar Coleta</span>
+                              </button>
+                            )}
+                            {/* Marcar como Realizada Action */}
+                            {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
+                              <button
+                                onClick={() => {
+                                  onAction(pickup.id, 'realizar');
+                                  setOpenActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                              >
+                                <CheckCircle size={16} />
+                                <span>Marcar como Realizada</span>
                               </button>
                             )}
                             
@@ -310,9 +323,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                               <Trash2 size={16} />
                               <span>Excluir Coleta</span>
                             </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap">

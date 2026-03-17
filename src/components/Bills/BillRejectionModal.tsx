@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertCircle, Search } from 'lucide-react';
 import { getAllRejectionReasons } from '../../data/rejectionReasonsData';
+import { Toast, ToastType } from '../common/Toast';
 
 interface BillRejectionModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const BillRejectionModal: React.FC<BillRejectionModalProps> = ({
   const [reasons, setReasons] = useState(getAllRejectionReasons());
   const [filteredReasons, setFilteredReasons] = useState(reasons);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   
   // Get unique categories
   const categories = ['Todas as Categorias', ...Array.from(new Set(reasons.map(r => r.categoria)))];
@@ -59,7 +61,7 @@ export const BillRejectionModal: React.FC<BillRejectionModalProps> = ({
   
   const handleConfirm = () => {
     if (!selectedReasonId) {
-      alert('Por favor, selecione um motivo de rejeição.');
+      setToast({ message: 'Por favor, selecione um motivo de rejeição.', type: 'warning' });
       return;
     }
     
@@ -188,6 +190,14 @@ export const BillRejectionModal: React.FC<BillRejectionModalProps> = ({
           </div>
         </div>
       </div>
+      
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

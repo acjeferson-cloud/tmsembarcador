@@ -23,7 +23,6 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [renderKey, setRenderKey] = useState(0);
 
   const [existingProof, setExistingProof] = useState<PickupProof | null>(null);
   const [collectorName, setCollectorName] = useState('');
@@ -108,9 +107,6 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           setPhoto3(result.url);
           console.log('📷 Photo3 atualizada');
         }
-
-        // Forçar re-render
-        setRenderKey(prev => prev + 1);
 
         setSuccess(`Foto ${photoNumber} adicionada com sucesso!`);
         setTimeout(() => setSuccess(''), 3000);
@@ -237,7 +233,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
     }
   };
 
-  const PhotoCard: React.FC<{ photoUrl: string; photoNumber: 1 | 2 | 3 }> = ({ photoUrl, photoNumber }) => {
+  const renderPhotoCard = (photoUrl: string, photoNumber: 1 | 2 | 3) => {
     if (photoUrl) {
       return (
         <div key={photoUrl} className="relative group">
@@ -276,6 +272,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           type="file"
           accept="image/*"
           capture="environment"
+          onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) handlePhotoUpload(photoNumber, file);
@@ -574,10 +571,10 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
                 Fotos da Coleta
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4" key={`photos-grid-${renderKey}`}>
-                <PhotoCard key={`photo-1-${renderKey}-${photo1 || 'empty'}`} photoUrl={photo1} photoNumber={1} />
-                <PhotoCard key={`photo-2-${renderKey}-${photo2 || 'empty'}`} photoUrl={photo2} photoNumber={2} />
-                <PhotoCard key={`photo-3-${renderKey}-${photo3 || 'empty'}`} photoUrl={photo3} photoNumber={3} />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {renderPhotoCard(photo1, 1)}
+                {renderPhotoCard(photo2, 2)}
+                {renderPhotoCard(photo3, 3)}
               </div>
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
                 <p className="text-sm text-blue-800 dark:text-blue-300">

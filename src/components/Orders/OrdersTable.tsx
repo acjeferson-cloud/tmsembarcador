@@ -163,7 +163,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
       case 'emitido':
         return 'Emitido';
       case 'coletado':
-        return 'Coletado';
+        return 'Em Coleta';
       case 'em_transito':
         return 'Em Trânsito';
       case 'saiu_entrega':

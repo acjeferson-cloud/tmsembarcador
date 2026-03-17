@@ -43,6 +43,7 @@ serve(async (req) => {
       to: email?.to,
       subject: email?.subject,
       html: email?.html,
+      attachments: email?.attachments,
     });
 
     console.log(`Email successfully sent to ${email?.to}. MessageId: ${info.messageId}`);

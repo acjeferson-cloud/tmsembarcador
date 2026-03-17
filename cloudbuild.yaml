@@ -29,7 +29,7 @@ steps:
           --build-arg VITE_SUPABASE_ANON_KEY="$(cat /workspace/.supabase-anon-key)" \
           --build-arg VITE_GOOGLE_MAPS_API_KEY="$(cat /workspace/.google-maps-api-key)" \
           --build-arg VITE_RECAPTCHA_SITE_KEY="$(cat /workspace/.recaptcha-site-key)" \
-          -t gcr.io/$PROJECT_ID/tms-embarcador:$SHORT_SHA \
+          -t gcr.io/$PROJECT_ID/tms-embarcador:${_SHORT_SHA} \
           -t gcr.io/$PROJECT_ID/tms-embarcador:latest \
           .
         echo "✅ Build concluído com sucesso"
@@ -39,7 +39,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/tms-embarcador:$SHORT_SHA'
+      - 'gcr.io/$PROJECT_ID/tms-embarcador:${_SHORT_SHA}'
     id: 'push-image'
 
   # Step 4: Push da tag latest
@@ -57,7 +57,7 @@ steps:
       - 'run'
       - 'deploy'
       - 'tms-embarcador'
-      - '--image=gcr.io/$PROJECT_ID/tms-embarcador:$SHORT_SHA'
+      - '--image=gcr.io/$PROJECT_ID/tms-embarcador:${_SHORT_SHA}'
       - '--region=us-east1'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -72,8 +72,11 @@ steps:
 
 # Imagens a serem publicadas no Container Registry
 images:
-  - 'gcr.io/$PROJECT_ID/tms-embarcador:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/tms-embarcador:${_SHORT_SHA}'
   - 'gcr.io/$PROJECT_ID/tms-embarcador:latest'
+
+substitutions:
+  _SHORT_SHA: 'manual'
 
 # Opções de build
 options:

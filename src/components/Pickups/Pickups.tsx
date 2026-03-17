@@ -7,8 +7,14 @@ import { PickupDetailsModal } from './PickupDetailsModal';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { pickupsService } from '../../services/pickupsService';
+import { pickupPdfService } from '../../services/pickupPdfService';
+import { pickupRequestService } from '../../services/pickupRequestService';
+import { useAuth } from '../../hooks/useAuth';
+import { Toast, ToastType } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 export const Pickups: React.FC = () => {
+  const { user } = useAuth();
   const [pickups, setPickups] = useState<any[]>([]);
   const [filteredPickups, setFilteredPickups] = useState<any[]>([]);
   const [selectedPickups, setSelectedPickups] = useState<string[]>([]);
@@ -16,6 +22,10 @@ export const Pickups: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [selectedPickup, setSelectedPickup] = useState<any>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; action: 'cancelar' | 'realizar' | 'delete' | null; message: string; title: string; targetIds: string[] }>({ 
+    isOpen: false, action: null, message: '', title: '', targetIds: [] 
+  });
   const [filters, setFilters] = useState({
     transportador: '',
     numeroColeta: '',
@@ -111,41 +121,146 @@ export const Pickups: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedPickups.length === 0) {
-      alert('Por favor, selecione pelo menos uma coleta para realizar esta ação.');
+      setToast({ message: 'Por favor, selecione pelo menos uma coleta para realizar esta ação.', type: 'warning' });
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      switch (action) {
-        case 'cancelar':
-          if (confirm(`Deseja realmente cancelar ${selectedPickups.length} coleta(s)?`)) {
-            alert(`${selectedPickups.length} coleta(s) cancelada(s).`);
-            setPickups(prev => prev.map(pickup => {
-              if (selectedPickups.includes(pickup.id)) {
-                return { ...pickup, status: 'coleta_cancelada' };
+    try {
+      if (action === 'solicitar-coleta') {
+        let successCount = 0;
+        let errorMessages: string[] = [];
+        for (const pickupId of selectedPickups) {
+          const data = await pickupsService.getById(pickupId);
+          console.log('DEBUG: Carrier Email fetched:', data?.carrier_email, data);
+          if (data && data.carrier_email) {
+            const fullPickup = {
+               ...data,
+               numeroColeta: data.pickup_number || data.id,
+               dataCriacao: data.created_at,
+               transportador: data.carrier_name,
+               usuarioResponsavel: data.contact_name,
+               logradouro: data.pickup_address,
+               cidade: data.pickup_city,
+               estado: data.pickup_state,
+               cep: data.pickup_zip,
+               quantidadeNotas: data.packages_quantity || 0,
+               total_weight: data.total_weight || 0,
+               total_volume: data.total_volume || 0
+            };
+            
+            const pdfBase64 = pickupPdfService.generatePickupPDF([fullPickup], 'base64' as any);
+            
+            const res = await pickupRequestService.requestPickup({
+              pickupId: pickupId,
+              notificationMethod: 'email',
+              carrierEmail: data.carrier_email || '',
+              carrierPhone: '',
+              userId: user?.id || null,
+              userName: user?.name || 'Sistema',
+              pdfBase64: pdfBase64,
+              establishmentId: data.establishment_id || ''
+            });
+            
+            if (res.success) {
+              const statusRes = await pickupsService.updateStatus(pickupId, 'solicitada');
+              if (statusRes.success) {
+                successCount++;
+              } else {
+                errorMessages.push(`Coleta ${data.pickup_number}: E-mail enviado, mas falha ao atualizar status.`);
               }
-              return pickup;
-            }));
+            } else {
+              errorMessages.push(res.error || `Erro desconhecido na coleta ${data.pickup_number}`);
+            }
+          } else if (data && !data.carrier_email) {
+             // If no email, just update status
+             const res = await pickupsService.updateStatus(pickupId, 'solicitada');
+             if (res.success) {
+               successCount++;
+             } else {
+               errorMessages.push(`Coleta ${data.pickup_number}: Transportador sem e-mail.`);
+             }
           }
-          break;
-        case 'print':
-          alert(`Gerando relatório para ${selectedPickups.length} coleta(s).`);
-          break;
-        case 'download':
-          alert(`Exportando dados de ${selectedPickups.length} coleta(s).`);
-          break;
-        default:
-          break;
-      }
+        }
+        if (successCount > 0) {
+          setToast({ 
+            message: `Coleta(s) solicitada(s) ao transportador com sucesso!${errorMessages.length > 0 ? '\n\nAlguns erros ocorreram:\n' + errorMessages.join('\n') : ''}`, 
+            type: errorMessages.length > 0 ? 'warning' : 'success' 
+          });
+          await refreshData();
+        } else {
+          setToast({ message: `Falha ao solicitar coleta(s).\n\n${errorMessages.join('\n')}`, type: 'error' });
+        }
+      } else if (action === 'cancelar') {
+        setConfirmDialog({
+          isOpen: true,
+          action: 'cancelar',
+          title: 'Cancelar Coleta(s)',
+          message: `Deseja realmente cancelar ${selectedPickups.length} coleta(s)?`,
+          targetIds: selectedPickups
+        });
+      } else if (action === 'realizar') {
+        setConfirmDialog({
+          isOpen: true,
+          action: 'realizar',
+          title: 'Marcar como Realizada(s)',
+          message: `Deseja marcar ${selectedPickups.length} coleta(s) como REALIZADA(s)?`,
+          targetIds: selectedPickups
+        });
+      } else if (action === 'print' || action === 'download') {
+        const fullPickupsToPrint = await Promise.all(
+          selectedPickups.map(async (id) => {
+            const data = await pickupsService.getById(id);
+            if (data) {
+                return {
+                   ...data,
+                   numeroColeta: data.pickup_number || data.id,
+                   dataCriacao: data.created_at,
+                   transportador: data.carrier_name,
+                   usuarioResponsavel: data.contact_name,
+                   logradouro: data.pickup_address,
+                   cidade: data.pickup_city,
+                   estado: data.pickup_state,
+                   cep: data.pickup_zip,
+                   quantidadeNotas: data.packages_quantity || 0,
+                   total_weight: data.total_weight || 0,
+                   total_volume: data.total_volume || 0
+                };
+            }
+            return data;
+          })
+        );
+        
+        const validPickups = fullPickupsToPrint.filter(p => !!(p && p.id));
+        
+        if (validPickups.length === 0) {
+           setToast({ message: 'Não foi possível recuperar os dados completos das coletas selecionadas.', type: 'error' });
+           setIsLoading(false);
+           return;
+        }
 
+        if (action === 'download') {
+          pickupPdfService.generatePickupPDF(validPickups, 'download');
+        } else {
+          const pdfUrl = pickupPdfService.generatePickupPDF(validPickups, 'print');
+          const printWindow = window.open(pdfUrl, '_blank');
+          if (printWindow) {
+            printWindow.onload = () => {
+              printWindow.print();
+            };
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erro na ação em lote:', error);
+      setToast({ message: 'Erro ao processar a ação solicitada.', type: 'error' });
+    } finally {
       setIsLoading(false);
       setSelectedPickups([]);
-    }, 1000);
+    }
   };
 
   const handleSingleAction = (pickupId: string, action: string) => {
@@ -168,25 +283,32 @@ export const Pickups: React.FC = () => {
           setSelectedPickup(pickup);
           setShowRelationshipMap(true);
           break;
+        case 'realizar':
+          setConfirmDialog({
+            isOpen: true,
+            action: 'realizar',
+            title: 'Marcar como Realizada',
+            message: `Deseja marcar a coleta ${pickup.numeroColeta} como REALIZADA?`,
+            targetIds: [pickupId]
+          });
+          break;
         case 'cancelar':
-          if (confirm(`Deseja realmente cancelar a coleta ${pickup.numeroColeta}?`)) {
-            alert(`Coleta ${pickup.numeroColeta} cancelada.`);
-            setPickups(prev => prev.map(p =>
-              p.id === pickupId ? { ...p, status: 'coleta_cancelada' } : p
-            ));
-          }
+          setConfirmDialog({
+            isOpen: true,
+            action: 'cancelar',
+            title: 'Cancelar Coleta',
+            message: `Deseja realmente cancelar a coleta ${pickup.numeroColeta}?`,
+            targetIds: [pickupId]
+          });
           break;
         case 'delete':
-          if (confirm(`Tem certeza que deseja excluir a coleta ${pickup.numeroColeta}? Esta ação removerá a coleta e o vínculo com todas as respectivas Notas Fiscais.`)) {
-            pickupsService.delete(pickup.id).then(res => {
-              if (res.success) {
-                alert(`Coleta ${pickup.numeroColeta} excluída com sucesso.`);
-                refreshData();
-              } else {
-                alert(`Erro ao excluir coleta: ${res.error}`);
-              }
-            });
-          }
+          setConfirmDialog({
+            isOpen: true,
+            action: 'delete',
+            title: 'Excluir Coleta',
+            message: `Tem certeza que deseja excluir a coleta ${pickup.numeroColeta}? Esta ação removerá a coleta e o vínculo com todas as respectivas Notas Fiscais.`,
+            targetIds: [pickupId]
+          });
           break;
         default:
           break;
@@ -207,7 +329,7 @@ export const Pickups: React.FC = () => {
         transportador: pickup.carrier_name || 'N/A',
         quantidadeNotas: pickup.packages_quantity || 0,
         dataCriacao: pickup.created_at,
-        usuarioResponsavel: pickup.contact_name || 'N/A',
+        usuarioResponsavel: pickup.usuarioResponsavel || pickup.customer_name || pickup.contact_name || 'N/A',
         enderecoColeta: `${pickup.pickup_city} - ${pickup.pickup_state}`,
         valorTotal: pickup.total_volume || 0,
         dataSolicitacao: pickup.requested_at || pickup.scheduled_date,
@@ -217,6 +339,56 @@ export const Pickups: React.FC = () => {
       setPickups(formattedPickups);
     } catch (error) {
       console.error('Erro ao carregar coletas:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.action) return;
+    
+    setIsLoading(true);
+    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+
+    try {
+      if (confirmDialog.action === 'delete') {
+         let successCount = 0;
+         let errors = 0;
+         for (const pickupId of confirmDialog.targetIds) {
+           const res = await pickupsService.delete(pickupId);
+           if (res.success) successCount++;
+           else errors++;
+         }
+         if (successCount > 0) {
+            setToast({ message: `${successCount} coleta(s) excluída(s) com sucesso.`, type: 'success' });
+            await refreshData();
+         } else if (errors > 0) {
+            setToast({ message: `Erro ao excluir coleta(s).`, type: 'error' });
+         }
+      } else {
+        let successCount = 0;
+        const newStatus = confirmDialog.action === 'realizar' ? 'realizada' : 'cancelada';
+        
+        for (const pickupId of confirmDialog.targetIds) {
+          const res = await pickupsService.updateStatus(pickupId, newStatus);
+          if (res.success) successCount++;
+        }
+        
+        if (successCount > 0) {
+          const actionMsg = confirmDialog.action === 'realizar' ? 'marcada(s) como realizada(s)' : 'cancelada(s)';
+          setToast({ message: `${successCount} coleta(s) ${actionMsg}.`, type: 'success' });
+          setPickups(prev => prev.map(pickup => {
+            if (confirmDialog.targetIds.includes(pickup.id)) {
+              return { ...pickup, status: newStatus };
+            }
+            return pickup;
+          }));
+        }
+      }
+      setSelectedPickups([]); // Limpar seleção após a ação
+    } catch (error) {
+      console.error(`Erro ao ${confirmDialog.action} coletas:`, error);
+      setToast({ message: `Erro ao processar as coletas selecionadas.`, type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -316,13 +488,11 @@ export const Pickups: React.FC = () => {
 
       <PickupsFilters onFilterChange={handleFilterChange} filters={filters} />
 
-      {selectedPickups.length > 0 && (
-        <PickupsActions
-          selectedCount={selectedPickups.length}
-          onAction={handleBulkAction}
-          isLoading={isLoading}
-        />
-      )}
+      <PickupsActions
+        selectedCount={selectedPickups.length}
+        onAction={handleBulkAction}
+        isLoading={isLoading}
+      />
 
       <PickupsTable
         pickups={filteredPickups}
@@ -360,6 +530,24 @@ export const Pickups: React.FC = () => {
           }}
         />
       )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.action === 'cancelar' ? 'Sim, Cancelar' : confirmDialog.action === 'delete' ? 'Sim, Excluir' : 'Sim, Marcar como Realizada'}
+        cancelText="Voltar"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

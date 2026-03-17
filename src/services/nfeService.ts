@@ -69,7 +69,8 @@ export const nfeService = {
             id,
             descricao,
             quantidade,
-            valor_total
+            valor_total,
+            cubagem
           )
         `)
         .order('created_at', { ascending: false });
@@ -90,6 +91,9 @@ export const nfeService = {
         access_key: invoice.chave_acesso,
         issue_date: invoice.data_emissao,
         operation_nature: invoice.natureza_operacao,
+        weight: invoice.peso_total || 0,
+        volumes: invoice.quantidade_volumes || 1,
+        cubic_meters: invoice.cubagem_total || (invoice.products || []).reduce((acc: number, p: any) => acc + (Number(p.cubagem) || 0), 0),
         total_value: invoice.valor_total,
         pis_value: invoice.valor_pis || 0,
         cofins_value: invoice.valor_cofins || 0,
@@ -116,7 +120,8 @@ export const nfeService = {
           id: p.id,
           description: p.descricao,
           quantity: p.quantidade,
-          total_value: p.valor_total
+          total_value: p.valor_total,
+          cubic_meters: p.cubagem
         })),
         freight_results: invoice.freight_results || []
       }));
@@ -381,6 +386,78 @@ export const nfeService = {
     } catch (error) {
       console.error('Error fetching NFes by IDs:', error);
       return [];
+    }
+  },
+
+  async addOccurrence(invoiceId: string, occurrenceData: any): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: invoice, error: fetchError } = await (supabase as any)
+        .from('invoices_nfe')
+        .select('metadata, situacao, order_number')
+        .eq('id', invoiceId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const metadata = invoice?.metadata || {};
+      const occurrences = metadata.occurrences || [];
+      
+      const newOccurrence = {
+        ...occurrenceData,
+        id: `occ_${Date.now()}`
+      };
+      
+      occurrences.push(newOccurrence);
+      
+      const updatedMetadata = {
+        ...metadata,
+        occurrences
+      };
+
+      const isDelivered = occurrenceData.codigo === '001' || occurrenceData.codigo === '002';
+      const newStatus = isDelivered ? 'entregue' : invoice.situacao;
+
+      const { error: updateError } = await (supabase as any)
+        .from('invoices_nfe')
+        .update({
+          metadata: updatedMetadata,
+          situacao: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', invoiceId);
+
+      if (updateError) throw updateError;
+      
+      // Se for entregue e tiver pedido vinculado, atualiza o pedido também
+      if (isDelivered && invoice.order_number) {
+         try {
+           const { data: orderData } = await (supabase as any)
+             .from('orders')
+             .select('id, metadata')
+             .eq('order_number', invoice.order_number)
+             .single();
+             
+           if (orderData) {
+             const orderMetadata = orderData.metadata || {};
+             const orderOccurrences = orderMetadata.occurrences || [];
+             orderOccurrences.push(newOccurrence);
+             
+             await (supabase as any).from('orders').update({
+               status: 'entregue',
+               metadata: { ...orderMetadata, occurrences: orderOccurrences },
+               data_entrega_realizada: occurrenceData.data_ocorrencia,
+               updated_at: new Date().toISOString()
+             }).eq('id', orderData.id);
+           }
+         } catch (e) {
+            console.error('Erro ao atualizar status do pedido relacionado', e);
+         }
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erro ao adicionar ocorrência:', error);
+      return { success: false, error: error.message };
     }
   },
 

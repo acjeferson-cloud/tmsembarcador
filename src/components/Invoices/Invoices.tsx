@@ -7,13 +7,16 @@ import { InvoiceDetailsModal } from './InvoiceDetailsModal';
 import { InvoiceCTesModal } from './InvoiceCTesModal';
 import { InvoiceForm } from './InvoiceForm';
 import { SchedulePickupModal } from './SchedulePickupModal';
+import { CreatePickupModal } from './CreatePickupModal';
 import { BulkXmlUploadModal } from './BulkXmlUploadModal';
+import { OccurrenceInvoiceModal } from './OccurrenceInvoiceModal';
+import { getDanfeHtml } from '../../utils/danfeGenerator';
+import { generateNfeXml } from '../../utils/xmlGenerator';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { AutoDownloadStatus } from '../common/AutoDownloadStatus';
 import { AutoImportDebugModal } from '../common/AutoImportDebugModal';
 import { establishmentsService } from '../../services/establishmentsService';
 import { nfeService, NFeWithCustomer } from '../../services/nfeService';
-import { pickupsService } from '../../services/pickupsService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
 import { supabase } from '../../lib/supabase';
@@ -38,10 +41,79 @@ const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   cliente: nfe.customer?.razao_social || 'Cliente não especificado',
   cidadeDestino: nfe.customer?.cidade || '',
   ufDestino: nfe.customer?.estado || '',
+  pesoTotal: (nfe as any).weight || 0,
+  volumes: (nfe as any).volumes || 1,
+  metros_cubicos: (nfe as any).cubic_meters || 0,
   chaveAcesso: nfe.access_key,
   cteCount: 0,
   freight_results: nfe.freight_results || []
 });
+
+const mapNFeToElectronicDoc = (nfe: any): any => {
+  // Try to parse XML to get rich data
+  let xmlData = null;
+  if (nfe.xml_data || nfe.xml_content) {
+    try {
+      const { parseNFeXml } = require('../../services/nfeXmlService');
+      xmlData = parseNFeXml(nfe.xml_data || nfe.xml_content);
+    } catch (e) {
+      console.error('Failed to parse NFe XML for print', e);
+    }
+  }
+
+  return {
+    id: nfe.id,
+    document_type: 'NFe',
+    modelo: '55',
+    numeroDocumento: nfe.number || nfe.numero || '',
+    serie: nfe.series || nfe.serie || '1',
+    chaveAcesso: nfe.access_key,
+    protocoloAutorizacao: xmlData?.authorizationProtocol || '',
+    dataAutorizacao: nfe.created_at,
+    dataImportacao: nfe.created_at,
+    status: 'autorizado',
+    emitente: xmlData?.carrier ? {
+      razaoSocial: xmlData.carrier.name || nfe.carrier?.razao_social || '',
+      cnpj: xmlData.carrier.cnpj || nfe.carrier?.cnpj || '',
+      endereco: xmlData.carrier.address || '',
+      cidade: xmlData.carrier.city || '',
+      uf: xmlData.carrier.state || '',
+      cep: xmlData.carrier.zipCode || '',
+      inscricaoEstadual: xmlData.carrier.stateRegistration || ''
+    } : {
+      razaoSocial: nfe.carrier?.razao_social || 'EMITENTE PADRÃO',
+      cnpj: nfe.carrier?.cnpj || '00000000000000',
+      endereco: '',
+      cidade: '',
+      uf: '',
+      cep: '',
+      inscricaoEstadual: ''
+    },
+    destinatario: xmlData?.customer ? {
+      razaoSocial: xmlData.customer.name || nfe.customer?.razao_social || '',
+      cnpjCpf: xmlData.customer.cnpj || nfe.customer?.cnpj_cpf || '',
+      endereco: xmlData.customer.address || nfe.customer?.logradouro || '',
+      cep: xmlData.customer.zipCode || nfe.customer?.cep || '',
+      cidade: xmlData.customer.city || nfe.customer?.cidade || '',
+      uf: xmlData.customer.state || nfe.customer?.estado || '',
+      inscricaoEstadual: xmlData.customer.stateRegistration || ''
+    } : {
+      razaoSocial: nfe.customer?.razao_social || '',
+      cnpjCpf: nfe.customer?.cnpj_cpf || '',
+      endereco: nfe.customer?.logradouro || '',
+      cep: nfe.customer?.cep || '',
+      cidade: nfe.customer?.cidade || '',
+      uf: nfe.customer?.estado || '',
+      inscricaoEstadual: nfe.customer?.inscricao_estadual || ''
+    },
+    valorTotal: nfe.total_value || 0,
+    valorIcms: nfe.icms_value || 0,
+    valorFrete: 0,
+    pesoTotal: nfe.weight || nfe.peso_total || 0,
+    modalTransporte: 'RODOVIARIO',
+    xmlContent: nfe.xml_data || nfe.xml_content || ''
+  };
+};
 
 export const Invoices: React.FC = () => {
   const { user } = useAuth();
@@ -55,6 +127,9 @@ export const Invoices: React.FC = () => {
   const [showSchedulePickupModal, setShowSchedulePickupModal] = useState(false);
   const [showBulkXmlUploadModal, setShowBulkXmlUploadModal] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
+  const [showCreatePickupModal, setShowCreatePickupModal] = useState(false);
+  const [showOccurrenceModal, setShowOccurrenceModal] = useState(false);
+  const [selectedInvoiceForOccurrence, setSelectedInvoiceForOccurrence] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
   const [currentEstablishment, setCurrentEstablishment] = useState<{id: string, name: string} | null>(null);
@@ -260,23 +335,73 @@ export const Invoices: React.FC = () => {
       return;
     }
 
+    if (action === 'print' || action === 'download') {
+      setIsLoading(true);
+      try {
+        const selectedInvoicesData = await nfeService.getByIds(selectedInvoices);
+        if (selectedInvoicesData.length === 0) throw new Error('Nenhuma nota encontrada');
+
+        if (action === 'download') {
+          selectedInvoicesData.forEach(nfe => {
+            const doc = mapNFeToElectronicDoc(nfe);
+            let xmlContent = doc.xmlContent || generateNfeXml(doc);
+            const blob = new Blob([xmlContent], { type: 'application/xml' });
+            const url = window.URL.createObjectURL(blob);
+            const a = window.document.createElement('a');
+            a.href = url;
+            a.download = `NFe_${doc.chaveAcesso}.xml`;
+            window.document.body.appendChild(a);
+            a.click();
+            window.document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          });
+          setToast({ message: `XML de ${selectedInvoices.length} nota(s) fiscal(is) baixado(s) com sucesso!`, type: 'success' });
+        }
+
+        if (action === 'print') {
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            // Get the HTML and extract the original styles from the first document
+            const firstDocHtml = getDanfeHtml(mapNFeToElectronicDoc(selectedInvoicesData[0]));
+            const styleMatch = firstDocHtml.match(/<style>([\s\S]*?)<\/style>/i);
+            const originalStyles = styleMatch ? styleMatch[1] : '';
+
+            let fullHtml = `<html><head><style>${originalStyles}\n@page{size: A4 portrait; margin: 10mm;} .page-break { page-break-after: always; }</style></head><body>`;
+            
+            selectedInvoicesData.forEach((nfe, index) => {
+              const doc = mapNFeToElectronicDoc(nfe);
+              const html = getDanfeHtml(doc);
+              const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
+              const innerHtml = bodyMatch ? bodyMatch[1] : html;
+              
+              fullHtml += `<div>${innerHtml}</div>`;
+              if (index < selectedInvoicesData.length - 1) {
+                fullHtml += '<div class="page-break"></div>';
+              }
+            });
+            fullHtml += '</body></html>';
+            
+            printWindow.document.write(fullHtml);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 500);
+            setToast({ message: `DANFE gerado para ${selectedInvoices.length} nota(s) fiscal(is).`, type: 'success' });
+          }
+        }
+      } catch (error) {
+        console.error('Erro na ação em lote:', error);
+        setToast({ message: 'Erro ao processar documentos.', type: 'error' });
+      } finally {
+        setIsLoading(false);
+        setSelectedInvoices([]);
+      }
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call
+    // Any other action...
     setTimeout(() => {
-      switch (action) {
-        case 'print':
-          setToast({ message: `DANFE gerado para ${selectedInvoices.length} nota(s) fiscal(is).`, type: 'success' });
-          break;
-        case 'download':
-          setToast({ message: `XML de ${selectedInvoices.length} nota(s) fiscal(is) baixado(s) com sucesso!`, type: 'success' });
-          break;
-        default:
-          break;
-      }
-
       setIsLoading(false);
-      // Clear selection after action
       setSelectedInvoices([]);
     }, 1000);
   };
@@ -307,57 +432,10 @@ export const Invoices: React.FC = () => {
     const pickupsToCreate = carriers.length;
 
     if (pickupsToCreate > 1) {
-      let message = `As notas selecionadas possuem ${pickupsToCreate} transportadores diferentes:\n\n`;
-      carriers.forEach((carrier, index) => {
-        const invoiceCount = invoicesByCarrier[carrier].length;
-        message += `${index + 1}. ${carrier}: ${invoiceCount} nota${invoiceCount > 1 ? 's' : ''}\n`;
-      });
-      message += `\nSerão criadas ${pickupsToCreate} coletas separadas. Deseja continuar?`;
-
-      if (!confirm(message)) {
-        return;
-      }
+      // The modal can handle showing multiples
     }
 
-    setConfirmDialog({
-      isOpen: true,
-      action: 'create-pickups',
-      invoiceNumber: `${pickupsToCreate} coleta(s)`
-    });
-
-    (window as any).__pendingPickupCreation = async () => {
-      setIsLoading(true);
-      try {
-        const result = await pickupsService.createFromNfes({
-          invoiceIds: selectedInvoices,
-          establishmentId: currentEstablishment.id,
-          userId: user.id
-        });
-
-        if (result.success && result.pickups) {
-          let message = `${result.pickups.length} coleta(s) criada(s) com sucesso!\n\n`;
-          result.pickups.forEach((pickup, index) => {
-            message += `${index + 1}. ${pickup.pickupNumber} - ${pickup.carrierName} (${pickup.invoiceCount} nota${pickup.invoiceCount > 1 ? 's' : ''})\n`;
-          });
-
-          if (result.warning) {
-            setToast({ message: result.warning + '\n\n' + message, type: 'success' });
-          } else {
-            setToast({ message, type: 'success' });
-          }
-
-          setSelectedInvoices([]);
-          refreshData();
-        } else {
-          setToast({ message: result.error || 'Erro ao criar coletas', type: 'error' });
-        }
-      } catch (error) {
-        console.error('Erro ao criar coletas:', error);
-        setToast({ message: 'Erro ao criar coletas', type: 'error' });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setShowCreatePickupModal(true);
   };
 
   const handleSingleAction = async (invoiceId: string, action: string) => {
@@ -390,11 +468,41 @@ export const Invoices: React.FC = () => {
           setSelectedInvoice(invoice);
           setShowDetailsModal(true);
           break;
-        case 'print':
-          setToast({ message: `DANFE gerado para a nota fiscal ${invoice.numero}.`, type: 'success' });
+        case 'print': {
+          const fullInvoice = await nfeService.getById(invoice.id);
+          if (fullInvoice) {
+            const doc = mapNFeToElectronicDoc(fullInvoice);
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+              printWindow.document.write(getDanfeHtml(doc));
+              printWindow.document.close();
+              setTimeout(() => { printWindow.print(); }, 500);
+            }
+            setToast({ message: `DANFE gerado para a nota fiscal ${invoice.numero}.`, type: 'success' });
+          }
           break;
-        case 'download':
-          setToast({ message: `XML da nota fiscal ${invoice.numero} baixado com sucesso!`, type: 'success' });
+        }
+        case 'download': {
+          const fullInvoice = await nfeService.getById(invoice.id);
+          if (fullInvoice) {
+            const doc = mapNFeToElectronicDoc(fullInvoice);
+            let xmlContent = doc.xmlContent || generateNfeXml(doc);
+            const blob = new Blob([xmlContent], { type: 'application/xml' });
+            const url = window.URL.createObjectURL(blob);
+            const a = window.document.createElement('a');
+            a.href = url;
+            a.download = `NFe_${doc.chaveAcesso}.xml`;
+            window.document.body.appendChild(a);
+            a.click();
+            window.document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            setToast({ message: `XML da nota fiscal ${invoice.numero} baixado com sucesso!`, type: 'success' });
+          }
+          break;
+        }
+        case 'lancar-ocorrencia':
+          setSelectedInvoiceForOccurrence(invoice.id);
+          setShowOccurrenceModal(true);
           break;
         case 'delete':
           setConfirmDialog({
@@ -428,12 +536,7 @@ export const Invoices: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    if (confirmDialog.action === 'create-pickups') {
-      if ((window as any).__pendingPickupCreation) {
-        (window as any).__pendingPickupCreation();
-        delete (window as any).__pendingPickupCreation;
-      }
-    } else if (confirmDialog.invoiceId && confirmDialog.invoiceNumber) {
+    if (confirmDialog.invoiceId && confirmDialog.invoiceNumber) {
       try {
         const result = await nfeService.delete(confirmDialog.invoiceId);
         if (result.success) {
@@ -561,7 +664,7 @@ export const Invoices: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Coletadas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Coleta</p>
               <p className="text-2xl font-semibold text-indigo-600 mt-1">
                 {invoices.filter(invoice => ['coletada', 'Coletada'].includes(invoice.status)).length}
               </p>
@@ -677,6 +780,8 @@ export const Invoices: React.FC = () => {
           isOpen={showDetailsModal}
           onClose={() => setShowDetailsModal(false)}
           invoice={selectedInvoice}
+          onPrint={() => handleSingleAction(selectedInvoice.id, 'print')}
+          onDownload={() => handleSingleAction(selectedInvoice.id, 'download')}
         />
       )}
 
@@ -699,6 +804,22 @@ export const Invoices: React.FC = () => {
           establishmentId={currentEstablishment?.id}
           onSuccess={() => {
             setToast({ message: 'Agendamento de coleta criado com sucesso!', type: 'success' });
+            setSelectedInvoices([]);
+            refreshData();
+          }}
+        />
+      )}
+
+      {/* Create Pickup Modal */}
+      {showCreatePickupModal && (
+        <CreatePickupModal
+          isOpen={showCreatePickupModal}
+          onClose={() => setShowCreatePickupModal(false)}
+          selectedInvoices={invoices.filter(inv => selectedInvoices.includes(inv.id))}
+          establishmentId={currentEstablishment?.id}
+          userId={Number(user?.id) || undefined}
+          onSuccess={() => {
+            setToast({ message: 'Coleta(s) criada(s) com sucesso!', type: 'success' });
             setSelectedInvoices([]);
             refreshData();
           }}
@@ -745,6 +866,31 @@ export const Invoices: React.FC = () => {
           }
           onConfirm={confirmDelete}
           onCancel={() => setConfirmDialog({ isOpen: false })}
+        />
+      )}
+
+      {/* Modal de Lançar Ocorrência */}
+      {showOccurrenceModal && selectedInvoiceForOccurrence && (
+        <OccurrenceInvoiceModal
+          isOpen={showOccurrenceModal}
+          onClose={() => {
+            setShowOccurrenceModal(false);
+            setSelectedInvoiceForOccurrence(null);
+          }}
+          onSave={async (occurrenceData) => {
+            try {
+              const res = await nfeService.addOccurrence(selectedInvoiceForOccurrence, occurrenceData);
+              if (res.success) {
+                setToast({ message: 'Ocorrência lançada com sucesso!', type: 'success' });
+                refreshData();
+              } else {
+                setToast({ message: res.error || 'Erro ao lançar ocorrência.', type: 'error' });
+              }
+            } catch (err) {
+              setToast({ message: 'Erro ao lançar ocorrência.', type: 'error' });
+            }
+          }}
+          invoiceNumber={invoices.find(i => i.id === selectedInvoiceForOccurrence)?.numero || ''}
         />
       )}
     </div>

@@ -323,7 +323,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-coletado" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Coletado
+                  Em Coleta
                 </label>
               </div>
               <div className="flex items-center">
