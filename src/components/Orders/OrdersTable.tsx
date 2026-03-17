@@ -113,6 +113,14 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
     
     if ((aValue as any) < (bValue as any)) return sortDirection === 'asc' ? -1 : 1;
     if ((aValue as any) > (bValue as any)) return sortDirection === 'asc' ? 1 : -1;
+    
+    // Tie-breaker: sort by numero desc if the primary field is the same
+    if (a.numero !== b.numero) {
+      const aNum = Number(a.numero) || 0;
+      const bNum = Number(b.numero) || 0;
+      return bNum - aNum; // always descending for the secondary sort
+    }
+    
     return 0;
   });
 
