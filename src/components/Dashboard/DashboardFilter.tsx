@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Info } from 'lucide-react';
+import { Calendar, Info } from 'lucide-react';
 import { DashboardFilters } from '../../services/dashboardService';
 import { Toast } from '../common/Toast';
 
@@ -9,17 +9,12 @@ interface Props {
   onShowCalc: () => void;
 }
 
-const BRAZILIAN_UFS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-];
+
 
 export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onShowCalc }) => {
 
   const [localStart, setLocalStart] = useState(filters.dateRange.start);
   const [localEnd, setLocalEnd] = useState(filters.dateRange.end);
-  const [localUf, setLocalUf] = useState(filters.uf || '');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
   const handleApply = () => {
@@ -52,7 +47,7 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
     onFilterChange({
       ...filters,
       dateRange: { start: localStart, end: localEnd },
-      uf: localUf || undefined
+      uf: undefined
     });
     
     setToast({
@@ -86,20 +81,7 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
           />
         </div>
 
-        {/* UF Selector */}
-        <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 shadow-sm">
-          <MapPin size={18} className="text-gray-500 dark:text-gray-400" />
-          <select
-            value={localUf}
-            onChange={(e) => setLocalUf(e.target.value)}
-            className="bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none w-28"
-          >
-            <option value="">Todas UFs</option>
-            {BRAZILIAN_UFS.map(uf => (
-              <option key={uf} value={uf}>{uf}</option>
-            ))}
-          </select>
-        </div>
+
 
         <button
           onClick={handleApply}

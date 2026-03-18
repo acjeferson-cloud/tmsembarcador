@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useJsApiLoader, GoogleMap, Circle, InfoWindow } from '@react-google-maps/api';
 import { dashboardService, DashboardFilters, DashboardMapaCusto } from '../../services/dashboardService';
-import { AlertCircle, Map, Truck, Calendar } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
 
 interface Props {
   filters: DashboardFilters;
@@ -17,23 +17,27 @@ const defaultCenter = { lat: -14.235, lng: -51.925 };
 const defaultZoom = 4;
 
 export const DashboardMap: React.FC<Props> = ({ filters }) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const circlesRef = useRef<google.maps.Circle[]>([]);
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mapData, setMapData] = useState<DashboardMapaCusto[]>([]);
   
   // Geocoded data cache
   const [geocodedLocations, setGeocodedLocations] = useState<Record<string, {lat: number, lng: number}>>({});
-  const [selectedCity, setSelectedCity] = useState<DashboardMapaCusto | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<Error | null>(null);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: apiKey || '',
-    language: 'pt-BR',
-    region: 'BR',
-  });
+  useEffect(() => {
+    loadGoogleMapsAPI()
+      .then(() => setIsLoaded(true))
+      .catch((err) => setLoadError(err));
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -43,7 +47,24 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
     if (isLoaded && !geocoderRef.current) {
       geocoderRef.current = new google.maps.Geocoder();
     }
-  }, [isLoaded]);
+    
+    if (isLoaded && mapRef.current && !mapInstance) {
+      const map = new google.maps.Map(mapRef.current, {
+        center: defaultCenter,
+        zoom: defaultZoom,
+        disableDefaultUI: false,
+        styles: [
+          {
+            featureType: 'administrative.country',
+            elementType: 'geometry.stroke',
+            stylers: [{ color: '#4b6878' }]
+          }
+        ]
+      });
+      setMapInstance(map);
+      infoWindowRef.current = new google.maps.InfoWindow();
+    }
+  }, [isLoaded, mapInstance]);
 
   useEffect(() => {
     // Only geocode if we have data and the geocoder is ready
@@ -51,6 +72,102 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       geocodeCities(mapData.slice(0, 50)); // Limit to Top 50 to avoid API limits
     }
   }, [mapData, isLoaded]);
+
+  useEffect(() => {
+    if (!mapInstance || mapData.length === 0) return;
+
+    // Clear previous circles
+    circlesRef.current.forEach(c => c.setMap(null));
+    circlesRef.current = [];
+
+    const maxCost = Math.max(...mapData.map(d => d.custoTotal), 1);
+    const getRadius = (cost: number) => {
+      const minRadius = 15000; // 15km
+      const maxRadius = 100000; // 100km
+      return minRadius + (cost / maxCost) * (maxRadius - minRadius);
+    };
+
+    mapData.slice(0, 50).forEach((city, idx) => {
+      const addressKey = `${city.cidade}, ${city.uf}, Brasil`;
+      const coords = geocodedLocations[addressKey];
+      
+      if (!coords) return;
+      
+      const isHighCost = city.custoTotal > (maxCost * 0.5);
+
+      const circle = new google.maps.Circle({
+        map: mapInstance,
+        center: coords,
+        radius: getRadius(city.custoTotal),
+        fillColor: isHighCost ? '#EF4444' : '#3B82F6',
+        fillOpacity: 0.6,
+        strokeColor: isHighCost ? '#DC2626' : '#2563EB',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        clickable: true
+      });
+
+      circle.addListener('click', () => {
+        if (infoWindowRef.current) {
+          infoWindowRef.current.setContent(buildInfoWindowContent(city));
+          infoWindowRef.current.setPosition(coords);
+          infoWindowRef.current.open(mapInstance);
+        }
+      });
+
+      circlesRef.current.push(circle);
+    });
+
+  }, [mapInstance, mapData, geocodedLocations]);
+
+  const buildInfoWindowContent = (city: DashboardMapaCusto) => {
+    let cteHtml = '';
+    if (city.ctes && city.ctes.length > 0) {
+      cteHtml = `
+        <div style="margin-top: 8px; max-height: 192px; overflow-y: auto; padding-right: 4px;">
+          <p style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; position: sticky; top: 0; background: white; margin: 0 0 4px 0;">Documentos Vinculados</p>
+          ${city.ctes.map(cte => `
+            <div style="background: #F9FAFB; border-radius: 4px; padding: 8px; margin-bottom: 8px; font-size: 10px; border: 1px solid #F3F4F6;">
+              <div style="display: flex; justify-content: space-between; font-weight: bold; color: #374151; margin-bottom: 4px;">
+                <span>CT-e: ${cte.serie}/${cte.numero}</span>
+              </div>
+              <p style="color: #4B5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 2px 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><path d="M10 17h4V5H2v12h3"></path><path d="M20 17h2v-9h-5V5H10"></path><path d="M15 13H5"></path><circle cx="6.5" cy="17.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+                ${cte.transportador}
+              </p>
+              <p style="color: #6B7280; margin: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                Data: ${new Date(cte.emissao).toLocaleDateString('pt-BR')}
+              </p>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    return `
+      <div style="padding: 4px; min-width: 200px; color: #1F2937; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <h4 style="font-weight: bold; font-size: 14px; border-bottom: 1px solid #E5E7EB; padding-bottom: 4px; margin: 0 0 8px 0;">
+          ${city.cidade} - ${city.uf}
+        </h4>
+        <div style="font-size: 12px;">
+          <p style="display: flex; justify-content: space-between; margin: 0 0 4px 0;">
+            <span style="color: #6B7280;">Custo Total:</span>
+            <span style="font-weight: 600; color: #DC2626;">R$ ${city.custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+          </p>
+          <p style="display: flex; justify-content: space-between; margin: 0 0 4px 0;">
+            <span style="color: #6B7280;">Volume:</span>
+            <span style="font-weight: 500;">${city.volumeKg.toLocaleString('pt-BR')} Kg</span>
+          </p>
+          <p style="display: flex; justify-content: space-between; border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; margin: 0;">
+            <span style="color: #6B7280;">Entregas Totais:</span>
+            <span style="font-weight: 500;">${city.totalEntregas}</span>
+          </p>
+          ${cteHtml}
+        </div>
+      </div>
+    `;
+  };
 
   const loadData = async () => {
     try {
@@ -66,12 +183,15 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
   };
 
   const geocodeCities = async (citiesToGeocode: DashboardMapaCusto[]) => {
-    const newGeocoded: Record<string, {lat: number, lng: number}> = { ...geocodedLocations };
+    // Mapeamento local para não tentar repetidas vezes o mesmo endereço
+    const inProgressOrDone = new Set(Object.keys(geocodedLocations));
     
     for (const item of citiesToGeocode) {
       const addressKey = `${item.cidade}, ${item.uf}, Brasil`;
       
-      if (!newGeocoded[addressKey]) {
+      if (!inProgressOrDone.has(addressKey)) {
+        inProgressOrDone.add(addressKey);
+        
         try {
           const response = await new Promise<google.maps.GeocoderResponse>((resolve, reject) => {
             geocoderRef.current?.geocode({ address: addressKey }, (results, status) => {
@@ -85,29 +205,20 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
           
           if (response.results && response.results.length > 0) {
             const loc = response.results[0].geometry.location;
-            newGeocoded[addressKey] = { lat: loc.lat(), lng: loc.lng() };
+            const newCoords = { lat: loc.lat(), lng: loc.lng() };
+            // Atualiza o state local para desenhar o pin imediatamente
+            setGeocodedLocations(prev => ({ ...prev, [addressKey]: newCoords }));
           }
           
-          // Small delay to respect rate limits
-          await new Promise(r => setTimeout(r, 200));
+          // Delay ligeiramente maior para evitar OVER_QUERY_LIMIT do Google Maps
+          await new Promise(r => setTimeout(r, 400));
         } catch (err) {
           console.warn('Falha ao geocodificar:', addressKey, err);
+          // Continua o loop mesmo se der erro num específico (ex: endereço não encontrado)
         }
       }
     }
-    
-    setGeocodedLocations(newGeocoded);
   };
-
-  if (!apiKey) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 rounded-lg flex flex-col items-center justify-center gap-3 text-center h-64">
-        <Map size={32} />
-        <h3 className="font-semibold text-lg">Chave de API do Google Maps Não Configurada</h3>
-        <p>A variável VITE_GOOGLE_MAPS_API_KEY não foi encontrada no arquivo .env.</p>
-      </div>
-    );
-  }
 
   if (loadError) {
     return (
@@ -127,14 +238,6 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
     );
   }
 
-  // Calculate dynamic radius based on cost
-  const maxCost = mapData.length > 0 ? Math.max(...mapData.map(d => d.custoTotal)) : 1;
-  const getRadius = (cost: number) => {
-    const minRadius = 15000; // 15km
-    const maxRadius = 100000; // 100km
-    return minRadius + (cost / maxCost) * (maxRadius - minRadius);
-  };
-
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -147,102 +250,17 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
           </div>
         </div>
 
-        {loading || !isLoaded ? (
-          <div className="w-full h-[600px] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center animate-pulse">
-            <p className="text-gray-400">Carregando mapa...</p>
-          </div>
-        ) : (
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={defaultCenter}
-            zoom={defaultZoom}
-            options={{
-              disableDefaultUI: false,
-              styles: [
-                {
-                  featureType: 'administrative.country',
-                  elementType: 'geometry.stroke',
-                  stylers: [{ color: '#4b6878' }]
-                }
-              ] // Can add a dark/light mode JSON style here
-            }}
-          >
-            {mapData.slice(0, 50).map((city, idx) => {
-              const addressKey = `${city.cidade}, ${city.uf}, Brasil`;
-              const coords = geocodedLocations[addressKey];
-              
-              if (!coords) return null;
-              
-              const isHighCost = city.custoTotal > (maxCost * 0.5);
-
-              return (
-                <Circle
-                  key={idx}
-                  center={coords}
-                  radius={getRadius(city.custoTotal)}
-                  options={{
-                    fillColor: isHighCost ? '#EF4444' : '#3B82F6', // Red for top 50%, Blue for lower
-                    fillOpacity: 0.6,
-                    strokeColor: isHighCost ? '#DC2626' : '#2563EB',
-                    strokeOpacity: 0.8,
-                    strokeWeight: 2,
-                    clickable: true
-                  }}
-                  onClick={() => setSelectedCity(city)}
-                />
-              );
-            })}
-
-            {selectedCity && geocodedLocations[`${selectedCity.cidade}, ${selectedCity.uf}, Brasil`] && (
-              <InfoWindow
-                position={geocodedLocations[`${selectedCity.cidade}, ${selectedCity.uf}, Brasil`]}
-                onCloseClick={() => setSelectedCity(null)}
-              >
-                <div className="p-1 min-w-[200px] text-gray-800">
-                  <h4 className="font-bold text-sm border-b pb-1 mb-2">
-                    {selectedCity.cidade} - {selectedCity.uf}
-                  </h4>
-                  <div className="text-sm space-y-1">
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Custo Total:</span>
-                      <span className="font-semibold text-red-600">R$ {selectedCity.custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                    </p>
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Volume:</span>
-                      <span className="font-medium">{selectedCity.volumeKg.toLocaleString('pt-BR')} Kg</span>
-                    </p>
-                    <p className="flex justify-between border-b pb-2">
-                      <span className="text-gray-500">Entregas Totais:</span>
-                      <span className="font-medium">{selectedCity.totalEntregas}</span>
-                    </p>
-                    
-                    {/* CT-es Detail View Scrollable */}
-                    {selectedCity.ctes && selectedCity.ctes.length > 0 && (
-                      <div className="mt-2 max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                        <p className="text-xs font-semibold text-gray-700 uppercase sticky top-0 bg-white">Documentos Vinculados</p>
-                        {selectedCity.ctes.map((cte, idx) => (
-                          <div key={idx} className="bg-gray-50 rounded p-2 text-xs border border-gray-100">
-                            <div className="flex justify-between font-bold text-gray-700 mb-1">
-                              <span>CT-e: {cte.serie}/{cte.numero}</span>
-                            </div>
-                            <p className="text-gray-600 truncate flex items-center gap-1" title={cte.transportador}>
-                              <Truck size={10} className="flex-shrink-0" />
-                              {cte.transportador}
-                            </p>
-                            <p className="text-gray-500 flex items-center gap-1">
-                              <Calendar size={10} className="flex-shrink-0" />
-                              Data: {new Date(cte.emissao).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </InfoWindow>
-            )}
-          </GoogleMap>
-        )}
+        <div className="relative w-full" style={containerStyle}>
+          {(loading || !isLoaded) && (
+            <div className="absolute inset-0 z-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center animate-pulse">
+               <p className="text-gray-400">Carregando mapa...</p>
+            </div>
+          )}
+          <div
+            ref={mapRef}
+            className="w-full h-full rounded-xl border border-gray-300 dark:border-gray-600"
+          />
+        </div>
       </div>
       
       {/* Top 10 List */}
