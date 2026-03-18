@@ -9,6 +9,17 @@ export async function setSessionContext(
   environmentId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Override with localStorage selection if available
+    const selectedOrgId = localStorage.getItem('tms-selected-organization');
+    if (selectedOrgId && selectedOrgId !== 'null') {
+      organizationId = selectedOrgId;
+    }
+    
+    const selectedEnvId = localStorage.getItem('tms-selected-environment');
+    if (selectedEnvId && selectedEnvId !== 'null') {
+      environmentId = selectedEnvId;
+    }
+
     console.log('🔐 [sessionContext] Configurando contexto da sessão:', {
       organizationId,
       environmentId

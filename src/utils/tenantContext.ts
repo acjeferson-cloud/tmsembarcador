@@ -58,7 +58,12 @@ export class TenantContextHelper {
         return null;
       }
 
-      const organizationId = userProfile.organization_id;
+      let organizationId = userProfile.organization_id;
+      const selectedOrgId = localStorage.getItem('tms-selected-organization');
+      
+      if (selectedOrgId && selectedOrgId !== 'null') {
+        organizationId = selectedOrgId;
+      }
 
       if (!organizationId) {
         console.warn(`TenantContext: Perfil sem organization_id para o e-mail ${userEmail}`);

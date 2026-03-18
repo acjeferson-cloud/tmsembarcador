@@ -25,7 +25,14 @@ export const EDIInput: React.FC = () => {
     { label: 'Entrada', current: true }
   ];
 
-  const [selectedLayout, setSelectedLayout] = useState<EDILayoutType | ''>('');
+  const [selectedLayout, setSelectedLayout] = useState<EDILayoutType | ''>(() => {
+    const preselected = localStorage.getItem('edi-preselected-layout');
+    if (preselected) {
+      localStorage.removeItem('edi-preselected-layout');
+      return preselected as EDILayoutType;
+    }
+    return '';
+  });
   const [files, setFiles] = useState<EDIFile[]>([]);
   const [observations, setObservations] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);

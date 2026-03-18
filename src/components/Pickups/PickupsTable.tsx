@@ -266,6 +266,16 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                         <Eye size={18} />
                       </button>
 
+                      {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
+                        <button
+                          onClick={() => onAction(pickup.id, 'realizar')}
+                          title="Marcar como Realizada"
+                          className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                        >
+                          <CheckCircle size={18} />
+                        </button>
+                      )}
+
                       <button
                         onClick={() => onAction(pickup.id, 'view-relationship-map')}
                         title="Mapa de Relações"
@@ -292,23 +302,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                                   onAction(pickup.id, 'cancelar');
                                   setOpenActionMenu(null);
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
                               >
                                 <XCircle size={16} />
                                 <span>Cancelar Coleta</span>
-                              </button>
-                            )}
-                            {/* Marcar como Realizada Action */}
-                            {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
-                              <button
-                                onClick={() => {
-                                  onAction(pickup.id, 'realizar');
-                                  setOpenActionMenu(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                              >
-                                <CheckCircle size={16} />
-                                <span>Marcar como Realizada</span>
                               </button>
                             )}
                             

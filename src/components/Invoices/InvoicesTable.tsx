@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2, ClipboardCheck } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2, ClipboardCheck, RefreshCw } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 
 interface Invoice {
@@ -384,6 +384,26 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                       </button>
 
 
+                      {/* Launch Occurrence */}
+                      <button
+                        onClick={() => onAction(invoice.id, 'lancar-ocorrencia')}
+                        disabled={isLoading}
+                        className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 p-1 rounded hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                        title="Lançar Ocorrência"
+                      >
+                        <ClipboardCheck size={16} />
+                      </button>
+
+                      {/* Recalculate */}
+                      <button
+                        onClick={() => onAction(invoice.id, 'recalculate')}
+                        disabled={isLoading}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        title="Recalcular Nota Fiscal"
+                      >
+                        <RefreshCw size={16} />
+                      </button>
+
                       {/* Relationship Map */}
                       <button
                         onClick={() => handleShowRelationshipMap(invoice)}
@@ -409,19 +429,6 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                         {openActionMenu === invoice.id && (
                           <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                             <div className="py-1">
-                              {/* View CT-es */}
-                              <button
-                                onClick={() => {
-                                  onAction(invoice.id, 'view-ctes');
-                                  setOpenActionMenu(null);
-                                }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center space-x-2"
-                              >
-                                <Eye size={14} />
-                                <span>Ver CT-es Vinculados</span>
-                              </button>
-
                               {/* Edit Invoice */}
                               <button
                                 onClick={() => {
@@ -429,23 +436,10 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center space-x-2 border-t border-gray-100 dark:border-gray-700"
+                                className="w-full text-left px-4 py-2 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center space-x-2"
                               >
                                 <Edit2 size={14} />
                                 <span>Editar Nota Fiscal</span>
-                              </button>
-                              
-                              {/* Launch Occurrence */}
-                              <button
-                                onClick={() => {
-                                  onAction(invoice.id, 'lancar-ocorrencia');
-                                  setOpenActionMenu(null);
-                                }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center space-x-2 border-t border-gray-100 dark:border-gray-700"
-                              >
-                                <ClipboardCheck size={14} />
-                                <span>Lançar Ocorrência</span>
                               </button>
                               
                               {/* Delete */}

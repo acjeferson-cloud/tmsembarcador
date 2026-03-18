@@ -3,6 +3,7 @@ import { ArrowLeft, Info, DollarSign, Users, FileText, Package, Upload, CheckCir
 import { parseNFeXml, importNFeToDatabase, NFeXmlData } from '../../services/nfeXmlService';
 import { carriersService } from '../../services/carriersService';
 import { freightQuoteService } from '../../services/freightQuoteService';
+import { invoicesCostService } from '../../services/invoicesCostService';
 import { TenantContextHelper } from '../../utils/tenantContext';
 import { normalizarCNPJ } from '../../utils/cnpj';
 import { useAuth } from '../../hooks/useAuth';
@@ -283,6 +284,20 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (formData.order_number !== invoice.order_number) {
             updateData.order_number = formData.order_number || null;
         }
+
+        const inputWeight = parseFloat(String(formData.weight).replace(',', '.')) || 0;
+        const inputVolumes = parseInt(String(formData.volumes)) || 1;
+        const inputCubage = parseFloat(String((formData as any).cubic_meters).replace(',', '.')) || 0;
+
+        if (inputWeight !== (invoice.peso_total || 0)) {
+            updateData.peso_total = inputWeight;
+        }
+        if (inputVolumes !== (invoice.quantidade_volumes || 1)) {
+            updateData.quantidade_volumes = inputVolumes;
+        }
+        if (inputCubage !== (invoice.cubagem_total || 0)) {
+            updateData.cubagem_total = inputCubage;
+        }
         
         if (Object.keys(updateData).length > 0) {
             const { error: updateError } = await (supabase as any)
@@ -299,41 +314,96 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         let finalFreightResults = invoice.freight_results || [];
         
         const invoiceTotalValue = Number(formData.invoice_value) || Number(formData.total_value) || 0;
-        const totalWeight = parseFloat(formData.weight as any) || 0;
-        const totalVolume = parseInt(formData.volumes as any) || 1;
+        const totalWeight = parseFloat(String(formData.weight).replace(',', '.')) || 0;
+        const totalVolume = parseInt(String(formData.volumes)) || 1;
         
         if (totalWeight > 0 && products.length > 0) {
           try {
-            const results = await freightQuoteService.calculateQuote(
-              {
-                destinationZipCode: customerData.zip_code ? customerData.zip_code.replace(/\D/g, '') : undefined,
-                weight: totalWeight,
-                volumeQty: totalVolume,
-                cubicMeters: (formData as any).cubic_meters || 0,
-                cargoValue: invoiceTotalValue,
-                establishmentId: establishmentId,
-                selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
-              },
-              user?.supabaseUser?.id,
-              user?.name || user?.email,
-              user?.email
-            );
-            
-            if (results && results.length > 0) {
-              finalFreightResults = results;
-              bestCarrierId = results[0].carrierId;
-              finalFreightValue = results[0].totalValue;
-              
-              const { error: fError } = await (supabase as any)
-                .from('invoices_nfe')
-                .update({ 
-                  carrier_id: bestCarrierId, 
-                  valor_frete: finalFreightValue,
-                  freight_results: finalFreightResults
-                })
-                .eq('id', invoice.id);
+            if (formData.carrier_id) {
+              try {
+                const invoiceData = {
+                  weight: totalWeight,
+                  value: invoiceTotalValue,
+                  volume: totalVolume,
+                  m3: parseFloat(String((formData as any).cubic_meters).replace(',', '.')) || 0,
+                  destinationCity: customerData.city || '',
+                  destinationState: customerData.state || '',
+                  issueDate: formData.issue_date
+                };
                 
-              if (fError) console.error('Error updating freight:', fError);
+                const carrierData = await invoicesCostService.getCarrierData(formData.carrier_id);
+                if (carrierData) {
+                  const calculation = await invoicesCostService.calculateInvoiceCost(invoiceData, formData.carrier_id, formData.issue_date);
+                  await invoicesCostService.saveCostsToInvoice(invoice.id, formData.carrier_id, calculation, carrierData);
+                  
+                  finalFreightValue = calculation.valorTotal;
+                  finalFreightResults = [{
+                    carrierId: formData.carrier_id,
+                    carrierName: carrierData.razao_social,
+                    totalValue: calculation.valorTotal,
+                    calculationDetails: calculation
+                  }];
+                  
+                  const { error: fError } = await (supabase as any)
+                    .from('invoices_nfe')
+                    .update({ 
+                      carrier_id: formData.carrier_id, 
+                      valor_frete: finalFreightValue,
+                      freight_results: finalFreightResults
+                    })
+                    .eq('id', invoice.id);
+                  if (fError) console.error('Error updating freight:', fError);
+                }
+              } catch (err: any) {
+                console.error('Erro no cálculo específico da NFe no save:', err);
+                const { TenantContextHelper } = await import('../../utils/tenantContext');
+                const context = await TenantContextHelper.getCurrentContext();
+                setError(`Aviso de Cálculo: Falha ao associar tabela do transportador. Motivo: ${err.message || JSON.stringify(err)} | Org: ${context?.organizationId} | Env: ${context?.environmentId}`);
+                
+                finalFreightValue = 0;
+                finalFreightResults = [];
+                
+                await (supabase as any)
+                  .from('invoices_nfe')
+                  .update({ 
+                    carrier_id: formData.carrier_id, 
+                    valor_frete: 0,
+                    freight_results: []
+                  })
+                  .eq('id', invoice.id);
+              }
+            } else {
+              const results = await freightQuoteService.calculateQuote(
+                {
+                  destinationZipCode: customerData.zip_code ? customerData.zip_code.replace(/\D/g, '') : undefined,
+                  weight: totalWeight,
+                  volumeQty: totalVolume,
+                  cubicMeters: parseFloat(String((formData as any).cubic_meters).replace(',', '.')) || 0,
+                  cargoValue: invoiceTotalValue,
+                  establishmentId: establishmentId,
+                  selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+                },
+                user?.supabaseUser?.id,
+                user?.name || user?.email,
+                user?.email
+              );
+              
+              if (results && results.length > 0) {
+                finalFreightResults = results;
+                bestCarrierId = results[0].carrierId;
+                finalFreightValue = results[0].totalValue;
+                
+                const { error: fError } = await (supabase as any)
+                  .from('invoices_nfe')
+                  .update({ 
+                    carrier_id: bestCarrierId, 
+                    valor_frete: finalFreightValue,
+                    freight_results: finalFreightResults
+                  })
+                  .eq('id', invoice.id);
+                  
+                if (fError) console.error('Error updating freight:', fError);
+              }
             }
           } catch (freightError) {
              console.error('Freight calc error:', freightError);
@@ -1133,8 +1203,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           </label>
                           <input
                             type="text"
-                            value={formData.weight || 0}
-                            onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || 0)}
+                            value={formData.weight || ''}
+                            onChange={(e) => handleInputChange('weight', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                           />
                         </div>
@@ -1144,8 +1214,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           </label>
                           <input
                             type="text"
-                            value={formData.volumes || 1}
-                            onChange={(e) => handleInputChange('volumes', parseInt(e.target.value) || 1)}
+                            value={formData.volumes || ''}
+                            onChange={(e) => handleInputChange('volumes', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                           />
                         </div>
@@ -1155,9 +1225,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           </label>
                           <input
                             type="text"
-                            value={(formData as any).cubic_meters || 0}
-                            disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
+                            value={(formData as any).cubic_meters || ''}
+                            onChange={(e) => handleInputChange('cubic_meters', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                           />
                         </div>
                       </div>

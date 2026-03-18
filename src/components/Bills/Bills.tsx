@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { FileText, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, AlertCircle, RefreshCw, Plus } from 'lucide-react';
 import { Toast, ToastType } from '../common/Toast';
 import { BillsFilters } from './BillsFilters';
 import { BillsTable } from './BillsTable';
@@ -10,6 +10,7 @@ import { BillCTesModal } from './BillCTesModal';
 import { BillRejectionModal } from './BillRejectionModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { billsService } from '../../services/billsService';
+import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 
 export const Bills: React.FC = () => {
   const breadcrumbItems = [
@@ -32,6 +33,7 @@ export const Bills: React.FC = () => {
     billNumber: '',
     action: ''
   });
+  const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [filters, setFilters] = useState({
     transportador: '',
     periodoEmissao: { start: '', end: '' },
@@ -57,7 +59,7 @@ export const Bills: React.FC = () => {
         dataEmissao: bill.issue_date,
         dataVencimento: bill.due_date,
         dataEntrada: bill.created_at,
-        dataAprovacao: (bill.status !== 'importada' && bill.status !== 'cancelada') ? bill.updated_at : null,
+        dataAprovacao: null, // NÃO VIRÁ DO ARQUIVO, mantenha a data em branco por enquanto
         transportador: bill.customer_name,
         valorCTes: parseFloat(bill.total_value?.toString() || '0'),
         valorDesconto: parseFloat(bill.discount_value?.toString() || '0'),
@@ -201,6 +203,10 @@ export const Bills: React.FC = () => {
     
     try {
       switch (action) {
+        case 'view-map':
+          setSelectedBill(bill);
+          setShowRelationshipMap(true);
+          break;
         case 'view-ctes':
           setSelectedBill(bill);
           setShowCTesModal(true);
@@ -305,9 +311,19 @@ export const Bills: React.FC = () => {
         </div>
         <div className="flex items-center space-x-3">
           <button
+            onClick={() => {
+              localStorage.setItem('edi-preselected-layout', 'DOCCOB');
+              window.dispatchEvent(new CustomEvent('app-navigate', { detail: 'edi-input' }));
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Plus size={20} />
+            <span>Inserir Fatura</span>
+          </button>
+          <button
             onClick={refreshData}
             disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
             <span>{isLoading ? 'Carregando...' : 'Atualizar'}</span>
@@ -458,6 +474,22 @@ export const Bills: React.FC = () => {
           onClose={() => setShowCTesModal(false)}
           billId={selectedBill.id}
           billNumber={selectedBill.numero}
+        />
+      )}
+
+      {/* Relationship Map Modal */}
+      {showRelationshipMap && selectedBill && (
+        <RelationshipMapModal
+          isOpen={showRelationshipMap}
+          onClose={() => setShowRelationshipMap(false)}
+          sourceDocument={{
+             id: `bill-${selectedBill.id}`,
+             type: 'bill',
+             number: selectedBill.numero,
+             date: selectedBill.dataEmissao,
+             status: selectedBill.status,
+             value: selectedBill.valorCTes || selectedBill.valorCusto
+          }}
         />
       )}
 

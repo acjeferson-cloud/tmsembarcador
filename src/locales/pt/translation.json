@@ -151,8 +151,8 @@
       "notInformed": "Não informado",
       "noRating": "Sem avaliação",
       "na": "N/A",
-      "days": "{{count}} dia",
-      "days_plural": "{{count}} dias"
+      "days": "{{count}} dia(s)",
+      "days_plural": "{{count}} dia(s)"
     },
     "history": {
       "title": "Histórico de Cotações",

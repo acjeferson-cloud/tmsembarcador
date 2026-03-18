@@ -429,10 +429,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
           if (results && results.length > 0) {
             freightResults = results;
             bestCarrierId = results[0].carrierId;
-            finalFreightValue = results[0].totalValue;
-            carrierId = bestCarrierId;
-            carrierName = results[0].carrierName;
-            console.log('Cotação Calculada Com Sucesso. Transportadora Vencedora:', carrierName, finalFreightValue);
+            
+            if (formData.carrier_id) {
+              const selectedQuote = results.find(r => r.carrierId === formData.carrier_id);
+              if (selectedQuote) {
+                carrierId = selectedQuote.carrierId;
+                carrierName = selectedQuote.carrierName;
+                finalFreightValue = selectedQuote.totalValue;
+                console.log('Utilizando transportadora selecionada manualmente pelo usuário:', carrierName, finalFreightValue);
+              } else {
+                carrierId = formData.carrier_id;
+                carrierName = formData.carrier_name || 'Sem transportador';
+                finalFreightValue = Number(formData.freight_value) || 0;
+                console.log('Transportadora selecionada manualmente mantida (nenhuma tarifa automática aplicável encontrada).');
+              }
+            } else {
+              finalFreightValue = results[0].totalValue;
+              carrierId = bestCarrierId;
+              carrierName = results[0].carrierName;
+              console.log('Cotação Calculada Com Sucesso. Transportadora Vencedora:', carrierName, finalFreightValue);
+            }
           }
         } catch (calcError) {
           console.error('Erro ao calcular frete no pedido. Isso não impede de salvar o pedido.', calcError);

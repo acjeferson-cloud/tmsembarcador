@@ -134,6 +134,18 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
   // Format date
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
+    
+    try {
+      // Extrair apenas o bloco YYYY-MM-DD da string, ignorando Timezone que causa o recuo de -1 dia no BR (-3h)
+      const datePart = dateString.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      if (year && month && day) {
+        return `${day}/${month}/${year}`;
+      }
+    } catch (e) {
+      // Ignora erro e cai no fallback
+    }
+    
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 

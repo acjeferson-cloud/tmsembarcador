@@ -139,6 +139,17 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
       environment_id: contextData.environment_id
     };
 
+    // Override with localStorage selection if available
+    const selectedOrgId = localStorage.getItem('tms-selected-organization');
+    if (selectedOrgId && selectedOrgId !== 'null') {
+      dbUser.organization_id = selectedOrgId;
+    }
+    
+    const selectedEnvId = localStorage.getItem('tms-selected-environment');
+    if (selectedEnvId && selectedEnvId !== 'null') {
+      dbUser.environment_id = selectedEnvId;
+    }
+
     if (!dbUser.organization_id || !dbUser.environment_id) {
       console.warn('⚠️ Contexto retornado sem organization_id ou environment_id');
       isConfiguringContext = false;

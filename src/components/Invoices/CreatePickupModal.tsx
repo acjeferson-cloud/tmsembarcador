@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X, Package, Weight, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Package, Weight, AlertCircle } from 'lucide-react';
 import { pickupsService } from '../../services/pickupsService';
 
 interface CreatePickupModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedInvoices: any[];
-  onSuccess: () => void;
+  onSuccess: (count?: number, desc?: string) => void;
   establishmentId?: string;
   userId?: number;
 }
@@ -20,7 +20,6 @@ export const CreatePickupModal: React.FC<CreatePickupModalProps> = ({
   userId
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [successResult, setSuccessResult] = useState<{ count: number, message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -63,11 +62,12 @@ export const CreatePickupModal: React.FC<CreatePickupModalProps> = ({
           txt = result.warning + '\n\n';
         }
         
-        result.pickups.forEach((pickup, index) => {
-          txt += `${index + 1}. ${pickup.pickupNumber} - ${pickup.carrierName} (${pickup.invoiceCount} nota${pickup.invoiceCount > 1 ? 's' : ''})\n`;
+        result.pickups.forEach((pickup) => {
+          txt += `${pickup.pickupNumber} - ${pickup.carrierName} (${pickup.invoiceCount} nota${pickup.invoiceCount > 1 ? 's' : ''})\n`;
         });
         
-        setSuccessResult({ count: result.pickups.length, message: txt });
+        onSuccess(result.pickups.length, txt.trim());
+        onClose();
       } else {
         setError(result.error || 'Erro ao criar coletas');
       }
@@ -79,11 +79,7 @@ export const CreatePickupModal: React.FC<CreatePickupModalProps> = ({
   };
 
   const handleClose = () => {
-    if (successResult) {
-      onSuccess();
-    }
     onClose();
-    setSuccessResult(null);
     setError(null);
   };
 
@@ -94,7 +90,7 @@ export const CreatePickupModal: React.FC<CreatePickupModalProps> = ({
           <div className="flex items-center space-x-3">
             <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {successResult ? 'Coletas Criadas' : 'Criar Coletas'}
+              Criar Coletas
             </h2>
           </div>
           <button
@@ -106,8 +102,6 @@ export const CreatePickupModal: React.FC<CreatePickupModalProps> = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {!successResult ? (
-            <>
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
                   Resumo das Notas Fiscais Selecionadas
@@ -223,33 +217,6 @@ export const CreatePickupModal: React.FC<CreatePickupModalProps> = ({
                   Cancelar
                 </button>
               </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-center py-6">
-                <div className="text-center space-y-4">
-                  <div className="flex justify-center">
-                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {successResult.count} Coleta{successResult.count > 1 ? 's' : ''} Criada{successResult.count > 1 ? 's' : ''} com Sucesso!
-                  </h3>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 text-left whitespace-pre-wrap bg-gray-50 py-3 px-4 rounded-md">
-                    {successResult.message}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleClose}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Fechar
-              </button>
-            </>
-          )}
         </div>
       </div>
     </div>

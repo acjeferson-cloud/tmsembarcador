@@ -19,6 +19,7 @@ import { establishmentsService } from '../../services/establishmentsService';
 import { nfeService, NFeWithCustomer } from '../../services/nfeService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
+import { invoicesCostService } from '../../services/invoicesCostService';
 import { supabase } from '../../lib/supabase';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -300,26 +301,81 @@ export const Invoices: React.FC = () => {
           const nfeData = await nfeService.getById(invoiceId);
           if (!nfeData || !nfeData.id) continue;
           
-          const weight = Number(nfeData.products?.reduce((acc, p) => acc + (p.quantidade || 0), 0)) || 100;
-          const volume_qty = 1;
-          const m3 = 0;
+          const weight = Number(nfeData.products?.reduce((acc: number, p: any) => acc + (p.quantidade || 0), 0)) || 100;
+          const volume_qty = Number((nfeData as any).volumes) || 1;
+          const m3 = Number((nfeData as any).cubic_meters) || 0;
           const value = Number(nfeData.total_value) || 0;
           
           if (weight === 0 || value === 0) continue;
           
-          // Get destination zip if possible or pass undefined
-          let destZipCode = undefined;
+          if (nfeData.carrier_id) {
+            try {
+              const invoiceData = {
+                weight,
+                value,
+                volume: volume_qty,
+                m3,
+                destinationCity: nfeData.customer?.cidade || '',
+                destinationState: nfeData.customer?.estado || '',
+                issueDate: nfeData.issue_date
+              };
+              
+              const carrierData = await invoicesCostService.getCarrierData(nfeData.carrier_id);
+              if (carrierData) {
+                const calculation = await invoicesCostService.calculateInvoiceCost(invoiceData, nfeData.carrier_id, nfeData.issue_date);
+                await invoicesCostService.saveCostsToInvoice(invoiceId, nfeData.carrier_id, calculation, carrierData);
+                
+                const mockFreightResult = [{
+                  carrierId: nfeData.carrier_id,
+                  carrierName: carrierData.razao_social,
+                  totalValue: calculation.valorTotal,
+                  calculationDetails: calculation
+                }];
+                await (supabase as any).from('invoices_nfe').update({ 
+                  valor_frete: calculation.valorTotal,
+                  freight_results: mockFreightResult 
+                }).eq('id', invoiceId);
+                successCount++;
+                continue;
+              }
+            } catch (err) {
+              console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
+            }
+          }
+          
+          let destZipCode = (nfeData.customer as any)?.cep ? (nfeData.customer as any).cep.replace(/\D/g, '') : undefined;
           
           const results = await freightQuoteService.calculateQuote({
             destinationZipCode: destZipCode,
             weight,
             volumeQty: volume_qty,
             cargoValue: value,
-            cubicMeters: m3
+            cubicMeters: m3,
+            selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
           });
           
-          // Using supabase directly since nfeService.update is pending implementation
-          await (supabase as any).from('invoices_nfe').update({ freight_results: results }).eq('id', invoiceId);
+          let updateData: any = { freight_results: results };
+          if (results && results.length > 0) {
+            if (nfeData.carrier_id) {
+              const selectedQuote = results.find(r => r.carrierId === nfeData.carrier_id);
+              if (selectedQuote) {
+                updateData.carrier_id = selectedQuote.carrierId;
+                updateData.valor_frete = selectedQuote.totalValue;
+              } else {
+                updateData.carrier_id = nfeData.carrier_id;
+                updateData.valor_frete = 0;
+              }
+            } else {
+              updateData.carrier_id = results[0].carrierId;
+              updateData.valor_frete = results[0].totalValue;
+            }
+          } else if (nfeData.carrier_id) {
+             updateData.carrier_id = nfeData.carrier_id;
+             updateData.valor_frete = 0;
+             updateData.freight_results = [];
+          }
+          
+          await (supabase as any).from('invoices_nfe').update(updateData).eq('id', invoiceId);
           successCount++;
         }
         
@@ -457,6 +513,101 @@ export const Invoices: React.FC = () => {
             setShowInvoiceForm(true);
           } else {
             setToast({ message: 'Erro ao carregar dados completos da nota fiscal.', type: 'error' });
+          }
+          break;
+        }
+        case 'recalculate': {
+          try {
+            const nfeData = await nfeService.getById(invoice.id);
+            if (!nfeData || !nfeData.id) {
+              setToast({ message: 'Erro ao carregar os dados completos da nota fiscal para recálculo.', type: 'error' });
+              break;
+            }
+            
+            const weight = Number(nfeData.products?.reduce((acc: number, p: any) => acc + (p.quantidade || 0), 0)) || 100;
+            const volume_qty = Number((nfeData as any).volumes) || 1;
+            const m3 = Number((nfeData as any).cubic_meters) || 0;
+            const value = Number(nfeData.total_value) || 0;
+            
+            if (weight === 0 || value === 0) {
+              setToast({ message: 'A nota fiscal não possui peso ou valor válidos para recálculo.', type: 'warning' });
+              break;
+            }
+            
+            if (nfeData.carrier_id) {
+              try {
+                const invoiceData = {
+                  weight,
+                  value,
+                  volume: volume_qty,
+                  m3,
+                  destinationCity: nfeData.customer?.cidade || '',
+                  destinationState: nfeData.customer?.estado || '',
+                  issueDate: nfeData.issue_date
+                };
+                
+                const carrierData = await invoicesCostService.getCarrierData(nfeData.carrier_id);
+                if (carrierData) {
+                  const calculation = await invoicesCostService.calculateInvoiceCost(invoiceData, nfeData.carrier_id, nfeData.issue_date);
+                  await invoicesCostService.saveCostsToInvoice(invoice.id, nfeData.carrier_id, calculation, carrierData);
+                  
+                  const mockFreightResult = [{
+                    carrierId: nfeData.carrier_id,
+                    carrierName: carrierData.razao_social,
+                    totalValue: calculation.valorTotal,
+                    calculationDetails: calculation
+                  }];
+                  await (supabase as any).from('invoices_nfe').update({ 
+                    valor_frete: calculation.valorTotal,
+                    freight_results: mockFreightResult 
+                  }).eq('id', invoice.id);
+                  
+                  setToast({ message: `Nota ${invoice.numero} recalculada com sucesso!`, type: 'success' });
+                  refreshData();
+                  break;
+                }
+              } catch (err) {
+                console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
+                // Fallback para cotação geral se falhar
+              }
+            }
+            
+            let destZipCode = (nfeData.customer as any)?.cep ? (nfeData.customer as any).cep.replace(/\D/g, '') : undefined;
+            const results = await freightQuoteService.calculateQuote({
+              destinationZipCode: destZipCode,
+              weight,
+              volumeQty: volume_qty,
+              cargoValue: value,
+              cubicMeters: m3,
+              selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+            });
+            
+            let updateData: any = { freight_results: results };
+            if (results && results.length > 0) {
+              if (nfeData.carrier_id) {
+                const selectedQuote = results.find(r => r.carrierId === nfeData.carrier_id);
+                if (selectedQuote) {
+                  updateData.carrier_id = selectedQuote.carrierId;
+                  updateData.valor_frete = selectedQuote.totalValue;
+                } else {
+                  updateData.carrier_id = nfeData.carrier_id;
+                  updateData.valor_frete = 0;
+                }
+              } else {
+                updateData.carrier_id = results[0].carrierId;
+                updateData.valor_frete = results[0].totalValue;
+              }
+            } else if (nfeData.carrier_id) {
+               updateData.carrier_id = nfeData.carrier_id;
+               updateData.valor_frete = 0;
+               updateData.freight_results = [];
+            }
+            await (supabase as any).from('invoices_nfe').update(updateData).eq('id', invoice.id);
+            setToast({ message: `Nota ${invoice.numero} recalculada com sucesso via cotação!`, type: 'success' });
+            refreshData();
+          } catch (error) {
+            console.error('Erro ao recalcular frete individual:', error);
+            setToast({ message: 'Erro ao recalcular frete.', type: 'error' });
           }
           break;
         }
@@ -818,8 +969,8 @@ export const Invoices: React.FC = () => {
           selectedInvoices={invoices.filter(inv => selectedInvoices.includes(inv.id))}
           establishmentId={currentEstablishment?.id}
           userId={Number(user?.id) || undefined}
-          onSuccess={() => {
-            setToast({ message: 'Coleta(s) criada(s) com sucesso!', type: 'success' });
+          onSuccess={(count, desc) => {
+            setToast({ message: `${count || 1} Coleta(s) criada(s) com sucesso!\n${desc || ''}`, type: 'success' });
             setSelectedInvoices([]);
             refreshData();
           }}

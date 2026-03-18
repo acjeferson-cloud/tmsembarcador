@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Plus, Filter, Download, RefreshCw, MapPin, Building, Globe, AlertCircle, Upload, Info } from 'lucide-react';
-import { cityTypes, regions } from '../../types/cities';
+import { Search, Plus, Download, Upload } from 'lucide-react';
+import { regions } from '../../types/cities';
 import { CityCard } from './CityCard';
 import { CityView } from './CityView';
 import { CityForm } from './CityForm';
@@ -18,10 +18,8 @@ import { statesService } from '../../services/statesService';
 import { alagoasCities } from '../../data/alagoas-cities';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { logCreate, logUpdate, logDelete } from '../../services/logsService';
-import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { logDelete } from '../../services/logsService';
 import { useAuth } from '../../hooks/useAuth';
-
 export const Cities: React.FC = () => {
   const { t } = useTranslation();
   const breadcrumbItems = [
@@ -31,22 +29,15 @@ export const Cities: React.FC = () => {
 
   const { user } = useAuth();
   const isAdmin = user?.email === 'jeferson.costa@logaxis.com.br';
-  const { isActive: correiosActive, isLoading: correiosLoading } = useInnovation(
-    INNOVATION_IDS.CORREIOS,
-    user?.id
-  );
-
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState('Todos');
   const [regionFilter, setRegionFilter] = useState('Todos');
-  const [typeFilter, setTypeFilter] = useState('Todos');
   const [showForm, setShowForm] = useState(false);
   const [showView, setShowView] = useState(false);
   const [editingCity, setEditingCity] = useState<any>(null);
   const [viewingCity, setViewingCity] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [citiesList, setCitiesList] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -69,7 +60,7 @@ export const Cities: React.FC = () => {
   // Load cities on component mount and when filters change
   useEffect(() => {
     loadCities();
-  }, [currentPage, stateFilter, regionFilter, typeFilter, searchTerm]);
+  }, [currentPage, stateFilter, regionFilter, searchTerm]);
 
   // Load cities stats
   useEffect(() => {
@@ -93,8 +84,7 @@ export const Cities: React.FC = () => {
         {
           searchTerm,
           stateFilter,
-          regionFilter,
-          typeFilter
+          regionFilter
         }
       );
 
@@ -167,18 +157,6 @@ export const Cities: React.FC = () => {
     setShowView(false);
     setEditingCity(null);
     setViewingCity(null);
-  };
-
-  const handleSyncCities = async () => {
-    setIsSyncing(true);
-    try {
-      setToast({ message: t('cities.messages.syncStart', { defaultValue: 'Sincronização com API dos Correios iniciada com sucesso! Este processo pode levar alguns minutos para ser concluído.' }), type: 'info' });
-      await loadStats();
-    } catch (error) {
-      setToast({ message: t('cities.messages.syncError', { defaultValue: 'Erro ao sincronizar com API dos Correios. Tente novamente.' }), type: 'error' });
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   const handleImportAlagoas = () => {
@@ -268,15 +246,6 @@ export const Cities: React.FC = () => {
               <span>{isImporting ? t('cities.actions.importing', { defaultValue: 'Importando...' }) : t('cities.actions.importData', { defaultValue: 'Importar Dados' })}</span>
             </button>
           )}
-          <button
-            onClick={handleSyncCities}
-            disabled={isSyncing || !correiosActive || correiosLoading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-            title={!correiosActive ? t('cities.messages.correiosInactive', { defaultValue: 'Integração Correios (CEPs) não está ativa' }) : ''}
-          >
-            <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
-            <span>{isSyncing ? t('cities.actions.syncing', { defaultValue: 'Sincronizando...' }) : t('cities.actions.syncApi', { defaultValue: 'Sincronizar API' })}</span>
-          </button>
           {isAdmin && (
             <button
               onClick={handleNewCity}
@@ -288,21 +257,6 @@ export const Cities: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* API Integration Notice */}
-      {!correiosActive && !correiosLoading && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
-          <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-yellow-800">
-              <strong>{t('cities.integration.inactiveTitle', { defaultValue: 'Integração Correios (CEPs) não contratada:' })}</strong> {t('cities.integration.inactiveDesc', { defaultValue: 'O botão "Sincronizar API" está desabilitado. Para habilitar a sincronização automática com a API dos Correios, ative o serviço em ' })}
-              <strong>{t('cities.integration.innovationsMenu', { defaultValue: 'Inovações & Sugestões' })}</strong>.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Database Status */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div className="w-full">
@@ -409,21 +363,6 @@ export const Cities: React.FC = () => {
               </option>
             ))}
           </select>
-
-          <select
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setCurrentPage(1); // Reset to first page on filter change
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {cityTypes.map(type => (
-              <option key={type} value={type}>
-                {type === 'Todos' ? t('cities.filters.allTypes', { defaultValue: 'Todos os Tipos' }) : type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
           
           <button 
             onClick={handleExport}
@@ -437,21 +376,6 @@ export const Cities: React.FC = () => {
         {/* Stats */}
         <div className="mt-4 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
           <span>{t('cities.stats.total', { defaultValue: 'Total:' })} {totalCount} {t('cities.stats.locations', { defaultValue: 'localidades' })}</span>
-          <span>{t('cities.stats.page', { defaultValue: 'Página' })} {currentPage} {t('cities.stats.of', { defaultValue: 'de' })} {totalPages || 1}</span>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <Building size={14} className="text-blue-600" />
-              <span>{stats.byType?.cidade || 0} {t('cities.stats.cities', { defaultValue: 'cidades' })}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <MapPin size={14} className="text-green-600" />
-              <span>{stats.byType?.distrito || 0} {t('cities.stats.districts', { defaultValue: 'distritos' })}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <MapPin size={14} className="text-orange-600" />
-              <span>{stats.byType?.povoado || 0} {t('cities.stats.villages', { defaultValue: 'povoados' })}</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -538,8 +462,7 @@ export const Cities: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('cities.messages.emptyTitle', { defaultValue: 'Nenhuma cidade encontrada' })}</h3>
-          <p className="text-gray-600 dark:text-gray-400">{t('cities.messages.emptySubtitle', { defaultValue: 'Tente ajustar os filtros ou sincronizar com a API dos Correios.' })}</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('cities.messages.emptySubtitle', { defaultValue: 'Tente ajustar os filtros estabelecidos na busca.' })}</p>
         </div>
       )}
 

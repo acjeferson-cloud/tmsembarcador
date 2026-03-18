@@ -80,12 +80,12 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         phone: partner.phone,
         type: partner.type,
         status: partner.status,
-        observations: partner.observations,
-        website: partner.website || '',
-        taxRegime: partner.taxRegime || 'simples',
-        creditLimit: partner.creditLimit || 0,
-        paymentTerms: partner.paymentTerms || 30,
-        notes: partner.notes || ''
+        observations: partner.observations ?? '',
+        website: partner.website ?? '',
+        taxRegime: (partner.taxRegime as 'simples' | 'presumido' | 'real' | 'mei') || 'simples',
+        creditLimit: Number(partner.creditLimit) || 0,
+        paymentTerms: Number(partner.paymentTerms) || 30,
+        notes: partner.notes ?? ''
       });
       setContacts(partner.contacts || []);
       // Mapear address_type para type para compatibilidade
@@ -133,30 +133,51 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       let cityData = null;
       let cityName = dados.municipio;
       let stateName = dados.uf;
+      let finalCep = dados.cep || '';
+      let finalBairro = dados.bairro || '';
+      let finalLogradouro = dados.logradouro || '';
 
       if (dados.cep) {
-        try {
-          console.log('Verificando cidade pelo CEP:', dados.cep);
-          cityData = await findOrCreateCityByCEP(dados.cep);
-          cityName = cityData.name;
-          stateName = cityData.stateAbbreviation;
-          console.log('Cidade validada/criada:', cityName);
-        } catch (error) {
-          console.warn('Não foi possível validar/criar cidade:', error);
+        const cleanCEP = dados.cep.replace(/\D/g, '');
+        if (cleanCEP.length === 8) {
+          finalCep = cleanCEP.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+          try {
+            console.log('Verificando cidade pelo CEP:', cleanCEP);
+            cityData = await findOrCreateCityByCEP(cleanCEP);
+            if (cityData) {
+              cityName = cityData.name;
+              stateName = cityData.stateAbbreviation;
+              console.log('Cidade validada/criada:', cityName);
+            }
+            
+            const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+            const viaCepData = await viaCepResponse.json();
+            
+            if (!viaCepData.erro) {
+               finalBairro = finalBairro || viaCepData.bairro || (cityData ? cityData.neighborhood : '');
+               finalLogradouro = finalLogradouro || viaCepData.logradouro;
+               stateName = viaCepData.uf || stateName;
+               cityName = viaCepData.localidade || cityName;
+            } else {
+               throw new Error('CEP retornado pela Receita é inválido no ViaCEP');
+            }
+          } catch (error) {
+            console.warn('Alerta na validação/enriquecimento de CEP do CNPJ:', error);
+          }
         }
       }
 
       const newAddress: BusinessPartnerAddress = {
         id: Date.now().toString(),
-        street: dados.logradouro,
+        street: finalLogradouro,
         number: dados.numero,
         complement: dados.complemento,
-        neighborhood: dados.bairro,
+        neighborhood: finalBairro,
         city: cityName,
         state: stateName,
-        zip_code: dados.cep,
+        zipCode: finalCep,
         type: 'commercial' as const,
-        is_primary: addresses.length === 0,
+        isPrimary: addresses.length === 0,
       };
 
       setAddresses(prev => prev.length === 0 ? [newAddress] : prev);
@@ -196,7 +217,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     if (!address.state || address.state.trim() === '') {
       errors.push('Estado é obrigatório');
     }
-    if (!address.zip_code || address.zip_code.replace(/\D/g, '').length !== 8) {
+    if (!address.zipCode || address.zipCode.replace(/\D/g, '').length !== 8) {
       errors.push('CEP válido é obrigatório (8 dígitos)');
     }
 
@@ -238,7 +259,6 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       addresses[0].isPrimary = true;
     }
 
-    // Mapear type para address_type antes de salvar no banco
     const addressesForSave = addresses.map(addr => ({
       ...addr,
       address_type: addr.type || addr.address_type || 'commercial'
@@ -252,6 +272,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
 
     onSave({
       ...formData,
+      creditLimit: Number(formData.creditLimit),
+      paymentTerms: String(formData.paymentTerms),
       contacts,
       addresses: addressesForSave
     });
@@ -329,7 +351,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       neighborhood: '',
       city: '',
       state: '',
-      zip_code: '',
+      zipCode: '',
       country: 'Brasil',
       isPrimary: addresses.length === 0
     };
@@ -385,15 +407,22 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
       const viaCepData = await viaCepResponse.json();
 
-      // Preenche o endereço com os dados validados da cidade
+      if (viaCepData.erro) {
+        setCepMessages({ ...cepMessages, [index]: { type: 'error', text: 'CEP inválido' } });
+        return;
+      }
+
+      // Preenche o endereço com os dados validados da cidade (apenas se vazios manualmente)
       const updatedAddresses = [...addresses];
+      const currentAddress = updatedAddresses[index];
+      
       updatedAddresses[index] = {
-        ...updatedAddresses[index],
-        city: cityData.name,
-        state: cityData.stateAbbreviation,
-        neighborhood: cityData.neighborhood || viaCepData.bairro || updatedAddresses[index].neighborhood,
-        street: viaCepData.logradouro || updatedAddresses[index].street,
-        zip_code: cleanCEP,
+        ...currentAddress,
+        city: viaCepData.localidade || cityData.name,
+        state: viaCepData.uf || cityData.stateAbbreviation,
+        neighborhood: currentAddress.neighborhood || viaCepData.bairro || cityData.neighborhood || '',
+        street: currentAddress.street || viaCepData.logradouro || '',
+        zipCode: cleanCEP.replace(/^(\d{5})(\d{3})$/, "$1-$2"),
         country: 'Brasil'
       };
       setAddresses(updatedAddresses);
@@ -1164,8 +1193,8 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                         <label className="flex items-center space-x-3 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={address.is_primary || false}
-                            onChange={(e) => updateAddress(index, 'is_primary', e.target.checked)}
+                            checked={address.isPrimary || false}
+                            onChange={(e) => updateAddress(index, 'isPrimary', e.target.checked)}
                             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1273,8 +1302,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
             </div>
             <div className="h-96">
               <GoogleMap
-                address={`${addresses[0]?.street}, ${addresses[0]?.city}, ${addresses[0]?.state}, Brasil`}
-                title={formData.name || 'Parceiro de Negócios'}
+                address={`${addresses[0]?.street}, ${addresses[0]?.number} - ${addresses[0]?.neighborhood}, ${addresses[0]?.city} - ${addresses[0]?.state}`}
               />
             </div>
           </div>

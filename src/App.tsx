@@ -233,6 +233,17 @@ function AppContent() {
     // No need to set currentPage here as it's now handled in the login function
   };
 
+  useEffect(() => {
+    const handleAppNavigate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        handlePageChange(customEvent.detail);
+      }
+    };
+    window.addEventListener('app-navigate', handleAppNavigate);
+    return () => window.removeEventListener('app-navigate', handleAppNavigate);
+  }, []);
+
   const handlePageChange = (page: string) => {
     // Check if user has permission to access this page
     if (user && user.perfil === 'personalizado' && user.permissoes) {

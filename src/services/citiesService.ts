@@ -102,7 +102,7 @@ export const fetchCities = async (
       .from('cities')
       .select(`
         *,
-        states:state_id (
+        states!inner (
           sigla,
           nome,
           regiao
@@ -111,6 +111,14 @@ export const fetchCities = async (
 
     if (filters?.searchTerm) {
       query = query.or(`nome.ilike.%${filters.searchTerm}%,codigo_ibge.ilike.%${filters.searchTerm}%`);
+    }
+
+    if (filters?.stateFilter && filters.stateFilter !== 'Todos') {
+      query = query.eq('states.sigla', filters.stateFilter);
+    }
+
+    if (filters?.regionFilter && filters.regionFilter !== 'Todos') {
+      query = query.eq('states.regiao', filters.regionFilter);
     }
 
     const start = (page - 1) * pageSize;

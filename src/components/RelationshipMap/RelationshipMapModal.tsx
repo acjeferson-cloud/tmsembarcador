@@ -55,6 +55,8 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
       .eq('order_number', orderNumber);
 
     if (invoicesData && invoicesData.length > 0) {
+      const invoiceIds = invoicesData.map((inv: any) => inv.id);
+
       for (const inv of invoicesData) {
         const invId = `invoice-${inv.id}`;
         documents.push({
@@ -66,25 +68,115 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
           value: Number(inv.valor_total || 0)
         });
         relationships.push({ from: sourceDocument.id, to: invId });
-        
-        // E procura CTes conectados a essa Invoice (tabela ctes via invoice_id)
-        const { data: ctesData } = await (supabase as any)
-          .from('ctes')
-          .select('id, numero, data_emissao, status, valor_total')
-          .eq('invoice_id', inv.id);
+      }
+
+      // Busca CTes conectados a essas Invoices usando 'invoice_id' + tabela ponte 'ctes_invoices'
+      const invoiceNumbers = invoicesData.map((inv: any) => inv.numero);
+
+      const { data: cteLinksByNum } = await (supabase as any)
+        .from('ctes_invoices')
+        .select('cte_id, number')
+        .in('number', invoiceNumbers);
+
+      const resolvedCteIds = cteLinksByNum ? cteLinksByNum.map((l:any) => l.cte_id) : [];
+
+      const ctesData: any[] = [];
+
+      if (resolvedCteIds.length > 0) {
+        const { data: ctesDataLinked } = await (supabase as any)
+          .from('ctes_complete')
+          .select('id, number, issue_date, status, total_value')
+          .in('id', resolvedCteIds);
           
-        if (ctesData && ctesData.length > 0) {
-          for (const cte of ctesData) {
-            const cteId = `cte-${cte.id}`;
-            documents.push({
-              id: cteId,
-              type: 'cte',
-              number: cte.numero,
-              date: cte.data_emissao || new Date().toISOString(),
-              status: cte.status || 'Emitido',
-              value: Number(cte.valor_total || 0)
-            });
-            relationships.push({ from: invId, to: cteId });
+        if (ctesDataLinked) {
+          for (const c of ctesDataLinked) {
+            if (!ctesData.some(existing => existing.id === c.id)) {
+              ctesData.push(c);
+            }
+          }
+        }
+      }
+        
+      const cteIds: string[] = [];
+      if (ctesData && ctesData.length > 0) {
+        for (const cte of ctesData) {
+          cteIds.push(cte.id);
+          const cteId = `cte-${cte.id}`;
+          documents.push({
+            id: cteId,
+            type: 'cte',
+            number: cte.number,
+            date: cte.issue_date || new Date().toISOString(),
+            status: cte.status || 'Emitido',
+            value: Number(cte.total_value || 0)
+          });
+          
+          // Connect back to the corresponding invoice
+          let sourceInvId = null;
+          // Find which invoice number linked to this CTE from cteLinksByNum
+          const link = cteLinksByNum?.find((l:any) => l.cte_id === cte.id);
+          if (link) {
+            const inv = invoicesData.find((i:any) => i.numero === link.number);
+            if (inv) sourceInvId = `invoice-${inv.id}`;
+          }
+          if (sourceInvId) {
+            relationships.push({ from: sourceInvId, to: cteId });
+          }
+        }
+      }
+
+      // Busca Coletas conectadas a essas Invoices
+      const { data: pickupLinks } = await (supabase as any)
+        .from('pickup_invoices')
+        .select('invoice_id, pickup_id, pickups(numero_coleta, created_at, status, valor_total)')
+        .in('invoice_id', invoiceIds);
+
+      if (pickupLinks && pickupLinks.length > 0) {
+        for (const link of pickupLinks) {
+          if (link.pickups) {
+            const pickupDocId = `pickup-${link.pickup_id}`;
+            if (!documents.some(d => d.id === pickupDocId)) {
+              documents.push({
+                id: pickupDocId,
+                type: 'pickup',
+                number: link.pickups.numero_coleta,
+                date: link.pickups.created_at || new Date().toISOString(),
+                status: link.pickups.status || 'Emitida',
+                value: Number(link.pickups.valor_total || 0)
+              });
+            }
+            if (!relationships.some(r => r.from === `invoice-${link.invoice_id}` && r.to === pickupDocId)) {
+              relationships.push({ from: `invoice-${link.invoice_id}`, to: pickupDocId });
+            }
+          }
+        }
+      }
+
+      // Busca Faturas conectadas a esses CTes
+      if (cteIds.length > 0) {
+        const { data: billLinks } = await (supabase as any)
+          .from('bill_ctes')
+          .select('cte_id, bill_id, bills(bill_number, issue_date, status, total_value)')
+          .in('cte_id', cteIds);
+
+        if (billLinks && billLinks.length > 0) {
+          for (const link of billLinks) {
+            if (link.bills) {
+              const billDocId = `bill-${link.bill_id}`;
+              if (!documents.some(d => d.id === billDocId)) {
+                documents.push({
+                  id: billDocId,
+                  type: 'bill',
+                  number: link.bills.bill_number,
+                  date: link.bills.issue_date || new Date().toISOString(),
+                  status: link.bills.status || 'Emitida',
+                  value: Number(link.bills.total_value || 0)
+                });
+              }
+              if (!relationships.some(r => r.from === `cte-${link.cte_id}` && r.to === billDocId)) {
+                relationships.push({ from: `cte-${link.cte_id}`, to: billDocId });
+              }
+            }
           }
         }
       }
@@ -92,7 +184,7 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
       // Se não tem invoice, tenta achar CTe direto pelo order_id
       const { data: ctesDirect } = await (supabase as any)
         .from('ctes')
-        .select('id, numero, data_emissao, status, valor_total')
+        .select('id, numero, data_emissao, status, valor_servico')
         .eq('order_id', orderId);
         
       if (ctesDirect && ctesDirect.length > 0) {
@@ -104,7 +196,7 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
             number: cte.numero,
             date: cte.data_emissao || new Date().toISOString(),
             status: cte.status || 'Emitido',
-            value: Number(cte.valor_total || 0)
+            value: Number(cte.valor_servico || 0)
           });
           relationships.push({ from: sourceDocument.id, to: cteId });
         }
@@ -142,24 +234,74 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
       }
     }
     
-    // Procura CTes conectados a essa Invoice
-    const { data: ctesData } = await (supabase as any)
-      .from('ctes')
-      .select('id, numero, data_emissao, status, valor_total')
-      .eq('invoice_id', invoiceId);
+    // Procura CTes conectados a essa Invoice (buscando via tabela ponte ctes_invoices)
+    const invNumber = sourceDocument.number;
+      
+    // Busca na tabela ponte ctes_invoices
+    const { data: cteLinksByNum } = await (supabase as any)
+      .from('ctes_invoices')
+      .select('cte_id, number')
+      .eq('number', invNumber);
+      
+    const resolvedCteIds = cteLinksByNum ? cteLinksByNum.map((l:any) => l.cte_id) : [];
+    
+    const ctesData: any[] = [];
+    
+    if (resolvedCteIds.length > 0) {
+      const { data: ctesDataLinked } = await (supabase as any)
+        .from('ctes_complete')
+        .select('id, number, issue_date, status, total_value')
+        .in('id', resolvedCteIds);
+        
+      if (ctesDataLinked) {
+        for (const c of ctesDataLinked) {
+          if (!ctesData.some(existing => existing.id === c.id)) {
+            ctesData.push(c);
+          }
+        }
+      }
+    }
       
     if (ctesData && ctesData.length > 0) {
+      const cteIds = ctesData.map((cte:any) => cte.id);
       for (const cte of ctesData) {
         const cteId = `cte-${cte.id}`;
         documents.push({
           id: cteId,
           type: 'cte',
-          number: cte.numero,
-          date: cte.data_emissao || new Date().toISOString(),
+          number: cte.number,
+          date: cte.issue_date || new Date().toISOString(),
           status: cte.status || 'Emitido',
-          value: Number(cte.valor_total || 0)
+          value: Number(cte.total_value || 0)
         });
         relationships.push({ from: sourceDocument.id, to: cteId });
+      }
+
+      // Procura Faturas a partir do CTe
+      const { data: billLinks } = await (supabase as any)
+        .from('bill_ctes')
+        .select('cte_id, bill_id, bills(bill_number, issue_date, status, total_value)')
+        .in('cte_id', cteIds);
+
+      if (billLinks && billLinks.length > 0) {
+        for (const link of billLinks) {
+          if (link.bills) {
+            const billDocId = `bill-${link.bill_id}`;
+            if (!documents.some(d => d.id === billDocId)) {
+              documents.push({
+                id: billDocId,
+                type: 'bill',
+                number: link.bills.bill_number,
+                date: link.bills.issue_date || new Date().toISOString(),
+                status: link.bills.status || 'Emitida',
+                value: Number(link.bills.total_value || 0)
+              });
+            }
+            if (!relationships.some(r => r.from === `cte-${link.cte_id}` && r.to === billDocId)) {
+              relationships.push({ from: `cte-${link.cte_id}`, to: billDocId });
+            }
+          }
+        }
       }
     }
 
@@ -239,6 +381,86 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
                 });
               }
               relationships.push({ from: orderId, to: invId });
+            }
+          }
+        }
+
+        // Procura CTes conectados a essas Invoices (buscando via tabela ponte ctes_invoices)
+        const invoiceNumbers = nfes.map((nfe: any) => nfe.numero);
+        
+        const { data: cteLinksByNum } = await (supabase as any)
+          .from('ctes_invoices')
+          .select('cte_id, number')
+          .in('number', invoiceNumbers);
+          
+        const resolvedCteIds = cteLinksByNum ? cteLinksByNum.map((l:any) => l.cte_id) : [];
+        
+        const ctesData: any[] = [];
+        
+        if (resolvedCteIds.length > 0) {
+          const { data: ctesDataLinked } = await (supabase as any)
+            .from('ctes_complete')
+            .select('id, number, issue_date, status, total_value')
+            .in('id', resolvedCteIds);
+            
+          if (ctesDataLinked) {
+            for (const c of ctesDataLinked) {
+              if (!ctesData.some(existing => existing.id === c.id)) {
+                ctesData.push(c);
+              }
+            }
+          }
+        }
+          
+        if (ctesData && ctesData.length > 0) {
+          const cteIds = ctesData.map((cte:any) => cte.id);
+          for (const cte of ctesData) {
+            const cteId = `cte-${cte.id}`;
+            documents.push({
+              id: cteId,
+              type: 'cte',
+              number: cte.number,
+              date: cte.issue_date || new Date().toISOString(),
+              status: cte.status || 'Emitido',
+              value: Number(cte.total_value || 0)
+            });
+            
+            // Connect back to the corresponding invoice
+            let sourceInvId = null;
+            const link = cteLinksByNum?.find((l:any) => l.cte_id === cte.id);
+            if (link) {
+              const inv = nfes.find((i:any) => i.numero === link.number);
+              if (inv) sourceInvId = `invoice-${inv.id}`;
+            }
+            if (sourceInvId) {
+              relationships.push({ from: sourceInvId, to: cteId });
+            }
+          }
+
+          // Busca Faturas a partir do CTe
+          const { data: billLinks } = await (supabase as any)
+            .from('bill_ctes')
+            .select('cte_id, bill_id, bills(bill_number, issue_date, status, total_value)')
+            .in('cte_id', cteIds);
+
+          if (billLinks && billLinks.length > 0) {
+            for (const link of billLinks) {
+              if (link.bills) {
+                const billDocId = `bill-${link.bill_id}`;
+                if (!documents.some(d => d.id === billDocId)) {
+                  documents.push({
+                    id: billDocId,
+                    type: 'bill',
+                    number: link.bills.bill_number,
+                    date: link.bills.issue_date || new Date().toISOString(),
+                    status: link.bills.status || 'Emitida',
+                    value: Number(link.bills.total_value || 0)
+                  });
+                }
+                if (!relationships.some(r => r.from === `cte-${link.cte_id}` && r.to === billDocId)) {
+                  relationships.push({ from: `cte-${link.cte_id}`, to: billDocId });
+                }
+              }
             }
           }
         }
@@ -416,6 +638,302 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
             const invId = `invoice-${link.invoice_id}`;
             if (!relationships.some(r => r.from === invId && r.to === pickupDocId)) {
               relationships.push({ from: invId, to: pickupDocId });
+            }
+          }
+        }
+      }
+    }
+    
+    // Procura Faturas diretamente conectadas a esse CT-e na raiz
+    const { data: billLinks } = await (supabase as any)
+      .from('bill_ctes')
+      .select('cte_id, bill_id, bills(bill_number, issue_date, status, total_value)')
+      .eq('cte_id', cteId);
+
+    if (billLinks && billLinks.length > 0) {
+      for (const link of billLinks) {
+        if (link.bills) {
+          const billDocId = `bill-${link.bill_id}`;
+          if (!documents.some(d => d.id === billDocId)) {
+            documents.push({
+              id: billDocId,
+              type: 'bill',
+              number: link.bills.bill_number,
+              date: link.bills.issue_date || new Date().toISOString(),
+              status: link.bills.status || 'Emitida',
+              value: Number(link.bills.total_value || 0)
+            });
+          }
+          if (!relationships.some(r => r.from === sourceDocument.id && r.to === billDocId)) {
+            relationships.push({ from: sourceDocument.id, to: billDocId });
+          }
+        }
+      }
+    }
+  } else if (sourceDocument.type === 'bill') {
+    const billId = sourceDocument.id.replace('bill-', '');
+
+    // Busca as chaves de ligação na tabela bill_ctes primeiro (não possui FK direta para ctes no schema)
+    const { data: rawCteLinks } = await (supabase as any)
+      .from('bill_ctes')
+      .select('cte_id')
+      .eq('bill_id', billId);
+
+    const cteIds = (rawCteLinks || []).map((l: any) => l.cte_id);
+
+    if (cteIds.length > 0) {
+      // Agora busca os dados dos CT-es
+      const { data: cteRecords } = await (supabase as any)
+        .from('ctes_complete')
+        .select('id, number, issue_date, status, total_value')
+        .in('id', cteIds);
+
+      if (cteRecords && cteRecords.length > 0) {
+        for (const cte of cteRecords) {
+          const cteDocId = `cte-${cte.id}`;
+          
+          if (!documents.some(d => d.id === cteDocId)) {
+            documents.push({
+              id: cteDocId,
+              type: 'cte',
+              number: cte.number,
+              date: cte.issue_date || new Date().toISOString(),
+              status: cte.status || 'Emitido',
+              value: Number(cte.total_value || 0)
+            });
+          }
+          // Fatura vem depois do CT-e
+          relationships.push({ from: cteDocId, to: sourceDocument.id });
+        }
+      }
+
+      if (cteIds.length > 0) {
+        // Busca Invoices e Pedidos relacionados aos CT-es na tabela ctes_invoices
+        const { data: cteInvoices } = await (supabase as any)
+          .from('ctes_invoices')
+          .select('cte_id, number, observations')
+          .in('cte_id', cteIds);
+
+        const accessKeys: string[] = [];
+        const invoiceNumbers: string[] = [];
+        const cteToKeyMap = new Map<string, string>();
+        const cteToNumMap = new Map<string, string>();
+
+        if (cteInvoices && cteInvoices.length > 0) {
+          cteInvoices.forEach((cteInv: any) => {
+            const matchKey = cteInv.observations?.match(/Chave:\s*([0-9]{44})/);
+            if (matchKey && matchKey[1]) {
+              accessKeys.push(matchKey[1]);
+              cteToKeyMap.set(matchKey[1], cteInv.cte_id);
+            } else if (cteInv.number) {
+              invoiceNumbers.push(cteInv.number);
+              cteToNumMap.set(cteInv.number, cteInv.cte_id);
+            }
+          });
+        }
+
+        const invoiceIdsFound: string[] = [];
+
+        // Busca por chave
+        if (accessKeys.length > 0) {
+          const { data: nfesByKey } = await (supabase as any)
+            .from('invoices_nfe')
+            .select('id, numero, data_emissao, situacao, valor_total, order_number, chave_acesso')
+            .in('chave_acesso', accessKeys);
+
+          if (nfesByKey && nfesByKey.length > 0) {
+            for (const nfe of nfesByKey) {
+              const invId = `invoice-${nfe.id}`;
+              invoiceIdsFound.push(nfe.id);
+
+              if (!documents.some(d => d.id === invId)) {
+                documents.push({
+                  id: invId,
+                  type: 'invoice',
+                  number: nfe.numero,
+                  date: nfe.data_emissao || new Date().toISOString(),
+                  status: nfe.situacao || 'Emitida',
+                  value: Number(nfe.valor_total || 0)
+                });
+              }
+
+              const cteIdSource = cteToKeyMap.get(nfe.chave_acesso);
+              if (cteIdSource) {
+                if (!relationships.some(r => r.from === invId && r.to === `cte-${cteIdSource}`)) {
+                  relationships.push({ from: invId, to: `cte-${cteIdSource}` });
+                }
+              }
+
+              // Busca pedido
+              if (nfe.order_number) {
+                const { data: orderData } = await (supabase as any)
+                  .from('orders')
+                  .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+                  .eq('numero_pedido', nfe.order_number)
+                  .maybeSingle();
+
+                if (orderData) {
+                  const orderId = `order-${orderData.id}`;
+                  if (!documents.some(d => d.id === orderId)) {
+                    documents.push({
+                      id: orderId,
+                      type: 'order',
+                      number: orderData.numero_pedido,
+                      date: orderData.data_pedido || new Date().toISOString(),
+                      status: orderData.status || 'Pendente',
+                      value: Number(orderData.valor_mercadoria || 0)
+                    });
+                  }
+                  relationships.push({ from: orderId, to: invId });
+                }
+              }
+            }
+          }
+        }
+
+        // Busca por numero da Invoice para as que não foram achadas
+        if (invoiceNumbers.length > 0) {
+          const nfesAchados = documents.map(d => d.number);
+          const numerosBuscados = invoiceNumbers.filter(n => !nfesAchados.includes(n));
+          
+          if (numerosBuscados.length > 0) {
+            const { data: nfesByNum } = await (supabase as any)
+              .from('invoices_nfe')
+              .select('id, numero, data_emissao, situacao, valor_total, order_number')
+              .in('numero', numerosBuscados);
+
+            if (nfesByNum && nfesByNum.length > 0) {
+              for (const nfe of nfesByNum) {
+                const invId = `invoice-${nfe.id}`;
+                invoiceIdsFound.push(nfe.id);
+
+                if (!documents.some(d => d.id === invId)) {
+                  documents.push({
+                    id: invId,
+                    type: 'invoice',
+                    number: nfe.numero,
+                    date: nfe.data_emissao || new Date().toISOString(),
+                    status: nfe.situacao || 'Emitida',
+                    value: Number(nfe.valor_total || 0)
+                  });
+                }
+
+                const cteIdSource = cteToNumMap.get(nfe.numero);
+                if (cteIdSource) {
+                  if (!relationships.some(r => r.from === invId && r.to === `cte-${cteIdSource}`)) {
+                    relationships.push({ from: invId, to: `cte-${cteIdSource}` });
+                  }
+                }
+
+                // Busca Pedido
+                if (nfe.order_number) {
+                  const { data: orderData } = await (supabase as any)
+                    .from('orders')
+                    .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+                    .eq('numero_pedido', nfe.order_number)
+                    .maybeSingle();
+
+                  if (orderData) {
+                    const orderId = `order-${orderData.id}`;
+                    if (!documents.some(d => d.id === orderId)) {
+                      documents.push({
+                        id: orderId,
+                        type: 'order',
+                        number: orderData.numero_pedido,
+                        date: orderData.data_pedido || new Date().toISOString(),
+                        status: orderData.status || 'Pendente',
+                        value: Number(orderData.valor_mercadoria || 0)
+                      });
+                    }
+                    relationships.push({ from: orderId, to: invId });
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Fallback: CTE com invoice_id preenchido diretamente
+        for (const cte of cteRecords) {
+          if (cte.invoice_id) {
+            const { data: nfe } = await (supabase as any)
+              .from('invoices_nfe')
+              .select('id, numero, data_emissao, situacao, valor_total, order_number')
+              .eq('id', cte.invoice_id)
+              .maybeSingle();
+
+            if (nfe) {
+              const invId = `invoice-${nfe.id}`;
+              invoiceIdsFound.push(nfe.id);
+
+              if (!documents.some(d => d.id === invId)) {
+                documents.push({
+                  id: invId,
+                  type: 'invoice',
+                  number: nfe.numero,
+                  date: nfe.data_emissao || new Date().toISOString(),
+                  status: nfe.situacao || 'Emitida',
+                  value: Number(nfe.valor_total || 0)
+                });
+              }
+
+              if (!relationships.some(r => r.from === invId && r.to === `cte-${cte.id}`)) {
+                relationships.push({ from: invId, to: `cte-${cte.id}` });
+              }
+
+              // Busca pedido
+              if (nfe.order_number) {
+                const { data: orderData } = await (supabase as any)
+                  .from('orders')
+                  .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+                  .eq('numero_pedido', nfe.order_number)
+                  .maybeSingle();
+
+                if (orderData) {
+                  const orderId = `order-${orderData.id}`;
+                  if (!documents.some(d => d.id === orderId)) {
+                    documents.push({
+                      id: orderId,
+                      type: 'order',
+                      number: orderData.numero_pedido,
+                      date: orderData.data_pedido || new Date().toISOString(),
+                      status: orderData.status || 'Pendente',
+                      value: Number(orderData.valor_mercadoria || 0)
+                    });
+                  }
+                  relationships.push({ from: orderId, to: invId });
+                }
+              }
+            }
+          }
+        }
+
+        // Busca coletas associadas às Invoices mapeadas
+        if (invoiceIdsFound.length > 0) {
+          const { data: pickupLinks } = await (supabase as any)
+            .from('pickup_invoices')
+            .select('invoice_id, pickup_id, pickups(numero_coleta, created_at, status, valor_total)')
+            .in('invoice_id', invoiceIdsFound);
+
+          if (pickupLinks && pickupLinks.length > 0) {
+            for (const plink of pickupLinks) {
+              if (plink.pickups) {
+                const pickupDocId = `pickup-${plink.pickup_id}`;
+                if (!documents.some(d => d.id === pickupDocId)) {
+                  documents.push({
+                    id: pickupDocId,
+                    type: 'pickup',
+                    number: plink.pickups.numero_coleta,
+                    date: plink.pickups.created_at || new Date().toISOString(),
+                    status: plink.pickups.status || 'Emitida',
+                    value: Number(plink.pickups.valor_total || 0)
+                  });
+                }
+                const invId = `invoice-${plink.invoice_id}`;
+                if (!relationships.some(r => r.from === invId && r.to === pickupDocId)) {
+                  relationships.push({ from: invId, to: pickupDocId });
+                }
+              }
             }
           }
         }
@@ -624,8 +1142,8 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-6xl h-[80vh]">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-6xl h-[80vh] flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <FileText size={24} className="text-blue-600 dark:text-blue-400" />
             <div>
@@ -642,38 +1160,39 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
             <X size={20} />
           </button>
         </div>
-        
-        <div className="p-4 h-full">
-          <h2 className="text-xl font-semibold mb-4">Mapa de Relacionamentos</h2>
+        <div className="p-4 flex-1 flex flex-col min-h-0">
+          <h2 className="text-xl font-semibold mb-4 shrink-0">Mapa de Relacionamentos</h2>
           {isLoading ? (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center border rounded-lg bg-gray-50 dark:bg-gray-900">
               <div className="flex flex-col items-center">
                 <RefreshCw size={40} className="text-blue-500 animate-spin mb-4" />
                 <p className="text-gray-600 dark:text-gray-400">Carregando mapa de relações...</p>
               </div>
             </div>
           ) : (
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              nodeTypes={nodeTypes}
-              fitView
-              attributionPosition="bottom-right"
-              className="bg-gray-50 dark:bg-gray-900 rounded-lg"
-            >
-              <Background />
-              <Controls />
-              <MiniMap 
-                nodeStrokeWidth={3}
-                zoomable 
-                pannable
-                className="bg-white dark:bg-gray-800"
-              />
-            </ReactFlow>
+            <div className="flex-1 min-h-0 border rounded-lg bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                nodeTypes={nodeTypes}
+                fitView
+                attributionPosition="bottom-right"
+                className="w-full h-full"
+              >
+                <Background />
+                <Controls />
+                <MiniMap 
+                  nodeStrokeWidth={3}
+                  zoomable 
+                  pannable
+                  className="bg-white dark:bg-gray-800"
+                />
+              </ReactFlow>
+            </div>
           )}
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Visualização dos relacionamentos</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 shrink-0">Visualização dos relacionamentos</p>
         </div>
       </div>
     </div>

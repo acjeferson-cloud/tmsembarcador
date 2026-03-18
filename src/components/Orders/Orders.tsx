@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Plus, FileText, CheckCircle, XCircle, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 import { Toast, ToastType } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { OrdersFilters } from './OrdersFilters';
 import { OrdersTable } from './OrdersTable';
 import { OrdersActions } from './OrdersActions';
@@ -47,6 +48,11 @@ export const Orders: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    orderId: string | null;
+    orderNumber: string | null;
+  }>({ isOpen: false, orderId: null, orderNumber: null });
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [filters, setFilters] = useState({
@@ -379,14 +385,14 @@ export const Orders: React.FC = () => {
                    carrier_id: bestCarrierId,
                    freight_value: finalFreightValue
                });
-               alert('Frete recalculado com sucesso!');
+               setToast({ message: 'Frete recalculado com sucesso!', type: 'success' });
                await loadOrders();
            } else {
-               alert('Nenhuma transportadora atende a esta cotação ou CEP não coberto.');
+               setToast({ message: 'Nenhuma transportadora atende a esta cotação ou CEP não coberto.', type: 'warning' });
            }
        } catch (error: any) {
            console.error(error);
-           alert(error.message || 'Erro ao recalcular frete.');
+           setToast({ message: error.message || 'Erro ao recalcular frete.', type: 'error' });
        }
        setIsLoading(false);
        return;
@@ -421,7 +427,7 @@ export const Orders: React.FC = () => {
         }
       } catch (err) {
         console.error('Erro ao carregar detalhes do pedido', err);
-        alert('Erro ao carregar detalhes do pedido.');
+        setToast({ message: 'Erro ao carregar detalhes do pedido.', type: 'error' });
       } finally {
         setIsLoading(false);
       }
@@ -455,24 +461,41 @@ export const Orders: React.FC = () => {
           orderPdfService.generateOrderPDF([order] as any, 'download');
           break;
         case 'delete':
-          if (window.confirm(`Tem certeza que deseja excluir o Pedido ${order.order_number || order.numero}? Esta ação também excluirá todos os itens e históricos de status vinculados.`)) {
-            const result = await ordersService.delete(order.id.toString());
-            if (result.success) {
-              alert('Pedido excluído com sucesso!');
-              await loadOrders();
-            } else {
-              alert(result.error || 'Erro ao excluir pedido.');
-            }
-          }
+          setConfirmDialog({
+            isOpen: true,
+            orderId: order.id.toString(),
+            orderNumber: order.order_number || order.numero || ''
+          });
           break;
         default:
           break;
       }
     } catch (err: any) {
       console.error('Erro na ação single:', err);
-      alert(`Erro ao processar: ${err.message || 'Erro desconhecido.'}`);
+      setToast({ message: `Erro ao processar: ${err.message || 'Erro desconhecido.'}`, type: 'error' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.orderId) return;
+    
+    setIsLoading(true);
+    try {
+      const result = await ordersService.delete(confirmDialog.orderId);
+      if (result.success) {
+        setToast({ message: 'Pedido excluído com sucesso!', type: 'success' });
+        await loadOrders();
+      } else {
+        setToast({ message: result.error || 'Erro ao excluir pedido.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Erro ao excluir pedido:', error);
+      setToast({ message: 'Erro ao processar exclusão do pedido.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+      setConfirmDialog({ isOpen: false, orderId: null, orderNumber: null });
     }
   };
 
@@ -698,6 +721,14 @@ export const Orders: React.FC = () => {
           order={editingOrder}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Excluir Pedido"
+        message={`Tem certeza que deseja excluir o Pedido ${confirmDialog.orderNumber}? Esta ação também excluirá todos os itens e históricos de status vinculados.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, orderId: null, orderNumber: null })}
+      />
 
       {toast && (
         <Toast

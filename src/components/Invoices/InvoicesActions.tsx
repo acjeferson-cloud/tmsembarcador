@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, Download, PackagePlus } from 'lucide-react';
+import { Printer, Download, PackagePlus, RefreshCw } from 'lucide-react';
 
 interface InvoicesActionsProps {
   selectedCount: number;
@@ -34,6 +34,15 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
         >
           <PackagePlus size={18} />
           <span>Criar Coleta(s)</span>
+        </button>
+
+        <button
+          onClick={() => onAction('recalculate')}
+          disabled={selectedCount === 0 || isLoading}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm font-medium"
+        >
+          <RefreshCw size={18} />
+          <span>Recalcular Nota Fiscal</span>
         </button>
 
         <button

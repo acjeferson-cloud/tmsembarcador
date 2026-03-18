@@ -36,6 +36,14 @@ export interface DashboardMapaCusto {
   custoTotal: number;
   totalEntregas: number;
   volumeKg: number;
+  ctes?: {
+    id: string;
+    numero: string;
+    serie: string;
+    emissao: string;
+    transportador: string;
+    valor: number;
+  }[];
 }
 
 export interface DashboardTopTransportadora {

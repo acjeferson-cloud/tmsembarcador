@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useJsApiLoader, GoogleMap, Circle, InfoWindow } from '@react-google-maps/api';
 import { dashboardService, DashboardFilters, DashboardMapaCusto } from '../../services/dashboardService';
-import { AlertCircle, Map } from 'lucide-react';
+import { AlertCircle, Map, Truck, Calendar } from 'lucide-react';
 
 interface Props {
   filters: DashboardFilters;
@@ -211,10 +211,32 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
                       <span className="text-gray-500">Volume:</span>
                       <span className="font-medium">{selectedCity.volumeKg.toLocaleString('pt-BR')} Kg</span>
                     </p>
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Entregas:</span>
+                    <p className="flex justify-between border-b pb-2">
+                      <span className="text-gray-500">Entregas Totais:</span>
                       <span className="font-medium">{selectedCity.totalEntregas}</span>
                     </p>
+                    
+                    {/* CT-es Detail View Scrollable */}
+                    {selectedCity.ctes && selectedCity.ctes.length > 0 && (
+                      <div className="mt-2 max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                        <p className="text-xs font-semibold text-gray-700 uppercase sticky top-0 bg-white">Documentos Vinculados</p>
+                        {selectedCity.ctes.map((cte, idx) => (
+                          <div key={idx} className="bg-gray-50 rounded p-2 text-xs border border-gray-100">
+                            <div className="flex justify-between font-bold text-gray-700 mb-1">
+                              <span>CT-e: {cte.serie}/{cte.numero}</span>
+                            </div>
+                            <p className="text-gray-600 truncate flex items-center gap-1" title={cte.transportador}>
+                              <Truck size={10} className="flex-shrink-0" />
+                              {cte.transportador}
+                            </p>
+                            <p className="text-gray-500 flex items-center gap-1">
+                              <Calendar size={10} className="flex-shrink-0" />
+                              Data: {new Date(cte.emissao).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </InfoWindow>

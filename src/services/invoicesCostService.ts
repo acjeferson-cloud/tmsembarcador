@@ -4,6 +4,8 @@ import { freightCostCalculator } from './freightCostCalculator';
 export interface InvoiceCarrierCost {
   id?: string;
   invoice_id: string;
+  organization_id?: string;
+  environment_id?: string;
   carrier_id: string;
   carrier_name: string;
   carrier_document: string;
@@ -122,10 +124,8 @@ export const invoicesCostService = {
     carrierData: any,
     freightType: string = 'CIF'
   ): Promise<void> {
-
-
-
-
+    const { TenantContextHelper } = await import('../utils/tenantContext');
+    const context = await TenantContextHelper.getCurrentContext();
 
     // Calcular PIS e COFINS sobre a base
     const baseCalculo = calculation.fretePeso + calculation.freteValor +
@@ -139,6 +139,8 @@ export const invoicesCostService = {
 
     const cost: Omit<InvoiceCarrierCost, 'id'> = {
       invoice_id: invoiceId,
+      organization_id: context?.organizationId || undefined,
+      environment_id: context?.environmentId || undefined,
       carrier_id: carrierId,
       carrier_name: carrierData.razao_social,
       carrier_document: carrierData.cnpj,
@@ -170,15 +172,12 @@ export const invoicesCostService = {
       },
     };
 
-
+    console.log('📦 CUSTO ANTES DO INSERT:', cost);
 
     const { error } = await supabase.from('invoices_nfe_carrier_costs').insert(cost);
 
     if (error) {
-
       throw error;
     }
-
-
   },
 };

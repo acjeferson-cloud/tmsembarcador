@@ -439,19 +439,25 @@ export const freightCostCalculator = {
     cte: CTeWithRelations | null,
     additionalFees: AdditionalFee[] = []
   ): CalculationResult {
-    // Identificar a faixa de peso aplicável
-    const weightRange = this.findWeightRange(tariff.detalhes || [], invoiceData.weight);
+    // Calcular o Peso Considerado (Priorizar o maior entre Regra de Cubagem e Peso Real)
+    let pesoConsiderado = invoiceData.weight;
+    let pesoCubado = 0;
+    
+    if (tariff.fator_m3 && tariff.fator_m3 > 0 && invoiceData.m3 && invoiceData.m3 > 0) {
+      pesoCubado = invoiceData.m3 * tariff.fator_m3;
+      if (pesoCubado > pesoConsiderado) {
+        pesoConsiderado = pesoCubado;
+      }
+    }
+
+    // Identificar a faixa de peso aplicável usando o pesoConsiderado
+    const weightRange = this.findWeightRange(tariff.detalhes || [], pesoConsiderado);
 
     // Verificar se a faixa tem tipo_taxa = "sem_taxas"
     const semTaxas = weightRange?.tipo_taxa === 'sem_taxas';
 
-
-
-
-
-
     // 1. FRETE PESO (arredondar individualmente)
-    const fretePeso = this.roundValue(this.calculateFretePeso(weightRange, invoiceData.weight, tariff));
+    const fretePeso = this.roundValue(this.calculateFretePeso(weightRange, pesoConsiderado, tariff));
 
     // 2. FRETE VALOR (arredondar individualmente)
     const freteValor = this.roundValue(this.calculateFreteValor(weightRange, invoiceData.value, tariff));
@@ -461,7 +467,7 @@ export const freightCostCalculator = {
     const gris = this.roundValue(semTaxas ? 0 : this.calculateGris(invoiceData.value, tariff));
 
     // 4. PEDÁGIO (arredondar individualmente)
-    const pedagio = this.roundValue(semTaxas ? 0 : this.calculatePedagio(invoiceData.weight, tariff));
+    const pedagio = this.roundValue(semTaxas ? 0 : this.calculatePedagio(pesoConsiderado, tariff));
 
     // 5. TAS (arredondar individualmente)
     const tas = this.roundValue(semTaxas ? 0 : (tariff.tas || 0));
