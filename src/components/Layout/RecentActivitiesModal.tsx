@@ -1,92 +1,70 @@
-import React from 'react';
-import { X, Clock, Activity, Calendar, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Clock, Activity, Calendar, User, Upload, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-interface Activity {
-  label: string;
-  time: string;
-  icon?: React.ReactNode;
-  details?: string;
-}
+import { useAuth } from '../../hooks/useAuth';
+import { userActivitiesService, UserActivity } from '../../services/userActivitiesService';
+import { formatDistanceToNow, isToday, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface RecentActivitiesModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activities: Activity[];
 }
 
 export const RecentActivitiesModal: React.FC<RecentActivitiesModalProps> = ({
   isOpen,
   onClose,
-  activities
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  
+  const [activities, setActivities] = useState<UserActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadActivities();
+    }
+  }, [isOpen]);
+
+  const loadActivities = async () => {
+    setLoading(true);
+    try {
+      const data = await userActivitiesService.getRecentActivities(20);
+      setActivities(data);
+    } catch (error) {
+      console.error('Failed to load activities', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
-  // Expanded activities with more details
-  const expandedActivities: Activity[] = [
-    {
-      label: t('recentActivities.activities.dashboard'),
-      time: t('recentActivities.timeAgo.minutes', { count: 2 }),
-      icon: <Activity size={16} className="text-blue-500" />,
-      details: t('recentActivities.details.dashboard')
-    },
-    {
-      label: t('recentActivities.activities.controlTower'),
-      time: t('recentActivities.timeAgo.minutes', { count: 15 }),
-      icon: <Activity size={16} className="text-indigo-500" />,
-      details: t('recentActivities.details.controlTower')
-    },
-    {
-      label: t('recentActivities.activities.freightQuote'),
-      time: t('recentActivities.timeAgo.hour', { count: 1 }),
-      icon: <Activity size={16} className="text-green-500" />,
-      details: t('recentActivities.details.freightQuote')
-    },
-    {
-      label: t('recentActivities.activities.tracking'),
-      time: t('recentActivities.timeAgo.hours', { count: 2 }),
-      icon: <Activity size={16} className="text-orange-500" />,
-      details: t('recentActivities.details.tracking')
-    },
-    {
-      label: t('recentActivities.activities.carriers'),
-      time: t('recentActivities.timeAgo.day', { count: 1 }),
-      icon: <Activity size={16} className="text-purple-500" />,
-      details: t('recentActivities.details.carriers')
-    },
-    {
-      label: t('recentActivities.activities.invoices'),
-      time: t('recentActivities.timeAgo.day', { count: 1 }),
-      icon: <Activity size={16} className="text-red-500" />,
-      details: t('recentActivities.details.invoices')
-    },
-    {
-      label: t('recentActivities.activities.ctes'),
-      time: t('recentActivities.timeAgo.days', { count: 2 }),
-      icon: <Activity size={16} className="text-teal-500" />,
-      details: t('recentActivities.details.ctes')
-    },
-    {
-      label: t('recentActivities.activities.users'),
-      time: t('recentActivities.timeAgo.days', { count: 3 }),
-      icon: <Activity size={16} className="text-gray-500 dark:text-gray-400" />,
-      details: t('recentActivities.details.users')
-    },
-    {
-      label: t('recentActivities.activities.reports'),
-      time: t('recentActivities.timeAgo.days', { count: 4 }),
-      icon: <Activity size={16} className="text-yellow-500" />,
-      details: t('recentActivities.details.reports')
-    },
-    {
-      label: t('recentActivities.activities.settings'),
-      time: t('recentActivities.timeAgo.week', { count: 1 }),
-      icon: <Activity size={16} className="text-blue-500" />,
-      details: t('recentActivities.details.settings')
+  const formatTimeAgo = (dateStr: string) => {
+    try {
+      return formatDistanceToNow(parseISO(dateStr), { addSuffix: true, locale: ptBR });
+    } catch (e) {
+      return '';
     }
-  ];
+  };
+
+  const getActivityIcon = (actionType: string) => {
+    switch (actionType) {
+      case 'criacao':
+      case 'importacao': return <Upload size={16} className="text-blue-500" />;
+      case 'edicao': return <RefreshCw size={16} className="text-yellow-500" />;
+      case 'aprovacao': return <CheckCircle size={16} className="text-green-500" />;
+      case 'reprovacao':
+      case 'cancelamento':
+      case 'exclusao': return <XCircle size={16} className="text-red-500" />;
+      case 'acesso':
+      default: return <Activity size={16} className="text-indigo-500" />;
+    }
+  };
+
+  const todayActivities = activities.filter(a => isToday(parseISO(a.created_at)));
+  const earlierActivities = activities.filter(a => !isToday(parseISO(a.created_at)));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -107,66 +85,84 @@ export const RecentActivitiesModal: React.FC<RecentActivitiesModalProps> = ({
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {/* User Info */}
           <div className="flex items-center space-x-3 mb-6 p-4 bg-blue-50 rounded-lg">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-              <User size={20} className="text-white" />
-            </div>
+            {user?.foto_perfil_url ? (
+               <img src={user.foto_perfil_url} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold uppercase">
+                 {user?.name ? user.name.charAt(0) : <User size={20} />}
+               </div>
+            )}
             <div>
-              <p className="font-medium text-blue-900">Jeferson Carthen</p>
-              <p className="text-sm text-blue-700">{t('recentActivities.userRole')}</p>
+              <p className="font-medium text-blue-900">{user?.name || 'Usuário'}</p>
+              <p className="text-sm text-blue-700 capitalize">{user?.perfil || t('recentActivities.userRole')}</p>
             </div>
           </div>
 
-          {/* Today's Activities */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
-              <Calendar size={14} className="mr-1" />
-              {t('recentActivities.today')}
-            </h3>
-            <div className="space-y-4">
-              {expandedActivities.slice(0, 5).map((activity, index) => (
-                <div key={index} className="flex items-start p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
-                  <div className="flex-shrink-0 mr-3">
-                    {activity.icon || <Clock size={16} className="text-gray-400" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.label}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
-                    </div>
-                    {activity.details && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{activity.details}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Earlier Activities */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
-              <Calendar size={14} className="mr-1" />
-              {t('recentActivities.earlier')}
-            </h3>
-            <div className="space-y-4">
-              {expandedActivities.slice(5).map((activity, index) => (
-                <div key={index} className="flex items-start p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
-                  <div className="flex-shrink-0 mr-3">
-                    {activity.icon || <Clock size={16} className="text-gray-400" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.label}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
-                    </div>
-                    {activity.details && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{activity.details}</p>
-                    )}
+          {loading ? (
+             <div className="flex justify-center p-4">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+             </div>
+          ) : activities.length === 0 ? (
+             <div className="text-center p-4 text-gray-500 text-sm">Nenhuma atividade recente registrada.</div>
+          ) : (
+            <>
+              {/* Today's Activities */}
+              {todayActivities.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
+                    <Calendar size={14} className="mr-1" />
+                    HOJE
+                  </h3>
+                  <div className="space-y-4">
+                    {todayActivities.map((activity) => (
+                      <div key={activity.id} className="flex items-start p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                        <div className="flex-shrink-0 mr-3">
+                          {getActivityIcon(activity.action_type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.module_name}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimeAgo(activity.created_at)}</p>
+                          </div>
+                          {activity.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{activity.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
+              
+              {/* Earlier Activities */}
+              {earlierActivities.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
+                    <Calendar size={14} className="mr-1" />
+                    ANTERIOR
+                  </h3>
+                  <div className="space-y-4">
+                    {earlierActivities.map((activity) => (
+                      <div key={activity.id} className="flex items-start p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                        <div className="flex-shrink-0 mr-3">
+                          {getActivityIcon(activity.action_type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.module_name}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimeAgo(activity.created_at)}</p>
+                          </div>
+                          {activity.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{activity.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
         
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between items-center rounded-b-xl">

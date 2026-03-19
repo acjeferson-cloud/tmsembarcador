@@ -8,11 +8,25 @@ import { BillsActions } from './BillsActions';
 import { BillDetailsModal } from './BillDetailsModal';
 import { BillCTesModal } from './BillCTesModal';
 import { BillRejectionModal } from './BillRejectionModal';
+import { PrintModal } from './PrintModal';
+import { DateRangePicker } from '../common/DateRangePicker';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { billsService } from '../../services/billsService';
+import { userActivitiesService } from '../../services/userActivitiesService';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
-export const Bills: React.FC = () => {
+const normalizeBillStatus = (status: string | undefined | null) => {
+  if (!status) return 'Importada';
+  const s = status.toLowerCase().trim();
+  if (s === 'aprovada' || s.includes('auditada e aprovada') || s.includes('auditada_aprovada')) return 'Auditada e aprovada';
+  if (s === 'reprovada' || s.includes('auditada e reprov') || s.includes('auditada_reprovada')) return 'Auditada e reprovada';
+  if (s === 'cancelada') return 'Cancelada';
+  if (s.includes('referenciada') || s.includes('com_nfe_referenciada') || s.includes('com nf-e')) return 'Com NF-e Referenciada';
+  return 'Importada'; 
+};
+
+export const Bills: React.FC = ({ initialId }) => {
   const breadcrumbItems = [
     { label: 'Documentos Operacionais' },
     { label: 'Conhecimentos', current: true }
@@ -34,6 +48,8 @@ export const Bills: React.FC = () => {
     action: ''
   });
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
+  const [dataDe, setDataDe] = useState('');
+  const [dataAte, setDataAte] = useState('');
   const [filters, setFilters] = useState({
     transportador: '',
     periodoEmissao: { start: '', end: '' },
@@ -42,10 +58,25 @@ export const Bills: React.FC = () => {
     numeroFatura: ''
   });
 
+  useActivityLogger(
+    'Faturas',
+    'Acesso',
+    'Acessou a listagem de Faturas e Relatórios'
+  );
+
   // Load bills from Supabase
   useEffect(() => {
     loadBills();
   }, []);
+
+  // Handle initial Bill navigation from Spotlight
+  const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialId && bills.length > 0 && initialId !== lastOpenedInitialId) {
+      setLastOpenedInitialId(initialId);
+      handleSingleAction(initialId, 'view-details');
+    }
+  }, [initialId, bills, lastOpenedInitialId]);
 
   const loadBills = async () => {
     try {
@@ -54,7 +85,7 @@ export const Bills: React.FC = () => {
 
       const formattedBills = data.map((bill: any) => ({
         id: bill.id,
-        status: bill.status,
+        status: normalizeBillStatus(bill.status),
         numero: bill.bill_number,
         dataEmissao: bill.issue_date,
         dataVencimento: bill.due_date,
@@ -194,7 +225,7 @@ export const Bills: React.FC = () => {
   const handleSingleAction = async (billId: string | number, action: string) => {
     setIsLoading(true);
     
-    const bill = bills.find(b => b.id === billId);
+    const bill = bills.find(b => b.id.toString() === billId.toString());
     
     if (!bill) {
       setIsLoading(false);
@@ -216,7 +247,7 @@ export const Bills: React.FC = () => {
           setShowDetailsModal(true);
           break;
         case 'approve':
-          await billsService.updateStatus(billId.toString(), 'auditada_aprovada');
+          await billsService.updateStatus(billId.toString(), 'Auditada e aprovada');
           setToast({ message: `Aprovando a fatura ${bill.numero}.`, type: 'success' });
           loadBills();
           break;
@@ -225,8 +256,13 @@ export const Bills: React.FC = () => {
           setShowRejectionModal(true);
           break;
         case 'revert':
-          await billsService.updateStatus(billId.toString(), 'importada');
+          await billsService.updateStatus(billId.toString(), 'Importada');
           setToast({ message: `Estornando a fatura ${bill.numero}.`, type: 'info' });
+          loadBills();
+          break;
+        case 'cancel':
+          await billsService.updateStatus(billId.toString(), 'Cancelada');
+          setToast({ message: `Fatura ${bill.numero} cancelada com sucesso.`, type: 'success' });
           loadBills();
           break;
         case 'delete':
@@ -252,7 +288,7 @@ export const Bills: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await billsService.updateStatus(selectedBill.id.toString(), 'auditada_reprovada');
+      await billsService.updateStatus(selectedBill.id.toString(), 'Auditada e reprovada');
       setToast({ message: `Fatura ${selectedBill.numero} reprovada com sucesso. Motivo ID: ${reasonId}`, type: 'success' });
       loadBills();
     } catch(err) {
@@ -350,7 +386,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Importadas</p>
               <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-1">
-                {bills.filter(bill => bill.status === 'importada').length}
+                {bills.filter(bill => bill.status === 'Importada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -364,7 +400,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auditadas e Aprovadas</p>
               <p className="text-2xl font-semibold text-green-600 mt-1">
-                {bills.filter(bill => bill.status === 'auditada_aprovada').length}
+                {bills.filter(bill => bill.status === 'Auditada e aprovada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -377,12 +413,12 @@ export const Bills: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auditadas e Reprovadas</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                {bills.filter(bill => bill.status === 'auditada_reprovada').length}
+              <p className="text-2xl font-semibold text-orange-600 dark:text-orange-500 mt-1">
+                {bills.filter(bill => bill.status === 'Auditada e reprovada').length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-              <XCircle size={20} className="text-white" />
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <XCircle size={20} className="text-orange-600" />
             </div>
           </div>
         </div>
@@ -392,7 +428,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Com NF-e Referenciada</p>
               <p className="text-2xl font-semibold text-yellow-600 mt-1">
-                {bills.filter(bill => bill.status === 'com_nfe_referenciada').length}
+                {bills.filter(bill => bill.status === 'Com NF-e Referenciada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -406,7 +442,7 @@ export const Bills: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
               <p className="text-2xl font-semibold text-red-600 mt-1">
-                {bills.filter(bill => bill.status === 'cancelada').length}
+                {bills.filter(bill => bill.status === 'Cancelada').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">

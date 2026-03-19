@@ -23,6 +23,7 @@ import { invoicesCostService } from '../../services/invoicesCostService';
 import { supabase } from '../../lib/supabase';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   id: nfe.id,
@@ -116,8 +117,11 @@ const mapNFeToElectronicDoc = (nfe: any): any => {
   };
 };
 
-export const Invoices: React.FC = () => {
+export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const { user } = useAuth();
+  
+  useActivityLogger('Notas Fiscais', 'Acesso', 'Acessou a Gestão de Notas Fiscais');
+
   const [invoices, setInvoices] = useState<any[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([]);
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
@@ -177,6 +181,15 @@ export const Invoices: React.FC = () => {
     loadData();
     refreshData();
   }, []);
+
+  // Handle initial invoice from navigation
+  const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialId && invoices.length > 0 && initialId !== lastOpenedInitialId) {
+      setLastOpenedInitialId(initialId);
+      handleSingleAction(initialId, 'view-details');
+    }
+  }, [initialId, invoices, lastOpenedInitialId]);
 
   // Apply filters to invoices
   useEffect(() => {
@@ -494,11 +507,11 @@ export const Invoices: React.FC = () => {
     setShowCreatePickupModal(true);
   };
 
-  const handleSingleAction = async (invoiceId: string, action: string) => {
+  const handleSingleAction = async (invoiceId: string | number, action: string) => {
     setIsLoading(true);
     
     try {
-      const invoice = invoices.find(i => i.id === invoiceId);
+      const invoice = invoices.find(i => i.id.toString() === invoiceId.toString());
       
       if (!invoice) {
         setIsLoading(false);

@@ -12,9 +12,13 @@ import { pickupRequestService } from '../../services/pickupRequestService';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
-export const Pickups: React.FC = () => {
+export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const { user } = useAuth();
+  
+  useActivityLogger('Coletas', 'Acesso', 'Acessou a Gestão de Coletas');
+
   const [pickups, setPickups] = useState<any[]>([]);
   const [filteredPickups, setFilteredPickups] = useState<any[]>([]);
   const [selectedPickups, setSelectedPickups] = useState<string[]>([]);
@@ -44,6 +48,15 @@ export const Pickups: React.FC = () => {
   useEffect(() => {
     refreshData();
   }, []);
+
+  // Handle initial pickup from navigation
+  const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialId && pickups.length > 0 && initialId !== lastOpenedInitialId) {
+      setLastOpenedInitialId(initialId);
+      handleSingleAction(initialId, 'view-details');
+    }
+  }, [initialId, pickups, lastOpenedInitialId]);
 
   // Apply filters to pickups
   useEffect(() => {
@@ -263,11 +276,11 @@ export const Pickups: React.FC = () => {
     }
   };
 
-  const handleSingleAction = (pickupId: string, action: string) => {
+  const handleSingleAction = (pickupId: string | number, action: string) => {
     setIsLoading(true);
 
     setTimeout(() => {
-      const pickup = pickups.find(p => p.id === pickupId);
+      const pickup = pickups.find(p => p.id.toString() === pickupId.toString());
 
       if (!pickup) {
         setIsLoading(false);
@@ -289,7 +302,7 @@ export const Pickups: React.FC = () => {
             action: 'realizar',
             title: 'Marcar como Realizada',
             message: `Deseja marcar a coleta ${pickup.numeroColeta} como REALIZADA?`,
-            targetIds: [pickupId]
+            targetIds: [pickupId.toString()]
           });
           break;
         case 'cancelar':
@@ -298,7 +311,7 @@ export const Pickups: React.FC = () => {
             action: 'cancelar',
             title: 'Cancelar Coleta',
             message: `Deseja realmente cancelar a coleta ${pickup.numeroColeta}?`,
-            targetIds: [pickupId]
+            targetIds: [pickupId.toString()]
           });
           break;
         case 'delete':
@@ -307,7 +320,7 @@ export const Pickups: React.FC = () => {
             action: 'delete',
             title: 'Excluir Coleta',
             message: `Tem certeza que deseja excluir a coleta ${pickup.numeroColeta}? Esta ação removerá a coleta e o vínculo com todas as respectivas Notas Fiscais.`,
-            targetIds: [pickupId]
+            targetIds: [pickupId.toString()]
           });
           break;
         default:

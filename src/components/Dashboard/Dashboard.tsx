@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -8,12 +8,20 @@ import { DashboardOperational } from './DashboardOperational';
 import { DashboardMap } from './DashboardMap';
 import { DashboardCalcModal } from './DashboardCalcModal';
 import { DashboardFilters } from '../../services/dashboardService';
+import { userActivitiesService } from '../../services/userActivitiesService';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 export const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'EXECUTIVA' | 'OPERACIONAL' | 'MAPA'>('EXECUTIVA');
   const [showCalculoModal, setShowCalculoModal] = useState(false);
+
+  useActivityLogger(
+    'Dashboard',
+    'Acesso',
+    'Acessou o Dashboard (Visão Geral)'
+  );
 
   // Filtros Globais 
   const getDefaultDates = () => {

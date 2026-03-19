@@ -51,7 +51,6 @@ const PublicPickupScheduling = lazy(() => import('./components/PublicPickupSched
 const SaasAdminConsole = lazy(() => import('./components/SaasAdmin/SaasAdminConsole').then(m => ({ default: m.SaasAdminConsole })));
 const SaasAdminApp = lazy(() => import('./components/SaasAdmin/SaasAdminApp').then(m => ({ default: m.SaasAdminApp })));
 const DeliveryTracking = lazy(() => import('./components/DeliveryTracking/DeliveryTracking').then(m => ({ default: m.DeliveryTracking })));
-const InnovationsCrud = lazy(() => import('./components/Innovations/InnovationsCrud').then(m => ({ default: m.InnovationsCrud })));
 import { ThemeProvider } from './context/ThemeContext';
 import { ConnectionProvider } from './context/ConnectionContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -320,15 +319,15 @@ function AppContent() {
       case 'freight-quote':
         return <FreightQuote key={`freight-quote-${refreshKey}`} />;
       case 'orders':
-        return <Orders key={`orders-${refreshKey}`} />;
+        return <Orders key={`orders-${refreshKey}`} initialId={selectedItemId} />;
       case 'invoices':
-        return <Invoices key={`invoices-${refreshKey}`} />;
+        return <Invoices key={`invoices-${refreshKey}`} initialId={selectedItemId} />;
       case 'pickups':
-        return <Pickups key={`pickups-${refreshKey}`} />;
+        return <Pickups key={`pickups-${refreshKey}`} initialId={selectedItemId} />;
       case 'ctes':
-        return <CTes key={`ctes-${refreshKey}`} />;
+        return <CTes key={`ctes-${refreshKey}`} initialId={selectedItemId} />;
       case 'bills':
-        return <Bills key={`bills-${refreshKey}`} />;
+        return <Bills key={`bills-${refreshKey}`} initialId={selectedItemId} />;
       case 'delivery-tracking':
         return <DeliveryTracking key={`delivery-tracking-${refreshKey}`} />;
       case 'reverse-logistics':
@@ -369,8 +368,6 @@ function AppContent() {
         return <LicenseManagement key={`license-management-${refreshKey}`} />;
       case 'api-keys':
         return <ApiKeysManagement key={`api-keys-${refreshKey}`} />;
-      case 'innovations-crud':
-        return <InnovationsCrud key={`innovations-crud-${refreshKey}`} />;
       case 'holidays':
         return <Holidays key={`holidays-${refreshKey}`} />;
       case 'rejection-history':

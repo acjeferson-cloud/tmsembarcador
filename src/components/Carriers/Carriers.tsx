@@ -9,9 +9,12 @@ import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 export const Carriers: React.FC = () => {
   const { t } = useTranslation();
+
+  useActivityLogger('Transportadores', 'Acesso', 'Acessou a Gestão de Transportadores');
 
   const breadcrumbItems = [
     { label: t('menu.settings') },

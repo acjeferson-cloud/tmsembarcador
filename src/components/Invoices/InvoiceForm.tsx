@@ -265,11 +265,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       if (invoice) {
         // Modo Edição
         const { supabase } = await import('../../lib/supabase');
-        
         const updateData: any = {};
         if (formData.status !== invoice.situacao && formData.status !== invoice.status) {
             updateData.situacao = formData.status;
-            updateData.status = formData.status;
         }
         if (formData.carrier_id !== invoice.carrier_id) {
             updateData.carrier_id = formData.carrier_id || null;

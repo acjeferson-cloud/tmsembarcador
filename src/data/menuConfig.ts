@@ -196,7 +196,6 @@ export const menuConfig: MenuItem[] = [
       { id: 'change-log', labelKey: 'menu.changeLog', icon: FileText, color: 'bg-indigo-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'license-management', labelKey: 'menu.licenseManagement', icon: Key, color: 'bg-purple-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'api-keys', labelKey: 'menu.apiKeys', icon: Shield, color: 'bg-blue-700', categoryKey: 'menu.categories.configuracoes', permission: 'admin' },
-      { id: 'innovations-crud', labelKey: 'menu.innovationsCrud', icon: Sparkles, color: 'bg-cyan-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'whatsapp-config', labelKey: 'menu.whatsappConfig', icon: MessageSquare, color: 'bg-green-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'google-maps-config', labelKey: 'menu.googleMapsConfig', icon: Map, color: 'bg-red-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'openai-config', labelKey: 'menu.openaiConfig', icon: Brain, color: 'bg-violet-600', categoryKey: 'menu.categories.configuracoes' }

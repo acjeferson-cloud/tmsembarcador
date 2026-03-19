@@ -98,15 +98,15 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'emitida':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
       case 'solicitada':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100';
       case 'realizada':
       case 'coleta_realizada':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
       case 'cancelada':
       case 'coleta_cancelada':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -327,7 +327,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                     </div>
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${getStatusColor(pickup.status)}`}>
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(pickup.status)}`}>
                       {getStatusLabel(pickup.status)}
                     </span>
                   </td>

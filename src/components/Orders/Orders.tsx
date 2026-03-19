@@ -12,6 +12,7 @@ import { orderPdfService } from '../../services/orderPdfService';
 import { ordersService } from '../../services/ordersService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 interface Order {
   id: number;
@@ -32,8 +33,11 @@ interface Order {
 }
 
 
-export const Orders: React.FC = () => {
+export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const { user } = useAuth();
+  
+  useActivityLogger('Pedidos', 'Acesso', 'Acessou a gestão de Pedidos');
+
   const breadcrumbItems = [
     { label: 'Área de trabalho' },
     { label: 'Pedidos', current: true }
@@ -71,6 +75,15 @@ export const Orders: React.FC = () => {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  // Handle initial order navigation from Spotlight
+  const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialId && orders.length > 0 && initialId !== lastOpenedInitialId) {
+      setLastOpenedInitialId(initialId);
+      handleSingleAction(initialId, 'view-details');
+    }
+  }, [initialId, orders, lastOpenedInitialId]);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -201,9 +214,9 @@ export const Orders: React.FC = () => {
     }
   };
 
-  const handleSelectOrder = (orderId: number, isSelected: boolean) => {
+  const handleSelectOrder = (orderId: number | string, isSelected: boolean) => {
     if (isSelected) {
-      setSelectedOrders(prev => [...prev, orderId]);
+      setSelectedOrders(prev => [...prev, orderId as any]);
     } else {
       setSelectedOrders(prev => prev.filter(id => id !== orderId));
     }
@@ -344,7 +357,8 @@ export const Orders: React.FC = () => {
     }, 500);
   };
 
-  const handleSingleAction = async (orderId: number, action: string) => {
+  const handleSingleAction = async (orderId: number | string, action: string) => {
+    const order = orders.find(o => o.id.toString() === orderId.toString());
     if (action === 'recalculate') {
        setIsLoading(true);
        try {

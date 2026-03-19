@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Share2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Share2, Trash2, XCircle } from 'lucide-react';
 
 interface Bill {
   id: string | number;
@@ -104,37 +104,24 @@ export const BillsTable = React.memo<BillsTableProps>(({
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'importada':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-      case 'auditada_aprovada':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'auditada_reprovada':
-        return 'bg-gray-900 text-white dark:bg-black dark:text-gray-100';
-      case 'com_nfe_referenciada':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'cancelada':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'Importada':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
+      case 'Auditada e aprovada':
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
+      case 'Auditada e reprovada':
+        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
+      case 'Com NF-e Referenciada':
+        return 'bg-indigo-600 text-white dark:bg-indigo-700 dark:text-indigo-50';
+      case 'Cancelada':
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
       default:
-        return 'bg-white text-gray-800 border border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
   // Get status label
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'importada':
-        return 'Importada';
-      case 'auditada_aprovada':
-        return 'Auditada e Aprovada';
-      case 'auditada_reprovada':
-        return 'Auditada e Reprovada';
-      case 'com_nfe_referenciada':
-        return 'Com NF-e Referenciada';
-      case 'cancelada':
-        return 'Cancelada';
-      default:
-        return status;
-    }
+    return status;
   };
 
   // Get value comparison color
@@ -415,9 +402,17 @@ export const BillsTable = React.memo<BillsTableProps>(({
                             )}
                             
                             <button
-                              onClick={() => { onAction(bill.id, 'delete'); setOpenActionMenu(null); }}
+                              onClick={() => { onAction(bill.id, 'cancel'); setOpenActionMenu(null); }}
                               disabled={isLoading}
                               className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                            >
+                              <XCircle size={14} /><span>Cancelar Fatura</span>
+                            </button>
+
+                            <button
+                              onClick={() => { onAction(bill.id, 'delete'); setOpenActionMenu(null); }}
+                              disabled={isLoading}
+                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2"
                             >
                               <Trash2 size={14} /><span>Excluir Fatura</span>
                             </button>

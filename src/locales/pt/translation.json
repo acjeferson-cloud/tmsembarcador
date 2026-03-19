@@ -656,7 +656,7 @@
     "userRole": "Administrador",
     "today": "Hoje",
     "earlier": "Anterior",
-    "showingDays": "Mostrando atividades dos últimos 7 dias",
+    "showingDays": "Mostrando atividades dos últimos 3 dias",
     "close": "Fechar",
     "activities": {
       "dashboard": "Dashboard",

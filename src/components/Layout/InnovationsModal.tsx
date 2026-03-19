@@ -37,9 +37,9 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   const { user, currentEstablishment } = useAuth();
   const [activeTab, setActiveTab] = useState<'innovations' | 'history'>('innovations');
   const [history, setHistory] = useState<InnovationHistoryEntry[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  const isAdmin = user?.perfil === 'administrador';
+  const isAdmin = 
+    user?.perfil?.toLowerCase() === 'administrador' || 
+    (user as any)?.tipo?.toLowerCase() === 'administrador';
 
   useEffect(() => {
     const loadUserId = async () => {

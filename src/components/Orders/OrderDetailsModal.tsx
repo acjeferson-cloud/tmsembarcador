@@ -56,19 +56,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'emitido':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
       case 'coletado':
-        return 'bg-indigo-100 text-indigo-800';
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100';
       case 'em_transito':
-        return 'bg-blue-300 text-blue-800';
+        return 'bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-50';
       case 'saiu_entrega':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
       case 'entregue':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
       case 'cancelado':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 

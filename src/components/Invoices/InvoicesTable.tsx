@@ -116,26 +116,26 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
     switch (status?.toLowerCase()) {
       case 'emitida':
       case 'nfe_emitida':
-        return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
       case 'coletada':
       case 'coletado_transportadora':
       case 'coleta_realizada':
-        return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400';
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100';
       case 'em trânsito':
       case 'em_transito':
       case 'em_transito_origem':
       case 'em_transito_rota':
-        return 'bg-blue-100 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400';
+        return 'bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-50';
       case 'saiu p/ entrega':
       case 'saiu_entrega':
-        return 'bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400';
+        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
       case 'entregue':
       case 'chegada_destino':
-        return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400';
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
       case 'cancelada':
-        return 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400';
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
       default:
-        return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 

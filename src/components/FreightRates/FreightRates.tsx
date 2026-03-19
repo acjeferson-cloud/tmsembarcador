@@ -8,8 +8,11 @@ import { brazilianStates } from '../../data/statesData';
 import { FreightRateTableForm } from './FreightRateTableForm';
 import { carriersService } from '../../services/carriersService';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 export const FreightRates: React.FC = () => {
+  useActivityLogger('Cotação de frete', 'Acesso', 'Acessou os relatórios de Cotação de Fretes');
+
   const breadcrumbItems = [
     { label: 'Cotação de Fretes', current: true }
   ];

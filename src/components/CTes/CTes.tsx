@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Search, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Clock as ArrowClockwise, ThumbsUp, ThumbsDown, Plus, Upload, Bug } from 'lucide-react';
+import { Search, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Clock as ArrowClockwise, ThumbsUp, ThumbsDown, Plus, Upload, Bug, User } from 'lucide-react';
 import { CTesFilters } from './CTesFilters';
 import { CTesTable } from './CTesTable';
 import { CTesActions } from './CTesActions';
@@ -9,6 +9,7 @@ import { CTeDetailsModal } from './CTeDetailsModal';
 import { CTeValuesComparisonModal } from './CTeValuesComparisonModal';
 import { ReportDivergenceModal } from './ReportDivergenceModal';
 import { BulkCTeXmlUploadModal } from './BulkCTeXmlUploadModal';
+import { CTesRejectModal } from './CTesRejectModal';
 import { FreightRateValuesForm } from '../FreightRates/FreightRateValuesForm';
 import { DactePreview } from '../ElectronicDocuments/DactePreview';
 import { AutoDownloadStatus } from '../common/AutoDownloadStatus';
@@ -23,6 +24,19 @@ import { freightRatesService, FreightRate } from '../../services/freightRatesSer
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ElectronicDocument } from '../../data/electronicDocumentsData';
+import { formatCurrency } from '../../utils/formatters';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
+
+const normalizeCTeStatus = (status: string | undefined | null) => {
+  if (!status) return 'Importado';
+  const s = status.toLowerCase().trim();
+  if (s === 'aprovado' || s.includes('auditado e aprovado') || s.includes('auditado_aprovado')) return 'Auditado e aprovado';
+  if (s === 'reprovado' || s.includes('auditado e reprov') || s.includes('auditado_reprovado')) return 'Auditado e reprovado';
+  if (s === 'cancelado') return 'Cancelado';
+  if (s.includes('referenciada') || s.includes('com_nfe_referenciada')) return 'Com NF-e Referenciada';
+  if (s === 'importado') return 'Importado';
+  return 'Importado'; 
+};
 
 const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
   // A Base ICMS sempre contém o valor total COM ICMS
@@ -34,7 +48,7 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
   return {
     id: cte.id,
     carrier_id: cte.carrier_id, // Adicionar carrier_id para filtros
-    status: cte.status,
+    status: normalizeCTeStatus(cte.status),
     serie: cte.series || '',
     numero: cte.number,
     dataEmissao: cte.issue_date || '',
@@ -94,7 +108,7 @@ const convertCTeToElectronicDocument = (cte: CTeWithRelations): ElectronicDocume
   };
 };
 
-export const CTes: React.FC = () => {
+export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const { user } = useAuth();
   const breadcrumbItems = [
     { label: 'Documentos Operacionais' },
@@ -119,6 +133,15 @@ export const CTes: React.FC = () => {
   const [selectedCTeForComparison, setSelectedCTeForComparison] = useState<CTeWithRelations | null>(null);
   const [selectedCTeForDacte, setSelectedCTeForDacte] = useState<ElectronicDocument | null>(null);
   const [divergenceReportData, setDivergenceReportData] = useState<DivergenceReportData | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedCTeForReject, setSelectedCTeForReject] = useState<any>(null);
+
+  useActivityLogger(
+    'CT-es',
+    'Acesso',
+    'Acessou a listagem de Conhecimentos de Transporte'
+  );
+
   const [selectedTariffId, setSelectedTariffId] = useState<string | null>(null);
   const [selectedTariff, setSelectedTariff] = useState<FreightRate | null>(null);
   const [currentEstablishment, setCurrentEstablishment] = useState<{id: string, name: string} | null>(null);
@@ -158,6 +181,15 @@ export const CTes: React.FC = () => {
     loadData();
     refreshData();
   }, []);
+
+  // Handle initial CTe from navigation
+  const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialId && ctes.length > 0 && initialId !== lastOpenedInitialId) {
+      setLastOpenedInitialId(initialId);
+      handleSingleAction(initialId, 'view-nfes');
+    }
+  }, [initialId, ctes, lastOpenedInitialId]);
 
   const refreshData = async () => {
     setIsLoading(true);
@@ -358,22 +390,38 @@ export const CTes: React.FC = () => {
           })();
           break;
         case 'approve':
-          setToast({ message: `${selectedCTes.length} CT-e(s) aprovado(s) com sucesso!`, type: 'success' });
-          // Update CT-es status in the mock data
-          setCTes(prev => prev.map(cte =>
-            selectedCTes.includes(cte.id)
-              ? { ...cte, status: 'aprovado', dataAprovacao: new Date().toISOString() }
-              : cte
-          ));
-          break;
         case 'reject':
-          setToast({ message: `${selectedCTes.length} CT-e(s) reprovado(s) com sucesso!`, type: 'success' });
-          // Update CT-es status in the mock data
-          setCTes(prev => prev.map(cte =>
-            selectedCTes.includes(cte.id)
-              ? { ...cte, status: 'reprovado', dataAprovacao: new Date().toISOString() }
-              : cte
-          ));
+          setToast({ 
+            message: `${selectedCTes.length} CT-e(s) ${action === 'approve' ? 'aprovado(s)' : 'reprovado(s)'} com sucesso!`, 
+            type: 'success' 
+          });
+          
+          let aprovadosCounter = 0;
+          let reprovadosCounter = 0;
+
+          // Update local state
+          setCTes(prev => prev.map(cte => {
+            if (selectedCTes.includes(cte.id)) {
+              if (action === 'approve') {
+                 aprovadosCounter++;
+                 return { ...cte, status: 'Auditado e aprovado' };
+              }
+              if (action === 'reject') {
+                 reprovadosCounter++;
+                 return { ...cte, status: 'Auditado e reprovado' };
+              }
+            }
+            return cte;
+          }));
+          
+          if (aprovadosCounter > 0) {
+            userActivitiesService.logActivity('CT-es', 'aprovacao', `Aprovação de ${aprovadosCounter} ${aprovadosCounter > 1 ? 'conhecimentos de transporte' : 'conhecimento de transporte'}`);
+          }
+          if (reprovadosCounter > 0) {
+            userActivitiesService.logActivity('CT-es', 'reprovacao', `Reprovação de ${reprovadosCounter} ${reprovadosCounter > 1 ? 'conhecimentos de transporte' : 'conhecimento de transporte'}`);
+          }
+
+          setSelectedCTes([]);
           break;
         case 'revert':
           setToast({ message: `${selectedCTes.length} CT-e(s) estornado(s) com sucesso!`, type: 'success' });
@@ -685,35 +733,42 @@ export const CTes: React.FC = () => {
           })();
           break;
         case 'approve':
-          setToast({ message: `CT-e ${cte.numero} aprovado com sucesso!`, type: 'success' });
-          // Update CT-e in the mock data
-          setCTes(prev => prev.map(c =>
-            c.id.toString() === cteId.toString()
-              ? { ...c, status: 'aprovado', dataAprovacao: new Date().toISOString() }
-              : c
-          ));
+          (async () => {
+             try {
+               const result = await ctesCompleteService.update(cteId.toString(), { 
+                 status: 'Auditado e aprovado'
+               });
+               if (result.success) {
+                 setToast({ message: `CT-e ${cte.numero} aprovado com sucesso!`, type: 'success' });
+                 await refreshData();
+               } else {
+                 setToast({ message: `Erro ao aprovar CT-e: ${result.error}`, type: 'error' });
+               }
+             } catch (error) {
+               setToast({ message: 'Erro ao aprovar CT-e.', type: 'error' });
+             }
+          })();
           break;
         case 'reject':
-          // In a real implementation, this would show a modal to select rejection reason
-          const rejectionReason = prompt('Informe o motivo da rejeição:');
-          if (rejectionReason) {
-            setToast({ message: `CT-e ${cte.numero} reprovado com sucesso!`, type: 'success' });
-            // Update CT-e in the mock data
-            setCTes(prev => prev.map(c =>
-              c.id.toString() === cteId.toString()
-                ? { ...c, status: 'reprovado', dataAprovacao: new Date().toISOString() }
-                : c
-            ));
-          }
+          setSelectedCTeForReject(cte);
+          setShowRejectModal(true);
           break;
         case 'revert':
-          setToast({ message: `CT-e ${cte.numero} estornado com sucesso!`, type: 'success' });
-          // Update CT-e in the mock data
-          setCTes(prev => prev.map(c =>
-            c.id.toString() === cteId.toString()
-              ? { ...c, status: 'somente_importado', dataAprovacao: null }
-              : c
-          ));
+          (async () => {
+             try {
+               const result = await ctesCompleteService.update(cteId.toString(), { 
+                 status: 'Importado'
+               });
+               if (result.success) {
+                 setToast({ message: `CT-e ${cte.numero} estornado com sucesso!`, type: 'success' });
+                 await refreshData();
+               } else {
+                 setToast({ message: `Erro ao estornar CT-e: ${result.error}`, type: 'error' });
+               }
+             } catch (error) {
+               setToast({ message: 'Erro ao estornar CT-e.', type: 'error' });
+             }
+          })();
           break;
         case 'download':
           (async () => {
@@ -796,6 +851,31 @@ export const CTes: React.FC = () => {
     setConfirmDialog({ isOpen: false });
   };
 
+  const handleRejectConfirm = async (reasonId: number, observation: string) => {
+    if (!selectedCTeForReject) return;
+    
+    setIsLoading(true);
+    try {
+      const result = await ctesCompleteService.update(selectedCTeForReject.id.toString(), {
+        status: 'Auditado e reprovado'
+      });
+      
+      if (result.success) {
+        setToast({ message: `CT-e ${selectedCTeForReject.numero} reprovado com sucesso! Motivo ID: ${reasonId}`, type: 'success' });
+        await refreshData();
+      } else {
+        setToast({ message: `Erro ao reprovar CT-e: ${result.error}`, type: 'error' });
+      }
+    } catch (error) {
+      console.error('Erro ao reprovar CT-e:', error);
+      setToast({ message: 'Erro ao reprovar CT-e.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+      setShowRejectModal(false);
+      setSelectedCTeForReject(null);
+    }
+  };
+
   if (showForm) {
     if (!currentEstablishment) {
       return (
@@ -870,56 +950,60 @@ export const CTes: React.FC = () => {
       </div>
 
       {/* Status Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* Total CT-es */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de CT-es</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{ctes.length}</p>
             </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <FileText size={20} className="text-blue-600" />
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+              <FileCheck size={20} className="text-blue-600 dark:text-blue-400" />
             </div>
           </div>
         </div>
 
+        {/* Importados */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Importados</p>
-              <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-1">
-                {ctes.filter(cte => cte.status === 'importado').length}
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
+                {ctes.filter(cte => cte.status === 'Importado').length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-              <FileText size={20} className="text-gray-600 dark:text-gray-400" />
+            <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+              <Clock size={20} className="text-gray-500 dark:text-gray-400" />
             </div>
           </div>
         </div>
 
+        {/* Auditados e Aprovados */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auditados e Aprovados</p>
-              <p className="text-2xl font-semibold text-green-600 mt-1">
-                {ctes.filter(cte => cte.status === 'auditado_aprovado').length}
+              <p className="text-2xl font-semibold text-green-600 dark:text-green-500 mt-1">
+                {ctes.filter(cte => cte.status === 'Auditado e aprovado').length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle size={20} className="text-green-600" />
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
+              <CheckCircle size={20} className="text-green-600 dark:text-green-500" />
             </div>
           </div>
         </div>
 
+        {/* Auditados e Reprovados */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Auditados e Reprovados</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                {ctes.filter(cte => cte.status === 'auditado_reprovado').length}
+              <p className="text-2xl font-semibold text-orange-600 dark:text-orange-500 mt-1">
+                {ctes.filter(cte => cte.status === 'Auditado e reprovado').length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-orange-600 dark:bg-orange-700 rounded-lg flex items-center justify-center">
               <XCircle size={20} className="text-white" />
             </div>
           </div>
@@ -929,12 +1013,12 @@ export const CTes: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Com NF-e Referenciada</p>
-              <p className="text-2xl font-semibold text-yellow-600 mt-1">
-                {ctes.filter(cte => cte.status === 'com_nfe_referenciada').length}
+              <p className="text-2xl font-semibold text-indigo-600 dark:text-indigo-500 mt-1">
+                {ctes.filter(cte => cte.status === 'Com NF-e Referenciada').length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <FileText size={20} className="text-yellow-600" />
+            <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-700 rounded-lg flex items-center justify-center">
+              <FileText size={20} className="text-white" />
             </div>
           </div>
         </div>
@@ -943,12 +1027,12 @@ export const CTes: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Cancelados</p>
-              <p className="text-2xl font-semibold text-red-600 mt-1">
-                {ctes.filter(cte => cte.status === 'cancelado').length}
+              <p className="text-2xl font-semibold text-red-600 dark:text-red-500 mt-1">
+                {ctes.filter(cte => cte.status === 'Cancelado').length}
               </p>
             </div>
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <AlertCircle size={20} className="text-red-600" />
+            <div className="w-10 h-10 bg-red-600 dark:bg-red-700 rounded-lg flex items-center justify-center">
+              <AlertCircle size={20} className="text-white" />
             </div>
           </div>
         </div>
@@ -1102,6 +1186,16 @@ export const CTes: React.FC = () => {
           onCancel={() => setConfirmDialog({ isOpen: false })}
         />
       )}
+
+      <CTesRejectModal
+        isOpen={showRejectModal}
+        onClose={() => {
+          setShowRejectModal(false);
+          setSelectedCTeForReject(null);
+        }}
+        onConfirm={handleRejectConfirm}
+        cteNumber={selectedCTeForReject?.numero || ''}
+      />
     </div>
   );
 };

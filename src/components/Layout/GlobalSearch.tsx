@@ -1,21 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, FileText, Package, Receipt, Truck, X } from 'lucide-react';
-import { ordersData } from '../../data/mockData';
-import { invoicesData } from '../../data/mockData';
-import { ctesData } from '../../data/mockData';
-import { billsData } from '../../data/mockData';
+import { Search, FileText, Package, Receipt, Truck, X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getCurrentSessionContext } from '../../lib/sessionContext';
-import { isDemoOrganizationSync } from '../../utils/organizationHelpers';
-
-interface SearchResult {
-  id: string;
-  type: 'order' | 'invoice' | 'cte' | 'bill';
-  title: string;
-  subtitle: string;
-  status?: string;
-  value?: number;
-}
+import { globalSearchService, SearchResult } from '../../services/globalSearchService';
 
 interface GlobalSearchProps {
   onNavigate: (type: string, id: string) => void;
@@ -27,116 +13,34 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isDemo, setIsDemo] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Verificar se é organization de demonstração
+  // Atualizar resultados com debounce e chamada ao backend real
   useEffect(() => {
-    const checkDemo = async () => {
-      const context = await getCurrentSessionContext();
-      setIsDemo(isDemoOrganizationSync(context.organizationId));
-    };
-    checkDemo();
-  }, []);
-
-  // Função para buscar em todos os dados - APENAS para organization de demonstração
-  const performSearch = (term: string): SearchResult[] => {
-    if (!term || term.length < 2) return [];
-
-    // Se NÃO for demonstração, não buscar em dados mockados
-    if (!isDemo) {
-      return [];
+    setSelectedIndex(-1);
+    
+    if (!searchTerm || searchTerm.length < 2) {
+      setResults([]);
+      setIsLoading(false);
+      return;
     }
 
-    const searchResults: SearchResult[] = [];
-    const lowerTerm = term.toLowerCase();
-
-    // Buscar em Pedidos
-    ordersData.forEach(order => {
-      if (
-        (order.id && order.id.toLowerCase().includes(lowerTerm)) ||
-        (order.customer && order.customer.toLowerCase().includes(lowerTerm)) ||
-        (order.origin && order.origin.toLowerCase().includes(lowerTerm)) ||
-        (order.destination && order.destination.toLowerCase().includes(lowerTerm))
-      ) {
-        searchResults.push({
-          id: order.id,
-          type: 'order',
-          title: `Pedido ${order.id}`,
-          subtitle: `${order.customer} • ${order.origin} → ${order.destination}`,
-          status: order.status,
-          value: order.value
-        });
+    setIsLoading(true);
+    const fetchTimer = setTimeout(async () => {
+      try {
+        const data = await globalSearchService.search(searchTerm);
+        setResults(data);
+      } catch (error) {
+        console.error('Erro ao buscar resultados globais', error);
+        setResults([]);
+      } finally {
+        setIsLoading(false);
       }
-    });
+    }, 500);
 
-    // Buscar em Notas Fiscais
-    invoicesData.forEach(invoice => {
-      if (
-        (invoice.id && invoice.id.toLowerCase().includes(lowerTerm)) ||
-        (invoice.number && invoice.number.toString().includes(lowerTerm)) ||
-        (invoice.customer && invoice.customer.toLowerCase().includes(lowerTerm)) ||
-        (invoice.carrier && invoice.carrier.toLowerCase().includes(lowerTerm))
-      ) {
-        searchResults.push({
-          id: invoice.id,
-          type: 'invoice',
-          title: `NF ${invoice.number}`,
-          subtitle: `${invoice.customer} • ${invoice.carrier}`,
-          status: invoice.status,
-          value: invoice.value
-        });
-      }
-    });
-
-    // Buscar em CTes
-    ctesData.forEach(cte => {
-      if (
-        (cte.id && cte.id.toLowerCase().includes(lowerTerm)) ||
-        (cte.number && cte.number.toString().includes(lowerTerm)) ||
-        (cte.sender && cte.sender.toLowerCase().includes(lowerTerm)) ||
-        (cte.recipient && cte.recipient.toLowerCase().includes(lowerTerm)) ||
-        (cte.carrier && cte.carrier.toLowerCase().includes(lowerTerm))
-      ) {
-        searchResults.push({
-          id: cte.id,
-          type: 'cte',
-          title: `CTe ${cte.number}`,
-          subtitle: `${cte.sender} → ${cte.recipient} • ${cte.carrier}`,
-          status: cte.status,
-          value: cte.value
-        });
-      }
-    });
-
-    // Buscar em Faturas
-    billsData.forEach(bill => {
-      if (
-        (bill.id && bill.id.toLowerCase().includes(lowerTerm)) ||
-        (bill.number && bill.number.toString().includes(lowerTerm)) ||
-        (bill.customer && bill.customer.toLowerCase().includes(lowerTerm)) ||
-        (bill.carrier && bill.carrier.toLowerCase().includes(lowerTerm))
-      ) {
-        searchResults.push({
-          id: bill.id,
-          type: 'bill',
-          title: `Fatura ${bill.number}`,
-          subtitle: `${bill.customer} • ${bill.carrier}`,
-          status: bill.status,
-          value: bill.totalValue
-        });
-      }
-    });
-
-    return searchResults.slice(0, 10); // Limitar a 10 resultados
-  };
-
-  // Atualizar resultados quando o termo de busca mudar
-  useEffect(() => {
-    const results = performSearch(searchTerm);
-    setResults(results);
-    setSelectedIndex(-1);
+    return () => clearTimeout(fetchTimer);
   }, [searchTerm]);
 
   // Fechar busca ao clicar fora
@@ -190,23 +94,67 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate }) => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pendente':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'aprovado':
-      case 'autorizado':
-      case 'pago':
-        return 'text-green-600 bg-green-100';
-      case 'rejeitado':
-      case 'cancelado':
-        return 'text-red-600 bg-red-100';
-      case 'em transito':
-      case 'processando':
-        return 'text-blue-600 bg-blue-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+  const getStatusBadge = (type: string, status: string | undefined) => {
+    if (!status) return { label: 'Desconhecido', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+    const st = status.toLowerCase();
+
+    if (type === 'order') {
+      switch (st) {
+        case 'emitido': return { label: 'Emitido', className: 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100' };
+        case 'coletado': return { label: 'Em Coleta', className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100' };
+        case 'em_transito': return { label: 'Em Trânsito', className: 'bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-50' };
+        case 'saiu_entrega': return { label: 'Saiu p/Entrega', className: 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50' };
+        case 'entregue': return { label: 'Entregue', className: 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50' };
+        case 'cancelado': return { label: 'Cancelado', className: 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50' };
+        default: return { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+      }
     }
+    
+    if (type === 'invoice') {
+      switch (st) {
+        case 'emitida': case 'nfe_emitida': return { label: 'Emitida', className: 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100' };
+        case 'coletada': case 'coletado_transportadora': case 'coleta_realizada': return { label: 'Em Coleta', className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100' };
+        case 'em trânsito': case 'em_transito': case 'em_transito_origem': case 'em_transito_rota': return { label: 'Em trânsito', className: 'bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-50' };
+        case 'saiu p/ entrega': case 'saiu_entrega': return { label: 'Saiu p/ Entrega', className: 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50' };
+        case 'entregue': case 'chegada_destino': return { label: 'Entregue', className: 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50' };
+        case 'cancelada': return { label: 'Cancelada', className: 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50' };
+        default: return { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+      }
+    }
+    
+    if (type === 'cte') {
+      switch (st) {
+        case 'importado': return { label: 'Importado', className: 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100' };
+        case 'auditado e aprovado': return { label: 'Auditado e Aprovado', className: 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50' };
+        case 'auditado e reprovado': return { label: 'Auditado e Reprovado', className: 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50' };
+        case 'com nf-e referenciada': return { label: 'Com NF-e Referenciada', className: 'bg-indigo-600 text-white dark:bg-indigo-700 dark:text-indigo-50' };
+        case 'cancelado': return { label: 'Cancelado', className: 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50' };
+        default: return { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+      }
+    }
+    
+    if (type === 'bill') {
+      switch (st) {
+        case 'importada': return { label: 'Importada', className: 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100' };
+        case 'auditada e aprovada': return { label: 'Auditada e Aprovada', className: 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50' };
+        case 'auditada e reprovada': return { label: 'Auditada e Reprovada', className: 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50' };
+        case 'com nf-e referenciada': return { label: 'Com NF-e Referenciada', className: 'bg-indigo-600 text-white dark:bg-indigo-700 dark:text-indigo-50' };
+        case 'cancelada': return { label: 'Cancelada', className: 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50' };
+        default: return { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+      }
+    }
+    
+    if (type === 'pickup') {
+      switch (st) {
+        case 'emitida': return { label: 'Emitida', className: 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100' };
+        case 'solicitada': return { label: 'Solicitada', className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100' };
+        case 'realizada': case 'coleta_realizada': return { label: 'Realizada', className: 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50' };
+        case 'cancelada': case 'coleta_cancelada': return { label: 'Cancelada', className: 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50' };
+        default: return { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+      }
+    }
+    
+    return { label: status, className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
   };
 
   const formatValue = (value?: number) => {
@@ -229,7 +177,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate }) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="w-80 pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full md:w-96 lg:w-[32rem] pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         {searchTerm && (
           <button
@@ -246,7 +194,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate }) => {
 
       {isOpen && (searchTerm.length >= 2 || results.length > 0) && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          {results.length > 0 ? (
+          {isLoading ? (
+            <div className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+              <Loader2 className="w-8 h-8 mx-auto mb-2 text-blue-500 animate-spin" />
+              <p className="text-sm">Buscando resultados...</p>
+            </div>
+          ) : results.length > 0 ? (
             <div className="py-2">
               <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b">
                 {t('globalSearch.searchResults')} ({results.length})
@@ -276,8 +229,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate }) => {
                         {result.subtitle}
                       </p>
                       {result.status && (
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(result.status)}`}>
-                          {result.status}
+                        <span className={`px-2 py-0.5 flex items-center justify-center text-[10px] font-semibold rounded-full whitespace-nowrap min-w-[70px] ${getStatusBadge(result.type, result.status).className}`}>
+                          {getStatusBadge(result.type, result.status).label}
                         </span>
                       )}
                     </div>

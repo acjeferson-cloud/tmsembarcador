@@ -19,6 +19,7 @@ import { RealTimeMap } from './RealTimeMap';
 import { AlertsPanel } from './AlertsPanel';
 import { PerformanceMetrics } from './PerformanceMetrics';
 import { NewsCarousel } from './NewsCarousel';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 interface KPIData {
   totalDeliveries: number;
@@ -33,6 +34,8 @@ interface KPIData {
 
 export const ControlTower: React.FC = () => {
   const { t } = useTranslation();
+  
+  useActivityLogger('Torre de controle', 'Acesso', 'Acessou o dashboard da Torre de Controle');
 
   const breadcrumbItems = [
     { label: t('controlTower.pageTitle'), current: true }

@@ -5,6 +5,7 @@ import { ordersService } from '../../services/ordersService';
 import { nfeService } from '../../services/nfeService';
 import { ctesCompleteService } from '../../services/ctesCompleteService';
 import { supabase } from '../../lib/supabase';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 type DocumentType = 'order' | 'nfe' | 'cte';
 type SearchType = 'number' | 'accessKey';
@@ -30,6 +31,8 @@ interface OrderTrackingData {
 }
 
 export const DeliveryTracking: React.FC = () => {
+  useActivityLogger('Rastreamento de entregas', 'Acesso', 'Acessou o Rastreamento de Entregas');
+
   const breadcrumbItems = [
     { label: 'Área de trabalho' },
     { label: 'Rastreamento de Entregas', current: true }

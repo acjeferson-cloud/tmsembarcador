@@ -118,18 +118,24 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
   };
 
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'validado':
-        return 'bg-green-100 text-green-800';
-      case 'aprovado':
-        return 'bg-blue-100 text-blue-800';
-      case 'reprovado':
-        return 'bg-red-100 text-red-800';
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800';
+    switch (status) {
+      case 'Importado':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100'; // Like Emitido
+      case 'Auditado e aprovado':
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
+      case 'Auditado e reprovado':
+        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
+      case 'Com NF-e Referenciada':
+        return 'bg-indigo-600 text-white dark:bg-indigo-700 dark:text-indigo-50'; // Strong tonal
+      case 'Cancelado':
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50'; // Like Cancelado
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status;
   };
 
   const formatChaveAcesso = (chave: string) => {
@@ -235,7 +241,7 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
                   <p className="text-gray-600 dark:text-gray-400">Série: {cte.series || '0'} | Emissão: {formatDate(cte.issue_date)}</p>
                 </div>
                 <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(cte.status)}`}>
-                  {cte.status}
+                  {getStatusLabel(cte.status)}
                 </span>
               </div>
 

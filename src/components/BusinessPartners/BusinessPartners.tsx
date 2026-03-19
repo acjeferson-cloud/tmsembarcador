@@ -11,9 +11,13 @@ import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
+import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 const BusinessPartners: React.FC = () => {
   const { t } = useTranslation();
+  
+  useActivityLogger('Parceiros de Negócios', 'Acesso', 'Acessou a base de Parceiros de Negócios');
+
   const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

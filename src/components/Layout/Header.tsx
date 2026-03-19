@@ -182,7 +182,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
       order: 'orders',
       invoice: 'invoices', 
       cte: 'ctes',
-      bill: 'bills'
+      bill: 'bills',
+      pickup: 'pickups'
     };
     
     const section = sectionMap[type as keyof typeof sectionMap] || type;

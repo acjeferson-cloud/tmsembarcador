@@ -48,35 +48,24 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'auditada_aprovada':
-        return 'bg-green-100 text-green-800';
-      case 'auditada_reprovada':
-        return 'bg-red-100 text-red-800';
-      case 'cancelada':
-        return 'bg-gray-100 text-gray-800';
-      case 'referenciada':
-        return 'bg-yellow-100 text-yellow-800';
+      case 'Importada':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
+      case 'Auditada e aprovada':
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
+      case 'Auditada e reprovada':
+        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
+      case 'Com NF-e Referenciada':
+        return 'bg-indigo-600 text-white dark:bg-indigo-700 dark:text-indigo-50';
+      case 'Cancelada':
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
       default:
-        return 'bg-white text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
-  
+
   // Get status label
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'auditada_aprovada':
-        return 'Aprovada';
-      case 'auditada_reprovada':
-        return 'Reprovada';
-      case 'cancelada':
-        return 'Cancelada';
-      case 'referenciada':
-        return 'Referenciada';
-      case 'somente_importado':
-        return 'Importada';
-      default:
-        return status;
-    }
+    return status;
   };
   
   // Calculate difference percentage

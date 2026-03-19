@@ -132,43 +132,55 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   
   // Get status color
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'emitida':
-        return 'bg-gray-100 text-gray-800';
+      case 'nfe_emitida':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
       case 'coletada':
-        return 'bg-blue-100 text-blue-800';
+      case 'coletado_transportadora':
+      case 'coleta_realizada':
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-700 dark:text-indigo-100';
+      case 'em trânsito':
+      case 'em_transito':
       case 'em_transito_origem':
-        return 'bg-blue-200 text-blue-800';
       case 'em_transito_rota':
-        return 'bg-blue-300 text-blue-800';
-      case 'chegada_destino':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-blue-600 text-white dark:bg-blue-700 dark:text-blue-50';
+      case 'saiu p/ entrega':
       case 'saiu_entrega':
-        return 'bg-orange-200 text-orange-800';
+        return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
       case 'entregue':
-        return 'bg-green-100 text-green-800';
+      case 'chegada_destino':
+        return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50';
+      case 'cancelada':
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
   
   // Get status label
   const getStatusLabel = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'emitida':
+      case 'nfe_emitida':
         return 'Emitida';
       case 'coletada':
+      case 'coletado_transportadora':
+      case 'coleta_realizada':
         return 'Em Coleta';
+      case 'em trânsito':
+      case 'em_transito':
       case 'em_transito_origem':
-        return 'Em Trânsito - Origem';
       case 'em_transito_rota':
-        return 'Em Trânsito - Rota';
-      case 'chegada_destino':
-        return 'Chegada Destino';
+        return 'Em trânsito';
+      case 'saiu p/ entrega':
       case 'saiu_entrega':
         return 'Saiu p/ Entrega';
       case 'entregue':
+      case 'chegada_destino':
         return 'Entregue';
+      case 'cancelada':
+        return 'Cancelada';
       default:
         return status;
     }

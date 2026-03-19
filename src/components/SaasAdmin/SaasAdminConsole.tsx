@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Palette,
   Package,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { SaasAdminDashboard } from './SaasAdminDashboard';
 import { SaasTenantsManagement } from './SaasTenantsManagement';
@@ -18,8 +19,9 @@ import { SaasAdminLogs } from './SaasAdminLogs';
 import { WhiteLabelManagement } from './WhiteLabelManagement';
 import { SaasPlansManager } from './SaasPlansManager';
 import { SaasEnvironmentsView } from './SaasEnvironmentsView';
+import { InnovationsCrud } from '../Innovations/InnovationsCrud';
 
-type TabType = 'dashboard' | 'tenants' | 'plans' | 'environments' | 'whitelabel' | 'databases' | 'metrics' | 'logs' | 'alerts' | 'settings';
+type TabType = 'dashboard' | 'tenants' | 'plans' | 'environments' | 'whitelabel' | 'databases' | 'metrics' | 'logs' | 'alerts' | 'innovations' | 'settings';
 
 export function SaasAdminConsole() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -34,6 +36,7 @@ export function SaasAdminConsole() {
     { id: 'metrics' as TabType, label: 'Métricas', icon: TrendingUp },
     { id: 'logs' as TabType, label: 'Logs de Auditoria', icon: FileText },
     { id: 'alerts' as TabType, label: 'Alertas', icon: AlertTriangle },
+    { id: 'innovations' as TabType, label: 'Inovações', icon: Sparkles },
     { id: 'settings' as TabType, label: 'Configurações', icon: Settings }
   ];
 
@@ -113,6 +116,8 @@ export function SaasAdminConsole() {
             <p className="text-gray-600 dark:text-gray-400">Em desenvolvimento...</p>
           </div>
         )}
+
+        {activeTab === 'innovations' && <InnovationsCrud />}
 
         {activeTab === 'settings' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
