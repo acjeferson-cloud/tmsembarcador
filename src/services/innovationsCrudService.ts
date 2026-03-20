@@ -11,6 +11,7 @@ export interface InnovationCrud {
   category: string;
   is_active: boolean;
   display_order: number;
+  innovation_key?: string;
   organization_id?: string;
   environment_id?: string;
   created_at?: string;
@@ -20,8 +21,7 @@ export interface InnovationCrud {
 export const innovationsCrudService = {
   async getAll(): Promise<InnovationCrud[]> {
     try {
-      const { data, error } = await supabase
-        .from('innovations')
+      const { data, error } = await (supabase as any).from('innovations')
         .select('*')
         .order('display_order', { ascending: true })
         .order('name', { ascending: true });
@@ -37,8 +37,7 @@ export const innovationsCrudService = {
 
   async getById(id: string): Promise<InnovationCrud | null> {
     try {
-      const { data, error } = await supabase
-        .from('innovations')
+      const { data, error } = await (supabase as any).from('innovations')
         .select('*')
         .eq('id', id)
         .maybeSingle();
@@ -55,8 +54,7 @@ export const innovationsCrudService = {
 
   async create(innovation: Omit<InnovationCrud, 'id' | 'created_at' | 'updated_at'>): Promise<InnovationCrud | null> {
     try {
-      const { data, error } = await supabase
-        .from('innovations')
+      const { data, error } = await (supabase as any).from('innovations')
         .insert({
           name: innovation.name,
           description: innovation.description,
@@ -66,9 +64,10 @@ export const innovationsCrudService = {
           category: innovation.category || 'general',
           is_active: innovation.is_active !== undefined ? innovation.is_active : true,
           display_order: innovation.display_order || 0,
+          innovation_key: innovation.innovation_key,
           organization_id: innovation.organization_id,
           environment_id: innovation.environment_id
-        })
+        } as any)
         .select()
         .single();
 
@@ -94,8 +93,7 @@ export const innovationsCrudService = {
     try {
       const oldData = await this.getById(id);
 
-      const { data, error } = await supabase
-        .from('innovations')
+      const { data, error } = await (supabase as any).from('innovations')
         .update({
           name: innovation.name,
           description: innovation.description,
@@ -105,8 +103,9 @@ export const innovationsCrudService = {
           category: innovation.category,
           is_active: innovation.is_active,
           display_order: innovation.display_order,
+          innovation_key: innovation.innovation_key,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', id)
         .select()
         .single();
@@ -136,8 +135,7 @@ export const innovationsCrudService = {
     try {
       const innovation = await this.getById(id);
 
-      const { error } = await supabase
-        .from('innovations')
+      const { error } = await (supabase as any).from('innovations')
         .delete()
         .eq('id', id);
 
@@ -162,8 +160,7 @@ export const innovationsCrudService = {
 
   async search(searchTerm: string): Promise<InnovationCrud[]> {
     try {
-      const { data, error } = await supabase
-        .from('innovations')
+      const { data, error } = await (supabase as any).from('innovations')
         .select('*')
         .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
         .order('display_order', { ascending: true })

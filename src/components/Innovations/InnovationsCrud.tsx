@@ -173,7 +173,14 @@ export const InnovationsCrud: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">{innovation.name}</h3>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{t(`innovations.categories.${innovation.category}`) || innovation.category}</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t(`innovations.categories.${innovation.category}`) || innovation.category}</span>
+                      {innovation.innovation_key && (
+                        <span className="text-[10px] bg-gray-100 dark:bg-gray-700 w-max px-1.5 py-0.5 rounded text-gray-400 mt-1 font-mono">
+                          {innovation.innovation_key}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">

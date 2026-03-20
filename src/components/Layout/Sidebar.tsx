@@ -10,8 +10,10 @@ import {
   Search,
   ChevronLeft,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Sparkles
 } from 'lucide-react';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface SidebarProps {
   currentPage: string;
@@ -35,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isInnovationActive } = useInnovations();
 
   // Filter menu items based on user permissions
   const menuItems = useMemo(() => {
@@ -212,23 +215,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 const Icon = item.icon;
                 const hasSubmenu = item.hasSubmenu;
                 const isExpanded = hasSubmenu && isSubmenuExpanded(item.id);
+                const isParentDisabled = item.innovationKey ? !isInnovationActive(item.innovationKey) : false;
 
                 return (
                   <li key={item.id}>
                   {hasSubmenu ? (
                     <>
                       <button
-                        onClick={() => !isCollapsed && toggleSubmenu(item.id)}
-                        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-lg text-left transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white`}
+                        onClick={() => {
+                          if (isParentDisabled) return;
+                          !isCollapsed && toggleSubmenu(item.id);
+                        }}
+                        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-lg text-left transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white ${isParentDisabled ? 'opacity-50 cursor-not-allowed group relative' : ''}`}
                         title={isCollapsed ? t(item.labelKey) : ''}
                       >
                         <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'} min-w-0 flex-1`}>
                           <Icon size={20} className="flex-shrink-0" />
-                          {!isCollapsed && <span className="text-sm whitespace-nowrap">{t(item.labelKey)}</span>}
+                          {!isCollapsed && <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">{t(item.labelKey)}</span>}
+                          {isParentDisabled && (
+                            <Sparkles size={14} className="text-yellow-400 ml-1 flex-shrink-0" />
+                          )}
                         </div>
                         {!isCollapsed && (
                           <div className="flex-shrink-0 ml-2">
                             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </div>
+                        )}
+                        {isParentDisabled && (
+                          <div className="hidden group-hover:block absolute left-full ml-2 w-max max-w-xs p-2 bg-gray-800 text-xs text-white rounded shadow-lg z-50 pointer-events-none">
+                            Ative esta inovação lá em Painel de Administrador &gt; Inovações
                           </div>
                         )}
                       </button>
@@ -237,20 +252,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <ul className="ml-6 mt-1 space-y-1">
                           {item.submenu.map((subItem) => {
                             const SubIcon = subItem.icon;
+                            const isSubItemDisabled = subItem.innovationKey ? !isInnovationActive(subItem.innovationKey) : false;
+                            
                             return (
                               <li key={subItem.id}>
                                 <button
-                                  onClick={() => handlePageChange(subItem.id)}
+                                  onClick={() => {
+                                    if (isSubItemDisabled) return;
+                                    handlePageChange(subItem.id);
+                                  }}
                                   className={`
-                                    w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200
-                                    ${currentPage === subItem.id
+                                    group relative w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200
+                                    ${currentPage === subItem.id && !isSubItemDisabled
                                       ? 'bg-blue-600 text-white shadow-lg'
                                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                     }
+                                    ${isSubItemDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                                   `}
                                 >
                                   <SubIcon size={16} className="flex-shrink-0" />
-                                  <span className="text-sm whitespace-nowrap">{t(subItem.labelKey)}</span>
+                                  <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis flex-1">{t(subItem.labelKey)}</span>
+                                  {isSubItemDisabled && (
+                                    <Sparkles size={14} className="text-yellow-400 ml-1 flex-shrink-0" />
+                                  )}
+                                  {isSubItemDisabled && (
+                                    <div className="hidden group-hover:block absolute left-full ml-2 w-max max-w-xs p-2 bg-gray-800 text-xs text-white rounded shadow-lg z-50 pointer-events-none">
+                                      Ative esta inovação lá em Painel de Administrador &gt; Inovações
+                                    </div>
+                                  )}
                                 </button>
                               </li>
                             );
@@ -260,18 +289,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </>
                   ) : (
                     <button
-                      onClick={() => handlePageChange(item.id)}
+                      onClick={() => {
+                        if (isParentDisabled) return;
+                        handlePageChange(item.id);
+                      }}
                       className={`
-                        w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg text-left transition-all duration-200
-                        ${currentPage === item.id
+                        group relative w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg text-left transition-all duration-200
+                        ${currentPage === item.id && !isParentDisabled
                           ? 'bg-blue-600 text-white shadow-lg'
                           : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                         }
+                        ${isParentDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
-                      title={isCollapsed ? t(item.labelKey) : ''}
+                      title={isCollapsed && !isParentDisabled ? t(item.labelKey) : ''}
                     >
                       <Icon size={20} className="flex-shrink-0" />
-                      {!isCollapsed && <span className="text-sm whitespace-nowrap">{t(item.labelKey)}</span>}
+                      {!isCollapsed && <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis flex-1">{t(item.labelKey)}</span>}
+                      {isParentDisabled && !isCollapsed && (
+                        <Sparkles size={14} className="text-yellow-400 ml-1 flex-shrink-0" />
+                      )}
+                      {isParentDisabled && (
+                        <div className="hidden group-hover:block absolute left-full ml-2 w-max max-w-xs p-2 bg-gray-800 text-xs text-white rounded shadow-lg z-50 pointer-events-none">
+                          Ative esta inovação lá em Painel de Administrador &gt; Inovações
+                        </div>
+                      )}
                     </button>
                   )}
                 </li>

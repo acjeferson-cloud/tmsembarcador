@@ -132,6 +132,13 @@ export const InnovationView: React.FC<InnovationViewProps> = ({
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Chave do Sistema</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                {innovation.innovation_key || '-'}
+              </p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('innovations.card.createdAt')}</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {formatDate(innovation.created_at)}

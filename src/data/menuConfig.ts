@@ -46,6 +46,7 @@ interface MenuItem {
   hasSubmenu?: boolean;
   submenu?: MenuItem[];
   permission?: string;
+  innovationKey?: string;
 }
 
 export const menuConfig: MenuItem[] = [
@@ -111,7 +112,8 @@ export const menuConfig: MenuItem[] = [
     labelKey: 'menu.deliveryTracking',
     icon: Search,
     color: 'bg-blue-600',
-    categoryKey: 'menu.categories.operacoes'
+    categoryKey: 'menu.categories.operacoes',
+    innovationKey: 'reatreamento-entregas'
   },
   {
     id: 'reverse-logistics',
@@ -132,7 +134,8 @@ export const menuConfig: MenuItem[] = [
     labelKey: 'menu.logisticsSimulator',
     icon: Activity,
     color: 'bg-violet-500',
-    categoryKey: 'menu.categories.operacoes'
+    categoryKey: 'menu.categories.operacoes',
+    innovationKey: 'logistics-simulator'
   },
   {
     id: 'edi',
@@ -141,9 +144,10 @@ export const menuConfig: MenuItem[] = [
     color: 'bg-yellow-500',
     categoryKey: 'menu.categories.edi',
     hasSubmenu: true,
+    innovationKey: 'edi',
     submenu: [
-      { id: 'edi-input', labelKey: 'menu.ediInput', icon: Database, color: 'bg-yellow-500', categoryKey: 'menu.categories.edi' },
-      { id: 'edi-output', labelKey: 'menu.ediOutput', icon: Database, color: 'bg-lime-500', categoryKey: 'menu.categories.edi' }
+      { id: 'edi-input', labelKey: 'menu.ediInput', icon: Database, color: 'bg-yellow-500', categoryKey: 'menu.categories.edi', innovationKey: 'edi' },
+      { id: 'edi-output', labelKey: 'menu.ediOutput', icon: Database, color: 'bg-lime-500', categoryKey: 'menu.categories.edi', innovationKey: 'edi' }
     ]
   },
   {
@@ -171,9 +175,10 @@ export const menuConfig: MenuItem[] = [
     color: 'bg-blue-600',
     categoryKey: 'menu.categories.nps',
     hasSubmenu: true,
+    innovationKey: 'nps',
     submenu: [
-      { id: 'nps-dashboard', labelKey: 'menu.npsDashboard', icon: TrendingUp, color: 'bg-blue-600', categoryKey: 'menu.categories.nps' },
-      { id: 'nps-config', labelKey: 'menu.npsConfig', icon: Settings, color: 'bg-cyan-600', categoryKey: 'menu.categories.nps' }
+      { id: 'nps-dashboard', labelKey: 'menu.npsDashboard', icon: TrendingUp, color: 'bg-blue-600', categoryKey: 'menu.categories.nps', innovationKey: 'nps' },
+      { id: 'nps-config', labelKey: 'menu.npsConfig', icon: Settings, color: 'bg-cyan-600', categoryKey: 'menu.categories.nps', innovationKey: 'nps' }
     ]
   },
   {
@@ -196,9 +201,9 @@ export const menuConfig: MenuItem[] = [
       { id: 'change-log', labelKey: 'menu.changeLog', icon: FileText, color: 'bg-indigo-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'license-management', labelKey: 'menu.licenseManagement', icon: Key, color: 'bg-purple-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'api-keys', labelKey: 'menu.apiKeys', icon: Shield, color: 'bg-blue-700', categoryKey: 'menu.categories.configuracoes', permission: 'admin' },
-      { id: 'whatsapp-config', labelKey: 'menu.whatsappConfig', icon: MessageSquare, color: 'bg-green-600', categoryKey: 'menu.categories.configuracoes' },
-      { id: 'google-maps-config', labelKey: 'menu.googleMapsConfig', icon: Map, color: 'bg-red-600', categoryKey: 'menu.categories.configuracoes' },
-      { id: 'openai-config', labelKey: 'menu.openaiConfig', icon: Brain, color: 'bg-violet-600', categoryKey: 'menu.categories.configuracoes' }
+      { id: 'whatsapp-config', labelKey: 'menu.whatsappConfig', icon: MessageSquare, color: 'bg-green-600', categoryKey: 'menu.categories.configuracoes', innovationKey: 'whatsapp' },
+      { id: 'google-maps-config', labelKey: 'menu.googleMapsConfig', icon: Map, color: 'bg-red-600', categoryKey: 'menu.categories.configuracoes', innovationKey: 'google-maps' },
+      { id: 'openai-config', labelKey: 'menu.openaiConfig', icon: Brain, color: 'bg-violet-600', categoryKey: 'menu.categories.configuracoes', innovationKey: 'openai' }
     ]
   }
 ];

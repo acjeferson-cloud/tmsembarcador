@@ -57,6 +57,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { OfflineAlert } from './components/common/OfflineAlert';
 import { SpotlightSearch } from './components/Layout/SpotlightSearch';
 import DiagnosticPage from './components/DiagnosticPage';
+import { InnovationsProvider } from './contexts/InnovationsContext';
 
 // Report definitions
 const reportTypes = [
@@ -174,8 +175,11 @@ import {
   Download, 
   Clock,
   Settings,
-  FileText
+  FileText,
+  Sparkles
 } from 'lucide-react';
+import { useInnovations } from './contexts/InnovationsContext';
+import { menuConfig } from './data/menuConfig';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('control-tower');
@@ -277,6 +281,8 @@ function AppContent() {
   };
 
   const renderCurrentPage = () => {
+    const { isInnovationActive, isLoading: innovationsLoading } = useInnovations();
+
     // Check if user has permission to access this page
     if (user && user.perfil === 'personalizado' && user.permissoes) {
       // For personalized users, check if they have permission for this page
@@ -295,6 +301,39 @@ function AppContent() {
       }
     }
     
+    // Check for Innovation Locks
+    if (!innovationsLoading) {
+      const currentMenuItem = (() => {
+        const findItem = (items: any[], id: string): any => {
+          for (const i of items) {
+            if (i.id === id) return i;
+            if (i.submenu) {
+              const found = findItem(i.submenu, id);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+        return findItem(menuConfig, currentPage);
+      })();
+
+      if (currentMenuItem?.innovationKey && !isInnovationActive(currentMenuItem.innovationKey)) {
+        return (
+          <div className="p-6 h-full flex items-center justify-center">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-8 text-center max-w-md w-full shadow-lg">
+              <div className="bg-yellow-100 dark:bg-yellow-900/40 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                <Sparkles size={40} className="text-yellow-600 dark:text-yellow-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Recurso Desativado</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Esta inovação não está ativada. Entre em contato com um administrador ou ative-a pelo Painel de Administrador.
+              </p>
+            </div>
+          </div>
+        );
+      }
+    }
+
     // Handle special case for Fiori menu
     if (currentPage === 'fiori') {
       return <FioriMenu onPageChange={handlePageChange} />;
@@ -559,8 +598,10 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <ConnectionProvider>
-          <OfflineAlert />
-          <AppContent />
+          <InnovationsProvider>
+            <OfflineAlert />
+            <AppContent />
+          </InnovationsProvider>
         </ConnectionProvider>
       </LanguageProvider>
     </ThemeProvider>

@@ -32,7 +32,8 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
     icon: 'Sparkles',
     category: 'geral',
     is_active: true,
-    display_order: 0
+    display_order: 0,
+    innovation_key: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -47,7 +48,8 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
         icon: innovation.icon,
         category: innovation.category,
         is_active: innovation.is_active,
-        display_order: innovation.display_order
+        display_order: innovation.display_order,
+        innovation_key: innovation.innovation_key || ''
       });
     }
   }, [innovation]);
@@ -193,6 +195,19 @@ export const InnovationForm: React.FC<InnovationFormProps> = ({
                 onChange={(e) => handleChange('display_order', parseInt(e.target.value) || 0)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 placeholder={t('innovations.form.orderPlaceholder')}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Chave de Inovação (Sistema)
+              </label>
+              <input
+                type="text"
+                value={formData.innovation_key}
+                onChange={(e) => handleChange('innovation_key', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="Ex: whatsapp-config"
               />
             </div>
 
