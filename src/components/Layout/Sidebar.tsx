@@ -7,11 +7,9 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Search,
   ChevronLeft,
   ChevronsLeft,
-  ChevronsRight,
-  Sparkles
+  ChevronsRight
 } from 'lucide-react';
 import { useInnovations } from '../../contexts/InnovationsContext';
 
@@ -215,35 +213,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 const Icon = item.icon;
                 const hasSubmenu = item.hasSubmenu;
                 const isExpanded = hasSubmenu && isSubmenuExpanded(item.id);
-                const isParentDisabled = item.innovationKey ? !isInnovationActive(item.innovationKey) : false;
 
                 return (
                   <li key={item.id}>
                   {hasSubmenu ? (
                     <>
                       <button
-                        onClick={() => {
-                          if (isParentDisabled) return;
-                          !isCollapsed && toggleSubmenu(item.id);
-                        }}
-                        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-lg text-left transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white ${isParentDisabled ? 'opacity-50 cursor-not-allowed group relative' : ''}`}
+                        onClick={() => !isCollapsed && toggleSubmenu(item.id)}
+                        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-lg text-left transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white`}
                         title={isCollapsed ? t(item.labelKey) : ''}
                       >
                         <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'} min-w-0 flex-1`}>
                           <Icon size={20} className="flex-shrink-0" />
                           {!isCollapsed && <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">{t(item.labelKey)}</span>}
-                          {isParentDisabled && (
-                            <Sparkles size={14} className="text-yellow-400 ml-1 flex-shrink-0" />
-                          )}
                         </div>
                         {!isCollapsed && (
                           <div className="flex-shrink-0 ml-2">
                             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                          </div>
-                        )}
-                        {isParentDisabled && (
-                          <div className="hidden group-hover:block absolute left-full ml-2 w-max max-w-xs p-2 bg-gray-800 text-xs text-white rounded shadow-lg z-50 pointer-events-none">
-                            Ative esta inovação lá em Painel de Administrador &gt; Inovações
                           </div>
                         )}
                       </button>
@@ -252,34 +238,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <ul className="ml-6 mt-1 space-y-1">
                           {item.submenu.map((subItem) => {
                             const SubIcon = subItem.icon;
-                            const isSubItemDisabled = subItem.innovationKey ? !isInnovationActive(subItem.innovationKey) : false;
                             
                             return (
                               <li key={subItem.id}>
                                 <button
-                                  onClick={() => {
-                                    if (isSubItemDisabled) return;
-                                    handlePageChange(subItem.id);
-                                  }}
+                                  onClick={() => handlePageChange(subItem.id)}
                                   className={`
-                                    group relative w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200
-                                    ${currentPage === subItem.id && !isSubItemDisabled
+                                    w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200
+                                    ${currentPage === subItem.id
                                       ? 'bg-blue-600 text-white shadow-lg'
                                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                     }
-                                    ${isSubItemDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                                   `}
                                 >
                                   <SubIcon size={16} className="flex-shrink-0" />
                                   <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis flex-1">{t(subItem.labelKey)}</span>
-                                  {isSubItemDisabled && (
-                                    <Sparkles size={14} className="text-yellow-400 ml-1 flex-shrink-0" />
-                                  )}
-                                  {isSubItemDisabled && (
-                                    <div className="hidden group-hover:block absolute left-full ml-2 w-max max-w-xs p-2 bg-gray-800 text-xs text-white rounded shadow-lg z-50 pointer-events-none">
-                                      Ative esta inovação lá em Painel de Administrador &gt; Inovações
-                                    </div>
-                                  )}
                                 </button>
                               </li>
                             );
@@ -289,30 +262,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </>
                   ) : (
                     <button
-                      onClick={() => {
-                        if (isParentDisabled) return;
-                        handlePageChange(item.id);
-                      }}
+                      onClick={() => handlePageChange(item.id)}
                       className={`
-                        group relative w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg text-left transition-all duration-200
-                        ${currentPage === item.id && !isParentDisabled
+                        w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg text-left transition-all duration-200
+                        ${currentPage === item.id
                           ? 'bg-blue-600 text-white shadow-lg'
                           : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                         }
-                        ${isParentDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
-                      title={isCollapsed && !isParentDisabled ? t(item.labelKey) : ''}
+                      title={isCollapsed ? t(item.labelKey) : ''}
                     >
                       <Icon size={20} className="flex-shrink-0" />
                       {!isCollapsed && <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis flex-1">{t(item.labelKey)}</span>}
-                      {isParentDisabled && !isCollapsed && (
-                        <Sparkles size={14} className="text-yellow-400 ml-1 flex-shrink-0" />
-                      )}
-                      {isParentDisabled && (
-                        <div className="hidden group-hover:block absolute left-full ml-2 w-max max-w-xs p-2 bg-gray-800 text-xs text-white rounded shadow-lg z-50 pointer-events-none">
-                          Ative esta inovação lá em Painel de Administrador &gt; Inovações
-                        </div>
-                      )}
                     </button>
                   )}
                 </li>
