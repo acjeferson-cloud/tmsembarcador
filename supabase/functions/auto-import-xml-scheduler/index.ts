@@ -29,12 +29,11 @@ serve(async (req) => {
     
     const { data: establishments, error: estabError } = await supabase
       .from('establishments')
-      .select('id, organization_id, environment_id, email_config, razao_social')
-      .not('email_config', 'is', null);
+      .select('id, organization_id, environment_id, metadata, razao_social');
 
     if (estabError) throw new Error(`Erro estabelecimentos: ${estabError.message}`);
 
-    const activeConfigs = establishments.filter(e => e.email_config?.autoDownloadEnabled === true);
+    const activeConfigs = establishments.filter(e => e.metadata?.email_config?.autoDownloadEnabled === true);
     
     let totalNfe = 0;
     let totalCte = 0;
@@ -42,7 +41,7 @@ serve(async (req) => {
     let details: any[] = [];
 
     for (const estab of activeConfigs) {
-      const config = estab.email_config;
+      const config = estab.metadata.email_config;
       let estabNfes = 0;
       let estabCtes = 0;
       let estabEmailsChecked = 0;
@@ -162,7 +161,8 @@ serve(async (req) => {
         await mailClient.logout();
         
         const newEmailConfig = { ...config, lastAutoDownload: new Date().toISOString() };
-        await supabase.from('establishments').update({ email_config: newEmailConfig }).eq('id', estab.id);
+        estab.metadata.email_config = newEmailConfig;
+        await supabase.from('establishments').update({ metadata: estab.metadata }).eq('id', estab.id);
 
         details.push({
            establishment: estab.razao_social,

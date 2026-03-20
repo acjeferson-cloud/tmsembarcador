@@ -54,8 +54,8 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
           .limit(50),
         supabase
           .from('establishments')
-          .select('id, codigo, razao_social, email_config')
-          .not('email_config', 'is', null)
+          .select('id, codigo, razao_social, metadata')
+          .not('metadata', 'is', null)
       ]);
 
       if (logsResponse.data) {
@@ -63,7 +63,10 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
       }
 
       if (estabResponse.data) {
-        setEstablishments(estabResponse.data.filter(e =>
+        setEstablishments(estabResponse.data.map((e: any) => ({
+          ...e,
+          email_config: e.metadata?.email_config
+        })).filter((e: any) =>
           e.email_config?.autoDownloadEnabled === true
         ));
       }
