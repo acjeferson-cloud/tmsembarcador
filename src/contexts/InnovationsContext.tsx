@@ -19,9 +19,9 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
   // Derive orgId and envId from context (you might adjust this based on how useAuth actually holds orgId/envId)
   // Usually, tms extracts it from the user's login session or localStorage
   const getContextValues = () => {
-    const orgId = localStorage.getItem('tms-selected-organization') || localStorage.getItem('tms-user-org-id');
-    const envId = localStorage.getItem('tms-selected-environment') || localStorage.getItem('tms-user-env-id');
-    const estabCode = currentEstablishment?.codigo;
+    const orgId = user?.organization_id || localStorage.getItem('tms-selected-organization') || localStorage.getItem('tms-user-org-id');
+    const envId = user?.environment_id || localStorage.getItem('tms-selected-environment') || localStorage.getItem('tms-user-env-id');
+    const estabCode = currentEstablishment?.codigo || '0000';
     
     // Fallback para ler do jwt decodificando ou cache
     const savedUser = localStorage.getItem('tms-user');

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Navigation, Search, Info } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
-import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { useInnovations } from '../../contexts/InnovationsContext';
 import { useAuth } from '../../hooks/useAuth';
 
 interface GoogleMapProps {
@@ -30,7 +30,8 @@ export default function GoogleMap({
   interactive = true
 }: GoogleMapProps) {
   const { user } = useAuth();
-  const { isActive, isLoading } = useInnovation(INNOVATION_IDS.GOOGLE_MAPS, user?.id);
+  const { isInnovationActive, isLoading } = useInnovations();
+  const isActive = isInnovationActive('google-maps');
 
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -84,7 +85,7 @@ export default function GoogleMap({
   };
 
   const initializeMap = async () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !isActive || isLoading) return;
 
     try {
       await loadGoogleMapsAPI();
@@ -196,7 +197,7 @@ export default function GoogleMap({
 
   useEffect(() => {
     initializeMap();
-  }, [latitude, longitude]);
+  }, [latitude, longitude, isActive, isLoading]);
 
   useEffect(() => {
     if (map && address && !latitude && !longitude) {
@@ -265,7 +266,18 @@ export default function GoogleMap({
     });
   };
 
-  if (!isActive && !isLoading) {
+  if (isLoading) {
+    return (
+      <div 
+        className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center"
+        style={{ minHeight: height }}
+      >
+        <p className="text-gray-500 animate-pulse">Carregando permissões...</p>
+      </div>
+    );
+  }
+
+  if (!isActive) {
     return (
       <div 
         className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center"

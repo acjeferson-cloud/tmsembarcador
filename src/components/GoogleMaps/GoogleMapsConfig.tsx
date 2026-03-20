@@ -4,16 +4,14 @@ import { googleMapsService, GoogleMapsConfig as IGoogleMapsConfig } from '../../
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { GoogleMapsExtract } from './GoogleMapsExtract';
-import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { useInnovations } from '../../contexts/InnovationsContext';
 import { useTranslation, Trans } from 'react-i18next';
 
 export const GoogleMapsConfig: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { isActive: googleMapsActive, isLoading: googleMapsLoading } = useInnovation(
-    INNOVATION_IDS.GOOGLE_MAPS,
-    user?.id
-  );
+  const { isInnovationActive, isLoading: googleMapsLoading } = useInnovations();
+  const googleMapsActive = isInnovationActive('google-maps');
   const [activeTab, setActiveTab] = useState<'config' | 'extract'>('config');
   const [config, setConfig] = useState<IGoogleMapsConfig>({
     api_key: '',

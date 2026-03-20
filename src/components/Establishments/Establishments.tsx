@@ -226,7 +226,7 @@ export const Establishments: React.FC = () => {
         logo_light_base64: establishmentData.logoLightBase64,
         logo_dark_base64: establishmentData.logoDarkBase64,
         logo_nps_base64: establishmentData.logoNpsBase64,
-        email_config: establishmentData.emailConfig,
+        email_config: establishmentData.email_config,
       };
       if (editingEstablishment) {
         // For update, only set updated_by
