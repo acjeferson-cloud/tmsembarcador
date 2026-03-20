@@ -1420,6 +1420,7 @@
         "tda": "TDA - Access Difficulty Fee",
         "tde": "TDE - Delivery Difficulty Fee",
         "trt": "TRT - Transit Restriction Fee",
+        "tec": "TEC - Fuel Emergency Tax",
         "businessPartner": "Business Partner",
         "optional": "(Optional)",
         "allPartners": "All partners",

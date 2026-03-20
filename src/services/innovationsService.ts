@@ -104,6 +104,7 @@ export async function activateInnovation(
         console.error('[innovationsService.ts] Erro no UPDATE de user_innovations:', updateError);
         return { success: false, message: `Erro ao reativar recurso: ${updateError.message}` };
       }
+      window.dispatchEvent(new Event('innovationsUpdated'));
       return { success: true, message: 'Recurso reativado com sucesso!' };
     }
     const { error: insertError } = await (supabase as any).from('user_innovations')
@@ -121,6 +122,7 @@ export async function activateInnovation(
       console.error('[innovationsService.ts] Erro no INSERT de user_innovations:', insertError);
       return { success: false, message: `Erro ao ativar recurso: ${insertError.message}` };
     }
+    window.dispatchEvent(new Event('innovationsUpdated'));
     return { success: true, message: 'Recurso ativado com sucesso!' };
   } catch (error: any) {
     console.error('[innovationsService.ts] Catch Exception no activateInnovation:', error);
@@ -146,6 +148,7 @@ export async function deactivateInnovation(
     if (error) {
       return { success: false, message: `Erro ao desativar recurso: ${error.message}` };
     }
+    window.dispatchEvent(new Event('innovationsUpdated'));
     return { success: true, message: 'Recurso desativado com sucesso!' };
   } catch (error) {
     return { success: false, message: 'Erro ao desativar recurso' };

@@ -1,98 +1,79 @@
 import { useState, useEffect } from 'react';
-import { isInnovationActivated } from '../services/innovationsService';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './useAuth';
 
 export const INNOVATION_IDS = {
-  WHATSAPP: '10000000-0000-0000-0000-000000000001',
-  OPENAI: '10000000-0000-0000-0000-000000000002',
-  GOOGLE_MAPS: '10000000-0000-0000-0000-000000000003',
-  CORREIOS: '10000000-0000-0000-0000-000000000004',
-  RECEITA_FEDERAL: '10000000-0000-0000-0000-000000000005',
-  NPS: '10000000-0000-0000-0000-000000000006'
+  WHATSAPP: '7808f41c-0a0e-445d-bc21-9ab29de310dc',
+  OPENAI: '2b513551-c84c-4fae-9eac-4cd3195d03dd',
+  GOOGLE_MAPS: '0923ddb9-c872-474c-b77b-1ea69322fbd6',
+  CORREIOS: 'dab1390b-1ae6-4916-8576-93a005ef85e0',
+  RECEITA_FEDERAL: '694a7f88-a342-4ad4-9711-daf2edf4aba6',
+  NPS: '6281084e-d0e2-4974-a32d-dc928cc17745'
 } as const;
 
 export function useInnovation(innovationId: string, userId?: number | string) {
-  const [isActive, setIsActive] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user, currentEstablishment } = useAuth();
 
   useEffect(() => {
     const checkInnovation = async () => {
-
-
       try {
-        let numericUserId: number;
+        const orgId = user?.organization_id || localStorage.getItem('tms-selected-org-id') || '';
+        const envId = user?.environment_id || localStorage.getItem('tms-selected-env-id') || '';
+        const estabCode = currentEstablishment?.codigo || '0000';
+        
+        let numericUserId = 1;
 
-        if (!userId) {
-
-
+        if (userId) {
+          numericUserId = typeof userId === 'number' ? userId : parseInt(userId as string) || 1;
+        } else {
           try {
             const savedUser = localStorage.getItem('tms-user');
             if (savedUser) {
               const userData = JSON.parse(savedUser);
-
               if (typeof userData?.id === 'number') {
                 numericUserId = userData.id;
-
-              } else {
-
-
-                setIsActive(true);
-                setIsLoading(false);
-                return;
               }
-            } else {
-
-
-              setIsActive(true);
-              setIsLoading(false);
-              return;
             }
-          } catch (error) {
-
-
-            setIsActive(true);
-            setIsLoading(false);
-            return;
-          }
-        }
-        else if (typeof userId === 'number') {
-          numericUserId = userId;
-
-        }
-        else {
-          const parsed = parseInt(userId as string);
-          if (!isNaN(parsed)) {
-            numericUserId = parsed;
-
-          } else {
-
-
-            setIsActive(true);
-            setIsLoading(false);
-            return;
-          }
+          } catch (e) {}
         }
 
-        const active = await isInnovationActivated(numericUserId, innovationId);
-
-
-        if (!active) {
-
-          setIsActive(true);
-        } else {
-          setIsActive(active);
-        }
+        const { data, error } = await (supabase as any).from('user_innovations')
+          .select('is_active')
+          .eq('organization_id', orgId)
+          .eq('environment_id', envId)
+          .eq('establishment_code', estabCode)
+          .eq('innovation_id', innovationId)
+          .eq('is_active', true)
+          .maybeSingle();
+          
+        const active = !error && !!data;
+        console.log('[useInnovation] DB result:', { innovationId, active, data, error, orgId, envId, estabCode });
+        setIsActive(active);
       } catch (error) {
-
-
-        setIsActive(true);
+        console.error('[useInnovation] erro fatal ao checar', error);
+        setIsActive(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkInnovation();
-  }, [innovationId, userId]);
+    if (user?.organization_id || localStorage.getItem('tms-selected-org-id')) {
+      checkInnovation();
+    } else {
+      setIsLoading(false);
+    }
+
+    const handleUpdate = () => {
+      checkInnovation(); // Always trigger checkInnovation on update to ensure reactivity
+    };
+    window.addEventListener('innovationsUpdated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('innovationsUpdated', handleUpdate);
+    };
+  }, [innovationId, userId, user, currentEstablishment]);
 
   return { isActive, isLoading };
 }

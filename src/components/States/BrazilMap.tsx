@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useTranslation } from 'react-i18next';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface BrazilMapProps {
   states?: any[];
@@ -10,6 +11,10 @@ interface BrazilMapProps {
 
 export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) => {
   const { t } = useTranslation();
+  const { isInnovationActive } = useInnovations();
+  const isActive = isInnovationActive('google-maps');
+  const isLoading = false; // Como usa contexto global já validado na inicialização, não há loading local.
+  
   const mapRef = useRef<HTMLDivElement>(null);
   const [, setMapInstance] = useState<google.maps.Map | null>(null);
 
@@ -78,11 +83,26 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) =>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div 
-          ref={mapRef}
-          className="w-full h-96 rounded-lg border border-gray-200 dark:border-gray-700"
-          style={{ minHeight: '400px' }}
-        />
+        {!isActive && !isLoading ? (
+          <div className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center" style={{ minHeight: '400px' }}>
+            <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
+              <MapPin className="w-10 h-10 text-yellow-500 mb-2" />
+              <h3 className="text-yellow-800 font-semibold text-lg">Integração Google Maps Premium não habilitada</h3>
+              <p className="text-yellow-700 text-sm">
+                Para visualizar a interação geográfica das suas operações de transporte e regiões do país, solicite a ativação ao administrador em:
+              </p>
+              <span className="text-yellow-800 font-medium bg-yellow-100 px-3 py-1 rounded-md text-xs mt-1">
+                Menu {'>'} Inovações & Sugestões {'>'} Ativar Recurso
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div 
+            ref={mapRef}
+            className="w-full h-96 rounded-lg border border-gray-200 dark:border-gray-700"
+            style={{ minHeight: '400px' }}
+          />
+        )}
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">

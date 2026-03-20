@@ -86,6 +86,15 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   useEffect(() => {
     loadActiveInnovations();
+
+    const handleUpdate = () => {
+      loadActiveInnovations();
+    };
+    window.addEventListener('innovationsUpdated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('innovationsUpdated', handleUpdate);
+    };
   }, [user?.id, currentEstablishment?.codigo]);
 
   const isInnovationActive = (key: string) => {

@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 
 export const States: React.FC = () => {
   const { t } = useTranslation();
@@ -31,7 +32,6 @@ export const States: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
   const [statesList, setStatesList] = useState<State[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; stateId?: string }>({ isOpen: false });
   const itemsPerPage = 12;
@@ -118,13 +118,15 @@ export const States: React.FC = () => {
         ibge_code: stateData.ibge_code,
         capital: stateData.capital,
         region: stateData.region,
-        bandeira_url: stateData.bandeira_url
+        bandeira_url: stateData.bandeira_url,
+        nome: stateData.name,
+        sigla: stateData.abbreviation,
+        codigo: stateData.ibge_code
       };
 
       if (editingState) {
         const updated = await statesService.update(editingState.id, {
-          ...normalizedData,
-          updated_by: 'current-user-id'
+          ...normalizedData
         });
         if (updated) {
           await logUpdate('state', editingState.id, editingState, updated, 1, 'Administrador');
@@ -135,8 +137,7 @@ export const States: React.FC = () => {
         }
       } else {
         const created = await statesService.create({
-          ...normalizedData,
-          created_by: 'current-user-id'
+          ...normalizedData
         });
         if (created) {
           await logCreate('state', created.id, created, 1, 'Administrador');
@@ -163,11 +164,11 @@ export const States: React.FC = () => {
     const csvContent = [
       [t('states.fields.name'), t('states.fields.abbreviation'), t('states.fields.ibge_code'), t('states.fields.capital'), t('states.fields.region')].join(','),
       ...filteredStates.map(state => [
-        state.name,
-        state.abbreviation,
-        state.ibge_code,
-        state.capital,
-        state.region
+        state.name || '',
+        state.abbreviation || '',
+        state.ibge_code || '',
+        state.capital || '',
+        state.region || ''
       ].join(','))
     ].join('\n');
 
@@ -305,7 +306,7 @@ export const States: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {displayedStates.map((state) => (
                 <StateCard
-                  key={`${state.id}-${refreshKey}`}
+                  key={state.id}
                   state={state}
                   onView={handleViewState}
                   onEdit={handleEditState}

@@ -10,6 +10,8 @@ import { normalizarCNPJ } from '../../utils/cnpj';
 import { formatTitleCase } from '../../utils/formatters';
 import { EmailOutgoingConfigTab } from './EmailOutgoingConfig';
 import { useTranslation } from 'react-i18next';
+import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { useAuth } from '../../hooks/useAuth';
 
 interface EstablishmentFormProps {
   onBack: () => void;
@@ -19,6 +21,11 @@ interface EstablishmentFormProps {
 
 export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, onSave, establishment }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { isActive: receitaFederalActive, isLoading: receitaFederalLoading } = useInnovation(
+    INNOVATION_IDS.RECEITA_FEDERAL,
+    user?.id
+  );
 
   const [formData, setFormData] = useState({
     codigo: establishment?.codigo || '',
@@ -260,16 +267,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     try {
       const result = await receitaFederalService.consultarCNPJ(cnpj);
       
-      if (result && 'success' in result && result.success && result.data) {
+      if (result) {
         setCnpjMessage({ type: 'success', text: 'Dados encontrados com sucesso.' });
         
-        const empresa = result.data as unknown as Record<string, unknown>;
-
         // Check if company is active
-        if (!receitaFederalService.permiteImportacao(empresa.situacao_cadastral as string)) {
+        if (!receitaFederalService.permiteImportacao(result.situacao_cadastral)) {
           setCnpjMessage({
             type: 'warning',
-            text: receitaFederalService.getMensagemStatus(empresa.situacao_cadastral as string)
+            text: receitaFederalService.getMensagemStatus(result.situacao_cadastral)
           });
           setIsSearchingCNPJ(false);
           return;
@@ -278,23 +283,23 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
         // Fill form with API data (applying Title Case formatting)
         setFormData(prev => ({
           ...prev,
-          razaoSocial: formatTitleCase(empresa.razao_social as string),
-          fantasia: formatTitleCase((empresa.nome_fantasia as string) || (empresa.razao_social as string)),
-          endereco: formatTitleCase(empresa.logradouro as string),
-          bairro: formatTitleCase(empresa.bairro as string),
-          cep: empresa.cep as string,
-          cidade: formatTitleCase(empresa.municipio as string),
-          estado: empresa.uf as string,
+          razaoSocial: formatTitleCase(result.razao_social),
+          fantasia: formatTitleCase(result.nome_fantasia || result.razao_social),
+          endereco: formatTitleCase(result.logradouro),
+          bairro: formatTitleCase(result.bairro),
+          cep: result.cep,
+          cidade: formatTitleCase(result.municipio),
+          estado: result.uf,
         }));
 
         setCnpjMessage({
           type: 'success',
-          text: `${empresa.razao_social} - ${receitaFederalService.getMensagemStatus(empresa.situacao_cadastral as string)}`
+          text: `${result.razao_social} - ${receitaFederalService.getMensagemStatus(result.situacao_cadastral)}`
         });
 
         // Auto-search location if we have address
-        if (empresa.logradouro && empresa.municipio && empresa.uf) {
-          const fullAddress = `${empresa.logradouro}, ${empresa.municipio} - ${empresa.uf}`;
+        if (result.logradouro && result.municipio && result.uf) {
+          const fullAddress = `${result.logradouro}, ${result.municipio} - ${result.uf}`;
           setMapLocation({
             lat: 0,
             lng: 0,
@@ -302,7 +307,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
           });
         }
       } else {
-        setCnpjMessage({ type: 'error', text: ('message' in result ? result.message as string : 'Erro ao buscar CNPJ. Tente novamente.') });
+        setCnpjMessage({ type: 'error', text: 'Erro ao buscar CNPJ. Tente novamente.' });
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -591,8 +596,8 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                   <button
                     type="button"
                     onClick={searchCNPJ}
-                    disabled={isSearchingCNPJ || normalizarCNPJ(formData.cnpj).length !== 14}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                    disabled={isSearchingCNPJ || normalizarCNPJ(formData.cnpj).length !== 14 || !receitaFederalActive || receitaFederalLoading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                   >
                     {isSearchingCNPJ ? (
                       <>
@@ -610,6 +615,14 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                 {cnpjMessage && (
                   <div className="mt-2">
                     <InlineMessage type={cnpjMessage.type} message={cnpjMessage.text} />
+                  </div>
+                )}
+                {!receitaFederalActive && !receitaFederalLoading && (
+                  <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start space-x-2">
+                    <Info className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-yellow-800">
+                      {t('businessPartners.form.receitaFederalWarnings.notActiveDesc')}
+                    </p>
                   </div>
                 )}
               </div>

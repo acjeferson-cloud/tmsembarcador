@@ -112,8 +112,7 @@ export const menuConfig: MenuItem[] = [
     labelKey: 'menu.deliveryTracking',
     icon: Search,
     color: 'bg-blue-600',
-    categoryKey: 'menu.categories.operacoes',
-    innovationKey: 'reatreamento-entregas'
+    categoryKey: 'menu.categories.operacoes'
   },
   {
     id: 'reverse-logistics',

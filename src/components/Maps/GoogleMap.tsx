@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Navigation, Search } from 'lucide-react';
+import { MapPin, Navigation, Search, Info } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { useAuth } from '../../hooks/useAuth';
 
 interface GoogleMapProps {
   address?: string;
@@ -27,6 +29,9 @@ export default function GoogleMap({
   zoom = 15,
   interactive = true
 }: GoogleMapProps) {
+  const { user } = useAuth();
+  const { isActive, isLoading } = useInnovation(INNOVATION_IDS.GOOGLE_MAPS, user?.id);
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const [map, setMap] = useState<any>(null);
@@ -260,8 +265,28 @@ export default function GoogleMap({
     });
   };
 
+  if (!isActive && !isLoading) {
+    return (
+      <div 
+        className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center"
+        style={{ minHeight: height }}
+      >
+        <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
+          <Info className="w-10 h-10 text-yellow-500 mb-2" />
+          <h3 className="text-yellow-800 font-semibold text-lg">Integração Google Maps Premium não está habilitada</h3>
+          <p className="text-yellow-700 text-sm">
+            Para utilizar o rastreamento em tempo real, cálculo de rotas e visualização de mapas, solicite a ativação ao administrador em:
+          </p>
+          <span className="text-yellow-800 font-medium bg-yellow-100 px-3 py-1 rounded-md text-xs mt-1">
+            Menu {'>'} Inovações & Sugestões {'>'} Ativar Recurso
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-64 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700">
+    <div className="w-full flex flex-col gap-2 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800">
       {interactive && (
         <div className="flex gap-2">
           <div className="flex-1 flex gap-2">

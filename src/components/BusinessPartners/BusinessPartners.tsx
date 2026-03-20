@@ -12,9 +12,11 @@ import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
+import { useAuth } from '../../hooks/useAuth';
 
 const BusinessPartners: React.FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   
   useActivityLogger('Parceiros de Negócios', 'Acesso', 'Acessou a base de Parceiros de Negócios');
 
@@ -369,16 +371,16 @@ const BusinessPartners: React.FC = () => {
               {t('businessPartners.tabs.list', 'Lista')}
             </button>
             <button
-              onClick={() => setActiveTab('map')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
-                activeTab === 'map'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Map className="w-4 h-4" />
-              {t('businessPartners.tabs.map', 'Mapa')}
-            </button>
+                onClick={() => setActiveTab('map')}
+                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                  activeTab === 'map'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Map className="w-4 h-4" />
+                {t('businessPartners.tabs.map', 'Mapa')}
+              </button>
           </div>
         </div>
 
@@ -491,10 +493,12 @@ const BusinessPartners: React.FC = () => {
 
         {/* Tab Content - Mapa */}
         {activeTab === 'map' && (
-          <BusinessPartnersMap
-            partners={filteredPartners}
-            onSelectPartner={handleView}
-          />
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <BusinessPartnersMap
+              partners={filteredPartners}
+              onSelectPartner={handleView}
+            />
+          </div>
         )}
       </div>
 

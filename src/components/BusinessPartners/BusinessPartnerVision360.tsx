@@ -295,12 +295,19 @@ Com base no histórico, o parceiro apresenta tendência de crescimento sustentá
     <div className="space-y-6">
       {/* Innovation Notice */}
       {!openaiActive && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
-          <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-start space-x-3">
+          <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-yellow-800" dangerouslySetInnerHTML={{
-                __html: `<strong>${t('businessPartners.vision360.aiInsight.notHired', 'Integração com OpenAI/ChatGPT não contratada')}:</strong> ${t('businessPartners.vision360.aiInsight.notHiredDesc', 'Para utilizar o botão de inteligência artificial "Insight IA", é necessário ativar o serviço em **Inovações & Sugestões**. Sem a ativação, o botão não terão efeito.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}`
-            }} />
+            <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300 mb-1">
+              💡 Insight por IA disponível para contratação
+            </h4>
+            <p className="text-sm text-blue-800 dark:text-blue-400">
+              O recurso "Insight por IA" pode gerar análises inteligentes e apoiar suas decisões, mas ainda não está habilitado para seu ambiente.
+            </p>
+            <p className="text-sm text-blue-800 dark:text-blue-400 mt-2">
+              Para ativar, solicite ao administrador:<br />
+              <strong>Menu &gt; Inovações &amp; Sugestões &gt; Ativar recurso</strong>
+            </p>
           </div>
         </div>
       )}

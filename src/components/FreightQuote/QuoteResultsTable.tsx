@@ -88,6 +88,9 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                 {t('freightQuote.results.columns.otherValues')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                TEC
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('freightQuote.results.columns.icms')}
               </th>
             </tr>
@@ -230,6 +233,9 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatCurrency(result.calculationDetails.outrosValores)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                  {formatCurrency(result.calculationDetails.tec || 0)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   <div>

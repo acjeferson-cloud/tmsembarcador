@@ -20,7 +20,11 @@ import {
 } from '../../services/openaiTransactionsService';
 import { useTranslation } from 'react-i18next';
 
-export const OpenAIExtract: React.FC = () => {
+interface OpenAIExtractProps {
+  disabled?: boolean;
+}
+
+export const OpenAIExtract: React.FC<OpenAIExtractProps> = ({ disabled = false }) => {
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState<OpenAITransaction[]>([]);
   const [summary, setSummary] = useState<TransactionSummary | null>(null);
@@ -115,14 +119,15 @@ export const OpenAIExtract: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 flex items-center gap-2"
+            disabled={disabled}
+            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Filter className="w-4 h-4" />
             {t('openai.extractPage.filters')}
           </button>
           <button
             onClick={handleExportCSV}
-            disabled={transactions.length === 0}
+            disabled={transactions.length === 0 || disabled}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
@@ -211,13 +216,15 @@ export const OpenAIExtract: React.FC = () => {
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleApplyFilters}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={disabled}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('openai.extractPage.applyFilters')}
             </button>
             <button
               onClick={handleClearFilters}
-              className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300"
+              disabled={disabled}
+              className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('openai.extractPage.clearFilters')}
             </button>

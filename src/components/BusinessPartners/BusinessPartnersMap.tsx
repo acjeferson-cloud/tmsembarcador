@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BusinessPartner } from '../../types';
-import { MapPin, Loader } from 'lucide-react';
+import { MapPin, Loader, Info } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useTranslation } from 'react-i18next';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface BusinessPartnersMapProps {
   partners: BusinessPartner[];
@@ -10,6 +11,10 @@ interface BusinessPartnersMapProps {
 }
 
 const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onSelectPartner }) => {
+  const { isInnovationActive } = useInnovations();
+  const isActive = isInnovationActive('google-maps');
+  const isLoadingInnovation = false; // Como usa contexto global já validado na inicialização, não há loading local.
+
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
@@ -230,6 +235,23 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
       newMarkers.forEach(marker => marker.setMap(null));
     };
   }, [map, partners, onSelectPartner]);
+
+  if (!isActive && !isLoadingInnovation) {
+    return (
+      <div className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center" style={{ minHeight: '600px' }}>
+        <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
+          <Info className="w-10 h-10 text-yellow-500 mb-2" />
+          <h3 className="text-yellow-800 font-semibold text-lg">Integração Google Maps Premium não habilitada</h3>
+          <p className="text-yellow-700 text-sm">
+            Para visualizar a distribuição geográfica dos seus parceiros de negócios, solicite a ativação ao administrador em:
+          </p>
+          <span className="text-yellow-800 font-medium bg-yellow-100 px-3 py-1 rounded-md text-xs mt-1">
+            Menu {'>'} Inovações & Sugestões {'>'} Ativar Recurso
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

@@ -8,6 +8,8 @@ import { getAllCities, findCityByCEPFromDatabase } from '../../services/citiesSe
 import { InlineMessage } from '../common/InlineMessage';
 import { receitaFederalService } from '../../services/receitaFederalService';
 import { formatCompanyName, formatCNPJInput, formatPhone, unformatCNPJ, unformatPhone } from '../../utils/formatters';
+import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { useAuth } from '../../hooks/useAuth';
 
 interface CarrierFormProps {
   onBack: () => void;
@@ -18,6 +20,11 @@ interface CarrierFormProps {
 
 export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrier, isEdit = false }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { isActive: receitaFederalActive, isLoading: receitaFederalLoading } = useInnovation(
+    INNOVATION_IDS.RECEITA_FEDERAL,
+    user?.id
+  );
   const [formData, setFormData] = useState({
     codigo: carrier?.codigo || '',
     razaoSocial: carrier?.razao_social || '',
@@ -488,7 +495,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
       setCnpjMessage({
         type: 'success',
-        text: t('carriers.dataImportedSuccess', { status: mensagemStatus })
+        text: t('carriers.form.dataImportedSuccess', { status: mensagemStatus })
       });
 
       setTimeout(() => {
@@ -786,23 +793,37 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <button
                     type="button"
                     onClick={handleConsultarCNPJ}
-                    disabled={isLoadingCNPJ || !formData.cnpj}
-                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                    disabled={isLoadingCNPJ || !formData.cnpj || !receitaFederalActive || receitaFederalLoading}
+                    className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                     title={t('carriers.form.searchRFB')}
                   >
                     {isLoadingCNPJ ? (
-                      <Loader className="w-4 h-4 animate-spin" />
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        <span>Buscando...</span>
+                      </>
                     ) : (
-                      <Search className="w-4 h-4" />
+                      <>
+                        <Search className="w-4 h-4" />
+                        <span>Buscar</span>
+                      </>
                     )}
                   </button>
                 </div>
                 {cnpjMessage && (
-                  <div className={`mt-2 text-xs ${cnpjMessage.type === 'error' ? 'text-red-600' : 'text-green-600'} flex items-start gap-1 whitespace-pre-wrap`}>
-                    <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                    <span>{cnpjMessage.text}</span>
+                  <div className="mt-2">
+                    <InlineMessage type={cnpjMessage.type} message={cnpjMessage.text} />
                   </div>
                 )}
+                {!receitaFederalActive && !receitaFederalLoading && (
+                  <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start space-x-2">
+                    <Info className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-yellow-800">
+                      {t('businessPartners.form.receitaFederalWarnings.notActiveDesc')}
+                    </p>
+                  </div>
+                )}
+
               </div>
 
               <div>

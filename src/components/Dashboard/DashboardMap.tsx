@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { dashboardService, DashboardFilters, DashboardMapaCusto } from '../../services/dashboardService';
 import { AlertCircle } from 'lucide-react';
 import { loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface Props {
   filters: DashboardFilters;
@@ -17,6 +18,10 @@ const defaultCenter = { lat: -14.235, lng: -51.925 };
 const defaultZoom = 4;
 
 export const DashboardMap: React.FC<Props> = ({ filters }) => {
+  const { isInnovationActive } = useInnovations();
+  const isActive = isInnovationActive('google-maps');
+  const isLoadingInnovation = false; // Como usa o context global, não precisamos de loading local que causava flicker
+
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const circlesRef = useRef<google.maps.Circle[]>([]);
@@ -87,7 +92,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       return minRadius + (cost / maxCost) * (maxRadius - minRadius);
     };
 
-    mapData.slice(0, 50).forEach((city, idx) => {
+    mapData.slice(0, 50).forEach((city) => {
       const addressKey = `${city.cidade}, ${city.uf}, Brasil`;
       const coords = geocodedLocations[addressKey];
       
@@ -251,15 +256,32 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
         </div>
 
         <div className="relative w-full" style={containerStyle}>
-          {(loading || !isLoaded) && (
-            <div className="absolute inset-0 z-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center animate-pulse">
-               <p className="text-gray-400">Carregando mapa...</p>
+          {!isActive && !isLoadingInnovation ? (
+            <div className="absolute inset-0 z-10 w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+              <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
+                <AlertCircle className="w-10 h-10 text-yellow-500 mb-2" />
+                <h3 className="text-yellow-800 font-semibold text-lg">Integração Google Maps Premium não habilitada</h3>
+                <p className="text-yellow-700 text-sm">
+                  Para visualizar a densidade financeira geolocalizada entre as 50 principais cidades, solicite a ativação ao administrador em:
+                </p>
+                <span className="text-yellow-800 font-medium bg-yellow-100 px-3 py-1 rounded-md text-xs mt-1">
+                  Menu {'>'} Inovações & Sugestões {'>'} Ativar Recurso
+                </span>
+              </div>
             </div>
+          ) : (
+            <>
+              {(loading || !isLoaded) && (
+                <div className="absolute inset-0 z-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center animate-pulse">
+                   <p className="text-gray-400">Carregando mapa...</p>
+                </div>
+              )}
+              <div
+                ref={mapRef}
+                className="w-full h-full rounded-xl border border-gray-300 dark:border-gray-600"
+              />
+            </>
           )}
-          <div
-            ref={mapRef}
-            className="w-full h-full rounded-xl border border-gray-300 dark:border-gray-600"
-          />
         </div>
       </div>
       

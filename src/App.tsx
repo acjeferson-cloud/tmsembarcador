@@ -433,7 +433,7 @@ function AppContent() {
                 </h3>
                 <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
                   Este recurso pode trazer ganhos importantes para sua operação, mas ainda não está habilitado.<br className="hidden sm:block" />
-                  Fale com o administrador e solicite a ativação em: <strong>Painel de Administrador &gt; Inovações & Sugestões</strong>.
+                  Fale com o administrador e solicite a ativação em: <strong>Menu &gt; Inovações &amp; Sugestões &gt; Ativar Recurso</strong>.
                 </p>
               </div>
             </div>

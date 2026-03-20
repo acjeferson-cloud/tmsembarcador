@@ -204,6 +204,20 @@ export const freightQuoteService = {
         const details = rateData.rate_data.freight_rate_details || [];
         tariff.detalhes = details;
 
+        let additionalFees: any[] = [];
+        try {
+          if (rateData.freight_rate_table_id) {
+            additionalFees = await freightCostCalculator.findAdditionalFees(
+              rateData.freight_rate_table_id,
+              cityId,
+              stateId,
+              params.businessPartnerId
+            );
+          }
+        } catch (err) {
+          console.error('Erro ao buscar taxas adicionais:', err);
+        }
+
         const calculation = await freightCostCalculator.performCalculation(
           tariff,
           {
@@ -212,7 +226,8 @@ export const freightQuoteService = {
             volume: params.volumeQty,
             m3: params.cubicMeters
           },
-          null
+          null,
+          additionalFees
         );
 
         let deliveryDeadline: string | undefined;

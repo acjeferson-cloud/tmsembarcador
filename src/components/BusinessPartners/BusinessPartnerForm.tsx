@@ -27,6 +27,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
     INNOVATION_IDS.RECEITA_FEDERAL,
     user?.id
   );
+  const { isActive: isGoogleMapsPremiumActive } = useInnovation(INNOVATION_IDS.GOOGLE_MAPS);
 
   const [activeTab, setActiveTab] = useState('basic');
   const [showMap, setShowMap] = useState(false);
@@ -1214,7 +1215,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                   </div>
                 )}
 
-                {addresses.length > 0 && addresses[0].street && addresses[0].city && (
+                {addresses.length > 0 && addresses[0].street && addresses[0].city && isGoogleMapsPremiumActive && (
                   <div className="flex justify-end mt-4">
                     <button
                       type="button"

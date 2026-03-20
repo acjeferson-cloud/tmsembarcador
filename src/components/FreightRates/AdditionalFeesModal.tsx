@@ -79,7 +79,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; feeId?: string }>({ isOpen: false });
 
   const [formData, setFormData] = useState({
-    fee_type: 'TDA' as 'TDA' | 'TDE' | 'TRT',
+    fee_type: 'TDA' as 'TDA' | 'TDE' | 'TRT' | 'TEC',
     business_partner_id: '',
     consider_cnpj_root: false,
     state_id: '',
@@ -252,6 +252,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       TDA: t('carriers.freightRates.additionalFees.tda'),
       TDE: t('carriers.freightRates.additionalFees.tde'),
       TRT: t('carriers.freightRates.additionalFees.trt'),
+      TEC: t('carriers.freightRates.additionalFees.tec'),
     };
     return types[type] || type;
   };
@@ -331,6 +332,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     <option value="TDA">{t('carriers.freightRates.additionalFees.tda')}</option>
                     <option value="TDE">{t('carriers.freightRates.additionalFees.tde')}</option>
                     <option value="TRT">{t('carriers.freightRates.additionalFees.trt')}</option>
+                    <option value="TEC">{t('carriers.freightRates.additionalFees.tec')}</option>
                   </select>
                 </div>
 

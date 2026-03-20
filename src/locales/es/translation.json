@@ -1420,6 +1420,7 @@
         "tda": "TDA - Tarifa de Dificultad de Acceso",
         "tde": "TDE - Tarifa de Dificultad de Entrega",
         "trt": "TRT - Tarifa de Restricción de Tránsito",
+        "tec": "TEC - Tasa de Emergencia de Combustible",
         "businessPartner": "Socio Comercial",
         "optional": "(Opcional)",
         "allPartners": "Todos los socios",

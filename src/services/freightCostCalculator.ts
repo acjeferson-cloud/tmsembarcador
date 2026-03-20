@@ -11,7 +11,7 @@ interface InvoiceData {
 
 interface AdditionalFee {
   id: string;
-  fee_type: 'TDA' | 'TDE' | 'TRT';
+  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC';
   fee_value: number;
   value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte';
   minimum_value: number;
@@ -30,6 +30,7 @@ interface CalculationResult {
   tda: number;
   tde: number;
   trt: number;
+  tec: number;
   outrosValores: number;
   icmsBase: number;
   icmsAliquota: number;
@@ -488,6 +489,7 @@ export const freightCostCalculator = {
     let tda = 0;
     let tde = 0;
     let trt = 0;
+    let tec = 0;
 
     if (!semTaxas && additionalFees.length > 0) {
 
@@ -519,6 +521,10 @@ export const freightCostCalculator = {
             trt += feeValue;
 
             break;
+          case 'TEC':
+            tec += feeValue;
+
+            break;
         }
       });
 
@@ -530,7 +536,7 @@ export const freightCostCalculator = {
 
     // 11. BASE DE CÁLCULO (sem outros valores) - somar valores já arredondados
     const baseCalculo = this.roundValue(fretePeso + freteValor + gris + pedagio + tas + seccat +
-                        despacho + itr + coletaEntrega + tda + tde + trt);
+                        despacho + itr + coletaEntrega + tda + tde + trt + tec);
 
     // 13. ICMS - Calcular ANTES de "outros valores"
     const icmsAliquota = parseFloat(tariff.aliquota_icms?.toString() || '0');
@@ -636,6 +642,7 @@ export const freightCostCalculator = {
       tda,
       tde,
       trt,
+      tec,
       outrosValores,
       icmsBase,
       icmsAliquota,
@@ -868,6 +875,7 @@ export const freightCostCalculator = {
       { cte_id: cteId, cost_type: 'tda', cost_value: calculation.tda },
       { cte_id: cteId, cost_type: 'tde', cost_value: calculation.tde },
       { cte_id: cteId, cost_type: 'trt', cost_value: calculation.trt },
+      { cte_id: cteId, cost_type: 'tec', cost_value: calculation.tec },
       { cte_id: cteId, cost_type: 'other_value', cost_value: calculation.outrosValores },
       { cte_id: cteId, cost_type: 'icms_base', cost_value: calculation.icmsBase },
       { cte_id: cteId, cost_type: 'icms_value', cost_value: calculation.icmsValor }
