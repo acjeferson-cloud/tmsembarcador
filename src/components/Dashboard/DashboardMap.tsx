@@ -18,10 +18,8 @@ const defaultCenter = { lat: -14.235, lng: -51.925 };
 const defaultZoom = 4;
 
 export const DashboardMap: React.FC<Props> = ({ filters }) => {
-  const { isInnovationActive } = useInnovations();
+  const { isInnovationActive, isLoading: isContextLoading } = useInnovations();
   const isActive = isInnovationActive('google-maps');
-  const isLoadingInnovation = false; // Como usa o context global, não precisamos de loading local que causava flicker
-
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const circlesRef = useRef<google.maps.Circle[]>([]);
@@ -53,7 +51,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       geocoderRef.current = new google.maps.Geocoder();
     }
     
-    if (isLoaded && mapRef.current && !mapInstance) {
+    if (isLoaded && mapRef.current && !mapInstance && isActive && !isContextLoading) {
       const map = new google.maps.Map(mapRef.current, {
         center: defaultCenter,
         zoom: defaultZoom,
@@ -69,7 +67,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       setMapInstance(map);
       infoWindowRef.current = new google.maps.InfoWindow();
     }
-  }, [isLoaded, mapInstance]);
+  }, [isLoaded, mapInstance, isActive, isContextLoading]);
 
   useEffect(() => {
     // Only geocode if we have data and the geocoder is ready
@@ -256,7 +254,11 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
         </div>
 
         <div className="relative w-full" style={containerStyle}>
-          {!isActive && !isLoadingInnovation ? (
+          {isContextLoading ? (
+            <div className="absolute inset-0 z-10 w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+               <p className="text-gray-400">Carregando permissões...</p>
+            </div>
+          ) : !isActive ? (
             <div className="absolute inset-0 z-10 w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
               <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
                 <AlertCircle className="w-10 h-10 text-yellow-500 mb-2" />

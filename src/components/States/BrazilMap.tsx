@@ -11,15 +11,12 @@ interface BrazilMapProps {
 
 export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) => {
   const { t } = useTranslation();
-  const { isInnovationActive } = useInnovations();
+  const { isInnovationActive, isLoading: isContextLoading } = useInnovations();
   const isActive = isInnovationActive('google-maps');
-  const isLoading = false; // Como usa contexto global já validado na inicialização, não há loading local.
-  
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
 
   const initializeMap = async () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !isActive || isContextLoading || mapInstance) return;
 
     try {
       await loadGoogleMapsAPI();
@@ -69,7 +66,7 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) =>
 
   useEffect(() => {
     initializeMap();
-  }, []);
+  }, [isActive, isContextLoading, mapInstance]);
 
   return (
     <div className="space-y-6">
@@ -83,7 +80,11 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) =>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        {!isActive && !isLoading ? (
+        {isContextLoading ? (
+          <div className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6" style={{ minHeight: '400px' }}>
+            <p className="text-gray-500 animate-pulse">Carregando inovações...</p>
+          </div>
+        ) : !isActive ? (
           <div className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center" style={{ minHeight: '400px' }}>
             <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
               <MapPin className="w-10 h-10 text-yellow-500 mb-2" />

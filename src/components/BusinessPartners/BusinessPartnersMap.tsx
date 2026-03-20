@@ -11,9 +11,8 @@ interface BusinessPartnersMapProps {
 }
 
 const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onSelectPartner }) => {
-  const { isInnovationActive } = useInnovations();
+  const { isInnovationActive, isLoading: isContextLoading } = useInnovations();
   const isActive = isInnovationActive('google-maps');
-  const isLoadingInnovation = false; // Como usa contexto global já validado na inicialização, não há loading local.
 
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -23,6 +22,8 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
   const { t } = useTranslation();
 
   useEffect(() => {
+    if (!isActive || isContextLoading || map) return;
+
     const loadAndInitializeMap = async () => {
       try {
         setIsLoading(true);
@@ -84,7 +85,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
     };
 
     loadAndInitializeMap();
-  }, []);
+  }, [isActive, isContextLoading, map, t]);
 
   useEffect(() => {
     if (!map) return;
@@ -236,7 +237,20 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
     };
   }, [map, partners, onSelectPartner]);
 
-  if (!isActive && !isLoadingInnovation) {
+  if (isContextLoading) {
+    return (
+      <div className="relative w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6" style={{ minHeight: '600px' }}>
+        <div className="absolute inset-0 bg-white dark:bg-gray-800 bg-opacity-90 z-10 flex items-center justify-center rounded-lg">
+          <div className="text-center">
+            <Loader className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
+            <p className="text-gray-600 dark:text-gray-400">{t('businessPartners.map.loading', 'Carregando inovações...')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isActive) {
     return (
       <div className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center" style={{ minHeight: '600px' }}>
         <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
