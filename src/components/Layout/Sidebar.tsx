@@ -7,11 +7,11 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Search,
   ChevronLeft,
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react';
-import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface SidebarProps {
   currentPage: string;
@@ -35,7 +35,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { isInnovationActive } = useInnovations();
 
   // Filter menu items based on user permissions
   const menuItems = useMemo(() => {
