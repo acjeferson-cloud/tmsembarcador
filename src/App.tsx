@@ -420,23 +420,27 @@ function AppContent() {
 
     if (isFeatureLocked) {
       return (
-        <div className="relative h-full w-full overflow-hidden flex flex-col">
-          {/* Overlay Lock Message */}
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/10 dark:bg-gray-900/50 backdrop-blur-[2px] pointer-events-auto">
-            <div className="bg-white/95 dark:bg-gray-800/95 border border-blue-200 dark:border-blue-800 rounded-2xl p-8 max-w-lg w-full shadow-2xl text-center">
-              <div className="bg-blue-100 dark:bg-blue-900/40 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <Sparkles size={40} className="text-blue-600 dark:text-blue-500" />
+        <div className="h-full w-full flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
+          {/* Banner Inline no Topo */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm z-10 shrink-0">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="bg-blue-100 dark:bg-blue-900/50 p-2.5 rounded-xl shrink-0">
+                <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                Inovação Disponível
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
-                Para utilizar este recurso, ative esta inovação lá em <br/><strong className="text-gray-900 dark:text-white mt-1 block">Painel de Administrador &gt; Inovações</strong>
-              </p>
+              <div>
+                <h3 className="text-base font-bold text-blue-900 dark:text-blue-300">
+                  💡 Inovação disponível para contratação!
+                </h3>
+                <p className="text-sm text-blue-800 dark:text-blue-400 mt-1">
+                  Este recurso pode trazer ganhos importantes para sua operação, mas ainda não está habilitado.<br className="hidden sm:block" />
+                  Fale com o administrador e solicite a ativação em: <strong>Painel de Administrador &gt; Inovações & Sugestões</strong>.
+                </p>
+              </div>
             </div>
           </div>
-          {/* Component Content Disabled */}
-          <div className="pointer-events-none select-none opacity-40 saturate-50 flex-1 overflow-hidden">
+          
+          {/* Component Content Disabled (Readonly Mode) */}
+          <div className="flex-1 overflow-auto opacity-50 saturate-50 pointer-events-none select-none transition-all duration-300">
             {content}
           </div>
         </div>

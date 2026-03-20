@@ -101,6 +101,7 @@ export async function activateInnovation(
         .eq('id', existing.id);
 
       if (updateError) {
+        console.error('[innovationsService.ts] Erro no UPDATE de user_innovations:', updateError);
         return { success: false, message: `Erro ao reativar recurso: ${updateError.message}` };
       }
       return { success: true, message: 'Recurso reativado com sucesso!' };
@@ -117,11 +118,13 @@ export async function activateInnovation(
       } as any);
 
     if (insertError) {
+      console.error('[innovationsService.ts] Erro no INSERT de user_innovations:', insertError);
       return { success: false, message: `Erro ao ativar recurso: ${insertError.message}` };
     }
     return { success: true, message: 'Recurso ativado com sucesso!' };
-  } catch (error) {
-    return { success: false, message: 'Erro ao ativar recurso' };
+  } catch (error: any) {
+    console.error('[innovationsService.ts] Catch Exception no activateInnovation:', error);
+    return { success: false, message: `Erro ao ativar recurso: ${error?.message || 'Erro Desconhecido'}` };
   }
 }
 

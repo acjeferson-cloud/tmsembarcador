@@ -37,6 +37,12 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   const { user, currentEstablishment } = useAuth();
   const [activeTab, setActiveTab] = useState<'innovations' | 'history'>('innovations');
   const [history, setHistory] = useState<InnovationHistoryEntry[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  const orgId = user?.organization_id || '';
+  const envId = user?.environment_id || '';
+  const estabCode = currentEstablishment?.codigo || '0000';
+
   const isAdmin = 
     user?.perfil?.toLowerCase() === 'administrador' || 
     (user as any)?.tipo?.toLowerCase() === 'administrador';
@@ -108,7 +114,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
 
       const activatedSet = new Set<string>();
       for (const innovation of data) {
-        const isActivated = await isInnovationActivated(userNumericId, innovation.id);
+        const isActivated = await isInnovationActivated(userNumericId, innovation.id, orgId, envId, estabCode);
         if (isActivated) {
           activatedSet.add(innovation.id);
         }
@@ -145,7 +151,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
 
     setIsLoading(true);
     try {
-      const result = await activateInnovation(userNumericId, innovationId);
+      const result = await activateInnovation(userNumericId, innovationId, orgId, envId, estabCode);
 
       if (result.success) {
         setActivatedInnovations(prev => new Set(prev).add(innovationId));
@@ -171,8 +177,9 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
       } else {
         setToast({ message: result.message, type: 'error' });
       }
-    } catch (error) {
-      setToast({ message: t('innovations.errorActivating'), type: 'error' });
+    } catch (error: any) {
+      console.error('[InnovationsModal.tsx] Catch block ao invocar activateInnovation:', error);
+      setToast({ message: error?.message || t('innovations.errorActivating'), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +196,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
 
     setIsLoading(true);
     try {
-      const result = await deactivateInnovation(userNumericId, innovationId);
+      const result = await deactivateInnovation(userNumericId, innovationId, orgId, envId, estabCode);
 
       if (result.success) {
         setActivatedInnovations(prev => {
