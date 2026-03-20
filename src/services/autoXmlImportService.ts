@@ -5,29 +5,17 @@ export const autoXmlImportService = {
 
 
     try {
-      const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auto-import-xml-scheduler`;
-
-
-
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        }
+      const { data: result, error: invokeError } = await supabase.functions.invoke('auto-import-xml-scheduler', {
+        method: 'POST'
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-
+      if (invokeError) {
+        console.error('Invoke error:', invokeError);
         return;
       }
 
-      const result = await response.json();
-
-
-      if (!result.success) {
-
+      if (!result || !result.success) {
+        console.error('Função retornou erro:', result);
         return;
       }
 
