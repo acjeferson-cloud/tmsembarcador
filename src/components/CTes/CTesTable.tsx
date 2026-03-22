@@ -21,6 +21,7 @@ interface CTe {
   tarifaCalculoId: string;
   chaveAcesso: string;
   nfesReferenciadas: number;
+  tpCTe: string;
 }
 
 interface CTesTableProps {
@@ -128,6 +129,20 @@ export const CTesTable = React.memo<CTesTableProps>(({
     return status;
   };
 
+  // Get Tipo CT-e label
+  const getTpCteLabel = (tpCte: string) => {
+    switch (tpCte) {
+      case '0': return 'CT-e Normal';
+      case '1': return 'CT-e Complementar';
+      case '2': return 'CT-e de Anulação';
+      case '3': return 'CT-e Substituto';
+      case '4': return 'CT-e Subcontratação';
+      case '5': return 'CT-e Redespacho';
+      case '6': return 'CT-e Redespacho Intermediário';
+      default: return 'CT-e Normal';
+    }
+  };
+
   // Format Cliente to max 30 chars
   const formatCliente = (cliente: string) => {
     if (!cliente) return '-';
@@ -184,6 +199,18 @@ export const CTesTable = React.memo<CTesTableProps>(({
                 <div className="flex items-center space-x-1">
                   <span>Status</span>
                   {sortField === 'status' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('tpCTe')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Tipo CT-e</span>
+                  {sortField === 'tpCTe' && (
                     sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                   )}
                 </div>
@@ -485,6 +512,11 @@ export const CTesTable = React.memo<CTesTableProps>(({
                 <td className="px-3 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(cte.status)}`}>
                     {getStatusLabel(cte.status)}
+                  </span>
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap">
+                  <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
+                    {getTpCteLabel(cte.tpCTe)}
                   </span>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

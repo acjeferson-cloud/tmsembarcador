@@ -406,7 +406,8 @@ export const cteXmlService = {
         // Dados completos
         xml_data: {
           original: xmlString,
-          parsed: new Date().toISOString()
+          parsed: new Date().toISOString(),
+          tpCTe: tpCTe
         },
         invoices: notasFiscais
       };

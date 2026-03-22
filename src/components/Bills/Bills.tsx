@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { FileText, CheckCircle, XCircle, AlertCircle, RefreshCw, Plus } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, AlertCircle, RefreshCw, Plus, Bug } from 'lucide-react';
 import { Toast, ToastType } from '../common/Toast';
+import { AutoDownloadStatus } from '../common/AutoDownloadStatus';
+import { AutoImportDebugModal } from '../common/AutoImportDebugModal';
 import { BillsFilters } from './BillsFilters';
 import { BillsTable } from './BillsTable';
 import { BillsActions } from './BillsActions';
 import { BillDetailsModal } from './BillDetailsModal';
 import { BillCTesModal } from './BillCTesModal';
 import { BillRejectionModal } from './BillRejectionModal';
-import { PrintModal } from './PrintModal';
-import { DateRangePicker } from '../common/DateRangePicker';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { billsService } from '../../services/billsService';
-import { userActivitiesService } from '../../services/userActivitiesService';
+import { establishmentsService } from '../../services/establishmentsService';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
 
@@ -26,7 +26,7 @@ const normalizeBillStatus = (status: string | undefined | null) => {
   return 'Importada'; 
 };
 
-export const Bills: React.FC = ({ initialId }) => {
+export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const breadcrumbItems = [
     { label: 'Documentos Operacionais' },
     { label: 'Conhecimentos', current: true }
@@ -36,6 +36,8 @@ export const Bills: React.FC = ({ initialId }) => {
   const [filteredBills, setFilteredBills] = useState<any[]>([]);
   const [selectedBills, setSelectedBills] = useState<(string | number)[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
+  const [currentEstablishment, setCurrentEstablishment] = useState<{id: string, name: string} | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showCTesModal, setShowCTesModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
@@ -48,8 +50,6 @@ export const Bills: React.FC = ({ initialId }) => {
     action: ''
   });
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
-  const [dataDe, setDataDe] = useState('');
-  const [dataAte, setDataAte] = useState('');
   const [filters, setFilters] = useState({
     transportador: '',
     periodoEmissao: { start: '', end: '' },
@@ -64,8 +64,23 @@ export const Bills: React.FC = ({ initialId }) => {
     'Acessou a listagem de Faturas e Relatórios'
   );
 
-  // Load bills from Supabase
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const establishments = await establishmentsService.getAll();
+        if (establishments.length > 0) {
+          const first = establishments[0];
+          setCurrentEstablishment({
+            id: first.id,
+            name: `${first.codigo} - ${first.razao_social}`
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar estabelecimento:', error);
+      }
+    };
+
+    loadData();
     loadBills();
   }, []);
 
@@ -340,6 +355,23 @@ export const Bills: React.FC = ({ initialId }) => {
   return (
     <div className="p-6 space-y-6">
       <Breadcrumbs items={breadcrumbItems} />
+
+      <div className="flex items-center gap-3">
+        {currentEstablishment && (
+          <div className="flex-1">
+            <AutoDownloadStatus establishmentId={currentEstablishment.id} />
+          </div>
+        )}
+        <button
+          onClick={() => setShowDebugModal(true)}
+          className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors border border-gray-300"
+          title="Debug - Importação Automática"
+        >
+          <Bug size={18} />
+          <span className="font-medium">Debug Auto-Import</span>
+        </button>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Faturas</h1>
@@ -556,6 +588,14 @@ export const Bills: React.FC = ({ initialId }) => {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Auto Import Debug Modal */}
+      {showDebugModal && currentEstablishment && (
+        <AutoImportDebugModal
+          isOpen={showDebugModal}
+          onClose={() => setShowDebugModal(false)}
         />
       )}
     </div>

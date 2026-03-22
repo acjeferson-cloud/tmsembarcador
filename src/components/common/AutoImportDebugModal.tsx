@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, RefreshCw, AlertCircle, CheckCircle, Clock, Play, Download, Bug, StopCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { autoXmlImportService } from '../../services/autoXmlImportService';
+import { establishmentsService } from '../../services/establishmentsService';
 
 interface AutoImportDebugModalProps {
   isOpen: boolean;
@@ -46,29 +47,43 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
       // Cleanup stuck logs before loading
       await supabase.rpc('cleanup_stuck_import_logs');
 
-      const [logsResponse, estabResponse] = await Promise.all([
-        supabase
-          .from('xml_auto_import_logs')
-          .select('*')
-          .order('execution_time', { ascending: false })
-          .limit(50),
-        supabase
-          .from('establishments')
-          .select('id, codigo, razao_social, metadata')
-          .not('metadata', 'is', null)
+      const [logsResponse, estabData] = await Promise.all([
+        supabase.rpc('get_xml_logs'),
+        establishmentsService.getAll()
       ]);
 
-      if (logsResponse.data) {
-        setLogs(logsResponse.data);
+      if ((logsResponse as any).data) {
+        setLogs((logsResponse as any).data);
+      } else if ((logsResponse as any).error) {
+        console.error("logsResponse error:", (logsResponse as any).error);
       }
 
-      if (estabResponse.data) {
-        setEstablishments(estabResponse.data.map((e: any) => ({
-          ...e,
-          email_config: e.metadata?.email_config
-        })).filter((e: any) =>
-          e.email_config?.autoDownloadEnabled === true
-        ));
+      if (estabData) {
+        setEstablishments(estabData.filter((e: any) => {
+          let metadata = e.metadata;
+          if (typeof metadata === 'string') {
+            try { metadata = JSON.parse(metadata); } catch (err) {}
+          }
+          let email_config = e.email_config;
+          if (typeof email_config === 'string') {
+            try { email_config = JSON.parse(email_config); } catch (err) {}
+          }
+          const config = email_config || metadata?.email_config;
+          return config?.autoDownloadEnabled === true || config?.autoDownloadEnabled === 'true' || config?.autoDownloadEnabled === 1;
+        }).map((e: any) => {
+          let metadata = e.metadata;
+          if (typeof metadata === 'string') {
+            try { metadata = JSON.parse(metadata); } catch (err) {}
+          }
+          let email_config = e.email_config;
+          if (typeof email_config === 'string') {
+            try { email_config = JSON.parse(email_config); } catch (err) {}
+          }
+          return {
+            ...e,
+            email_config: email_config || metadata?.email_config
+          };
+        }));
       }
     } catch (error) {
       console.error('Error loading debug data:', error);
@@ -87,35 +102,16 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
 
   const runManualImport = async () => {
     setRunning(true);
-    try {
-      const logId = crypto.randomUUID();
-
-      await supabase.from('xml_auto_import_logs').insert({
-        id: logId,
-        execution_time: new Date().toISOString(),
-        status: 'running',
-        details: { type: 'manual', triggered_by: 'user' }
-      });
-
-      await loadData();
-
-      await autoXmlImportService.runScheduler();
-
-      await loadData();
-
-    } catch (error: any) {
-      console.error('Error running manual import:', error);
-
-      await supabase.from('xml_auto_import_logs').insert({
-        execution_time: new Date().toISOString(),
-        status: 'error',
-        error_message: error.message,
-        details: { type: 'manual', triggered_by: 'user', error: error.message }
-      });
-    } finally {
+    
+    // Dispara a execução sem travar a tela (background)
+    autoXmlImportService.runScheduler().then(() => {
+      window.dispatchEvent(new CustomEvent('refresh-invoices-list'));
+    }).catch(error => {
+      console.error('Error running manual import in background:', error);
+    }).finally(() => {
       setRunning(false);
-      await loadData();
-    }
+      loadData();
+    });
   };
 
   const stopCurrentExecution = async () => {
@@ -123,19 +119,10 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
     try {
       const runningLog = logs.find(l => l.status === 'running');
       if (runningLog) {
-        await supabase
-          .from('xml_auto_import_logs')
-          .update({
-            status: 'warning',
-            should_stop: true,
-            details: {
-              ...(runningLog.details || {}),
-              message: 'Execução cancelada pelo usuário',
-              stopped_at: new Date().toISOString(),
-              forced_stop: true
-            }
-          })
-          .eq('id', runningLog.id);
+        const { error: invokeError } = await supabase.functions.invoke('auto-import-xml-scheduler', {
+          body: { action: 'stop', logId: runningLog.id }
+        });
+        if (invokeError) throw new Error(invokeError.message);
 
         console.log('🛑 Execution FORCE STOPPED immediately');
         await loadData();

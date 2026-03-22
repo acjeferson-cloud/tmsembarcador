@@ -202,6 +202,7 @@ function AppContent() {
   const [hasInitialized, setHasInitialized] = useState(false);
 
   useAutoXmlImport();
+  const { isInnovationActive, isLoading: innovationsLoading } = useInnovations();
 
   // Inicializar na Torre de Controle após o login
   useEffect(() => {
@@ -281,8 +282,6 @@ function AppContent() {
   };
 
   const renderCurrentPage = () => {
-    const { isInnovationActive, isLoading: innovationsLoading } = useInnovations();
-
     // Check if user has permission to access this page
     if (user && user.perfil === 'personalizado' && user.permissoes) {
       // For personalized users, check if they have permission for this page

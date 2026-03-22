@@ -17,12 +17,13 @@ export const DactePreview: React.FC<DactePreviewProps> = ({ document, onClose })
       <head>
         <title>DACTE - ${document.chaveAcesso}</title>
         <style>
-          @page { size: A4 portrait; margin: 10mm; }
-          body { font-family: "Times New Roman", Times, serif; margin: 0; padding: 0; font-size: 10px; color: #000; }
-          .dacte-container { width: 100%; max-width: 800px; margin: 0 auto; }
-          .box { border: 1px solid #000; padding: 2px 4px; border-radius: 2px; position: relative; overflow: hidden; }
-          .lbl { font-size: 6px; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; display: block; }
-          .val { font-size: 9px; font-weight: bold; }
+          @page { size: A4 portrait; margin: 5mm; }
+          *, *:before, *:after { box-sizing: border-box; }
+          html, body { width: 100%; margin: 0; padding: 0; font-family: "Times New Roman", Times, serif; font-size: 10px; color: #000; overflow-x: hidden; box-sizing: border-box; }
+          .dacte-container { width: 98%; max-width: 100%; margin: 0 auto; padding-right: 2px; }
+          .box { border: 1px solid #000; padding: 3px 4px; border-radius: 2px; position: relative; }
+          .lbl { font-size: 6px; text-transform: uppercase; font-weight: bold; margin-bottom: 3px; display: block; letter-spacing: 0.2px; }
+          .val { font-size: 9px; font-weight: bold; display: block; line-height: 1.2; }
           .row { display: flex; width: 100%; margin-top: -1px; }
           .row > .box { margin-left: -1px; flex: 1; }
           .row > .box:first-child { margin-left: 0; }

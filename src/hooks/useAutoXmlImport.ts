@@ -19,12 +19,10 @@ export const useAutoXmlImport = () => {
       try {
         const { data: establishments } = await supabase
           .from('establishments')
-          .select('id, email_config, auto_download_xml')
-          .eq('auto_download_xml', true)
-          .not('email_config', 'is', null);
+          .select('id, metadata');
 
         const hasAutoImportEnabled = establishments?.some((est: any) =>
-          est.email_config?.autoDownloadEnabled === true
+          est.metadata?.email_config?.autoDownloadEnabled === true
         );
 
         if (!hasAutoImportEnabled) {

@@ -12,6 +12,7 @@ interface CTesFiltersProps {
     periodoFim: string;
     ufDestino: string;
     status: string[];
+    tpCTe: string[];
     numeroOuChave: string;
   };
 }
@@ -59,6 +60,21 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
     });
   };
 
+  const handleTpCteCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = e.target;
+    
+    setLocalFilters(prev => {
+      const newTpCte = checked
+        ? [...(prev.tpCTe || []), value]
+        : (prev.tpCTe || []).filter((item: string) => item !== value);
+      
+      return {
+        ...prev,
+        tpCTe: newTpCte
+      };
+    });
+  };
+
   const handleApplyFilters = () => {
     onFilterChange(localFilters);
   };
@@ -70,6 +86,7 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
       periodoFim: '',
       ufDestino: '',
       status: [] as string[],
+      tpCTe: [] as string[],
       numeroOuChave: ''
     };
     
@@ -265,6 +282,39 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
                   Com NF-e Referenciada
                 </label>
               </div>
+            </div>
+          </div>
+
+          {/* Tipo CT-e Checkboxes */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-1">
+              <FileText size={16} />
+              <span>Tipo do CT-e</span>
+            </label>
+            <div className="flex flex-wrap gap-4">
+              {[
+                { label: 'Normal', value: '0' },
+                { label: 'Complementar', value: '1' },
+                { label: 'Anulação', value: '2' },
+                { label: 'Substituto', value: '3' },
+                { label: 'Subcontratação', value: '4' },
+                { label: 'Redespacho', value: '5' },
+                { label: 'Redespacho Intermediário', value: '6' }
+              ].map(tipo => (
+                <div className="flex items-center" key={tipo.value}>
+                  <input
+                    type="checkbox"
+                    id={`tpcte-${tipo.value}`}
+                    value={tipo.value}
+                    checked={(localFilters.tpCTe || []).includes(tipo.value)}
+                    onChange={handleTpCteCheckboxChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor={`tpcte-${tipo.value}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    {tipo.label}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
 

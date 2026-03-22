@@ -180,6 +180,11 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
     loadData();
     refreshData();
+    
+    window.addEventListener('refresh-invoices-list', refreshData);
+    return () => {
+      window.removeEventListener('refresh-invoices-list', refreshData);
+    };
   }, []);
 
   // Handle initial invoice from navigation

@@ -65,7 +65,8 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
     tarifaCalculo: cte.calculated_freight_rate ? cte.calculated_freight_rate.codigo : '',
     tarifaCalculoId: cte.calculated_freight_rate_id || '',
     chaveAcesso: cte.access_key || '',
-    nfesReferenciadas: cte.invoices?.length || 0
+    nfesReferenciadas: cte.invoices?.length || 0,
+    tpCTe: cte.xml_data?.tpCTe || '0'
   };
 };
 
@@ -159,6 +160,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     periodoFim: '',
     ufDestino: '',
     status: [] as string[],
+    tpCTe: [] as string[],
     numeroOuChave: ''
   });
 
@@ -180,6 +182,17 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
     loadData();
     refreshData();
+  }, []);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshData();
+    };
+    
+    window.addEventListener('refresh-invoices-list', handleRefresh);
+    return () => {
+      window.removeEventListener('refresh-invoices-list', handleRefresh);
+    };
   }, []);
 
   // Handle initial CTe from navigation
@@ -279,6 +292,11 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       // Filter by status
       if (filters.status.length > 0) {
         result = result.filter(cte => filters.status.includes(cte.status));
+      }
+
+      // Filter by tpCTe
+      if (filters.tpCTe && filters.tpCTe.length > 0) {
+        result = result.filter(cte => filters.tpCTe.includes(cte.tpCTe));
       }
 
       // Filter by número ou chave
