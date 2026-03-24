@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Calendar, Clock, Camera, Upload, AlertCircle, FileText } from 'lucide-react';
 import { occurrencesService } from '../../services/occurrencesService';
 import { supabase } from '../../lib/supabase';
@@ -16,6 +17,8 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
   onSave,
   invoiceNumber
 }) => {
+  const { t } = useTranslation();
+
   const [occurrencesList, setOccurrencesList] = useState<any[]>([]);
   const [selectedOccurrenceId, setSelectedOccurrenceId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -37,7 +40,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
       setOccurrencesList(data);
     } catch (err) {
       console.error('Erro ao buscar ocorrências', err);
-      setError('Erro ao carregar histórico de ocorrências');
+      setError(t('invoices.modals.occurrence.errorLoad'));
     }
   };
 
@@ -74,7 +77,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
       return data.publicUrl;
     } catch (err) {
       console.error('Erro no upload da foto', err);
-      throw new Error('Falha ao fazer o upload da foto. Verifique seu armazenamento.');
+      throw new Error(t('invoices.modals.occurrence.errorPhoto'));
     }
   };
 
@@ -83,12 +86,12 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
     setError(null);
 
     if (!selectedOccurrenceId) {
-      setError('Por favor, selecione uma ocorrência.');
+      setError(t('invoices.modals.occurrence.errorSelect'));
       return;
     }
     
     if (!date || !time) {
-      setError('Data e hora são obrigatórias.');
+      setError(t('invoices.modals.occurrence.errorDateTime'));
       return;
     }
 
@@ -112,7 +115,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
 
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Erro ao salvar a ocorrência');
+      setError(err.message || t('invoices.modals.occurrence.errorSave'));
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +132,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
               <FileText size={20} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Lançar Ocorrência</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('invoices.modals.occurrence.title')}</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">NF-e: {invoiceNumber}</p>
             </div>
           </div>
@@ -152,7 +155,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
           <form id="occurrenceForm" onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Ocorrência *
+                {t('invoices.modals.occurrence.type')} *
               </label>
               <select
                 required
@@ -160,7 +163,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
                 onChange={(e) => setSelectedOccurrenceId(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
-                <option value="">Selecione uma ocorrência...</option>
+                <option value="">{t('invoices.modals.occurrence.select')}...</option>
                 {occurrencesList.map(occ => (
                   <option key={occ.id} value={occ.id}>
                     [{occ.codigo}] {occ.descricao}
@@ -172,7 +175,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Data da Ocorrência *
+                  {t('invoices.modals.occurrence.date')} *
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -187,7 +190,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Hora da Ocorrência *
+                  {t('invoices.modals.occurrence.time')} *
                 </label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -204,7 +207,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Foto de Comprovante de Entrega
+                {t('invoices.modals.occurrence.photo')}
               </label>
               
               {!photoPreview ? (
@@ -213,11 +216,11 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
                     <Camera className="mx-auto h-12 w-12 text-gray-400 group-hover:text-indigo-500 transition-colors" />
                     <div className="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
                       <label htmlFor="photo-upload" className="relative cursor-pointer bg-transparent rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none">
-                        <span>Fazer upload de foto</span>
+                        <span>{t('invoices.modals.occurrence.uploadPhoto')}</span>
                         <input id="photo-upload" name="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
                       </label>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, JPEG até 5MB</p>
+                    <p className="text-xs text-gray-500">{t('invoices.modals.occurrence.photoHint')}</p>
                   </div>
                 </div>
               ) : (
@@ -246,7 +249,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             disabled={isLoading}
           >
-            Cancelar
+            {t('invoices.modals.common.cancel')}
           </button>
           <button
             type="submit"
@@ -257,10 +260,10 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
             {isLoading ? (
               <>
                 <Upload size={18} className="animate-bounce" />
-                <span>Salvando...</span>
+                <span>{t('invoices.form.saving')}</span>
               </>
             ) : (
-              <span>Lançar Ocorrência</span>
+              <span>{t('invoices.modals.occurrence.title')}</span>
             )}
           </button>
         </div>

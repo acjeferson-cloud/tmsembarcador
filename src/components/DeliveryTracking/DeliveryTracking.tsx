@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Search, Package, FileText, Truck, Calendar, CheckCircle, Clock, Box, XCircle } from 'lucide-react';
 import { ordersService } from '../../services/ordersService';
@@ -31,11 +32,12 @@ interface OrderTrackingData {
 }
 
 export const DeliveryTracking: React.FC = () => {
+  const { t } = useTranslation();
   useActivityLogger('Rastreamento de entregas', 'Acesso', 'Acessou o Rastreamento de Entregas');
 
   const breadcrumbItems = [
     { label: 'Área de trabalho' },
-    { label: 'Rastreamento de Entregas', current: true }
+    { label: t('deliveryTracking.pageTitle'), current: true }
   ];
 
   const [documentType, setDocumentType] = useState<DocumentType>('order');
@@ -47,9 +49,9 @@ export const DeliveryTracking: React.FC = () => {
 
   const getDocumentTypeLabel = (type: DocumentType): string => {
     const labels = {
-      order: 'Pedido',
-      nfe: 'Nota Fiscal (NF-e)',
-      cte: 'Conhecimento de Transporte (CT-e)'
+      order: t('deliveryTracking.documentTypes.order'),
+      nfe: t('deliveryTracking.documentTypes.nfe'),
+      cte: t('deliveryTracking.documentTypes.cte')
     };
     return labels[type];
   };
@@ -57,16 +59,16 @@ export const DeliveryTracking: React.FC = () => {
   const getSearchPlaceholder = (): string => {
     if (searchType === 'number') {
       const placeholders = {
-        order: 'Digite o número do pedido (ex: PED-001001)',
-        nfe: 'Digite o número da NF-e (ex: 25)',
-        cte: 'Digite o número do CT-e (ex: 67890)'
+        order: t('deliveryTracking.searchPlaceholders.orderNumber'),
+        nfe: t('deliveryTracking.searchPlaceholders.nfeNumber'),
+        cte: t('deliveryTracking.searchPlaceholders.cteNumber')
       };
       return placeholders[documentType];
     } else {
       const placeholders = {
-        order: 'Digite o código de rastreamento',
-        nfe: 'Digite a chave de acesso da NF-e (44 dígitos)',
-        cte: 'Digite a chave de acesso do CT-e (44 dígitos)'
+        order: t('deliveryTracking.searchPlaceholders.trackingCode'),
+        nfe: t('deliveryTracking.searchPlaceholders.accessKey'),
+        cte: t('deliveryTracking.searchPlaceholders.accessKey')
       };
       return placeholders[documentType];
     }
@@ -78,20 +80,20 @@ export const DeliveryTracking: React.FC = () => {
     // Etapa 1: Pedido Realizado (sempre ativo se pedido existe)
     steps.push({
       order: 1,
-      title: 'Pedido Realizado',
-      description: data.order ? 'Pedido foi criado no sistema' : 'Informações do pedido não disponíveis',
+      title: t('deliveryTracking.timeline.orderPlaced'),
+      description: data.order ? t('deliveryTracking.timeline.orderPlacedDesc') : t('deliveryTracking.timeline.orderPlacedNotAvail'),
       icon: Package,
       status: data.order ? 'completed' : 'pending',
       date: data.order?.created_at ? new Date(data.order.created_at).toLocaleString('pt-BR') : '-',
-      details: data.order ? `Pedido Nº ${data.order?.order_number || ''}` : undefined
+      details: data.order ? `${t('deliveryTracking.documentTypes.order')} Nº ${data.order?.order_number || ''}` : undefined
     });
 
     // Etapa 2: Pedido Faturado (ativo se tem NF-e vinculada)
     const hasInvoice = !!data.invoice;
     steps.push({
       order: 2,
-      title: 'Pedido Faturado',
-      description: hasInvoice ? 'Nota fiscal emitida e vinculada ao pedido' : 'Aguardando emissão da nota fiscal',
+      title: t('deliveryTracking.timeline.orderInvoiced'),
+      description: hasInvoice ? t('deliveryTracking.timeline.orderInvoicedDesc') : t('deliveryTracking.timeline.orderInvoicedPending'),
       icon: FileText,
       status: hasInvoice ? 'completed' : 'pending',
       date: hasInvoice && data.invoice?.issue_date ? new Date(data.invoice.issue_date).toLocaleString('pt-BR') : undefined,
@@ -102,32 +104,32 @@ export const DeliveryTracking: React.FC = () => {
     const hasPickup = !!data.pickup;
     steps.push({
       order: 3,
-      title: 'Aguardando Coleta',
-      description: hasPickup ? 'Coleta agendada com a transportadora' : 'Aguardando agendamento de coleta',
+      title: t('deliveryTracking.timeline.waitingPickup'),
+      description: hasPickup ? t('deliveryTracking.timeline.waitingPickupDesc') : t('deliveryTracking.timeline.waitingPickupPending'),
       icon: Clock,
       status: hasPickup ? 'completed' : 'pending',
       date: hasPickup && data.pickup?.created_at ? new Date(data.pickup.created_at).toLocaleString('pt-BR') : undefined,
-      details: hasPickup ? `Coleta Nº ${data.pickup?.pickup_number || ''} - Status: ${data.pickup?.status || ''}` : undefined
+      details: hasPickup ? `${t('deliveryTracking.labels.pickup')} Nº ${data.pickup?.pickup_number || ''} - Status: ${data.pickup?.status || ''}` : undefined
     });
 
     // Etapa 4: Coletado pela Transportadora (ativo se coleta status = REALIZADA)
     const isPickupCompleted = data.pickup?.status?.toUpperCase() === 'REALIZADA';
     steps.push({
       order: 4,
-      title: 'Coletado pela Transportadora',
-      description: isPickupCompleted ? 'Mercadoria coletada pela transportadora' : 'Aguardando coleta pela transportadora',
+      title: t('deliveryTracking.timeline.collected'),
+      description: isPickupCompleted ? t('deliveryTracking.timeline.collectedDesc') : t('deliveryTracking.timeline.collectedPending'),
       icon: Box,
       status: isPickupCompleted ? 'completed' : 'pending',
       date: isPickupCompleted && data.pickup?.updated_at ? new Date(data.pickup.updated_at).toLocaleString('pt-BR') : undefined,
-      details: isPickupCompleted ? `Transportadora: ${data.order?.carrier_name || 'N/A'}` : undefined
+      details: isPickupCompleted ? `${t('deliveryTracking.labels.carrier')}: ${data.order?.carrier_name || 'N/A'}` : undefined
     });
 
     // Etapa 5: Em Transporte (ativo se tem CT-e vinculado)
     const hasCte = !!data.cte;
     steps.push({
       order: 5,
-      title: 'Em Transporte',
-      description: hasCte ? 'Mercadoria em trânsito' : 'Aguardando início do transporte',
+      title: t('deliveryTracking.timeline.inTransit'),
+      description: hasCte ? t('deliveryTracking.timeline.inTransitDesc') : t('deliveryTracking.timeline.inTransitPending'),
       icon: Truck,
       status: hasCte ? 'completed' : 'pending',
       date: hasCte && data.cte?.issue_date ? new Date(data.cte.issue_date).toLocaleString('pt-BR') : undefined,
@@ -139,24 +141,24 @@ export const DeliveryTracking: React.FC = () => {
     const outForDeliveryOcc = data.occurrences?.find(occ => occ.codigo === '100');
     steps.push({
       order: 6,
-      title: 'Saiu para Entrega',
-      description: hasOutForDelivery ? 'Mercadoria em rota de entrega' : 'Aguardando saída para entrega',
+      title: t('deliveryTracking.timeline.outForDelivery'),
+      description: hasOutForDelivery ? t('deliveryTracking.timeline.outForDeliveryDesc') : t('deliveryTracking.timeline.outForDeliveryPending'),
       icon: Truck,
       status: hasOutForDelivery ? 'completed' : 'pending',
       date: hasOutForDelivery && (outForDeliveryOcc?.data_ocorrencia || outForDeliveryOcc?.created_at) ? new Date(outForDeliveryOcc.data_ocorrencia || outForDeliveryOcc.created_at).toLocaleString('pt-BR') : undefined,
-      details: hasOutForDelivery ? 'Ocorrência: 100 - Em rota de entrega' : undefined
+      details: hasOutForDelivery ? `${t('deliveryTracking.timeline.occurrence')}100 - ${t('deliveryTracking.timeline.outForDeliveryDesc')}` : undefined
     });
 
     // Etapa 7: Faturado pela Transportadora (ativo se tem Fatura vinculada ao CT-e)
     const hasBill = !!data.bill;
     steps.push({
       order: 7,
-      title: 'Faturado pela Transportadora',
-      description: hasBill ? 'CT-e faturado e consolidado para cobrança' : 'Aguardando faturamento do frete',
+      title: t('deliveryTracking.timeline.carrierInvoiced'),
+      description: hasBill ? t('deliveryTracking.timeline.carrierInvoicedDesc') : t('deliveryTracking.timeline.carrierInvoicedPending'),
       icon: FileText,
       status: hasBill ? 'completed' : 'pending',
       date: hasBill && data.bill?.issue_date ? new Date(data.bill.issue_date).toLocaleString('pt-BR') : undefined,
-      details: hasBill ? `Fatura Nº ${data.bill?.bill_number || ''}` : undefined
+      details: hasBill ? `${t('deliveryTracking.labels.bill')} Nº ${data.bill?.bill_number || ''}` : undefined
     });
 
     // Etapa 8: Entrega Realizada (ativo se tem ocorrência EDI código 001 ou 002)
@@ -164,12 +166,12 @@ export const DeliveryTracking: React.FC = () => {
     const deliveryOcc = data.occurrences?.find(occ => occ.codigo === '001' || occ.codigo === '002');
     steps.push({
       order: 8,
-      title: 'Entrega Realizada',
-      description: isDelivered ? 'Mercadoria entregue ao destinatário' : 'Aguardando confirmação de entrega',
+      title: t('deliveryTracking.timeline.delivered'),
+      description: isDelivered ? t('deliveryTracking.timeline.deliveredDesc') : t('deliveryTracking.timeline.deliveredPending'),
       icon: CheckCircle,
       status: isDelivered ? 'completed' : 'pending',
       date: isDelivered && (deliveryOcc?.data_ocorrencia || deliveryOcc?.created_at) ? new Date(deliveryOcc.data_ocorrencia || deliveryOcc.created_at).toLocaleString('pt-BR') : undefined,
-      details: isDelivered ? `Ocorrência: ${deliveryOcc?.codigo} - ${deliveryOcc?.descricao || 'Entrega realizada'}` : undefined,
+      details: isDelivered ? `${t('deliveryTracking.timeline.occurrence')}${deliveryOcc?.codigo} - ${deliveryOcc?.descricao || t('deliveryTracking.timeline.delivered')}` : undefined,
       imageUrl: isDelivered ? deliveryOcc?.foto_url : undefined
     });
 
@@ -184,11 +186,19 @@ export const DeliveryTracking: React.FC = () => {
     // Marcar todas as etapas anteriores à mais avançada como concluídas
     const updatedSteps = steps.map(step => {
       if (step.order < highestCompletedStep && step.status === 'pending') {
+        const isPending = step.description === t('deliveryTracking.timeline.orderPlacedNotAvail') || 
+                          step.description === t('deliveryTracking.timeline.orderInvoicedPending') ||
+                          step.description === t('deliveryTracking.timeline.waitingPickupPending') ||
+                          step.description === t('deliveryTracking.timeline.collectedPending') ||
+                          step.description === t('deliveryTracking.timeline.inTransitPending') ||
+                          step.description === t('deliveryTracking.timeline.outForDeliveryPending') ||
+                          step.description === t('deliveryTracking.timeline.carrierInvoicedPending') ||
+                          step.description === t('deliveryTracking.timeline.deliveredPending');
         return {
           ...step,
           status: 'completed' as const,
-          description: step.description.includes('Aguardando')
-            ? step.description.replace('Aguardando', 'Etapa concluída -')
+          description: isPending
+            ? `${t('deliveryTracking.timeline.stepCompleted')}${step.description.replace(/^(Aguardando |Awaiting |Esperando )/, '').trim()}`
             : step.description
         };
       }
@@ -541,7 +551,7 @@ export const DeliveryTracking: React.FC = () => {
 
   const handleSearch = async () => {
     if (!searchValue.trim()) {
-      setError('Por favor, digite um valor para buscar');
+      setError(t('deliveryTracking.errors.emptyValue'));
       return;
     }
 
@@ -556,7 +566,7 @@ export const DeliveryTracking: React.FC = () => {
         if (data) {
           setTrackingData(data);
         } else {
-          setError(`Pedido não encontrado: ${searchValue}`);
+          setError(t('deliveryTracking.errors.orderNotFound', { value: searchValue }));
         }
       } else if (documentType === 'nfe') {
         // Buscar NF-e e depois o pedido relacionado
@@ -585,10 +595,10 @@ export const DeliveryTracking: React.FC = () => {
           if (data) {
             setTrackingData(data);
           } else {
-            setError('Não foi possível processar as informações de rastreamento da NF-e.');
+            setError(t('deliveryTracking.errors.nfeProcessingError'));
           }
         } else {
-          setError(`NF-e não encontrada no sistema de acordo com os critérios informados.`);
+          setError(t('deliveryTracking.errors.nfeNotFound'));
         }
       } else if (documentType === 'cte') {
         // Buscar CT-e, depois NF-e e depois pedido
@@ -656,15 +666,15 @@ export const DeliveryTracking: React.FC = () => {
           if (data) {
             setTrackingData(data);
           } else {
-            setError('Não foi possível processar as informações de rastreamento do CT-e.');
+            setError(t('deliveryTracking.errors.cteProcessingError'));
           }
         } else {
-          setError(`CT-e não encontrado no sistema de acordo com os critérios informados.`);
+          setError(t('deliveryTracking.errors.cteNotFound'));
         }
       }
     } catch (err) {
       console.error('Erro ao buscar:', err);
-      setError('Erro ao realizar a busca. Tente novamente.');
+      setError(t('deliveryTracking.errors.genericError'));
     } finally {
       setIsLoading(false);
     }
@@ -678,23 +688,23 @@ export const DeliveryTracking: React.FC = () => {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-3 mb-4">
             <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Informações do Pedido</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('deliveryTracking.labels.orderInfo')}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Número do Pedido</p>
-              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.order_number || 'Não Informado'}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('deliveryTracking.documentTypes.order')}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{data.order?.order_number || t('deliveryTracking.labels.notInformed')}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cliente</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('deliveryTracking.labels.customer')}</p>
               <p className="font-semibold text-gray-900 dark:text-white">{data.order?.customer_name || data.invoice?.recipient_name || data.invoice?.nome_destinatario || data.cte?.recipient_name || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Transportadora</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('deliveryTracking.labels.carrier')}</p>
               <p className="font-semibold text-gray-900 dark:text-white">{data.order?.carrier_name || data.cte?.carrier?.razao_social || data.cte?.sender_name || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Data de Criação</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('deliveryTracking.labels.creationDate')}</p>
               <p className="font-semibold text-gray-900 dark:text-white">
                 {data.order?.created_at 
                   ? new Date(data.order.created_at).toLocaleDateString('pt-BR') 
@@ -707,7 +717,7 @@ export const DeliveryTracking: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-6">
             <Clock className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Timeline de Entregas</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('deliveryTracking.labels.deliveryTimeline')}</h3>
           </div>
 
           <div className="relative">
@@ -734,30 +744,30 @@ export const DeliveryTracking: React.FC = () => {
           <div className={`p-4 rounded-lg border-2 ${data.order ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
               <Package className={`w-5 h-5 ${data.order ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span className="font-semibold text-gray-900 dark:text-white">Pedido</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{t('deliveryTracking.documentTypes.order')}</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.order ? `Nº ${data.order.order_number}` : 'Não vinculado'}
+              {data.order ? `Nº ${data.order.order_number}` : t('deliveryTracking.labels.notLinked')}
             </p>
           </div>
 
           <div className={`p-4 rounded-lg border-2 ${data.invoice ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
               <FileText className={`w-5 h-5 ${data.invoice ? 'text-green-600' : 'text-gray-400'}`} />
-              <span className="font-semibold text-gray-900 dark:text-white">Nota Fiscal</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{t('deliveryTracking.labels.invoice')}</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.invoice ? `NF-e Nº ${data.invoice.number || data.invoice.numero}` : 'Não vinculada'}
+              {data.invoice ? `NF-e Nº ${data.invoice.number || data.invoice.numero}` : t('deliveryTracking.labels.notLinkedFem')}
             </p>
           </div>
 
           <div className={`p-4 rounded-lg border-2 ${data.pickup ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
               <Box className={`w-5 h-5 ${data.pickup ? 'text-purple-600' : 'text-gray-400'}`} />
-              <span className="font-semibold text-gray-900 dark:text-white">Coleta</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{t('deliveryTracking.labels.pickup')}</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.pickup ? `Coleta Nº ${data.pickup.numero_coleta || data.pickup.pickup_number || data.pickup.number || data.pickup.numero || data.pickup.id.substring(0,8)}` : 'Não vinculada'}
+              {data.pickup ? `${t('deliveryTracking.labels.pickup')} Nº ${data.pickup.numero_coleta || data.pickup.pickup_number || data.pickup.number || data.pickup.numero || data.pickup.id.substring(0,8)}` : t('deliveryTracking.labels.notLinkedFem')}
             </p>
           </div>
 
@@ -767,17 +777,17 @@ export const DeliveryTracking: React.FC = () => {
               <span className="font-semibold text-gray-900 dark:text-white">CT-e</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.cte ? `CT-e Nº ${data.cte.number || data.cte.cte_number || data.cte.numero}` : 'Não vinculado'}
+              {data.cte ? `CT-e Nº ${data.cte.number || data.cte.cte_number || data.cte.numero}` : t('deliveryTracking.labels.notLinked')}
             </p>
           </div>
 
           <div className={`p-4 rounded-lg border-2 ${data.bill ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800'}`}>
             <div className="flex items-center gap-2 mb-2">
               <FileText className={`w-5 h-5 ${data.bill ? 'text-orange-600' : 'text-gray-400'}`} />
-              <span className="font-semibold text-gray-900 dark:text-white">Fatura</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{t('deliveryTracking.labels.bill')}</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {data.bill ? `Fatura Nº ${data.bill.bill_number}` : 'Não vinculada'}
+              {data.bill ? `${t('deliveryTracking.labels.bill')} Nº ${data.bill.bill_number}` : t('deliveryTracking.labels.notLinkedFem')}
             </p>
           </div>
         </div>
@@ -794,10 +804,10 @@ export const DeliveryTracking: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Rastreamento de Entregas
+                {t('deliveryTracking.pageTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Busque pedidos, notas fiscais ou conhecimentos de transporte para acompanhar o status de entrega
+                {t('deliveryTracking.pageSubtitle')}
               </p>
             </div>
           </div>
@@ -806,7 +816,7 @@ export const DeliveryTracking: React.FC = () => {
         <div className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Selecione o tipo de documento que deseja rastrear
+              {t('deliveryTracking.labels.selectDocument')}
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
@@ -826,7 +836,7 @@ export const DeliveryTracking: React.FC = () => {
                 <div className="flex flex-col items-center gap-2">
                   <Package className={`w-8 h-8 ${documentType === 'order' ? 'text-blue-600' : 'text-gray-400'}`} />
                   <span className={`font-semibold ${documentType === 'order' ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                    Pedido
+                    {t('deliveryTracking.documentTypes.order')}
                   </span>
                 </div>
               </button>
@@ -848,7 +858,7 @@ export const DeliveryTracking: React.FC = () => {
                 <div className="flex flex-col items-center gap-2">
                   <FileText className={`w-8 h-8 ${documentType === 'nfe' ? 'text-green-600' : 'text-gray-400'}`} />
                   <span className={`font-semibold ${documentType === 'nfe' ? 'text-green-900 dark:text-green-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                    Nota Fiscal (NF-e)
+                    {t('deliveryTracking.documentTypes.nfe')}
                   </span>
                 </div>
               </button>
@@ -879,7 +889,7 @@ export const DeliveryTracking: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Como deseja buscar o {getDocumentTypeLabel(documentType)}?
+              {t('deliveryTracking.labels.howToSearch', { documentType: getDocumentTypeLabel(documentType) })}
             </label>
             <div className="flex gap-4">
               <label className="flex items-center cursor-pointer">
@@ -897,7 +907,7 @@ export const DeliveryTracking: React.FC = () => {
                   className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  {documentType === 'order' ? 'Buscar por Número do Pedido' : 'Buscar por Número'}
+                  {documentType === 'order' ? t('deliveryTracking.searchBy.orderNumber') : t('deliveryTracking.searchBy.number')}
                 </span>
               </label>
               <label className="flex items-center cursor-pointer">
@@ -915,7 +925,7 @@ export const DeliveryTracking: React.FC = () => {
                   className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  {documentType === 'order' ? 'Buscar por Código de Rastreamento' : 'Buscar por Chave de Acesso'}
+                  {documentType === 'order' ? t('deliveryTracking.searchBy.trackingCode') : t('deliveryTracking.searchBy.accessKey')}
                 </span>
               </label>
             </div>
@@ -923,7 +933,7 @@ export const DeliveryTracking: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Digite o valor para busca
+              {t('deliveryTracking.labels.enterValue')}
             </label>
             <div className="flex gap-2">
               <input
@@ -944,7 +954,7 @@ export const DeliveryTracking: React.FC = () => {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
-                {isLoading ? 'Buscando...' : 'Buscar'}
+                {isLoading ? t('deliveryTracking.labels.buttonSearching') : t('deliveryTracking.labels.buttonSearch')}
               </button>
             </div>
           </div>
@@ -980,6 +990,8 @@ interface TimelineItemProps {
 }
 
 const TimelineItem: React.FC<TimelineItemProps> = ({ icon: Icon, title, description, date, details, status, imageUrl }) => {
+  const { t } = useTranslation();
+
   const getStatusStyles = () => {
     switch (status) {
       case 'completed':
@@ -1004,7 +1016,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ icon: Icon, title, descript
         )}
         {imageUrl && (
           <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:opacity-90 transition-opacity">
-            <img src={imageUrl} alt="Comprovante de entrega" className="h-24 object-contain bg-white dark:bg-gray-800" />
+            <img src={imageUrl} alt={t('deliveryTracking.labels.deliveryProof', 'Comprovante de entrega')} className="h-24 object-contain bg-white dark:bg-gray-800" />
           </a>
         )}
         {date && (

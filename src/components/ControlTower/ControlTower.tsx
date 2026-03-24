@@ -3,7 +3,6 @@ import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useTranslation } from 'react-i18next';
 import {
   Activity,
-  MapPin,
   Clock,
   AlertTriangle,
   CheckCircle,
@@ -206,7 +205,7 @@ export const ControlTower: React.FC = () => {
                   {kpi.changeType === 'negative' && <TrendingDown size={14} />}
                   <span>{kpi.change}</span>
                 </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">últimas 24h</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{t('controlTower.last24h')}</span>
               </div>
             </div>
           );

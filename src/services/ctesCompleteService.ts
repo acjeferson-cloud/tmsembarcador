@@ -90,6 +90,7 @@ export interface CTeWithRelations extends CTe {
     id: string;
     codigo: string;
     razao_social: string;
+    metadata?: any;
   };
   establishment?: {
     id: string;
@@ -107,7 +108,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social),
+          carrier:carriers(id, codigo, razao_social, metadata),
           establishment:establishments(id, codigo, razao_social)
         `)
         .order('created_at', { ascending: false });
@@ -137,7 +138,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social),
+          carrier:carriers(id, codigo, razao_social, metadata),
           establishment:establishments(id, codigo, razao_social)
         `)
         .eq('id', id)

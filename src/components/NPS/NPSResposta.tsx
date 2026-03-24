@@ -54,19 +54,16 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
       const notaValue = parseInt(notaParam, 10);
       if (!isNaN(notaValue) && notaValue >= 0 && notaValue <= 10) {
         setNota(notaValue);
-        console.log('Nota selecionada da URL:', notaValue);
       }
     }
   }, []);
 
   const loadPesquisa = async () => {
     try {
-      console.log('🔍 Carregando pesquisa NPS com token:', token);
       setIsLoading(true);
 
       const data = await npsService.getPesquisaByToken(token);
 
-      console.log('📊 Dados da pesquisa:', data);
 
       if (!data) {
         console.error('❌ Pesquisa não encontrada');
@@ -78,10 +75,8 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
       }
 
       if (data.status === 'respondida') {
-        console.log('✅ Pesquisa já foi respondida');
         setSubmitted(true);
       } else if (data.status === 'expirada') {
-        console.log('⏰ Pesquisa expirada');
         setToast({
           message: t('nps.resposta.evaluationExpired'),
           type: 'error',

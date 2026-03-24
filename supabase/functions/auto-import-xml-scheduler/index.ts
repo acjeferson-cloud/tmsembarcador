@@ -12,7 +12,8 @@ const corsHeaders = {
 
 const xmlParser = new XMLParser({
   ignoreAttributes: false,
-  attributeNamePrefix: "@_"
+  attributeNamePrefix: "@_",
+  parseTagValue: false
 });
 
 serve(async (req) => {
@@ -79,7 +80,7 @@ serve(async (req) => {
 
     const { data: establishments, error: estabError } = await supabase
       .from('establishments')
-      .select('id, organization_id, environment_id, metadata, razao_social');
+      .select('id, organization_id, environment_id, metadata, razao_social, codigo');
 
     if (estabError) throw new Error(`Erro estabelecimentos: ${estabError.message}`);
 
@@ -223,6 +224,17 @@ serve(async (req) => {
                  tem_arquivos_suportados: hasValidFiles
                });
                
+               // Sort attachments so NFes are processed first based on filename heuristic
+               validAttachmentsInfo.sort((a, b) => {
+                  const aName = (a.filename || '').toLowerCase();
+                  const bName = (b.filename || '').toLowerCase();
+                  const aIsNfe = aName.includes('nfe') || (!aName.includes('cte') && aName.includes('nf'));
+                  const bIsNfe = bName.includes('nfe') || (!bName.includes('cte') && bName.includes('nf'));
+                  if (aIsNfe && !bIsNfe) return -1;
+                  if (!aIsNfe && bIsNfe) return 1;
+                  return 0;
+               });
+
                for (const attachmentInfo of validAttachmentsInfo) {
                  const currFilename = attachmentInfo.filename ? attachmentInfo.filename.toLowerCase() : '';
                  if (currFilename.endsWith('.xml') || currFilename.endsWith('.txt') || currFilename.endsWith('.edi')) {
@@ -311,6 +323,13 @@ serve(async (req) => {
                      const serie = String(ide?.serie || '0');
                      const dhEmi = ide?.dhEmi || new Date().toISOString();
                      const natOp = String(ide?.natOp || '');
+                     const finNFe = String(ide?.finNFe || '1');
+                     
+                     let directionValue = 'outbound';
+                     if (finNFe === '4' || natOp.toLowerCase().includes('devolu') || natOp.toLowerCase().includes('retorno')) {
+                        directionValue = 'reverse';
+                     }
+
                      
                      const totalValue = parseFloat(total?.vNF || '0');
                      const icmsValue = parseFloat(total?.vICMS || '0') + parseFloat(total?.vST || '0');
@@ -337,13 +356,26 @@ serve(async (req) => {
                      let carrierId = null;
                      if (transporta && transporta.CNPJ) {
                        const cleanCnpj = String(transporta.CNPJ).replace(/\D/g, '');
-                       const { data: foundCarrier } = await supabase
+                       let { data: foundCarrier } = await supabase
                          .from('carriers')
                          .select('id')
                          .eq('organization_id', estab.organization_id)
                          .like('cnpj', `%${cleanCnpj}%`)
                          .limit(1)
                          .maybeSingle();
+
+                       if (!foundCarrier && cleanCnpj.length >= 8) {
+                         const rootCnpj = cleanCnpj.substring(0, 8);
+                         const { data: rootCarrier } = await supabase
+                           .from('carriers')
+                           .select('id')
+                           .eq('organization_id', estab.organization_id)
+                           .like('cnpj', `%${rootCnpj}%`)
+                           .limit(1)
+                           .maybeSingle();
+                         if (rootCarrier) foundCarrier = rootCarrier;
+                       }
+
                        if (foundCarrier) carrierId = foundCarrier.id;
                      }
 
@@ -420,7 +452,8 @@ serve(async (req) => {
                          xml_content: xmlString,
                          carrier_id: bestCarrierId,
                          valor_frete: valorFrete,
-                         freight_results: freightResults
+                         freight_results: freightResults,
+                         direction: directionValue
                        })
                        .select()
                        .single();
@@ -527,6 +560,12 @@ serve(async (req) => {
                      const vTPrest = infCte.vPrest?.vTPrest || infCte.vPrest?.vRec || 0;
                      const xNome = infCte.rem?.xNome || infCte.dest?.xNome || 'Desconhecido';
                      const dhEmi = infCte.ide?.dhEmi || new Date().toISOString();
+                     
+                     const cteNatOp = String(infCte.ide?.natOp || '').toLowerCase();
+                     let cteDirection = 'outbound';
+                     if (cteNatOp.includes('devolu') || cteNatOp.includes('reversa') || cteNatOp.includes('retorno')) {
+                        cteDirection = 'reverse';
+                     }
 
                      // Extração da Transportadora (Emitente do CT-e)
                      let cteCarrierId = null;
@@ -557,15 +596,46 @@ serve(async (req) => {
                      // Extração de Peso e Valor da Carga
                      const vCarga = infCte.infCTeNorm?.infCarga?.vCarga || 0;
                      let pesoReal = 0;
+                     let pesoBruto = 0;
+                     let pesoCubadoXml = 0;
+                     let cargaVolume = 0;
+                     let cargaM3 = 0;
+                     let cargaPeso = 0;
+                     
                      const infQNode = infCte.infCTeNorm?.infCarga?.infQ;
                      if (infQNode) {
                         const infQArray = Array.isArray(infQNode) ? infQNode : [infQNode];
-                        // Procura por PESO BASE CÁLCULO, PESO REAL, ou PESO BRUTO
-                        const pesoObj = infQArray.find((q: any) => String(q.tpMed).toUpperCase().includes('PESO') || q.cUnid === '01' || q.cUnid === '00');
-                        if (pesoObj) {
-                           pesoReal = parseFloat(pesoObj.qCarga || '0');
+                        infQArray.forEach((q: any) => {
+                           const cUnid = String(q.cUnid || '');
+                           const tpMed = String(q.tpMed || '').toUpperCase();
+                           const qCarga = parseFloat(q.qCarga || '0');
+                           
+                           if (tpMed.includes('PESO REAL') || tpMed === 'REAL') {
+                              pesoReal = qCarga;
+                           } else if (tpMed.includes('PESO CUBADO') || tpMed.includes('CUBADO')) {
+                              pesoCubadoXml = qCarga;
+                           } else if (tpMed.includes('PESO BRUTO') || tpMed.includes('BRUTO')) {
+                              pesoBruto = qCarga;
+                           } else if (!cargaPeso && cUnid === '01' && tpMed.includes('PESO')) {
+                              cargaPeso = qCarga;
+                           } else if (cUnid === '00' && tpMed.includes('VOLUME')) {
+                              cargaM3 = qCarga;
+                           } else if (cUnid === '03' && tpMed.includes('VOLUMES')) {
+                              cargaVolume = qCarga;
+                           }
+                        });
+                        
+                        if (pesoReal > 0) cargaPeso = pesoReal;
+                        else if (pesoBruto > 0) cargaPeso = pesoBruto;
+                        else if (!cargaPeso && infQArray.length > 0) {
+                           const firstKg = infQArray.find((q: any) => String(q.cUnid) === '01');
+                           if (firstKg) cargaPeso = parseFloat(firstKg.qCarga || '0');
                         }
                      }
+                     
+                     const pesoCubadoCalculado = cargaM3 > 0 ? cargaM3 * 250 : 0;
+                     const pesoCubadoFinal = pesoCubadoXml > 0 ? pesoCubadoXml : pesoCubadoCalculado;
+                     const pesoParaCalculo = Math.max(cargaPeso, pesoCubadoFinal);
 
                      // Componentes de Valor
                      let freteValor = 0, fretePeso = 0, seccat = 0, despacho = 0, ademe = 0, pedagio = 0, tas = 0, outrosValores = 0;
@@ -618,8 +688,12 @@ serve(async (req) => {
                            recipient_document: destDoc,
                            recipient_city: destCity,
                            recipient_state: destState,
-                           cargo_weight: pesoReal,
-                           cargo_weight_for_calculation: pesoReal,
+                           cargo_weight: cargaPeso,
+                           cargo_weight_for_calculation: pesoParaCalculo,
+                           cargo_weight_cubed: pesoCubadoFinal,
+                           cargo_volume: cargaVolume,
+                           cargo_m3: cargaM3,
+                           cubing_factor: 250,
                            cargo_value: parseFloat(vCarga),
                            freight_weight_value: fretePeso,
                            freight_value_value: freteValor,
@@ -631,7 +705,8 @@ serve(async (req) => {
                            toll_value: pedagio,
                            icms_rate: pICMS,
                            icms_base: vBC,
-                           icms_value: vICMS
+                           icms_value: vICMS,
+                           direction: cteDirection
                         });
                         if (cteInsertError) {
                            details.push({ message: `Erro DB ao inserir CTe ${accessKey}`, error: cteInsertError.message });
@@ -641,6 +716,90 @@ serve(async (req) => {
                            if (existing === null || existing === undefined) {
                              const { data: fetchInserted } = await supabase.from('ctes_complete').select('id').eq('access_key', accessKey).maybeSingle();
                              if (fetchInserted) {
+                               // Extract and link NF-es
+                               try {
+                                 const infDoc = infCte.infCTeNorm?.infDoc;
+                                 const infNFeNodes = infDoc?.infNFe || infDoc?.infNF;
+                                 if (infNFeNodes) {
+                                   const nfeArray = Array.isArray(infNFeNodes) ? infNFeNodes : [infNFeNodes];
+                                   const nfeKeys = nfeArray.map((n: any) => String(n.chave || '')).filter((k: string) => k.length === 44);
+                                   
+                                   if (nfeKeys.length > 0) {
+                                     const { data: nfesFromDB } = await supabase
+                                       .from('invoices_nfe')
+                                       .select('chave_acesso, total_value, serie, numero, establishment_id, invoice_type')
+                                       .in('chave_acesso', nfeKeys);
+                                       
+                                     const dbNfes = nfesFromDB || [];
+                                     
+                                       const invoicesToInsert = nfeArray.map((n: any) => {
+                                       const chave = String(n.chave || '');
+                                       const match = dbNfes.find((db: any) => db.chave_acesso === chave);
+                                       if (match) {
+                                          const matchedEstab = establishments.find((e: any) => e.id === match.establishment_id) || estab;
+                                          const establishmentCode = `${matchedEstab.codigo || ''} - ${matchedEstab.razao_social}`.replace(/^ - /, '');
+                                          return {
+                                             cte_id: fetchInserted.id,
+                                             establishment_code: establishmentCode,
+                                             invoice_type: match.invoice_type || 'Saída',
+                                             series: match.serie || (chave ? chave.substring(22, 25) : ''),
+                                             number: match.numero || (chave ? chave.substring(25, 34) : ''),
+                                             cost_value: match.total_value || 0,
+                                             observations: `Vinculada automaticamente - Chave: ${chave}`
+                                          };
+                                       } else {
+                                          const rawNum = String(n.nDoc || (chave ? chave.substring(25, 34) : ''));
+                                           const numDoc = rawNum.replace(/^0+/, '');
+                                          const establishmentCode = `${estab.codigo || ''} - ${estab.razao_social}`.replace(/^ - /, '');
+                                          return {
+                                             cte_id: fetchInserted.id,
+                                             establishment_code: establishmentCode,
+                                             invoice_type: 'Saída',
+                                             series: String(n.serie || (chave ? chave.substring(22, 25) : '')),
+                                             number: numDoc,
+                                             cost_value: 0,
+                                             observations: `NF-e não localizada no banco - Chave: ${chave || numDoc}`
+                                          };
+                                       }
+                                     });
+                                     
+                                     if (invoicesToInsert.length > 0) {
+                                        const { error: invErr } = await supabase.from('ctes_invoices').insert(invoicesToInsert);
+                                        if (invErr) {
+                                           details.push({ message: `Aviso: Falha ao vincular NF-es ao CT-e ${accessKey}`, error: invErr.message });
+                                        } else {
+                                           details.push({ message: `Vinculadas ${invoicesToInsert.length} NF-es ao CT-e ${accessKey}` });
+                                           // Parity with manual import: copy to electronic_documents unified view
+                                           try {
+                                              await supabase.from('electronic_documents').insert({
+                                                organization_id: estab.organization_id,
+                                                environment_id: estab.environment_id,
+                                                document_type: 'CTe',
+                                                model: '57',
+                                                document_number: String(nNF),
+                                                series: String(serie),
+                                                access_key: accessKey,
+                                                status: 'authorized',
+                                                issuer_name: String(infCte.emit?.xNome || ''),
+                                                issuer_document: String(infCte.emit?.CNPJ || ''),
+                                                recipient_name: destName || origName,
+                                                recipient_document: destDoc || origDoc,
+                                                total_value: parseFloat(vTPrest),
+                                                icms_value: vICMS,
+                                                freight_value: parseFloat(vTPrest),
+                                                total_weight: pesoParaCalculo || cargaPeso || 0,
+                                                transport_mode: 'Rodoviário',
+                                                xml_content: xmlString
+                                              });
+                                           } catch(e) {}
+                                        }
+                                     }
+                                   }
+                                 }
+                               } catch (linkErr: any) {
+                                 details.push({ message: `Aviso: Erro no parse de infDoc (NFe) no CTe ${accessKey}`, error: linkErr.message });
+                               }
+
                                try {
                                  const calcResult = await calculateCteFreight(fetchInserted.id);
                                  details.push({ 

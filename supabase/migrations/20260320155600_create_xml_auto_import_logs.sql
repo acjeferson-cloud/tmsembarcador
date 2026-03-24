@@ -19,14 +19,17 @@ CREATE TABLE IF NOT EXISTS public.xml_auto_import_logs (
 ALTER TABLE public.xml_auto_import_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow read access to all authenticated users
+DROP POLICY IF EXISTS "Allow read access to all authenticated users for xml logs" ON public.xml_auto_import_logs;
 CREATE POLICY "Allow read access to all authenticated users for xml logs"
 ON public.xml_auto_import_logs FOR SELECT TO authenticated USING (true);
 
 -- Allow insert access to authenticated users and service role
+DROP POLICY IF EXISTS "Allow insert access to authenticated users for xml logs" ON public.xml_auto_import_logs;
 CREATE POLICY "Allow insert access to authenticated users for xml logs"
 ON public.xml_auto_import_logs FOR INSERT TO authenticated, service_role WITH CHECK (true);
 
 -- Allow update access for stopping executions
+DROP POLICY IF EXISTS "Allow update access to authenticated users for xml logs" ON public.xml_auto_import_logs;
 CREATE POLICY "Allow update access to authenticated users for xml logs"
 ON public.xml_auto_import_logs FOR UPDATE TO authenticated USING (true);
 
@@ -41,5 +44,16 @@ BEGIN
       details = jsonb_build_object('error', 'Execution stuck in running status', 'fixed_by', 'cleanup_stuck_import_logs')
   WHERE status = 'running'
   AND execution_time < NOW() - INTERVAL '15 minutes';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create get_xml_logs RPC function
+CREATE OR REPLACE FUNCTION public.get_xml_logs()
+RETURNS setof public.xml_auto_import_logs AS $$
+BEGIN
+  RETURN QUERY
+  SELECT * FROM public.xml_auto_import_logs
+  ORDER BY execution_time DESC
+  LIMIT 50;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -15,15 +15,15 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
   const [validatedPassword, setValidatedPassword] = useState<string>('');
   const [rememberMe, setRememberMe] = useState(false);
 
-  console.log('[LoginWithEnvironmentFlow] Current step:', step);
+
 
   const handleLoginSubmit = async (email: string, password: string, remember: boolean) => {
     try {
-      console.log('[LoginWithEnvironmentFlow] Validating credentials for:', email);
+
 
       // Validar credenciais
       const result = await authWithEnvironmentService.validateCredentials(email, password);
-      console.log('[LoginWithEnvironmentFlow] Validation result:', result);
+
 
       if (!result.success) {
         console.error('[LoginWithEnvironmentFlow] Validation failed:', result.error);
@@ -31,7 +31,7 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
       }
 
       // Credenciais válidas, passar para seleção de environment
-      console.log('[LoginWithEnvironmentFlow] Credentials valid, switching to environment selection');
+
       setValidatedEmail(email);
       setValidatedPassword(password);
       setRememberMe(remember);

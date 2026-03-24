@@ -232,7 +232,6 @@ function AppContent() {
   }, [menuType]);
 
   const handleLoginSuccess = async (loginData: any, rememberMe: boolean) => {
-    console.log('🎯 [APP] Login bem-sucedido, processando dados:', loginData);
     await loginWithEnvironmentData(loginData, rememberMe);
     // No need to set currentPage here as it's now handled in the login function
   };
@@ -469,12 +468,6 @@ function AppContent() {
   // CRÍTICO: SEMPRE verificar se há estabelecimento selecionado
   // NUNCA permitir acesso ao sistema sem estabelecimento
   if (!currentEstablishment || showEstablishmentSelector) {
-    console.log('[APP] Mostrando modal de estabelecimento:', {
-      currentEstablishment,
-      showEstablishmentSelector,
-      availableEstablishmentsCount: availableEstablishments.length,
-      availableEstablishments
-    });
 
     return (
       <EstablishmentSelectionModal

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Calendar, Package, Weight, Mail, Link as LinkIcon, CheckCircle, AlertCircle, Copy } from 'lucide-react';
 import { pickupSchedulingService } from '../../services/pickupSchedulingService';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +19,8 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
   onSuccess,
   establishmentId
 }) => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   const [carrierEmail, setCarrierEmail] = useState('');
   const [expiresInHours, setExpiresInHours] = useState(72);
@@ -37,17 +40,17 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
 
   const handleSchedule = async () => {
     if (!carrierEmail) {
-      setError('Informe o e-mail do transportador');
+      setError(t('invoices.modals.schedulePickup.errorEmail'));
       return;
     }
 
     if (!carrierEmail.includes('@')) {
-      setError('E-mail inválido');
+      setError(t('invoices.modals.schedulePickup.errorInvalidEmail'));
       return;
     }
 
     if (selectedInvoices.length === 0) {
-      setError('Selecione pelo menos uma nota fiscal');
+      setError(t('invoices.modals.common.errorSelectInvoice'));
       return;
     }
 
@@ -58,7 +61,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
       const estabId = establishmentId || selectedInvoices[0]?.establishment_id;
 
       if (!estabId) {
-        setError('Estabelecimento não identificado');
+        setError(t('invoices.modals.common.errorEstNotFound'));
         setIsLoading(false);
         return;
       }
@@ -77,18 +80,16 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
 
         await sendEmailToCarrier(link);
       } else {
-        setError(result.error || 'Erro ao criar agendamento');
+        setError(result.error || t('invoices.modals.schedulePickup.errorCreate'));
       }
     } catch (err: any) {
-      setError(err.message || 'Erro ao processar agendamento');
+      setError(err.message || t('invoices.modals.schedulePickup.errorProcess'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const sendEmailToCarrier = async (link: string) => {
-    console.log('Email enviado para:', carrierEmail);
-    console.log('Link:', link);
   };
 
   const copyToClipboard = async () => {
@@ -122,7 +123,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
           <div className="flex items-center space-x-3">
             <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {generatedLink ? 'Agendamento Criado' : 'Agendar Coleta'}
+              {generatedLink ? t('invoices.modals.schedulePickup.titleCreated') : t('invoices.modals.schedulePickup.title')}
             </h2>
           </div>
           <button
@@ -138,13 +139,13 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
             <>
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                  Resumo das Notas Fiscais Selecionadas
+                  {t('invoices.modals.common.summaryTitle')}
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="flex items-center space-x-2">
                     <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <div>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">Volumes</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">{t('invoices.modals.common.volumes')}</p>
                       <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                         {totals.volumes}
                       </p>
@@ -153,7 +154,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                   <div className="flex items-center space-x-2">
                     <Weight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <div>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">Peso Total</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">{t('invoices.modals.common.totalWeight')}</p>
                       <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                         {totals.weight.toFixed(2)} kg
                       </p>
@@ -162,7 +163,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                   <div className="flex items-center space-x-2">
                     <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <div>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">NFs</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">{t('invoices.modals.common.nfs')}</p>
                       <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                         {selectedInvoices.length}
                       </p>
@@ -177,16 +178,16 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                     <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                       <tr>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300">
-                          Nota Fiscal
+                          {t('invoices.modals.common.invoice')}
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300">
-                          Destinatário
+                          {t('invoices.modals.common.recipient')}
                         </th>
                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
-                          Peso
+                          {t('invoices.modals.common.weight')}
                         </th>
                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
-                          Volumes
+                          {t('invoices.modals.common.volumes')}
                         </th>
                       </tr>
                     </thead>
@@ -213,7 +214,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    E-mail do Transportador *
+                    {t('invoices.modals.schedulePickup.carrierEmail')} *
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -226,24 +227,24 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                     />
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    O link de agendamento será enviado para este e-mail
+                    {t('invoices.modals.schedulePickup.emailHint')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Validade do Link (horas)
+                    {t('invoices.modals.schedulePickup.linkValidity')}
                   </label>
                   <select
                     value={expiresInHours}
                     onChange={(e) => setExpiresInHours(parseInt(e.target.value))}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   >
-                    <option value={24}>24 horas</option>
-                    <option value={48}>48 horas (2 dias)</option>
-                    <option value={72}>72 horas (3 dias)</option>
-                    <option value={120}>120 horas (5 dias)</option>
-                    <option value={168}>168 horas (7 dias)</option>
+                    <option value={24}>{t('invoices.modals.schedulePickup.validity24')}</option>
+                    <option value={48}>{t('invoices.modals.schedulePickup.validity48')}</option>
+                    <option value={72}>{t('invoices.modals.schedulePickup.validity72')}</option>
+                    <option value={120}>{t('invoices.modals.schedulePickup.validity120')}</option>
+                    <option value={168}>{t('invoices.modals.schedulePickup.validity168')}</option>
                   </select>
                 </div>
               </div>
@@ -262,13 +263,13 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                   className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Calendar size={20} />
-                  <span>{isLoading ? 'Processando...' : 'Criar Agendamento'}</span>
+                  <span>{isLoading ? t('invoices.modals.common.processing') : t('invoices.modals.schedulePickup.createBtn')}</span>
                 </button>
                 <button
                   onClick={handleClose}
                   className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  Cancelar
+                  {t('invoices.modals.common.cancel')}
                 </button>
               </div>
             </>
@@ -282,10 +283,10 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                     </div>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Agendamento Criado com Sucesso!
+                    {t('invoices.modals.schedulePickup.createdSuccess')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    O link foi enviado para <strong>{carrierEmail}</strong>
+                    {t('invoices.modals.schedulePickup.linkSentTo')} <strong>{carrierEmail}</strong>
                   </p>
                 </div>
               </div>
@@ -295,7 +296,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                   <LinkIcon className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Link de Agendamento:
+                      {t('invoices.modals.schedulePickup.bookingLink')}:
                     </p>
                     <p className="text-sm text-gray-900 dark:text-white break-all font-mono bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
                       {generatedLink}
@@ -307,7 +308,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                   className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Copy size={16} />
-                  <span>{linkCopied ? 'Link Copiado!' : 'Copiar Link'}</span>
+                  <span>{linkCopied ? t('invoices.modals.schedulePickup.linkCopiedBtn') : t('invoices.modals.schedulePickup.copyLinkBtn')}</span>
                 </button>
               </div>
 
@@ -315,12 +316,12 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-blue-800 dark:text-blue-300">
-                    <p className="font-semibold mb-1">Próximos Passos:</p>
+                    <p className="font-semibold mb-1">{t('invoices.modals.schedulePickup.nextSteps')}:</p>
                     <ol className="list-decimal list-inside space-y-1 text-xs">
-                      <li>O transportador receberá um e-mail com o link de acesso</li>
-                      <li>Ele poderá acessar o link e informar data/hora da coleta</li>
-                      <li>Você será notificado quando o agendamento for confirmado</li>
-                      <li>O link expirará em {expiresInHours} horas</li>
+                      <li>{t('invoices.modals.schedulePickup.step1')}</li>
+                      <li>{t('invoices.modals.schedulePickup.step2')}</li>
+                      <li>{t('invoices.modals.schedulePickup.step3')}</li>
+                      <li>{t('invoices.modals.schedulePickup.step4', { hours: expiresInHours })}</li>
                     </ol>
                   </div>
                 </div>
@@ -330,7 +331,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
                 onClick={handleClose}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Fechar
+                {t('invoices.modals.common.close')}
               </button>
             </>
           )}

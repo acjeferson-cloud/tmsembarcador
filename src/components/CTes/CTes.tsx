@@ -66,7 +66,9 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
     tarifaCalculoId: cte.calculated_freight_rate_id || '',
     chaveAcesso: cte.access_key || '',
     nfesReferenciadas: cte.invoices?.length || 0,
-    tpCTe: cte.xml_data?.tpCTe || '0'
+    tpCTe: cte.xml_data?.tpCTe || '0',
+    tolerancia_valor_cte: cte.carrier?.metadata?.tolerancia_valor_cte || 0,
+    tolerancia_percentual_cte: cte.carrier?.metadata?.tolerancia_percentual_cte || 0
   };
 };
 

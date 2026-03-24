@@ -3,11 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-console.log('🔧 Supabase Config:', {
-  url: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : 'NOT SET',
-  hasKey: !!supabaseAnonKey,
-  keyPrefix: supabaseAnonKey ? supabaseAnonKey.slice(0, 20) + '...' : 'NOT SET'
-});
+
 
 let supabase: ReturnType<typeof createClient> | null = null
 
@@ -15,14 +11,14 @@ try {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('⚠️ Supabase environment variables not found. Running in offline mode.')
   } else {
-    console.log('✅ Creating Supabase client...');
+
     supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
       }
     })
-    console.log('✅ Supabase client created successfully');
+
   }
 } catch (error) {
   console.error('❌ Failed to initialize Supabase client:', error)
@@ -190,7 +186,7 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
     // Tentar novamente até 3 vezes com delay exponencial
     if (retryCount < 3) {
       const delay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
-      console.log(`🔄 Tentando novamente em ${delay}ms (tentativa ${retryCount + 1}/3)...`);
+
       await new Promise(resolve => setTimeout(resolve, delay));
       isConfiguringContext = false;
       return configureSessionContext(retryCount + 1);
@@ -279,7 +275,7 @@ if (typeof window !== 'undefined') {
     if (savedUser) {
       startHeartbeat();
       ensureSessionContext().catch(err => {
-        console.debug('ℹ️ Contexto inicial não configurado:', err);
+
       });
     }
   }, 500);

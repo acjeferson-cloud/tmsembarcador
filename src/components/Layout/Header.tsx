@@ -10,6 +10,8 @@ import HelpModal from './HelpModal';
 import { InnovationsModal } from './InnovationsModal';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { AppNotification, notificationService } from '../../services/notificationService';
+import { supabase } from '../../lib/supabase';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -110,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
   const [isAppearanceModalOpen, setIsAppearanceModalOpen] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showInnovationsModal, setShowInnovationsModal] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(3);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const { user, logout, availableEstablishments, currentEstablishment } = useAuth();
   const { theme } = useTheme();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -124,6 +126,35 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
     { label: 'Rastreamento de Entregas', time: '2 horas atrás' },
     { label: 'Transportadores', time: '1 dia atrás' }
   ];
+
+  // Fetch real notifications
+  useEffect(() => {
+    if (user && currentEstablishment) {
+      notificationService.getNotifications().then(data => {
+        setNotifications(data);
+      });
+
+      if (!supabase) return;
+
+      // Se inscrever para realtime futuramente
+      const channel = supabase
+        .channel('public:notifications')
+        .on('postgres_changes', { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications' 
+        }, payload => {
+          setNotifications(prev => [payload.new as AppNotification, ...prev]);
+        })
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, currentEstablishment]);
+
+  const unreadNotificationCount = notifications.filter(n => !n.is_read).length;
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -218,9 +249,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
                 onClick={toggleNotifications}
               >
                 <Bell size={20} className="text-gray-700 dark:text-gray-300" />
-                {notificationCount > 0 && (
+                {unreadNotificationCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {notificationCount}
+                    {unreadNotificationCount}
                   </span>
                 )}
               </button>
@@ -228,7 +259,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
               {/* Notifications Dropdown */}
               {isNotificationsOpen && (
                 <NotificationsDropdown 
-                  onMarkAllAsRead={() => setNotificationCount(0)}
+                  notifications={notifications}
+                  onMarkAllAsRead={() => {
+                    setNotifications(prev => prev.map(n => ({...n, is_read: true})));
+                  }}
+                  onMarkAsRead={(id) => {
+                    setNotifications(prev => prev.map(n => n.id === id ? {...n, is_read: true} : n));
+                  }}
+                  onClear={() => setNotifications([])}
                 />
               )}
             </div>
@@ -390,7 +428,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
       <RecentActivitiesModal 
         isOpen={isActivitiesModalOpen} 
         onClose={() => setIsActivitiesModalOpen(false)} 
-        activities={recentActivities}
       />
 
       {/* Establishment Selection Modal */}

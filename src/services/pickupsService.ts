@@ -235,6 +235,13 @@ export const pickupsService = {
         return { success: false, error: 'Erro ao buscar notas fiscais selecionadas' };
       }
 
+      // Buscar os dados do Estabelecimento (Galpão/CD) para coletas normais
+      const { data: estab } = await (supabase as any)
+        .from('establishments')
+        .select('*')
+        .eq('id', establishmentId)
+        .maybeSingle();
+
       // Group by carrier
       const invoicesByCarrier = invoices.reduce((acc: any, invoice: any) => {
         const carrierId = invoice.carrier?.id || 'sem_transportador';
@@ -267,6 +274,34 @@ export const pickupsService = {
       for (const group of carrierGroups) {
         const firstInvoice = group.invoices[0];
         const dest = firstInvoice.customer?.[0] || {};
+        const isReverse = firstInvoice.direction === 'reverse';
+
+        let pickupLogradouro = '';
+        let pickupCidade = '';
+        let pickupEstado = '';
+        let pickupCep = '';
+        let pickupContato = '';
+        let pickupTelefone = '';
+
+        if (isReverse) {
+          // Logística Reversa: Transportadora coleta no endereço do Cliente/Destinatário Original
+          pickupLogradouro = dest.logradouro || dest.endereco || '';
+          pickupCidade = dest.cidade || '';
+          pickupEstado = dest.estado || '';
+          pickupCep = dest.cep || '';
+          pickupContato = dest.razao_social || '';
+          pickupTelefone = dest.telefone || '';
+        } else {
+          // Envio Normal: Transportadora coleta no CD do Embarcador
+          const meta = estab?.metadata || {};
+          const addr = meta?.address || {};
+          pickupLogradouro = addr.logradouro || meta.endereco || '';
+          pickupCidade = addr.city || meta.cidade || estab?.cidade || '';
+          pickupEstado = addr.state || meta.uf || estab?.estado || '';
+          pickupCep = addr.zipCode || meta.cep || '';
+          pickupContato = estab?.razao_social || '';
+          pickupTelefone = meta.phone || meta.telefone || '';
+        }
 
         // In XML NFe imported, we didn't strictly map total weight and volume globally in the DB schema, 
         // we map it if present or leave it 0
@@ -283,12 +318,12 @@ export const pickupsService = {
           numero_coleta: pickupNumber,
           data_agendada: new Date().toISOString().split('T')[0],
           data_solicitacao: new Date().toISOString(),
-          logradouro: dest.endereco || '',
-          cidade: dest.cidade || '',
-          estado: dest.estado || '',
-          cep: dest.cep || '',
-          contato_nome: dest.razao_social || '',
-          contato_telefone: dest.telefone || '',
+          logradouro: pickupLogradouro,
+          cidade: pickupCidade,
+          estado: pickupEstado,
+          cep: pickupCep,
+          contato_nome: pickupContato,
+          contato_telefone: pickupTelefone,
           quantidade_volumes: totalPackages,
           peso_total: totalWeight,
           valor_total: totalValue,

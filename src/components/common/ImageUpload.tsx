@@ -94,7 +94,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       const compressedBase64 = await compressImage(file, 500, 200, 0.85);
 
       const sizeInKB = Math.round((compressedBase64.length * 3) / 4 / 1024);
-      console.log(`Imagem comprimida: ${sizeInKB}KB (500x200px, qualidade 85%)`);
 
       onChange(compressedBase64);
       setIsLoading(false);

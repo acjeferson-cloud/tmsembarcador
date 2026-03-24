@@ -125,7 +125,6 @@ export default function Calculator() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Lógica de cálculo aqui
-    console.log('Dados do formulário:', formData);
   };
 
   return (

@@ -74,7 +74,6 @@ export const OrganizationEnvironmentSelector: React.FC<Props> = ({
         // Se houver apenas 1 organization/environment, auto-selecionar E confirmar
         if (data.length === 1) {
           const item = data[0];
-          console.log('✅ Apenas 1 ambiente encontrado, auto-selecionando:', item.organization_name, '-', item.environment_name);
 
           // NÃO mostrar o modal
           setShouldShowModal(false);
@@ -88,7 +87,6 @@ export const OrganizationEnvironmentSelector: React.FC<Props> = ({
           );
         } else {
           // Múltiplos ambientes: mostrar o modal
-          console.log('📋 Múltiplos ambientes encontrados, exibindo modal de seleção');
           setShouldShowModal(true);
         }
       }

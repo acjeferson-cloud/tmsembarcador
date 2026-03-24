@@ -42,7 +42,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   ];
 
   const handleLanguageClick = (lang: SupportedLanguage) => {
-    console.log('🌐 Idioma selecionado no login:', lang);
     localStorage.setItem('tms-login-language', lang);
     i18n.changeLanguage(lang);
   };
@@ -69,7 +68,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true);
       setShowPWAPrompt(false);
-      console.log('✅ PWA instalado com sucesso!');
     });
 
     return () => {
@@ -85,9 +83,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
-      console.log('✅ Usuário aceitou a instalação');
     } else {
-      console.log('❌ Usuário recusou a instalação');
     }
 
     localStorage.setItem('pwa_prompt_dismissed', 'true');
@@ -326,7 +322,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           {/* Version */}
           <div className="text-center pt-1">
-            <p className="text-xs text-gray-400 dark:text-gray-600">V1.16</p>
+            <p className="text-xs text-gray-400 dark:text-gray-600">V1.17</p>
           </div>
         </div>
       </div>

@@ -14,6 +14,8 @@ interface Bill {
   valorDesconto: number;
   valorCusto: number;
   cteCount: number;
+  tolerancia_valor_fatura?: number;
+  tolerancia_percentual_fatura?: number;
 }
 
 interface BillsTableProps {
@@ -65,9 +67,9 @@ export const BillsTable = React.memo<BillsTableProps>(({
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
-    // Handle null values
-    if (aValue === null) aValue = '';
-    if (bValue === null) bValue = '';
+    // Handle null/undefined values
+    if (aValue == null) aValue = '';
+    if (bValue == null) bValue = '';
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -126,13 +128,47 @@ export const BillsTable = React.memo<BillsTableProps>(({
 
   // Get value comparison color
   const getValueComparisonColor = (bill: Bill) => {
-    if (bill.valorCTes === bill.valorCusto) return 'text-green-600';
+    const diffAmount = bill.valorCTes - bill.valorCusto;
     
-    const diff = calculateDifference(bill);
-    if (diff === 0) return 'text-green-600';
+    // Prevent float precision issues (do not ignore 1 cent)
+    if (Math.abs(diffAmount) < 0.001) return 'text-green-600';
     
-    // Assuming a tolerance of ±5%
-    if (Math.abs(diff) <= 5) return 'text-yellow-600';
+    // Divergences: can be positive (overcharge) or negative (undercharge)
+    const diffPercent = calculateDifference(bill);
+    const maxVal = Number(bill.tolerancia_valor_fatura || 0);
+    const maxPct = Number(bill.tolerancia_percentual_fatura || 0);
+
+    const absDiffAmount = Math.abs(diffAmount);
+    const absDiffPercent = Math.abs(diffPercent);
+
+
+
+    // If no tolerances are configured, any overcharge/undercharge is a divergence
+    if (maxVal === 0 && maxPct === 0) {
+
+      return 'text-red-600';
+    }
+
+    const isWithinAmount = maxVal > 0 && absDiffAmount <= maxVal;
+    const isWithinPercent = maxPct > 0 && absDiffPercent <= maxPct;
+
+    const exceedsAmount = maxVal > 0 && absDiffAmount > maxVal;
+    const exceedsPercent = maxPct > 0 && absDiffPercent > maxPct;
+
+    // Se ultrapassar QUALQUER uma das tolerâncias configuradas, é divergência grave (Vermelho)
+    if (exceedsAmount || exceedsPercent) {
+
+      return 'text-red-600';
+    }
+
+    // Se não ultrapassou, mas está dentro de alguma tolerância (Amarelo)
+    if (isWithinAmount || isWithinPercent) {
+
+      return 'text-yellow-600';
+    }
+
+    // Exceeds tolerances / Fallback
+
     return 'text-red-600';
   };
 
@@ -460,10 +496,12 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   {formatCurrency(bill.valorCTes)}
                 </td>
                 <td className={`px-3 py-4 whitespace-nowrap text-sm font-medium ${getValueComparisonColor(bill)}`}>
-                  {formatCurrency(bill.valorCusto)}
-                  <span className="text-xs ml-1">
-                    ({calculateDifference(bill).toFixed(2)}%)
-                  </span>
+                  <div className="flex flex-col">
+                    <span>{formatCurrency(bill.valorCusto)}</span>
+                    <span className="text-xs mt-1">
+                      {calculateDifference(bill) > 0 ? '+' : ''}{calculateDifference(bill).toFixed(2)}%
+                    </span>
+                  </div>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                   {formatCurrency(bill.valorDesconto)}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Info } from 'lucide-react';
 import { DashboardFilters } from '../../services/dashboardService';
 import { Toast } from '../common/Toast';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   filters: DashboardFilters;
@@ -12,7 +13,7 @@ interface Props {
 
 
 export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onShowCalc }) => {
-
+  const { t } = useTranslation();
   const [localStart, setLocalStart] = useState(filters.dateRange.start);
   const [localEnd, setLocalEnd] = useState(filters.dateRange.end);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
@@ -39,7 +40,7 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
     if (startObj > endObj) {
       setToast({
         type: 'warning',
-        message: 'A data de início não pode ser maior que a data de fim.'
+        message: t('dashboard.filter.dateWarning')
       });
       return;
     }
@@ -52,7 +53,7 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
     
     setToast({
       type: 'success',
-      message: 'Filtros aplicados com sucesso.'
+      message: t('dashboard.filter.applySuccess')
     });
   };
 
@@ -71,7 +72,7 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
             onChange={(e) => setLocalStart(e.target.value)}
             className="bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none"
           />
-          <span className="text-gray-500 dark:text-gray-400 text-sm">até</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm">{t('dashboard.filter.until')}</span>
           <input
             type="date"
             value={localEnd}
@@ -87,7 +88,7 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
           onClick={handleApply}
           className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap"
         >
-          Aplicar Filtros
+          {t('dashboard.filter.applyFilters')}
         </button>
 
       </div>
@@ -96,10 +97,10 @@ export const DashboardFilter: React.FC<Props> = ({ filters, onFilterChange, onSh
         <button
           onClick={onShowCalc}
           className="p-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors shadow-sm flex items-center gap-2"
-          title="Como é calculado o dashboard?"
+          title={t('dashboard.filter.howItsCalculatedTitle')}
         >
           <Info size={16} />
-          <span className="text-sm font-medium hidden sm:block">Como é calculado?</span>
+          <span className="text-sm font-medium hidden sm:block">{t('dashboard.filter.howItsCalculated')}</span>
         </button>
       </div>
 

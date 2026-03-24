@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, ShoppingCart } from 'lucide-react';
 import { brazilianStates } from '../../data/statesData';
 import { carriersService, Carrier } from '../../services/carriersService';
@@ -20,6 +21,7 @@ interface OrdersFiltersProps {
 }
 
 export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, filters }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
   const [carriers, setCarriers] = useState<Carrier[]>([]);
@@ -122,7 +124,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Buscar por número do pedido..."
+            placeholder={t('orders.filters.searchPlaceholder')}
             value={localFilters.numeroPedido}
             onChange={handleQuickSearch}
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -134,7 +136,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
           className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
         >
           <Filter size={18} />
-          <span>Filtros Avançados</span>
+          <span>{t('orders.filters.advancedFilters')}</span>
           <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
             {Object.values(localFilters).filter(val => 
               Array.isArray(val) ? val.length > 0 : 
@@ -153,7 +155,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Truck size={16} />
-                <span>Transportador</span>
+                <span>{t('orders.filters.carrier')}</span>
               </label>
               <select
                 name="transportador"
@@ -161,7 +163,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Todos os Transportadores</option>
+                <option value="">{t('orders.filters.carrier')}</option>
                 {carriers.map(carrier => (
                   <option key={carrier.id} value={carrier.id}>
                     {carrier.codigo} {carrier.razao_social}
@@ -174,7 +176,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <User size={16} />
-                <span>Cliente</span>
+                <span>{t('orders.filters.customer')}</span>
               </label>
               <input
                 type="text"
@@ -182,7 +184,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 value={localFilters.cliente}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Digite o nome do cliente"
+                placeholder={t('orders.filters.customerPlaceholder')}
               />
             </div>
 
@@ -190,7 +192,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Calendar size={16} />
-                <span>Período de Emissão</span>
+                <span>{t('orders.filters.issueDate')}</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -199,7 +201,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   onChange={(e) => handleDateRangeChange('periodoEmissao', 'start', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
+                <span className="flex items-center text-gray-500 dark:text-gray-400">{t('orders.filters.to')}</span>
                 <input
                   type="date"
                   value={localFilters.periodoEmissao.end}
@@ -213,7 +215,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Calendar size={16} />
-                <span>Período de Entrada</span>
+                <span>{t('orders.filters.entryDate')}</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -222,7 +224,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   onChange={(e) => handleDateRangeChange('periodoEntrada', 'start', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
+                <span className="flex items-center text-gray-500 dark:text-gray-400">{t('orders.filters.to')}</span>
                 <input
                   type="date"
                   value={localFilters.periodoEntrada.end}
@@ -236,7 +238,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Calendar size={16} />
-                <span>Período de Previsão de Entrega</span>
+                <span>{t('orders.filters.expectedDate')}</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -245,7 +247,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   onChange={(e) => handleDateRangeChange('periodoPrevisao', 'start', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
+                <span className="flex items-center text-gray-500 dark:text-gray-400">{t('orders.filters.to')}</span>
                 <input
                   type="date"
                   value={localFilters.periodoPrevisao.end}
@@ -259,7 +261,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <MapPin size={16} />
-                <span>UF de Destino</span>
+                <span>{t('orders.filters.destinationState')}</span>
               </label>
               <select
                 name="ufDestino"
@@ -267,7 +269,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Todas as UFs</option>
+                <option value="">{t('orders.filters.destinationState')}</option>
                 {brazilianStates.map(state => (
                   <option key={state.id} value={state.abbreviation}>
                     {state.abbreviation} - {state.name}
@@ -280,7 +282,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <MapPin size={16} />
-                <span>Cidade de Destino</span>
+                <span>{t('orders.filters.destinationCity')}</span>
               </label>
               <input
                 type="text"
@@ -288,7 +290,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 value={localFilters.cidadeDestino}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Digite a cidade de destino"
+                placeholder={t('orders.filters.destinationCity')}
               />
             </div>
           </div>
@@ -297,7 +299,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-1">
               <ShoppingCart size={16} />
-              <span>Status do Pedido</span>
+              <span>{t('orders.filters.orderStatus')}</span>
             </label>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center">
@@ -310,7 +312,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-emitido" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Emitido
+                  {t('orders.status.emitido')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -323,7 +325,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-coletado" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Em Coleta
+                  {t('orders.status.coletado')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -336,7 +338,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-em_transito" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Em Trânsito
+                  {t('orders.status.em_transito')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -349,7 +351,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-saiu_entrega" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Saiu para Entrega
+                  {t('orders.status.saiu_entrega')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -362,7 +364,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-entregue" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Entregue
+                  {t('orders.status.entregue')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -375,7 +377,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-cancelado" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Cancelado
+                  {t('orders.status.cancelado')}
                 </label>
               </div>
             </div>
@@ -387,13 +389,13 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
               onClick={handleClearFilters}
               className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
-              Limpar Filtros
+              {t('orders.actions.clearFilters')}
             </button>
             <button
               onClick={handleApplyFilters}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Aplicar Filtros
+              {t('common.filter')}
             </button>
           </div>
         </div>

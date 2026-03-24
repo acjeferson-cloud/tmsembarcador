@@ -124,9 +124,7 @@ const FreightQuote: React.FC = () => {
   };
 
   const loadHistory = async () => {
-    console.log('📋 Carregando histórico de cotações...');
     const data = await freightQuoteService.getHistory();
-    console.log('📋 Histórico carregado:', data?.length || 0, 'registros');
     setHistory(data);
   };
 
@@ -281,9 +279,7 @@ const FreightQuote: React.FC = () => {
       } else {
         setResults(quoteResults);
         setToast({ message: t('freightQuote.messages.quotesFound', { count: quoteResults.length }), type: 'success' });
-        console.log(t('freightQuote.messages.reloadingHistory'));
         await loadHistory();
-        console.log(t('freightQuote.messages.historyReloaded'));
       }
     } catch (error) {
       setToast({ message: (error as Error).message || t('freightQuote.messages.errorCalculating'), type: 'error' });

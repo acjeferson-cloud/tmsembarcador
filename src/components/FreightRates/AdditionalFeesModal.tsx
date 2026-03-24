@@ -94,34 +94,21 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   }, []);
 
   const loadData = async () => {
-    console.log('=== STARTING DATA LOAD ===');
-    console.log('Table ID:', freightRateTableId);
     setLoading(true);
 
     try {
       // Load fees
-      console.log('1. Loading fees...');
       const feesData = await additionalFeesService.getByFreightRateTable(freightRateTableId);
-      console.log('Fees loaded successfully:', feesData?.length || 0, 'items');
       setFees(feesData || []);
 
       // Load business partners
-      console.log('2. Loading business partners...');
       const bpData = await businessPartnersService.getAll();
-      console.log('Business partners loaded successfully:', bpData?.length || 0, 'items');
-      console.log('Business partners data:', bpData);
       setBusinessPartners(bpData || []);
 
       // Load states
-      console.log('3. Loading states...');
       const statesData = await statesService.getAll();
-      console.log('States loaded successfully:', statesData?.length || 0, 'items');
-      console.log('States data:', statesData);
       setStates(statesData || []);
 
-      console.log('=== ALL DATA LOADED SUCCESSFULLY ===');
-      console.log('Business Partners:', bpData?.length || 0);
-      console.log('States:', statesData?.length || 0);
     } catch (error) {
       console.error('=== ERROR LOADING DATA ===');
       console.error('Error details:', error);
@@ -132,7 +119,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       setStates([]);
     } finally {
       setLoading(false);
-      console.log('=== LOADING FINISHED ===');
     }
   };
 
@@ -149,9 +135,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     try {
       const state = states.find(s => s.id === stateId);
       if (state) {
-        console.log('Loading cities for state:', state.abbreviation);
         const result = await fetchCities(1, 1000, { stateFilter: state.abbreviation });
-        console.log('Cities loaded:', result.cities.length);
         setCities(result.cities.map(c => ({ id: c.ibgeCode, name: c.name })));
       }
     } catch (error) {
@@ -171,8 +155,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         city_id: formData.city_id?.trim() || null,
       };
 
-      console.log('=== SAVING FEE ===');
-      console.log('Data to save:', dataToSave);
 
       if (editingFee) {
         await additionalFeesService.update(editingFee.id, dataToSave);
@@ -183,7 +165,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
           freight_rate_id: null,
           ...dataToSave,
         };
-        console.log('Creating fee:', feeToCreate);
         await additionalFeesService.create(feeToCreate);
         setToast({ message: t('carriers.freightRates.additionalFees.saveSuccess'), type: 'success' });
       }

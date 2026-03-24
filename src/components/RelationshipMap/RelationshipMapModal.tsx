@@ -990,22 +990,24 @@ const getDocumentColor = (type: DocumentType) => {
 };
 
 // Get document type label
-const getDocumentTypeLabel = (type: DocumentType) => {
+const getDocumentTypeLabel = (type: DocumentType, t: any) => {
   switch (type) {
     case 'order':
-      return 'Pedido';
+      return t('orders.relationshipMap.order');
     case 'invoice':
-      return 'Nota Fiscal';
+      return t('orders.relationshipMap.invoice');
     case 'pickup':
-      return 'Coleta';
+      return t('orders.relationshipMap.pickup');
     case 'cte':
-      return 'CT-e';
+      return t('orders.relationshipMap.cte');
     case 'bill':
-      return 'Fatura';
+      return t('orders.relationshipMap.bill');
   }
 };
 
 // Custom node component
+import { useTranslation } from 'react-i18next';
+
 const DocumentNode: React.FC<{
   data: {
     document: Document;
@@ -1013,9 +1015,10 @@ const DocumentNode: React.FC<{
   };
 }> = ({ data }) => {
   const { document, onClick } = data;
+  const { t } = useTranslation();
   const colors = getDocumentColor(document.type);
   
-  const displayStatus = document.status === 'processando' ? 'Emitido' : document.status.charAt(0).toUpperCase() + document.status.slice(1);
+  const displayStatus = document.status === 'processando' ? t('orders.relationshipMap.status.emitido', 'Emitido') : t('orders.relationshipMap.status.' + document.status.toLowerCase(), document.status.charAt(0).toUpperCase() + document.status.slice(1));
   
   return (
     <div 
@@ -1026,12 +1029,12 @@ const DocumentNode: React.FC<{
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           {getDocumentIcon(document.type)}
-          <span className={`text-sm font-semibold ${colors.text}`}>{getDocumentTypeLabel(document.type)}</span>
+          <span className={`text-sm font-semibold ${colors.text}`}>{getDocumentTypeLabel(document.type, t)}</span>
         </div>
         {onClick && (
           <button 
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            title="Abrir documento"
+            title={t('orders.relationshipMap.openDoc')}
           >
             <ExternalLink size={14} />
           </button>
@@ -1065,6 +1068,7 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
   sourceDocument,
   onDocumentClick
 }) => {
+  const { t } = useTranslation();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1147,9 +1151,9 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
           <div className="flex items-center space-x-3">
             <FileText size={24} className="text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Mapa de Relações</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('orders.relationshipMap.title')}</h2>
               <p className="text-gray-600 dark:text-gray-400">
-                {getDocumentTypeLabel(sourceDocument.type)} {sourceDocument.number}
+                {getDocumentTypeLabel(sourceDocument.type, t)} {sourceDocument.number}
               </p>
             </div>
           </div>
@@ -1161,12 +1165,12 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
           </button>
         </div>
         <div className="p-4 flex-1 flex flex-col min-h-0">
-          <h2 className="text-xl font-semibold mb-4 shrink-0">Mapa de Relacionamentos</h2>
+          <h2 className="text-xl font-semibold mb-4 shrink-0">{t('orders.relationshipMap.subtitle')}</h2>
           {isLoading ? (
             <div className="flex-1 flex items-center justify-center border rounded-lg bg-gray-50 dark:bg-gray-900">
               <div className="flex flex-col items-center">
                 <RefreshCw size={40} className="text-blue-500 animate-spin mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">Carregando mapa de relações...</p>
+                <p className="text-gray-600 dark:text-gray-400">{t('orders.relationshipMap.loading')}</p>
               </div>
             </div>
           ) : (
@@ -1192,7 +1196,7 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
               </ReactFlow>
             </div>
           )}
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 shrink-0">Visualização dos relacionamentos</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 shrink-0">{t('orders.relationshipMap.footer')}</p>
         </div>
       </div>
     </div>

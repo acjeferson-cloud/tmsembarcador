@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, Target, Clock, Fuel, DollarSign } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -21,9 +22,11 @@ const costData = [
 ];
 
 export const PerformanceMetrics: React.FC = () => {
+  const { t } = useTranslation();
+
   const metrics = [
     {
-      title: 'Eficiência Operacional',
+      title: t('controlTower.performance.kpis.efficiency'),
       value: '94.2%',
       change: '+2.1%',
       changeType: 'positive' as const,
@@ -31,7 +34,7 @@ export const PerformanceMetrics: React.FC = () => {
       color: 'green'
     },
     {
-      title: 'Consumo Médio',
+      title: t('controlTower.performance.kpis.avgConsumption'),
       value: '3.2 km/L',
       change: '+0.3',
       changeType: 'positive' as const,
@@ -39,7 +42,7 @@ export const PerformanceMetrics: React.FC = () => {
       color: 'blue'
     },
     {
-      title: 'Tempo Médio Rota',
+      title: t('controlTower.performance.kpis.avgRouteTime'),
       value: '4.8h',
       change: '-0.5h',
       changeType: 'positive' as const,
@@ -47,7 +50,7 @@ export const PerformanceMetrics: React.FC = () => {
       color: 'purple'
     },
     {
-      title: 'Custo por KM',
+      title: t('controlTower.performance.kpis.costPerKm'),
       value: 'R$ 2.45',
       change: '-R$ 0.15',
       changeType: 'positive' as const,
@@ -59,11 +62,11 @@ export const PerformanceMetrics: React.FC = () => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Métricas de Performance</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('controlTower.performance.title')}</h3>
         <select className="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option>Últimas 24h</option>
-          <option>Última semana</option>
-          <option>Último mês</option>
+          <option>{t('controlTower.performance.filters.last24h')}</option>
+          <option>{t('controlTower.performance.filters.lastWeek')}</option>
+          <option>{t('controlTower.performance.filters.lastMonth')}</option>
         </select>
       </div>
 
@@ -97,31 +100,31 @@ export const PerformanceMetrics: React.FC = () => {
 
       {/* Performance Chart */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Tendência de Performance</h4>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">{t('controlTower.performance.trend')}</h4>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={performanceData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="efficiency" stroke="#10B981" strokeWidth={2} name="Eficiência %" />
-            <Line type="monotone" dataKey="onTime" stroke="#3B82F6" strokeWidth={2} name="Pontualidade %" />
+            <Line type="monotone" dataKey="efficiency" stroke="#10B981" strokeWidth={2} name={t('controlTower.performance.efficiencyPercent')} />
+            <Line type="monotone" dataKey="onTime" stroke="#3B82F6" strokeWidth={2} name={t('controlTower.performance.punctualityPercent')} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       {/* Cost Analysis */}
       <div>
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Análise de Custos (R$)</h4>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">{t('controlTower.performance.costAnalysis')}</h4>
         <ResponsiveContainer width="100%" height={180}>
           <AreaChart data={costData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
-            <Area type="monotone" dataKey="combustivel" stackId="1" stroke="#EF4444" fill="#FEE2E2" name="Combustível" />
-            <Area type="monotone" dataKey="manutencao" stackId="1" stroke="#F59E0B" fill="#FEF3C7" name="Manutenção" />
-            <Area type="monotone" dataKey="pedagio" stackId="1" stroke="#8B5CF6" fill="#EDE9FE" name="Pedágio" />
+            <Area type="monotone" dataKey="combustivel" stackId="1" stroke="#EF4444" fill="#FEE2E2" name={t('controlTower.performance.fuel')} />
+            <Area type="monotone" dataKey="manutencao" stackId="1" stroke="#F59E0B" fill="#FEF3C7" name={t('controlTower.performance.maintenance')} />
+            <Area type="monotone" dataKey="pedagio" stackId="1" stroke="#8B5CF6" fill="#EDE9FE" name={t('controlTower.performance.toll')} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -131,15 +134,15 @@ export const PerformanceMetrics: React.FC = () => {
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-green-600">98.5%</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Disponibilidade</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">{t('controlTower.performance.availability')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-blue-600">2.1h</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Tempo Parado</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">{t('controlTower.performance.stoppedTime')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-purple-600">R$ 1.2M</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Economia Mensal</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">{t('controlTower.performance.monthlySavings')}</p>
           </div>
         </div>
       </div>

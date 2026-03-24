@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +8,6 @@ import { DashboardOperational } from './DashboardOperational';
 import { DashboardMap } from './DashboardMap';
 import { DashboardCalcModal } from './DashboardCalcModal';
 import { DashboardFilters } from '../../services/dashboardService';
-import { userActivitiesService } from '../../services/userActivitiesService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 export const Dashboard: React.FC = () => {
@@ -69,7 +68,7 @@ export const Dashboard: React.FC = () => {
             {t('dashboard.welcome', { name: user?.name || 'Usuário' })}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Métricas consolidadas de desempenho, operação e faturamento logístico.
+            {t('dashboard.description')}
           </p>
         </div>
 
@@ -91,7 +90,7 @@ export const Dashboard: React.FC = () => {
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
           >
-            Visão Executiva
+            {t('dashboard.tabs.executive')}
           </button>
           <button
             onClick={() => setActiveTab('OPERACIONAL')}
@@ -100,7 +99,7 @@ export const Dashboard: React.FC = () => {
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
           >
-            Nível de Serviço
+            {t('dashboard.tabs.operational')}
           </button>
           <button
             onClick={() => setActiveTab('MAPA')}
@@ -109,7 +108,7 @@ export const Dashboard: React.FC = () => {
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/50'
               }`}
           >
-            Mapa de Custos
+            {t('dashboard.tabs.map')}
           </button>
         </div>
       </div>

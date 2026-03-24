@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { FileText, RefreshCw, Search, CheckCircle, AlertCircle, Clock, X, Plus } from 'lucide-react';
 import { carriers } from '../../data/mockData';
@@ -24,9 +25,11 @@ interface EDIOutputFile {
 }
 
 export const EDIOutput: React.FC = () => {
+  const { t } = useTranslation();
+
   const breadcrumbItems = [
     { label: 'EDI' },
-    { label: 'Saída', current: true }
+    { label: t('ediOutbound.pageTitle'), current: true }
   ];
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -206,13 +209,13 @@ export const EDIOutput: React.FC = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'Concluído';
+        return t('ediOutbound.filters.completed');
       case 'error':
-        return 'Erro';
+        return t('ediOutbound.filters.error');
       case 'processing':
-        return 'Processando';
+        return t('ediOutbound.filters.processing');
       case 'pending':
-        return 'Pendente';
+        return t('ediOutbound.filters.pending');
       default:
         return status;
     }
@@ -265,7 +268,7 @@ export const EDIOutput: React.FC = () => {
     const file = mockFiles.find(f => f.id === fileId);
     if (!file) return;
     
-    setToast({ message: `Baixando arquivo ${file.name}`, type: 'success' });
+    setToast({ message: t('ediOutbound.actions.downloadMsg', { file: file.name }), type: 'success' });
   };
 
   // Handle input change for generation form
@@ -281,12 +284,12 @@ export const EDIOutput: React.FC = () => {
   const handleGeneratePreview = () => {
     // Validate required fields
     if (!generationData.transportador) {
-      setToast({ message: 'Por favor, selecione um transportador', type: 'warning' });
+      setToast({ message: t('ediOutbound.messages.selectCarrierRequired'), type: 'warning' });
       return;
     }
     
     if (!generationData.periodoInicio || !generationData.periodoFim) {
-      setToast({ message: 'Por favor, informe o período', type: 'warning' });
+      setToast({ message: t('ediOutbound.messages.periodRequired'), type: 'warning' });
       return;
     }
     
@@ -352,7 +355,7 @@ export const EDIOutput: React.FC = () => {
       setShowGenerateForm(false);
       setIsGenerating(false);
       
-      setToast({ message: `Arquivo ${newFile.name} gerado com sucesso!`, type: 'success' });
+      setToast({ message: t('ediOutbound.messages.fileGeneratedSuccess', { file: newFile.name }), type: 'success' });
     }, 2000);
   };
 
@@ -376,8 +379,8 @@ export const EDIOutput: React.FC = () => {
       )}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">EDIs de Saída</h1>
-          <p className="text-gray-600 dark:text-gray-400">Gerencie os arquivos EDI gerados para envio aos transportadores</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('ediOutbound.pageTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('ediOutbound.pageSubtitle')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -385,7 +388,7 @@ export const EDIOutput: React.FC = () => {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Gerar Arquivo EDI</span>
+            <span>{t('ediOutbound.actions.generateFile')}</span>
           </button>
           <button
             onClick={handleRefresh}
@@ -393,7 +396,7 @@ export const EDIOutput: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
-            <span>{isLoading ? 'Carregando...' : 'Atualizar'}</span>
+            <span>{isLoading ? t('ediOutbound.actions.loading') : t('ediOutbound.actions.refresh')}</span>
           </button>
         </div>
       </div>
@@ -402,7 +405,7 @@ export const EDIOutput: React.FC = () => {
       {showGenerateForm && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Gerar Arquivo EDI</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('ediOutbound.generateForm.title')}</h2>
             {!previewData && (
               <button
                 onClick={() => setShowGenerateForm(false)}
@@ -418,7 +421,7 @@ export const EDIOutput: React.FC = () => {
               {/* Layout Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tipo de Arquivo EDI a Ser Gerado *
+                  {t('ediOutbound.generateForm.layoutType')}
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="relative">
@@ -436,8 +439,8 @@ export const EDIOutput: React.FC = () => {
                       className="flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 dark:bg-gray-900"
                     >
                       <FileText size={32} className="text-blue-600 mb-2" />
-                      <span className="font-medium text-gray-900 dark:text-white">Notas Fiscais</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Layout: NOTFIS</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{t('ediOutbound.generateForm.layouts.notfisTitle')}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('ediOutbound.generateForm.layouts.notfisSubtitle')}</span>
                     </label>
                   </div>
                 </div>
@@ -447,7 +450,7 @@ export const EDIOutput: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Período *
+                    {t('ediOutbound.generateForm.period')}
                   </label>
                   <div className="flex space-x-2">
                     <input
@@ -458,7 +461,7 @@ export const EDIOutput: React.FC = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
+                    <span className="flex items-center text-gray-500 dark:text-gray-400">{t('ediOutbound.generateForm.to')}</span>
                     <input
                       type="date"
                       name="periodoFim"
@@ -472,7 +475,7 @@ export const EDIOutput: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Transportador *
+                    {t('ediOutbound.generateForm.carrier')}
                   </label>
                   <select
                     name="transportador"
@@ -481,7 +484,7 @@ export const EDIOutput: React.FC = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Selecione o transportador</option>
+                    <option value="">{t('ediOutbound.generateForm.selectCarrier')}</option>
                     {carriers.map(carrier => (
                       <option key={carrier.id} value={carrier.id}>
                         {carrier.codigo} - {carrier.name}
@@ -492,7 +495,7 @@ export const EDIOutput: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Estabelecimento
+                    {t('ediOutbound.generateForm.establishment')}
                   </label>
                   <select
                     name="estabelecimento"
@@ -500,7 +503,7 @@ export const EDIOutput: React.FC = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Todos os Estabelecimentos</option>
+                    <option value="">{t('ediOutbound.generateForm.allEstablishments')}</option>
                     {establishments.map(establishment => (
                       <option key={establishment.id} value={establishment.id}>
                         {establishment.codigo} - {establishment.fantasia || establishment.razaoSocial}
@@ -511,7 +514,7 @@ export const EDIOutput: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    UF
+                    {t('ediOutbound.generateForm.uf')}
                   </label>
                   <select
                     name="uf"
@@ -519,7 +522,7 @@ export const EDIOutput: React.FC = () => {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Todas as UFs</option>
+                    <option value="">{t('ediOutbound.generateForm.allUfs')}</option>
                     {brazilianStates.map(state => (
                       <option key={state.id} value={state.abbreviation}>
                         {state.abbreviation} - {state.name}
@@ -530,7 +533,7 @@ export const EDIOutput: React.FC = () => {
                 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Observações
+                    {t('ediOutbound.generateForm.observations')}
                   </label>
                   <textarea
                     name="observacoes"
@@ -538,7 +541,7 @@ export const EDIOutput: React.FC = () => {
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Informações adicionais sobre este arquivo EDI..."
+                    placeholder={t('ediOutbound.generateForm.observationsPlaceholder')}
                   />
                 </div>
               </div>
@@ -549,7 +552,7 @@ export const EDIOutput: React.FC = () => {
                   onClick={() => setShowGenerateForm(false)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                 >
-                  Cancelar
+                  {t('ediOutbound.generateForm.cancel')}
                 </button>
                 <button
                   onClick={handleGeneratePreview}
@@ -559,10 +562,10 @@ export const EDIOutput: React.FC = () => {
                   {isGenerating ? (
                     <div className="flex items-center space-x-2">
                       <RefreshCw size={16} className="animate-spin" />
-                      <span>Gerando...</span>
+                      <span>{t('ediOutbound.generateForm.generating')}</span>
                     </div>
                   ) : (
-                    'Gerar Arquivo'
+                    t('ediOutbound.generateForm.generate')
                   )}
                 </button>
               </div>
@@ -571,60 +574,60 @@ export const EDIOutput: React.FC = () => {
             <div className="space-y-6">
               {/* Preview Data */}
               <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resumo Prévio</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('ediOutbound.preview.title')}</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Layout</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ediOutbound.preview.layout')}</p>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">{previewData.layout}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Transportador</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ediOutbound.preview.carrier')}</p>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">{previewData.transportador}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Período</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ediOutbound.preview.period')}</p>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">{previewData.periodo}</p>
                   </div>
                   
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos Identificados</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ediOutbound.preview.documents')}</p>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">{previewData.documentos}</p>
                   </div>
                 </div>
                 
                 <div className="mt-6">
-                  <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">Total de Registros por Tipo</h4>
+                  <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">{t('ediOutbound.preview.recordsTotal')}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Cabeçalho</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('ediOutbound.preview.header')}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{previewData.registros.cabecalho}</p>
                     </div>
                     
                     <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Emitente</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('ediOutbound.preview.issuer')}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{previewData.registros.emitente}</p>
                     </div>
                     
                     <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Destinatário</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('ediOutbound.preview.recipient')}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{previewData.registros.destinatario}</p>
                     </div>
                     
                     <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Produtos</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('ediOutbound.preview.products')}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{previewData.registros.produtos}</p>
                     </div>
                     
                     <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Valores</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('ediOutbound.preview.values')}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{previewData.registros.valores}</p>
                     </div>
                     
                     <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-600">Total</p>
+                      <p className="text-sm text-blue-600">{t('ediOutbound.preview.total')}</p>
                       <p className="text-xl font-bold text-blue-900">{previewData.registros.total}</p>
                     </div>
                   </div>
@@ -638,7 +641,7 @@ export const EDIOutput: React.FC = () => {
                   disabled={isGenerating}
                   className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-50"
                 >
-                  Cancelar
+                  {t('ediOutbound.generateForm.cancel')}
                 </button>
                 <button
                   onClick={handleConfirmGeneration}
@@ -647,11 +650,11 @@ export const EDIOutput: React.FC = () => {
                 >
                   {isGenerating ? (
                     <div className="flex items-center space-x-2">
-                      <RefreshCw size={16} className="animate-spin" />
-                      <span>Gerando...</span>
+                       <RefreshCw size={16} className="animate-spin" />
+                       <span>{t('ediOutbound.generateForm.generating')}</span>
                     </div>
                   ) : (
-                    'Confirmar Geração'
+                    t('ediOutbound.preview.confirm')
                   )}
                 </button>
               </div>
@@ -667,7 +670,7 @@ export const EDIOutput: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por nome de arquivo ou destinatário..."
+              placeholder={t('ediOutbound.filters.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -679,7 +682,7 @@ export const EDIOutput: React.FC = () => {
             onChange={(e) => setLayoutFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">Todos os Layouts</option>
+            <option value="all">{t('ediOutbound.filters.allLayouts')}</option>
             <option value="NOTFIS">NOTFIS</option>
             <option value="CONEMB">CONEMB</option>
             <option value="OCOREN">OCOREN</option>
@@ -691,11 +694,11 @@ export const EDIOutput: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">Todos os Status</option>
-            <option value="completed">Concluído</option>
-            <option value="error">Erro</option>
-            <option value="processing">Processando</option>
-            <option value="pending">Pendente</option>
+            <option value="all">{t('ediOutbound.filters.allStatus')}</option>
+            <option value="completed">{t('ediOutbound.filters.completed')}</option>
+            <option value="error">{t('ediOutbound.filters.error')}</option>
+            <option value="processing">{t('ediOutbound.filters.processing')}</option>
+            <option value="pending">{t('ediOutbound.filters.pending')}</option>
           </select>
           
           <select
@@ -703,10 +706,10 @@ export const EDIOutput: React.FC = () => {
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">Todas as Datas</option>
-            <option value="today">Hoje</option>
-            <option value="week">Última Semana</option>
-            <option value="month">Último Mês</option>
+            <option value="all">{t('ediOutbound.filters.allDates')}</option>
+            <option value="today">{t('ediOutbound.filters.today')}</option>
+            <option value="week">{t('ediOutbound.filters.lastWeek')}</option>
+            <option value="month">{t('ediOutbound.filters.lastMonth')}</option>
           </select>
         </div>
       </div>
@@ -718,28 +721,28 @@ export const EDIOutput: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Arquivo
+                  {t('ediOutbound.table.file')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Layout
+                  {t('ediOutbound.table.layout')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Destinatário
+                  {t('ediOutbound.table.recipient')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Data de Criação
+                  {t('ediOutbound.table.creationDate')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tamanho
+                  {t('ediOutbound.table.size')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
+                  {t('ediOutbound.table.status')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Registros
+                  {t('ediOutbound.table.records')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ações
+                  {t('ediOutbound.table.actions')}
                 </th>
               </tr>
             </thead>
@@ -780,7 +783,7 @@ export const EDIOutput: React.FC = () => {
                         <span className="font-medium">{file.recordCount}</span>
                         {file.errorCount > 0 && (
                           <span className="text-red-600 ml-2">
-                            ({file.errorCount} erro{file.errorCount !== 1 ? 's' : ''})
+                            ({file.errorCount} {file.errorCount !== 1 ? t('ediOutbound.table.errorsPlural') : t('ediOutbound.table.errors')})
                           </span>
                         )}
                       </div>
@@ -795,21 +798,21 @@ export const EDIOutput: React.FC = () => {
                           onClick={() => handleDownload(file.id)}
                           className="text-blue-600 hover:text-blue-900"
                         >
-                          Download
+                          {t('ediOutbound.table.download')}
                         </button>
                       )}
                       {file.status === 'error' && (
                         <button
                           className="text-red-600 hover:text-red-900"
                         >
-                          Ver Erros
+                          {t('ediOutbound.table.viewErrors')}
                         </button>
                       )}
                       {(file.status === 'pending' || file.status === 'error') && (
                         <button
                           className="text-green-600 hover:text-green-900"
                         >
-                          Reprocessar
+                          {t('ediOutbound.table.reprocess')}
                         </button>
                       )}
                     </div>
@@ -823,75 +826,74 @@ export const EDIOutput: React.FC = () => {
         {filteredFiles.length === 0 && (
           <div className="text-center py-12">
             <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum arquivo EDI encontrado</h3>
-            <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou gerar novos arquivos EDI.</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('ediOutbound.table.notFound')}</h3>
+            <p className="text-gray-600 dark:text-gray-400">{t('ediOutbound.table.tryAdjusting')}</p>
           </div>
         )}
       </div>
 
       {/* Information Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre EDIs de Saída</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('ediOutbound.about.title')}</h3>
         <p className="text-blue-800 mb-4">
-          Os arquivos EDI de saída são gerados pelo sistema para envio aos transportadores e parceiros logísticos.
-          Cada layout tem uma finalidade específica no processo de comunicação.
+          {t('ediOutbound.about.description')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
             <p className="font-semibold text-blue-900">NOTFIS</p>
-            <p className="text-blue-700">Envio de notas fiscais</p>
+            <p className="text-blue-700">{t('ediOutbound.about.notfisDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
             <p className="font-semibold text-blue-900">CONEMB</p>
-            <p className="text-blue-700">Envio de conhecimentos</p>
+            <p className="text-blue-700">{t('ediOutbound.about.conembDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
             <p className="font-semibold text-blue-900">OCOREN</p>
-            <p className="text-blue-700">Envio de ocorrências</p>
+            <p className="text-blue-700">{t('ediOutbound.about.ocorenDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
             <p className="font-semibold text-blue-900">DOCCOB</p>
-            <p className="text-blue-700">Envio de faturas</p>
+            <p className="text-blue-700">{t('ediOutbound.about.doccobDesc')}</p>
           </div>
         </div>
       </div>
 
       {/* Technical Requirements */}
       <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Informações Técnicas</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('ediOutbound.requirements.title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Formato de Saída</h4>
+            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('ediOutbound.requirements.formatTitle')}</h4>
             <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Arquivos de texto (.txt) com codificação UTF-8</span>
+                <span>{t('ediOutbound.requirements.formatItem1')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Separadores e delimitadores conforme padrão EDI</span>
+                <span>{t('ediOutbound.requirements.formatItem2')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Nomenclatura padronizada para fácil identificação</span>
+                <span>{t('ediOutbound.requirements.formatItem3')}</span>
               </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Validações</h4>
+            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('ediOutbound.requirements.validationTitle')}</h4>
             <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Validação de campos obrigatórios</span>
+                <span>{t('ediOutbound.requirements.validationItem1')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Verificação de consistência de dados</span>
+                <span>{t('ediOutbound.requirements.validationItem2')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Logs detalhados para auditoria</span>
+                <span>{t('ediOutbound.requirements.validationItem3')}</span>
               </li>
             </ul>
           </div>

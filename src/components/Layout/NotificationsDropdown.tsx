@@ -1,69 +1,22 @@
-import React, { useState } from 'react';
-import { Bell, CheckCircle, AlertTriangle, Info, Truck, Package, FileText, Clock, X, Eye } from 'lucide-react';
-
-interface Notification {
-  id: number;
-  title: string;
-  description: string;
-  time: string;
-  isRead: boolean;
-  type: 'success' | 'warning' | 'info' | 'error';
-  link?: string;
-}
+import React from 'react';
+import { Bell, CheckCircle, AlertTriangle, Info, X, Eye } from 'lucide-react';
+import { AppNotification, notificationService } from '../../services/notificationService';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface NotificationsDropdownProps {
+  notifications: AppNotification[];
   onMarkAllAsRead: () => void;
+  onMarkAsRead: (id: string) => void;
+  onClear: () => void;
 }
 
-export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ onMarkAllAsRead }) => {
-  // Mock notifications data
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      title: 'Entrega Concluída',
-      description: 'A entrega TMS-2025-001 foi concluída com sucesso',
-      time: '5 min atrás',
-      isRead: false,
-      type: 'success',
-      link: '/shipments'
-    },
-    {
-      id: 2,
-      title: 'Ocorrência Registrada',
-      description: 'Nova ocorrência na entrega TMS-2025-002: Destinatário ausente',
-      time: '30 min atrás',
-      isRead: false,
-      type: 'warning',
-      link: '/shipments'
-    },
-    {
-      id: 3,
-      title: 'CT-e Recebido',
-      description: 'Novo CT-e recebido da Transportadora ABC',
-      time: '1 hora atrás',
-      isRead: false,
-      type: 'info',
-      link: '/ctes'
-    },
-    {
-      id: 4,
-      title: 'Fatura Reprovada',
-      description: 'A fatura FAT-2025-123 foi reprovada por divergência de valor',
-      time: '3 horas atrás',
-      isRead: true,
-      type: 'error',
-      link: '/bills'
-    },
-    {
-      id: 5,
-      title: 'Novo Usuário',
-      description: 'O usuário Carlos Silva foi cadastrado no sistema',
-      time: '1 dia atrás',
-      isRead: true,
-      type: 'info',
-      link: '/users'
-    }
-  ]);
+export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ 
+  notifications, 
+  onMarkAllAsRead, 
+  onMarkAsRead,
+  onClear 
+}) => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -95,27 +48,17 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ on
     }
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id ? { ...notification, isRead: true } : notification
-      )
-    );
+  const handleMarkAsRead = async (id: string) => {
+    await notificationService.markAsRead(id);
+    onMarkAsRead(id);
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
+  const handleMarkAllAsRead = async () => {
+    await notificationService.markAllAsRead();
     onMarkAllAsRead();
   };
 
-  const clearNotifications = () => {
-    setNotifications([]);
-    onMarkAllAsRead();
-  };
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
@@ -148,7 +91,7 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ on
             {notifications.map(notification => (
               <div 
                 key={notification.id}
-                className={`p-4 transition-colors ${getNotificationBgColor(notification.type, notification.isRead)}`}
+                className={`p-4 transition-colors ${getNotificationBgColor(notification.type, notification.is_read)}`}
               >
                 <div className="flex items-start">
                   <div className="flex-shrink-0 mr-3">
@@ -156,24 +99,27 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ on
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                      <p className={`text-sm font-medium ${notification.isRead ? 'text-gray-900' : 'text-gray-900 font-semibold'}`}>
-                        {notification.title}
+                      <p className={`text-sm font-medium ${notification.is_read ? 'text-gray-900' : 'text-gray-900 font-semibold'}`}>
+                        {notification.title} {notification.priority === 'critical' && <span className="ml-2 text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Crítica</span>}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">{notification.time}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ptBR })}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{notification.description}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{notification.message}</p>
                     
                     <div className="mt-2 flex items-center justify-between">
-                      {notification.link && (
-                        <a href={notification.link} className="text-xs text-blue-600 hover:text-blue-800 flex items-center">
-                          <Eye size={12} className="mr-1" />
-                          Ver detalhes
+                      {notification.link ? (
+                        <a href={notification.link} className="text-xs text-blue-600 hover:text-blue-800 flex items-center font-medium">
+                          Ação Necessária <Eye size={12} className="ml-1" />
                         </a>
+                      ) : (
+                        <span />
                       )}
                       
-                      {!notification.isRead && (
+                      {!notification.is_read && (
                         <button 
-                          onClick={() => markAsRead(notification.id)}
+                          onClick={() => handleMarkAsRead(notification.id)}
                           className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
                         >
                           Marcar como lida
@@ -196,15 +142,15 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ on
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between items-center">
         <button 
-          onClick={clearNotifications}
-          className="text-xs text-red-600 hover:text-red-800"
+          onClick={onClear}
+          className="text-xs text-gray-600 hover:text-gray-800"
           disabled={notifications.length === 0}
         >
-          Limpar notificações
+          Limpar lista
         </button>
-        <a href="#" className="text-xs text-blue-600 hover:text-blue-800 flex items-center">
-          Ver todas
-        </a>
+        <button className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+          Ver todas as notificações
+        </button>
       </div>
     </div>
   );

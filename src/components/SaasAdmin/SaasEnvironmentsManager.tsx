@@ -133,12 +133,10 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
   async function handleLogoUpload(environmentId: string, file: File) {
     try {
       setUploadingLogo(environmentId);
-      console.log('Iniciando upload do logo para ambiente:', environmentId);
 
       const result = await environmentLogoService.uploadLogo(environmentId, file);
 
       if (result.success) {
-        console.log('Logo enviado com sucesso:', result.url);
         alert('Logotipo enviado com sucesso!');
         // Forçar reload completo dos ambientes
         await loadEnvironments();
@@ -353,7 +351,6 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
                               alt="Logo do ambiente"
                               className="h-12 w-12 object-contain rounded bg-white/5 p-1"
                               onLoad={() => {
-                                console.log('Logo carregado com sucesso para ambiente:', env.nome);
                               }}
                               onError={(e) => {
                                 console.error('Erro ao carregar logo:', finalUrl);

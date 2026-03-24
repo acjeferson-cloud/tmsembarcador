@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, DollarSign } from 'lucide-react';
 import { brazilianStates } from '../../data/statesData';
 import { carriersService, Carrier } from '../../services/carriersService';
@@ -13,6 +14,7 @@ interface InvoicesFiltersProps {
     periodoEntrada: { start: string; end: string };
     ufDestino: string;
     cidadeDestino: string;
+    direction?: string;
     status: string[];
     baseCusto: string;
     numeroOuChave: string;
@@ -20,6 +22,8 @@ interface InvoicesFiltersProps {
 }
 
 export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange, filters }) => {
+  const { t } = useTranslation();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
   const [carriers, setCarriers] = useState<Carrier[]>([]);
@@ -84,6 +88,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
       periodoEntrada: { start: '', end: '' },
       ufDestino: '',
       cidadeDestino: '',
+      direction: '',
       status: [] as string[],
       baseCusto: '',
       numeroOuChave: ''
@@ -122,7 +127,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Buscar por número ou chave de acesso..."
+            placeholder={t('invoices.filters.searchPlaceholder')}
             value={localFilters.numeroOuChave}
             onChange={handleQuickSearch}
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -134,7 +139,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
           className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
         >
           <Filter size={18} />
-          <span>Filtros Avançados</span>
+          <span>{t('invoices.filters.advancedFilters')}</span>
           <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
             {Object.values(localFilters).filter(val => 
               Array.isArray(val) ? val.length > 0 : 
@@ -153,7 +158,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Truck size={16} />
-                <span>Transportador</span>
+                <span>{t('invoices.filters.carrier')}</span>
               </label>
               <select
                 name="transportador"
@@ -161,7 +166,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Todos os Transportadores</option>
+                <option value="">{t('invoices.filters.allCarriers')}</option>
                 {carriers.map(carrier => (
                   <option key={carrier.id} value={carrier.id}>
                     {carrier.codigo} {carrier.razao_social}
@@ -174,7 +179,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <User size={16} />
-                <span>Cliente</span>
+                <span>{t('invoices.filters.customer')}</span>
               </label>
               <input
                 type="text"
@@ -182,7 +187,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 value={localFilters.cliente}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Digite o nome do cliente"
+                placeholder={t('invoices.filters.customerPlaceholder')}
               />
             </div>
 
@@ -190,7 +195,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Calendar size={16} />
-                <span>Período de Emissão</span>
+                <span>{t('invoices.filters.issuePeriod')}</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -213,7 +218,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Calendar size={16} />
-                <span>Período de Entrada</span>
+                <span>{t('invoices.filters.entryPeriod')}</span>
               </label>
               <div className="flex space-x-2">
                 <input
@@ -236,7 +241,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <MapPin size={16} />
-                <span>UF de Destino</span>
+                <span>{t('invoices.filters.destState')}</span>
               </label>
               <select
                 name="ufDestino"
@@ -244,7 +249,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Todas as UFs</option>
+                <option value="">{t('invoices.filters.allStates')}</option>
                 {brazilianStates.map(state => (
                   <option key={state.id} value={state.abbreviation}>
                     {state.abbreviation} - {state.name}
@@ -257,7 +262,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <MapPin size={16} />
-                <span>Cidade de Destino</span>
+                <span>{t('invoices.filters.destCity')}</span>
               </label>
               <input
                 type="text"
@@ -265,7 +270,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 value={localFilters.cidadeDestino}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Digite a cidade de destino"
+                placeholder={t('invoices.filters.destCityPlaceholder')}
               />
             </div>
 
@@ -273,7 +278,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <DollarSign size={16} />
-                <span>Base para Custo</span>
+                <span>{t('invoices.filters.costBase')}</span>
               </label>
               <select
                 name="baseCusto"
@@ -281,19 +286,37 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Todas</option>
-                <option value="tabela">Tabela de Frete</option>
-                <option value="negociacao">Negociação Individual</option>
+                <option value="">{t('invoices.filters.all')}</option>
+                <option value="tabela">{t('invoices.filters.freightTable')}</option>
+                <option value="negociacao">{t('invoices.filters.individualNegotiation')}</option>
               </select>
             </div>
 
+            {/* Direção Filter */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
+                <Truck size={16} className="transform scale-x-[-1]" />
+                <span>{t('Direção Logística', 'Direção Logística')}</span>
+              </label>
+              <select
+                name="direction"
+                value={localFilters.direction || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">{t('Todas')}</option>
+                <option value="outbound">{t('Envio Padrão (Ida)')}</option>
+                <option value="reverse">{t('Logística Reversa')}</option>
+                <option value="inbound">{t('Recebimento (Inbound)')}</option>
+              </select>
+            </div>
           </div>
 
           {/* Status Checkboxes */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-1">
               <FileText size={16} />
-              <span>Status da NF-e</span>
+              <span>{t('invoices.filters.nfeStatus')}</span>
             </label>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center">
@@ -306,7 +329,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-nfe_emitida" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Nota Fiscal Emitida
+                  {t('invoices.status.emitida')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -319,7 +342,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-coletado_transportadora" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Em Coleta
+                  {t('invoices.status.emColeta')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -332,7 +355,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-em_transito" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Em Trânsito
+                  {t('invoices.status.emTransito')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -345,7 +368,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-saiu_entrega" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Saiu para Entrega
+                  {t('invoices.status.saiuParaEntrega')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -358,7 +381,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-entregue" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Entregue
+                  {t('invoices.status.entregue')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -371,7 +394,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-cancelada" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Cancelada
+                  {t('invoices.status.cancelada')}
                 </label>
               </div>
             </div>
@@ -384,14 +407,14 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
               onClick={handleClearFilters}
               className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
-              Limpar Filtros
+              {t('invoices.filters.clearFilters')}
             </button>
             <button
               type="button"
               onClick={handleApplyFilters}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Aplicar Filtros
+              {t('invoices.filters.applyFilters')}
             </button>
           </div>
         </div>

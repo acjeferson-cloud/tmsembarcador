@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, XCircle, Clock, Eye, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise } from 'lucide-react';
+import { billsService } from '../../services/billsService';
 
 interface Bill {
   id: number;
@@ -86,15 +87,48 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
     return 'text-red-600';
   };
   
-  // Generate mock CT-es for the bill
-  const mockCTes = Array.from({ length: bill.cteCount }, (_, i) => ({
-    id: i + 1,
-    numero: (Math.floor(Math.random() * 9000) + 1000).toString(),
-    serie: Math.floor(Math.random() * 10).toString(),
-    dataEmissao: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-    valor: Math.floor(Math.random() * 2000) + 200,
-    status: ['Aprovado', 'Reprovado', 'Pendente'][Math.floor(Math.random() * 3)]
-  }));
+  // Generate real CT-es for the bill
+  const [ctes, setCtes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    const loadLinkedCtes = async () => {
+      try {
+        setIsLoading(true);
+        const data = await billsService.getLinkedCtes(bill.id.toString());
+        
+        const formattedCtes = data.map((link: any) => {
+          const cte = link.ctes_complete;
+          let valorCustoCalculado = 0;
+          if (cte && cte.carrier_costs && cte.carrier_costs.length > 0) {
+            const icmsBaseCost = cte.carrier_costs.find((c: any) => c.cost_type === 'icms_base');
+            if (icmsBaseCost) {
+              valorCustoCalculado = parseFloat(icmsBaseCost.cost_value || '0');
+            }
+          }
+          return {
+            id: link.id,
+            numero: link.cte_number || (cte ? cte.number : 'N/A'),
+            serie: link.cte_series || (cte ? cte.series : '-'),
+            dataEmissao: cte?.issue_date || new Date().toISOString(),
+            valor: cte ? parseFloat(cte.total_value || 0) : 0,
+            valorCusto: valorCustoCalculado,
+            status: cte ? cte.status : 'Desconhecido'
+          };
+        });
+        
+        setCtes(formattedCtes);
+      } catch (error) {
+        console.error('Erro ao buscar CT-es:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen && activeTab === 'ctes') {
+      loadLinkedCtes();
+    }
+  }, [isOpen, activeTab, bill.id]);
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -376,7 +410,11 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                      {mockCTes.map((cte) => (
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-4">Carregando CT-es...</td>
+                        </tr>
+                      ) : ctes.map((cte) => (
                         <tr key={cte.id} className="hover:bg-gray-50 dark:bg-gray-900">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             {cte.numero}
@@ -392,8 +430,8 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              cte.status === 'Aprovado' ? 'bg-green-100 text-green-800' : 
-                              cte.status === 'Reprovado' ? 'bg-red-100 text-red-800' : 
+                              cte.status.includes('Aprovado') ? 'bg-green-100 text-green-800' : 
+                              cte.status.includes('Reprovado') || cte.status.includes('Cancelado') ? 'bg-red-100 text-red-800' : 
                               'bg-yellow-100 text-yellow-800'
                             }`}>
                               {cte.status}

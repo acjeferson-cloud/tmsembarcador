@@ -133,8 +133,7 @@ export const menuConfig: MenuItem[] = [
     labelKey: 'menu.logisticsSimulator',
     icon: Activity,
     color: 'bg-violet-500',
-    categoryKey: 'menu.categories.operacoes',
-    innovationKey: 'logistics-simulator'
+    categoryKey: 'menu.categories.operacoes'
   },
   {
     id: 'edi',
@@ -143,10 +142,9 @@ export const menuConfig: MenuItem[] = [
     color: 'bg-yellow-500',
     categoryKey: 'menu.categories.edi',
     hasSubmenu: true,
-    innovationKey: 'edi',
     submenu: [
-      { id: 'edi-input', labelKey: 'menu.ediInput', icon: Database, color: 'bg-yellow-500', categoryKey: 'menu.categories.edi', innovationKey: 'edi' },
-      { id: 'edi-output', labelKey: 'menu.ediOutput', icon: Database, color: 'bg-lime-500', categoryKey: 'menu.categories.edi', innovationKey: 'edi' }
+      { id: 'edi-input', labelKey: 'menu.ediInput', icon: Database, color: 'bg-yellow-500', categoryKey: 'menu.categories.edi' },
+      { id: 'edi-output', labelKey: 'menu.ediOutput', icon: Database, color: 'bg-lime-500', categoryKey: 'menu.categories.edi' }
     ]
   },
   {

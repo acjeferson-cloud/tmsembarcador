@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Clock, Truck, X, Bell, CheckCircle } from 'lucide-react';
 
 interface Alert {
@@ -13,6 +14,7 @@ interface Alert {
 }
 
 export const AlertsPanel: React.FC = () => {
+  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<Alert[]>([
     {
       id: 1,
@@ -103,7 +105,7 @@ export const AlertsPanel: React.FC = () => {
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alertas</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('controlTower.alerts.title')}</h3>
           {unreadCount > 0 && (
             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
               {unreadCount}
@@ -111,7 +113,7 @@ export const AlertsPanel: React.FC = () => {
           )}
         </div>
         <button className="text-sm text-blue-600 hover:text-blue-800 transition-colors">
-          Ver todos
+          {t('controlTower.alerts.viewAll')}
         </button>
       </div>
 
@@ -153,7 +155,7 @@ export const AlertsPanel: React.FC = () => {
                   <button
                     onClick={() => markAsRead(alert.id)}
                     className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-white dark:bg-gray-800 transition-colors"
-                    title="Marcar como lido"
+                    title={t('controlTower.alerts.markAsRead')}
                   >
                     <CheckCircle size={14} />
                   </button>
@@ -161,7 +163,7 @@ export const AlertsPanel: React.FC = () => {
                 <button
                   onClick={() => dismissAlert(alert.id)}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-400 p-1 rounded hover:bg-white dark:bg-gray-800 transition-colors"
-                  title="Dispensar alerta"
+                  title={t('controlTower.alerts.dismiss')}
                 >
                   <X size={14} />
                 </button>
@@ -174,8 +176,8 @@ export const AlertsPanel: React.FC = () => {
       {alerts.length === 0 && (
         <div className="text-center py-8">
           <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Nenhum alerta ativo</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Todas as operações estão funcionando normalmente</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">{t('controlTower.alerts.noActiveAlerts')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('controlTower.alerts.allNormals')}</p>
         </div>
       )}
 
@@ -183,10 +185,10 @@ export const AlertsPanel: React.FC = () => {
       <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-2 gap-3">
           <button className="bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-            Configurar Alertas
+            {t('controlTower.alerts.configureAlerts')}
           </button>
           <button className="bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:bg-gray-700 transition-colors">
-            Histórico
+            {t('controlTower.alerts.history')}
           </button>
         </div>
       </div>

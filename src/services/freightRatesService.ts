@@ -724,10 +724,23 @@ export const freightRatesService = {
     // Filtrar apenas campos válidos
     const filteredRate = filterValidFields(rateToCopy, VALID_FREIGHT_RATE_FIELDS);
 
+    // Obter dados do usuário para organization_id e environment_id
+    const savedUser = localStorage.getItem('tms-user');
+    if (!savedUser) {
+      throw new Error('Usuário não autenticado. Faça login novamente.');
+    }
+    const userData = JSON.parse(savedUser);
+
+    if (!userData.organization_id || !userData.environment_id) {
+      throw new Error('Dados de organização incompletos. Contate o suporte.');
+    }
+
     const newRateData = {
       ...filteredRate,
       codigo: newCode,
-      descricao: `${rateToCopy.descricao} (Cópia)`
+      descricao: `${rateToCopy.descricao} (Cópia)`,
+      organization_id: userData.organization_id,
+      environment_id: userData.environment_id
     };
 
     // Limpar campos com strings vazias

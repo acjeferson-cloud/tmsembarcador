@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, Eye, MoreHorizontal, XCircle, Share2, Trash2, CheckCircle } from 'lucide-react';
 
 interface Pickup {
@@ -33,6 +34,8 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
   onAction,
   isLoading
 }) => {
+  const { t } = useTranslation();
+
   const [sortField, setSortField] = useState<keyof Pickup>('dataCriacao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,15 +119,15 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'emitida':
-        return 'Emitida';
+        return t('pickups.status.emitida');
       case 'solicitada':
-        return 'Solicitada';
+        return t('pickups.status.solicitada');
       case 'realizada':
       case 'coleta_realizada':
-        return 'Realizada';
+        return t('pickups.status.realizada');
       case 'cancelada':
       case 'coleta_cancelada':
-        return 'Cancelada';
+        return t('pickups.status.cancelada');
       default:
         return status;
     }
@@ -156,7 +159,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   </div>
                 </th>
                 <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
-                  Ações
+                  {t('pickups.table.actions')}
                 </th>
                 <th
                   scope="col"
@@ -164,7 +167,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Status</span>
+                    <span>{t('pickups.table.status')}</span>
                     {sortField === 'status' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -176,7 +179,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('numeroColeta')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Nº Coleta</span>
+                    <span>{t('pickups.table.pickupNumber')}</span>
                     {sortField === 'numeroColeta' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -188,7 +191,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('dataCriacao')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Data Emissão</span>
+                    <span>{t('pickups.table.issueDate')}</span>
                     {sortField === 'dataCriacao' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -200,7 +203,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('quantidadeNotas')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Qtd. NF-e(s)</span>
+                    <span>{t('pickups.table.nfeQty')}</span>
                     {sortField === 'quantidadeNotas' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -212,7 +215,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('valorTotal')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Valor NF-e(s)</span>
+                    <span>{t('pickups.table.nfeValue')}</span>
                     {sortField === 'valorTotal' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -224,7 +227,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('transportador')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Transportador</span>
+                    <span>{t('pickups.table.carrier')}</span>
                     {sortField === 'transportador' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -236,7 +239,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   onClick={() => handleSort('usuarioResponsavel')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>USUÁRIO CRIADOR</span>
+                    <span>{t('pickups.table.creatorUser')}</span>
                     {sortField === 'usuarioResponsavel' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -260,7 +263,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                     <div className="flex items-center justify-center space-x-3">
                       <button
                         onClick={() => onAction(pickup.id, 'view-details')}
-                        title="Ver Detalhes"
+                        title={t('pickups.table.viewDetails')}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       >
                         <Eye size={18} />
@@ -269,7 +272,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                       {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
                         <button
                           onClick={() => onAction(pickup.id, 'realizar')}
-                          title="Marcar como Realizada"
+                          title={t('pickups.actions.markAsDone')}
                           className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                         >
                           <CheckCircle size={18} />
@@ -278,7 +281,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
 
                       <button
                         onClick={() => onAction(pickup.id, 'view-relationship-map')}
-                        title="Mapa de Relações"
+                        title={t('pickups.table.relationshipMap')}
                         className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
                       >
                         <Share2 size={18} />
@@ -287,7 +290,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                       <div className="relative inline-block text-left">
                         <button
                           onClick={() => toggleActionMenu(pickup.id)}
-                          title="Mais Ações"
+                          title="Mais {t('pickups.table.actions')}"
                           className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                           <MoreHorizontal size={20} />
@@ -305,7 +308,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                                 className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
                               >
                                 <XCircle size={16} />
-                                <span>Cancelar Coleta</span>
+                                <span>{t('pickups.actions.cancel')}</span>
                               </button>
                             )}
                             
@@ -318,7 +321,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                               className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                             >
                               <Trash2 size={16} />
-                              <span>Excluir Coleta</span>
+                              <span>{t('pickups.actions.delete')}</span>
                             </button>
                             </div>
                           </div>
@@ -365,26 +368,24 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
               disabled={currentPage === 1}
               className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
             >
-              Anterior
+              {t('pickups.table.previous')}
             </button>
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              Página {currentPage} de {totalPages}
+              {t('pickups.table.pageOf', { current: currentPage, total: totalPages })}
             </span>
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
             >
-              Próxima
+              {t('pickups.table.next')}
             </button>
           </div>
 
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                Mostrando <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span> até{' '}
-                <span className="font-medium">{Math.min(currentPage * rowsPerPage, sortedPickups.length)}</span> de{' '}
-                <span className="font-medium">{sortedPickups.length}</span> resultados
+                {t('pickups.table.showingResults', { start: (currentPage - 1) * rowsPerPage + 1, end: Math.min(currentPage * rowsPerPage, sortedPickups.length), total: sortedPickups.length })}
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -396,10 +397,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                 }}
                 className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
               >
-                <option value={5}>5 por página</option>
-                <option value={10}>10 por página</option>
-                <option value={25}>25 por página</option>
-                <option value={50}>50 por página</option>
+                <option value={5}>{t('pickups.table.rowsPerPage', { count: 5 })}</option>
+                <option value={10}>{t('pickups.table.rowsPerPage', { count: 10 })}</option>
+                <option value={25}>{t('pickups.table.rowsPerPage', { count: 25 })}</option>
+                <option value={50}>{t('pickups.table.rowsPerPage', { count: 50 })}</option>
               </select>
 
               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
@@ -408,7 +409,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   disabled={currentPage === 1}
                   className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                 >
-                  Anterior
+                  {t('pickups.table.previous')}
                 </button>
 
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -443,7 +444,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   disabled={currentPage === totalPages}
                   className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                 >
-                  Próxima
+                  {t('pickups.table.next')}
                 </button>
               </nav>
             </div>

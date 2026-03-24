@@ -108,9 +108,22 @@ export const freightRateCitiesService = {
 
     // Se houver termo de busca, filtrar no servidor
     if (searchTerm && searchTerm.trim()) {
-      query = query.or(
-        `nome.ilike.%${searchTerm}%,states.sigla.ilike.%${searchTerm}%,codigo_ibge.like.%${searchTerm}%`
-      );
+      const term = searchTerm.trim();
+      const isNumber = /^\d+$/.test(term);
+      const isUF = term.length === 2 && /^[a-zA-Z]{2}$/.test(term);
+      
+      if (isNumber) {
+        query = query.like('codigo_ibge', `%${term}%`);
+      } else if (isUF) {
+        const validUFs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+        if (validUFs.includes(term.toUpperCase())) {
+           query = query.eq('states.sigla', term.toUpperCase());
+        } else {
+           query = query.ilike('nome', `%${term}%`);
+        }
+      } else {
+         query = query.ilike('nome', `%${term}%`);
+      }
     }
 
     const { data: allCities, error: citiesError } = await query;

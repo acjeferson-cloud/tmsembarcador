@@ -45,7 +45,6 @@ export const ElectronicDocuments: React.FC = () => {
         if (doc.xml_content) {
           try {
             parsedData = parseXML(doc.xml_content);
-            console.log(`Parsed XML for ${doc.document_number}: dataAutorizacao=${parsedData.dataAutorizacao}, DB auth_date=${doc.authorization_date}, DB import_date=${doc.import_date}`);
           } catch (e) {
             console.error('Error parsing XML:', e);
           }

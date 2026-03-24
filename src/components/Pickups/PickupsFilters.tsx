@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, Package } from 'lucide-react';
 
 interface PickupsFiltersProps {
@@ -14,6 +15,8 @@ interface PickupsFiltersProps {
 }
 
 export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, filters }) => {
+  const { t } = useTranslation();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
 
@@ -99,7 +102,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
               value={localFilters.numeroColeta}
               onChange={handleQuickSearch}
               onKeyPress={handleQuickSearchKeyPress}
-              placeholder="Buscar por número da coleta..."
+              placeholder={t('pickups.filters.searchPlaceholder')}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -108,7 +111,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
             className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2"
           >
             <Filter size={20} />
-            <span>{isExpanded ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
+            <span>{isExpanded ? t('pickups.filters.hideFilters') : t('pickups.filters.showFilters')}</span>
           </button>
         </div>
       </div>
@@ -122,14 +125,14 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <Truck size={16} />
-                <span>Transportador</span>
+                <span>{t('pickups.filters.carrier')}</span>
               </label>
               <input
                 type="text"
                 name="transportador"
                 value={localFilters.transportador}
                 onChange={handleInputChange}
-                placeholder="Nome do transportador..."
+                placeholder={t('pickups.filters.carrierPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -138,14 +141,14 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <User size={16} />
-                <span>Usuário Responsável</span>
+                <span>{t('pickups.filters.responsibleUser')}</span>
               </label>
               <input
                 type="text"
                 name="usuarioResponsavel"
                 value={localFilters.usuarioResponsavel}
                 onChange={handleInputChange}
-                placeholder="Nome do usuário..."
+                placeholder={t('pickups.filters.userPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -154,14 +157,14 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-1">
                 <MapPin size={16} />
-                <span>Endereço de Coleta</span>
+                <span>{t('pickups.filters.pickupAddress')}</span>
               </label>
               <input
                 type="text"
                 name="enderecoColeta"
                 value={localFilters.enderecoColeta}
                 onChange={handleInputChange}
-                placeholder="Cidade - UF..."
+                placeholder={t('pickups.filters.addressPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
@@ -171,7 +174,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-1">
               <Calendar size={16} />
-              <span>Período de Criação</span>
+              <span>{t('pickups.filters.creationPeriod')}</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
@@ -179,14 +182,14 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
                 value={localFilters.dataCriacao.start}
                 onChange={(e) => handleDateRangeChange('start', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Data inicial"
+                placeholder={t('pickups.filters.startDate')}
               />
               <input
                 type="date"
                 value={localFilters.dataCriacao.end}
                 onChange={(e) => handleDateRangeChange('end', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Data final"
+                placeholder={t('pickups.filters.endDate')}
               />
             </div>
           </div>
@@ -195,7 +198,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center space-x-1">
               <Package size={16} />
-              <span>Status da Coleta</span>
+              <span>{t('pickups.filters.pickupStatus')}</span>
             </label>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center">
@@ -208,7 +211,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-emitida" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Emitida
+                  {t('pickups.status.emitida')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -221,7 +224,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-solicitada" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Solicitada
+                  {t('pickups.status.solicitada')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -234,7 +237,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-realizada" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Realizada
+                  {t('pickups.status.realizada')}
                 </label>
               </div>
               <div className="flex items-center">
@@ -247,7 +250,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="status-cancelada" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Cancelada
+                  {t('pickups.status.cancelada')}
                 </label>
               </div>
             </div>
@@ -259,13 +262,13 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
               onClick={handleClearFilters}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              Limpar Filtros
+              {t('pickups.filters.clearBtn')}
             </button>
             <button
               onClick={handleApplyFilters}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Aplicar Filtros
+              {t('pickups.filters.applyBtn')}
             </button>
           </div>
         </div>

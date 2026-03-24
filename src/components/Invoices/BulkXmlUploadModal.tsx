@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Upload, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { parseNFeXml, importNFeToDatabase } from '../../services/nfeXmlService';
 import { TenantContextHelper } from '../../utils/tenantContext';
@@ -22,6 +23,8 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
   establishmentId,
   onSuccess
 }) => {
+  const { t } = useTranslation();
+
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<FileResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -83,11 +86,11 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
         const parsedData = parseNFeXml(xmlContent);
 
         if (!parsedData) {
-          throw new Error('Erro ao fazer parse do XML');
+          throw new Error(t('invoices.modals.bulkXml.errorParse'));
         }
 
         const context = await TenantContextHelper.getCurrentContext();
-        if (!context) throw new Error('Contexto de locatário não encontrado');
+        if (!context) throw new Error(t('invoices.modals.bulkXml.errorTenant'));
         
         let orgId = context.organizationId;
         let envId = context.environmentId;
@@ -104,19 +107,19 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
             index === i ? {
               ...res,
               status: 'success',
-              message: 'Importado com sucesso'
+              message: t('invoices.modals.bulkXml.importedSuccess')
             } : res
           ));
           successCount++;
         } else {
-          throw new Error(result.error || 'Erro ao importar');
+          throw new Error(result.error || t('invoices.modals.bulkXml.errorImport'));
         }
       } catch (error: any) {
         setResults(prev => prev.map((res, index) =>
           index === i ? {
             ...res,
             status: 'error',
-            message: error.message || 'Erro desconhecido'
+            message: error.message || t('invoices.modals.bulkXml.errorUnknown')
           } : res
         ));
       }
@@ -155,7 +158,7 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold flex items-center">
             <Upload className="mr-3" size={24} />
-            Upload de XML em Lote - Notas Fiscais
+            {t('invoices.modals.bulkXml.title')}
           </h2>
           <button
             onClick={handleClose}
@@ -180,13 +183,13 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
             >
               <Upload className="mx-auto mb-4 text-gray-400" size={48} />
               <p className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Arraste arquivos XML aqui
+                {t('invoices.modals.bulkXml.dragXml')}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                ou clique no botão abaixo para selecionar
+                {t('invoices.modals.bulkXml.orClickToSelect')}
               </p>
               <label className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-                Selecionar Arquivos
+                {t('invoices.modals.bulkXml.selectFiles')}
                 <input
                   type="file"
                   multiple
@@ -201,22 +204,22 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex gap-4 text-sm">
                   <span className="text-gray-600 dark:text-gray-400">
-                    Total: <strong>{files.length}</strong>
+                    {t('invoices.modals.bulkXml.total')}: <strong>{files.length}</strong>
                   </span>
                   {successCount > 0 && (
                     <span className="text-green-600">
-                      Sucesso: <strong>{successCount}</strong>
+                      {t('invoices.modals.bulkXml.success')}: <strong>{successCount}</strong>
                     </span>
                   )}
                   {errorCount > 0 && (
                     <span className="text-red-600">
-                      Erro: <strong>{errorCount}</strong>
+                      {t('invoices.modals.bulkXml.error')}: <strong>{errorCount}</strong>
                     </span>
                   )}
                 </div>
                 {!isProcessing && pendingCount > 0 && (
                   <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors text-sm">
-                    Adicionar Mais
+                    {t('invoices.modals.bulkXml.addMore')}
                     <input
                       type="file"
                       multiple
@@ -285,14 +288,14 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
                   onClick={processFiles}
                   className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
-                  Processar {pendingCount} Arquivo{pendingCount !== 1 ? 's' : ''}
+                  {t('invoices.modals.bulkXml.processFiles', { count: pendingCount })}
                 </button>
               )}
 
               {isProcessing && (
                 <div className="text-center text-gray-600 dark:text-gray-400">
                   <Loader className="animate-spin mx-auto mb-2" size={32} />
-                  <p className="font-medium">Processando arquivos...</p>
+                  <p className="font-medium">{t('invoices.modals.bulkXml.processingFiles')}</p>
                 </div>
               )}
 
@@ -301,7 +304,7 @@ export const BulkXmlUploadModal: React.FC<BulkXmlUploadModalProps> = ({
                   onClick={handleClose}
                   className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
                 >
-                  Fechar
+                  {t('invoices.modals.common.close')}
                 </button>
               )}
             </>

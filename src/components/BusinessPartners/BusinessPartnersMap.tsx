@@ -31,16 +31,13 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
 
         // Verifica se o Google Maps já está carregado
         if (isGoogleMapsLoaded()) {
-          console.log('Google Maps já está carregado, inicializando mapa...');
           initializeMap();
           return;
         }
 
         // Carrega o Google Maps usando o loader centralizado
-        console.log('Carregando Google Maps API...');
         await loadGoogleMapsAPI();
 
-        console.log('Google Maps API carregada com sucesso, inicializando mapa...');
         initializeMap();
       } catch (err: any) {
         console.error('Erro ao carregar Google Maps:', err);
@@ -63,7 +60,6 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
       }
 
       try {
-        console.log('Criando instância do mapa...');
         // Mapa centralizado no Brasil
         const mapInstance = new google.maps.Map(mapRef.current, {
           center: { lat: -14.2350, lng: -51.9253 }, // Centro do Brasil
@@ -74,7 +70,6 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
           zoomControl: true,
         });
 
-        console.log('Mapa criado com sucesso!');
         setMap(mapInstance);
         setIsLoading(false);
       } catch (err) {
@@ -104,7 +99,6 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         const address = partner.addresses && partner.addresses.length > 0 ? partner.addresses[0] : null;
 
         if (!address || !address.city || !address.state) {
-          console.log(`Parceiro ${partner.name} sem endereço válido`);
           return;
         }
 

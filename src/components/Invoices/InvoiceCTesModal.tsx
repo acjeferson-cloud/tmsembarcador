@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { X, FileText, Download, Printer, Search, ExternalLink, CheckCircle, XCircle, Clock } from 'lucide-react';
 
@@ -24,6 +25,8 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
   invoiceId,
   invoiceNumber
 }) => {
+  const { t } = useTranslation();
+
   const [searchTerm, setSearchTerm] = useState('');
   
   const [ctes, setCtes] = useState<CTe[]>([]);
@@ -118,7 +121,7 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
           <div className="flex items-center space-x-2">
             <FileText size={24} className="text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">CT-es da Nota Fiscal</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('invoices.modals.ctes.title')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -132,7 +135,7 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
           {/* Invoice Info */}
           <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Nota Fiscal: <span className="font-semibold text-gray-900 dark:text-white">{invoiceNumber}</span>
+              {t('invoices.modals.common.invoice')}: <span className="font-semibold text-gray-900 dark:text-white">{invoiceNumber}</span>
             </p>
           </div>
           
@@ -141,7 +144,7 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por número de CT-e..."
+              placeholder={t('invoices.modals.ctes.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -154,22 +157,22 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Número
+                    {t('invoices.details.code')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Série
+                    {t('invoices.form.fields.serie')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Data Emissão
+                    {t('invoices.form.fields.issueDate')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Valor
+                    {t('invoices.table.value')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('invoices.table.status')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ações
+                    {t('invoices.table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -177,7 +180,7 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                      Carregando CT-es...
+                      {t('invoices.modals.ctes.loading')}
                     </td>
                   </tr>
                 ) : (
@@ -205,19 +208,19 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                          title="Visualizar DACTE"
+                          title={t('invoices.modals.ctes.viewDacte')}
                         >
                           <Printer size={16} />
                         </button>
                         <button
                           className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                          title="Download XML"
+                          title={t('invoices.modals.ctes.downloadXml')}
                         >
                           <Download size={16} />
                         </button>
                         <button
                           className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50"
-                          title="Consultar na SEFAZ"
+                          title={t('invoices.modals.ctes.consultSefaz')}
                         >
                           <ExternalLink size={16} />
                         </button>
@@ -232,7 +235,7 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
           {!isLoading && filteredCTes.length === 0 && (
             <div className="text-center py-8">
               <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Nenhum CT-e encontrado.</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('invoices.modals.ctes.notFound')}</p>
             </div>
           )}
           
@@ -240,15 +243,15 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-800 font-medium">Total de CT-es: {ctes.length}</p>
+                <p className="text-sm text-blue-800 font-medium">{t('invoices.modals.ctes.totalCtes')}: {ctes.length}</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Valor total: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}
+                  {t('invoices.modals.ctes.totalValue')}: {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}
                 </p>
               </div>
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Exportar Lista
+                {t('invoices.modals.ctes.exportList')}
               </button>
             </div>
           </div>

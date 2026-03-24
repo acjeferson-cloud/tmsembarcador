@@ -39,8 +39,8 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   const [history, setHistory] = useState<InnovationHistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   
-  const orgId = user?.organization_id || '';
-  const envId = user?.environment_id || '';
+  const orgId = user?.organization_id || localStorage.getItem('tms-selected-org-id') || '';
+  const envId = user?.environment_id || localStorage.getItem('tms-selected-env-id') || '';
   const estabCode = currentEstablishment?.codigo || '0000';
 
   const isAdmin = 
@@ -56,7 +56,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
 
       try {
         // Usar RPC para bypassar RLS
-        const { data: contextData, error } = await supabase
+        const { data: contextData, error } = await (supabase as any)
           .rpc('get_user_context_for_session', { p_email: user.email });
 
         if (contextData?.success && !error) {

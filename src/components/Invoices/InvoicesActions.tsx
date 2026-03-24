@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Printer, Download, PackagePlus, RefreshCw } from 'lucide-react';
 
 interface InvoicesActionsProps {
@@ -8,11 +9,13 @@ interface InvoicesActionsProps {
 }
 
 export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount, onAction, isLoading }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {selectedCount} Nota{selectedCount !== 1 ? 's' : ''} Fiscal{selectedCount !== 1 ? 'is' : ''} selecionada{selectedCount !== 1 ? 's' : ''}
+          {selectedCount} {selectedCount !== 1 ? t('invoices.actions.selectedPlural') : t('invoices.actions.selectedSingular')}
         </span>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -33,7 +36,7 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm font-medium"
         >
           <PackagePlus size={18} />
-          <span>Criar Coleta(s)</span>
+          <span>{t('invoices.actions.createPickup')}</span>
         </button>
 
         <button
@@ -42,7 +45,7 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm font-medium"
         >
           <RefreshCw size={18} />
-          <span>Recalcular Nota Fiscal</span>
+          <span>{t('invoices.actions.recalculate')}</span>
         </button>
 
         <button
@@ -51,7 +54,7 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
           className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
         >
           <Printer size={16} />
-          <span>Imprimir DANFE</span>
+          <span>{t('invoices.actions.printDanfe')}</span>
         </button>
 
         <button
@@ -60,7 +63,7 @@ export const InvoicesActions: React.FC<InvoicesActionsProps> = ({ selectedCount,
           className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
         >
           <Download size={16} />
-          <span>Download XMLs</span>
+          <span>{t('invoices.actions.downloadXmls')}</span>
         </button>
         </div>
       </div>

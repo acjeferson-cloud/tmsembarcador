@@ -1,5 +1,6 @@
 import React from 'react';
 import { Info, X, TrendingUp, Activity, Map } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export const DashboardCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
 
   return (
@@ -15,7 +18,7 @@ export const DashboardCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Info className="w-6 h-6 text-blue-600" />
-            Como os KPIs são Calculados?
+            {t('dashboard.calcModal.title')}
           </h3>
           <button
             onClick={onClose}
@@ -31,48 +34,48 @@ export const DashboardCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4 text-gray-700 dark:text-gray-300">
             <h4 className="flex items-center gap-2 font-bold text-lg text-gray-900 dark:text-white border-b pb-2 dark:border-gray-700">
               <TrendingUp className="w-5 h-5 text-blue-600" />
-              Visão Executiva
+              {t('dashboard.tabs.executive')}
             </h4>
             <div className="space-y-4">
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Despesa de Frete (R$)</p>
-                <p className="text-sm">Soma do valor total gasto em fretes durante o período filtrado.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.freightExpense')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.freightExpenseDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Embarques (Pedido)</p>
-                <p className="text-sm">Volume total de embarques ou pedidos únicos transportados dentro das datas de corte.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.shipments')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.shipmentsDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Ticket Médio (R$/Pedido)</p>
-                <p className="text-sm">Cálculo da despesa de frete total dívido pela volume absoluto de embarques gerados.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.averageTicket')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.averageTicketDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">SLA (On-Time in Full)</p>
-                <p className="text-sm">Percentual de entregas realizadas rigorosamente no prazo e em sua totalidade sistêmica de acordo com a meta da empresa e faturada.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.sla')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.slaDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Representatividade (Frete/Mercadoria)</p>
-                <p className="text-sm">Percentual de custo que o frete consome relativo ao valor estipulado no documento da mercadoria movimentada.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.representativity')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.representativityDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Custo Operacional (R$/Kg)</p>
-                <p className="text-sm">Desdobramento da despesa total de frete rateada em relação ao peso bruto consolidado em quilos (R$ por Kg).</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.operationalCost')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.operationalCostDesc')}</p>
               </div>
                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Custo em Divergências</p>
-                <p className="text-sm">Apanhado de diferenças em reais originadas durantes as auditorias entre os cálculos previstos pela tabela (simulação) contra as cobranças efetivas das transportadoras.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.divergenceCost')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.divergenceCostDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Taxas Extras / Acessórias (%)</p>
-                <p className="text-sm">Porcentagem gasta em incrementos ou sobretaxas que formam o montante final do frete (pedágio, emergência, TRT, etc).</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.extraFees')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.extraFeesDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Evolução de Custos Operacionais</p>
-                <p className="text-sm">Gráfico linear evidenciando a concentração e saltos da curva da Despesa do Frete por dia/período selecionado.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.costEvolution')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.costEvolutionDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Share de Transportadoras</p>
-                <p className="text-sm">Gráfico estipulando a divisão e fatia da representatividade financeira gasta por parceiro logístico ou transportadora atrelada.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.executive.carrierShare')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.executive.carrierShareDesc')}</p>
               </div>
             </div>
           </div>
@@ -81,32 +84,32 @@ export const DashboardCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4 text-gray-700 dark:text-gray-300">
             <h4 className="flex items-center gap-2 font-bold text-lg text-gray-900 dark:text-white border-b pb-2 dark:border-gray-700">
               <Activity className="w-5 h-5 text-green-600" />
-              Nível de Serviço
+              {t('dashboard.tabs.operational')}
             </h4>
             <div className="space-y-4">
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Lead Time Médio (Dias)</p>
-                <p className="text-sm">Médiana de dias decorridos entre a aprovação do pedido e a chegada física da mercadoria no recebedor logístico.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.operational.leadTime')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.operational.leadTimeDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">SLA de Coleta (Horas Atraso)</p>
-                <p className="text-sm">Média de horas em déficit de atendimento de coletas na comparação da data/hora acordada e a apanha real da transportadora.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.operational.collectionSla')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.operational.collectionSlaDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Volume em Backlog</p>
-                <p className="text-sm">Total de embarques e pedidos que estão estagnados fora do processo de expedição aguardando tratativas sistêmicas, indicando carga parada no balcão de CD.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.operational.backlogVolume')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.operational.backlogVolumeDesc')}</p>
               </div>
                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Pipeline de Logística (Funil)</p>
-                <p className="text-sm">Indicativo da progressão quantitativa de embarques segmentada pelas 7 grandes fases do ciclo de vida: Pedido Realizado, Pedido Faturado, Aguardando Coleta, Coletado pela Transportadora, Em Transporte, Saiu para Entrega, e Entrega Realizada.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.operational.pipeline')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.operational.pipelineDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Composição de Status</p>
-                <p className="text-sm">Detalhamento visual informando em tempo real qual a fatia e o volume quantitativo que preenchem as estapas lógicas listadas na Timeline de Entregas e Macro-Funil.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.operational.statusComposition')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.operational.statusCompositionDesc')}</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Top 5 Ocorrências / Motivos de Falha</p>
-                <p className="text-sm">Raio-x rankeando e filtrando as cinco métricas causais ou motivos com maior nível de indício dentro da esteira de falhas dos manifestos.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.operational.topOccurrences')}</p>
+                <p className="text-sm">{t('dashboard.calcModal.operational.topOccurrencesDesc')}</p>
               </div>
             </div>
           </div>
@@ -115,11 +118,11 @@ export const DashboardCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4 text-gray-700 dark:text-gray-300">
             <h4 className="flex items-center gap-2 font-bold text-lg text-gray-900 dark:text-white border-b pb-2 dark:border-gray-700">
               <Map className="w-5 h-5 text-orange-600" />
-              Mapa de Custos
+              {t('dashboard.tabs.map')}
             </h4>
             <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-              <p className="font-semibold text-gray-900 dark:text-white mb-1">Mapa de Densidade Financeira</p>
-              <p className="text-sm">Apresentação geográfica de calor. Destaca cidades e UFs (Destino) nas quais sua empresa mais aplica Despesa de Frete, projetado diretamente na interface dos servidores do Google Maps.</p>
+              <p className="font-semibold text-gray-900 dark:text-white mb-1">{t('dashboard.map.densityMap')}</p>
+              <p className="text-sm">{t('dashboard.calcModal.map.densityMapDesc')}</p>
             </div>
           </div>
 
@@ -130,7 +133,7 @@ export const DashboardCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
           >
-            Entendido
+            {t('dashboard.calcModal.understood')}
           </button>
         </div>
       </div>

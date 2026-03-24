@@ -172,7 +172,6 @@ export const invoicesCostService = {
       },
     };
 
-    console.log('📦 CUSTO ANTES DO INSERT:', cost);
 
     const { error } = await supabase.from('invoices_nfe_carrier_costs').insert(cost);
 

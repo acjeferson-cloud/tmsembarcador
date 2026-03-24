@@ -39,7 +39,8 @@ export const billsService = {
           bill_ctes (
             id,
             ctes_complete (
-              carrier_costs:ctes_carrier_costs(cost_type, cost_value)
+              carrier_costs:ctes_carrier_costs(cost_type, cost_value),
+              carrier:carriers(metadata)
             )
           )
         `)
@@ -51,17 +52,29 @@ export const billsService = {
       return (data || []).map((b: any) => {
         let totalCost = 0;
         let cteCount = 0;
+        let tolVal = 0;
+        let tolPct = 0;
         
         if (b.bill_ctes && Array.isArray(b.bill_ctes)) {
           cteCount = b.bill_ctes.length;
           b.bill_ctes.forEach((link: any) => {
-            if (link.ctes_complete && link.ctes_complete.carrier_costs) {
-              const costs = link.ctes_complete.carrier_costs;
-              if (Array.isArray(costs)) {
-                const icmsBaseCost = costs.find((c: any) => c.cost_type === 'icms_base');
-                if (icmsBaseCost) {
-                  const val = parseFloat(icmsBaseCost.cost_value || '0');
-                  if (!isNaN(val)) totalCost += val;
+            if (link.ctes_complete) {
+              // Extract carrier tolerances if not already set
+              if (tolVal === 0 && link.ctes_complete.carrier?.metadata?.tolerancia_valor_fatura) {
+                tolVal = Number(link.ctes_complete.carrier.metadata.tolerancia_valor_fatura);
+              }
+              if (tolPct === 0 && link.ctes_complete.carrier?.metadata?.tolerancia_percentual_fatura) {
+                tolPct = Number(link.ctes_complete.carrier.metadata.tolerancia_percentual_fatura);
+              }
+
+              if (link.ctes_complete.carrier_costs) {
+                const costs = link.ctes_complete.carrier_costs;
+                if (Array.isArray(costs)) {
+                  const icmsBaseCost = costs.find((c: any) => c.cost_type === 'icms_base');
+                  if (icmsBaseCost) {
+                    const val = parseFloat(icmsBaseCost.cost_value || '0');
+                    if (!isNaN(val)) totalCost += val;
+                  }
                 }
               }
             }
@@ -71,7 +84,9 @@ export const billsService = {
         return {
           ...b,
           calculated_cost: totalCost,
-          cteCount: b.bill_ctes && b.bill_ctes[0] && b.bill_ctes[0].count !== undefined ? b.bill_ctes[0].count : cteCount
+          cteCount: b.bill_ctes && b.bill_ctes[0] && b.bill_ctes[0].count !== undefined ? b.bill_ctes[0].count : cteCount,
+          tolerancia_valor_fatura: tolVal,
+          tolerancia_percentual_fatura: tolPct
         };
       });
     } catch (error) {

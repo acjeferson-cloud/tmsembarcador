@@ -79,9 +79,7 @@ export const FreightRates: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      console.log('🔄 [FREIGHT RATES] Carregando tabelas de frete...');
       const data = await freightRatesService.getAllTables();
-      console.log('✅ [FREIGHT RATES] Tabelas carregadas:', data.length);
       setTables(data);
     } catch (err: any) {
       console.error('❌ [FREIGHT RATES] Erro ao carregar tabelas:', err);

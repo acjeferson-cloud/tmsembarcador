@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Plus, FileText, CheckCircle, XCircle, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
 import { Toast, ToastType } from '../common/Toast';
@@ -35,12 +36,13 @@ interface Order {
 
 export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   useActivityLogger('Pedidos', 'Acesso', 'Acessou a gestão de Pedidos');
 
   const breadcrumbItems = [
     { label: 'Área de trabalho' },
-    { label: 'Pedidos', current: true }
+    { label: t('orders.pageTitle'), current: true }
   ];
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -545,8 +547,8 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
       <Breadcrumbs items={breadcrumbItems} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pedidos</h1>
-          <p className="text-gray-600 dark:text-gray-400">Visualize e gerencie todos os pedidos importados no sistema</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('orders.pageTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('orders.pageDescription')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -554,7 +556,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Inserir Pedido</span>
+            <span>{t('orders.actions.insertOrder')}</span>
           </button>
           <button
             onClick={refreshData}
@@ -562,7 +564,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
             className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
-            <span>{isLoading ? 'Carregando...' : 'Atualizar'}</span>
+            <span>{isLoading ? t('orders.actions.loading') : t('orders.actions.refresh')}</span>
           </button>
         </div>
       </div>
@@ -572,7 +574,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Pedidos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.total')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{orders.length}</p>
             </div>
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -584,7 +586,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Emitidos</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.emitido')}</p>
               <p className="text-2xl font-semibold text-gray-600 dark:text-gray-400 mt-1">
                 {orders.filter(order => order.status === 'emitido').length}
               </p>
@@ -598,7 +600,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Coleta</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.coletado')}</p>
               <p className="text-2xl font-semibold text-blue-400 mt-1">
                 {orders.filter(order => order.status === 'coletado').length}
               </p>
@@ -612,7 +614,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Trânsito</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.em_transito')}</p>
               <p className="text-2xl font-semibold text-blue-600 mt-1">
                 {orders.filter(order => order.status === 'em_transito').length}
               </p>
@@ -626,7 +628,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Saiu p/ Entrega</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.saiu_entrega')}</p>
               <p className="text-2xl font-semibold text-orange-600 mt-1">
                 {orders.filter(order => order.status === 'saiu_entrega').length}
               </p>
@@ -640,7 +642,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Entregues</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.entregue')}</p>
               <p className="text-2xl font-semibold text-green-600 mt-1">
                 {orders.filter(order => order.status === 'entregue').length}
               </p>
@@ -654,7 +656,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Cancelados</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('orders.summary.cancelado')}</p>
               <p className="text-2xl font-semibold text-red-600 mt-1">
                 {orders.filter(order => order.status === 'cancelado').length}
               </p>
@@ -695,8 +697,8 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
       {filteredOrders.length === 0 && !isLoading && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <ShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhum pedido encontrado</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou importar novos pedidos.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('orders.table.notFound')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('orders.table.tryAdjusting')}</p>
         </div>
       )}
 
@@ -705,7 +707,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl flex items-center space-x-4">
             <RefreshCw size={24} className="text-blue-600 animate-spin" />
-            <p className="text-gray-800 dark:text-gray-200 font-medium">Processando...</p>
+            <p className="text-gray-800 dark:text-gray-200 font-medium">{t('orders.actions.processing')}</p>
           </div>
         </div>
       )}
@@ -738,8 +740,8 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        title="Excluir Pedido"
-        message={`Tem certeza que deseja excluir o Pedido ${confirmDialog.orderNumber}? Esta ação também excluirá todos os itens e históricos de status vinculados.`}
+        title={t('orders.dialogs.deleteTitle')}
+        message={t('orders.dialogs.deleteMessage', { orderNumber: confirmDialog.orderNumber || '' })}
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmDialog({ isOpen: false, orderId: null, orderNumber: null })}
       />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, FileText, CheckCircle, XCircle, AlertCircle, Truck, Upload, Bug, RefreshCw } from 'lucide-react';
 import { InvoicesFilters } from './InvoicesFilters';
 import { InvoicesTable } from './InvoicesTable';
@@ -48,7 +49,9 @@ const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   metros_cubicos: (nfe as any).cubic_meters || 0,
   chaveAcesso: nfe.access_key,
   cteCount: 0,
-  freight_results: nfe.freight_results || []
+  freight_results: nfe.freight_results || [],
+  tolerancia_valor_fatura: nfe.carrier?.metadata?.tolerancia_valor_fatura || 0,
+  tolerancia_percentual_fatura: nfe.carrier?.metadata?.tolerancia_percentual_fatura || 0
 });
 
 const mapNFeToElectronicDoc = (nfe: any): any => {
@@ -117,7 +120,13 @@ const mapNFeToElectronicDoc = (nfe: any): any => {
   };
 };
 
-export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
+interface InvoicesProps {
+  initialId?: string;
+}
+
+export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   
   useActivityLogger('Notas Fiscais', 'Acesso', 'Acessou a Gestão de Notas Fiscais');
@@ -767,14 +776,14 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
           title="Debug - Importação Automática"
         >
           <Bug size={18} />
-          <span className="font-medium">Debug Auto-Import</span>
+          <span className="font-medium">{t('invoices.actions.debugAutoImport')}</span>
         </button>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notas Fiscais</h1>
-          <p className="text-gray-600 dark:text-gray-400">Visualize, audite e gerencie todas as Notas Fiscais importadas no sistema</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('invoices.pageTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('invoices.pageDescription')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -782,14 +791,14 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus size={20} />
-            <span>Inserir Nota Fiscal</span>
+            <span>{t('invoices.actions.insertInvoice')}</span>
           </button>
           <button
             onClick={() => setShowBulkXmlUploadModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Upload size={20} />
-            <span>Inserir XML em Lote</span>
+            <span>{t('invoices.actions.bulkXmlImport')}</span>
           </button>
           <button
             onClick={refreshData}
@@ -797,7 +806,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
             className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
-            <span>{isLoading ? 'Carregando...' : 'Atualizar'}</span>
+            <span>{isLoading ? t('invoices.actions.loading') : t('invoices.actions.refresh')}</span>
           </button>
         </div>
       </div>
@@ -807,7 +816,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de NF-es</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.totalNfes')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{invoices.length}</p>
             </div>
             <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -819,7 +828,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Emitidas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.issued')}</p>
               <p className="text-2xl font-semibold text-gray-500 mt-1">
                 {invoices.filter(invoice => ['emitida', 'Emitida'].includes(invoice.status)).length}
               </p>
@@ -833,7 +842,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Coleta</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.inCollection')}</p>
               <p className="text-2xl font-semibold text-indigo-600 mt-1">
                 {invoices.filter(invoice => ['coletada', 'Coletada'].includes(invoice.status)).length}
               </p>
@@ -847,7 +856,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Em Trânsito</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.inTransit')}</p>
               <p className="text-2xl font-semibold text-blue-500 mt-1">
                 {invoices.filter(invoice => ['em trânsito', 'Em trânsito', 'em_transito'].includes(invoice.status)).length}
               </p>
@@ -861,7 +870,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Saiu p/ Entrega</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.outForDelivery')}</p>
               <p className="text-2xl font-semibold text-orange-500 mt-1">
                 {invoices.filter(invoice => ['saiu p/ entrega', 'Saiu p/ Entrega', 'saiu_entrega'].includes(invoice.status)).length}
               </p>
@@ -875,7 +884,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Entregues</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.delivered')}</p>
               <p className="text-2xl font-semibold text-green-600 mt-1">
                 {invoices.filter(invoice => ['entregue', 'Entregue'].includes(invoice.status)).length}
               </p>
@@ -889,7 +898,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('invoices.summary.canceled')}</p>
               <p className="text-2xl font-semibold text-red-600 mt-1">
                 {invoices.filter(invoice => ['cancelada', 'Cancelada'].includes(invoice.status)).length}
               </p>
@@ -928,8 +937,8 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
       {filteredInvoices.length === 0 && !isLoading && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Nenhuma nota fiscal encontrada</h3>
-          <p className="text-gray-600 dark:text-gray-400">Tente ajustar os filtros ou importar novas notas fiscais.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('invoices.empty.title')}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{t('invoices.empty.description')}</p>
         </div>
       )}
 
@@ -938,7 +947,7 @@ export const Invoices: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl flex items-center space-x-4">
             <RefreshCw size={24} className="text-blue-600 animate-spin" />
-            <p className="text-gray-800 dark:text-gray-200 font-medium">Processando...</p>
+            <p className="text-gray-800 dark:text-gray-200 font-medium">{t('invoices.loading')}</p>
           </div>
         </div>
       )}

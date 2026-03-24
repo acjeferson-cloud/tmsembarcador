@@ -8,6 +8,7 @@ import { FreightRateCitiesModal } from './FreightRateCitiesModal';
 import { AdditionalFeesModal } from './AdditionalFeesModal';
 import RestrictedItemsModal from './RestrictedItemsModal';
 import { Toast, ToastType } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface FreightRateTableFormProps {
   onBack: () => void;
@@ -50,6 +51,38 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   const [showFeesModal, setShowFeesModal] = useState(false);
   const [showRestrictedItemsModal, setShowRestrictedItemsModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => {}
+  });
+
+  const confirmAction = (title: string, message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmDialog({
+        isOpen: true,
+        title,
+        message,
+        onConfirm: () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          resolve(true);
+        },
+        onCancel: () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          resolve(false);
+        }
+      });
+    });
+  };
 
   useEffect(() => {
     loadCarriers();
@@ -191,14 +224,22 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     setShowRateForm(true);
   };
 
-  const handleDeleteRate = (rateId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta tarifa?')) {
+  const handleDeleteRate = async (rateId: string) => {
+    const confirmed = await confirmAction(
+      'Excluir Tarifa',
+      'Tem certeza que deseja excluir esta tarifa?'
+    );
+    if (confirmed) {
       setTarifas(prev => prev.filter(tarifa => tarifa.id !== rateId));
     }
   };
 
   const handleDuplicateRate = async (rate: FreightRate) => {
-    if (window.confirm(`\n${t('carriers.freightRates.form.duplicateConfirm')} "${rate.descricao}"?`)) {
+    const confirmed = await confirmAction(
+      'Duplicar Tarifa',
+      `${t('carriers.freightRates.form.duplicateConfirm')} "${rate.descricao}"?`
+    );
+    if (confirmed) {
       try {
         await freightRatesService.duplicateRate(rate.id);
         setToast({ message: t('carriers.freightRates.form.duplicateSuccess'), type: 'success' });
@@ -224,23 +265,17 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
   const handleSaveRateValues = async (updatedRate: FreightRate) => {
     try {
-      console.log('💾 [FreightRateTableForm] Salvando valores da tarifa:', updatedRate);
-      console.log('💾 [FreightRateTableForm] Detalhes a salvar:', updatedRate.detalhes);
 
       // Se a tarifa tem ID real (não temporário), salvar no banco
       if (updatedRate.id && !updatedRate.id.startsWith('temp-')) {
-        console.log('💾 [FreightRateTableForm] Salvando no banco de dados...');
         await freightRatesService.updateRate(updatedRate.id, updatedRate);
-        console.log('✅ [FreightRateTableForm] Valores salvos no banco com sucesso!');
 
         // Recarregar os detalhes do banco para confirmar que foram salvos
         const detalhesRecarregados = await freightRatesService.getDetailsByRate(updatedRate.id);
-        console.log('✅ [FreightRateTableForm] Detalhes recarregados do banco:', detalhesRecarregados);
 
         // Atualizar o rate com os detalhes recarregados
         updatedRate.detalhes = detalhesRecarregados;
       } else {
-        console.log('⚠️ [FreightRateTableForm] Tarifa temporária - será salva ao atualizar a tabela');
       }
 
       // Atualizar state local
@@ -302,7 +337,6 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      console.log('❌ Erros de validação:', newErrors);
     }
 
     return Object.keys(newErrors).length === 0;
@@ -317,7 +351,11 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     }
 
     if (tarifas.length === 0) {
-      if (!window.confirm(t('carriers.freightRates.form.confirmNoRates'))) {
+      const confirmed = await confirmAction(
+        'Salvar sem tarifas',
+        t('carriers.freightRates.form.confirmNoRates') || 'Tem certeza?'
+      );
+      if (!confirmed) {
         return;
       }
     }
@@ -334,22 +372,18 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         tarifas
       };
 
-      console.log('📋 Salvando tabela de frete:', tableData);
 
       if (table?.id) {
-        console.log('📝 Atualizando tabela existente:', table.id);
         await freightRatesService.updateTable(table.id, tableData);
 
         // Salvar novas tarifas (aquelas com IDs temporários)
         const novasTarifas = tarifas.filter(tarifa => tarifa.id.startsWith('temp-'));
-        console.log('➕ Novas tarifas a adicionar:', novasTarifas.length);
 
         for (const tarifa of novasTarifas) {
           // Extrai campos para não duplicar no objeto passado para createRate
           // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
           const { id, detalhes, freight_rate_table_id, data_inicio, ...tarifaData } = tarifa as any;
 
-          console.log(`➕ Criando nova tarifa: ${tarifa.descricao}`);
           const novaTarifa = await freightRatesService.createRate({
             freight_rate_table_id: table.id,
             data_inicio: formData.data_inicio,
@@ -358,19 +392,15 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
           // Salvar detalhes se existirem
           if (detalhes && detalhes.length > 0) {
-            console.log(`💾 Salvando ${detalhes.length} detalhes para tarifa ${novaTarifa.id}`);
             await freightRatesService.updateRate(novaTarifa.id, { detalhes });
           }
         }
 
         // Atualizar tarifas existentes (aquelas com IDs reais)
         const tarifasExistentes = tarifas.filter(tarifa => !tarifa.id.startsWith('temp-'));
-        console.log('✏️ Tarifas existentes a atualizar:', tarifasExistentes.length);
 
         for (const tarifa of tarifasExistentes) {
           try {
-            console.log(`✏️ Atualizando tarifa ${tarifa.id}: ${tarifa.descricao}`);
-            console.log(`   - Possui ${tarifa.detalhes?.length || 0} detalhes`);
 
             // Remover campos que não devem ser atualizados
             // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
@@ -382,17 +412,14 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
               detalhes: tarifa.detalhes
             });
 
-            console.log(`✅ Tarifa ${tarifa.id} atualizada com sucesso`);
           } catch (error) {
             console.error(`❌ Erro ao atualizar tarifa ${tarifa.id}:`, error);
             throw new Error(`Erro ao atualizar tarifa ${tarifa.descricao}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
           }
         }
 
-        console.log('✅ Todas as tarifas foram atualizadas com sucesso!');
         setToast({ message: t('carriers.freightRates.form.saveSuccess'), type: 'success' });
       } else {
-        console.log('➕ Criando nova tabela');
         await freightRatesService.createTable(tableData);
         setToast({ message: t('carriers.freightRates.form.createSuccess'), type: 'success' });
       }
@@ -974,6 +1001,15 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={confirmDialog.onCancel}
+      />
     </div>
   );
 };

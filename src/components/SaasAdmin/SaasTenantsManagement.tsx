@@ -42,7 +42,6 @@ export function SaasTenantsManagement() {
         saasTenantsService.getTenants(),
         saasTenantsService.getPlans()
       ]);
-      console.log('Planos carregados:', plansData);
       setTenants(tenantsData);
       setPlans(plansData);
     } catch (error) {

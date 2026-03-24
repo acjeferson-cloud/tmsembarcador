@@ -7,9 +7,7 @@ const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SU
 
 async function main() {
   const { data, error } = await supabase.from('user_activities').select('id').limit(1);
-  console.log('user_activities:', data, error);
   
   const { data: data2, error: error2 } = await supabase.from('audit_logs').select('id').limit(1);
-  console.log('audit_logs:', data2, error2);
 }
 main();

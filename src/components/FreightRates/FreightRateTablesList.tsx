@@ -30,12 +30,9 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
   const loadTables = async () => {
     try {
       setIsLoading(true);
-      console.log('🔄 Carregando tabelas...', { carrierId });
       const data = carrierId
         ? await freightRatesService.getTablesByCarrier(carrierId)
         : await freightRatesService.getAllTables();
-      console.log('✅ Tabelas carregadas:', data);
-      console.log('📊 Total de tabelas:', data.length);
       setTables(data);
     } catch (error) {
       console.error('❌ Erro ao carregar tabelas:', error);

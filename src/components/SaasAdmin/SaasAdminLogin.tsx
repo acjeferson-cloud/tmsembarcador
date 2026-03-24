@@ -28,10 +28,8 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
 
     try {
       const passwordHash = await hashPassword(password);
-      console.log('Login attempt:', { email, passwordHash });
 
       const result = await tenantAuthService.loginSaasAdmin(email, passwordHash);
-      console.log('Login result:', result);
 
       if (result.success) {
         logger.info('SaaS Admin logged in successfully', 'SaasAdminLogin');

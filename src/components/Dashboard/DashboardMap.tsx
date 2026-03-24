@@ -3,6 +3,7 @@ import { dashboardService, DashboardFilters, DashboardMapaCusto } from '../../se
 import { AlertCircle } from 'lucide-react';
 import { loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
 import { useInnovations } from '../../contexts/InnovationsContext';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   filters: DashboardFilters;
@@ -18,6 +19,7 @@ const defaultCenter = { lat: -14.235, lng: -51.925 };
 const defaultZoom = 4;
 
 export const DashboardMap: React.FC<Props> = ({ filters }) => {
+  const { t } = useTranslation();
   const { isInnovationActive, isLoading: isContextLoading } = useInnovations();
   const isActive = isInnovationActive('google-maps');
   const mapRef = useRef<HTMLDivElement>(null);
@@ -128,11 +130,11 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
     if (city.ctes && city.ctes.length > 0) {
       cteHtml = `
         <div style="margin-top: 8px; max-height: 192px; overflow-y: auto; padding-right: 4px;">
-          <p style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; position: sticky; top: 0; background: white; margin: 0 0 4px 0;">Documentos Vinculados</p>
+          <p style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; position: sticky; top: 0; background: white; margin: 0 0 4px 0;">${t('dashboard.map.linkedDocs')}</p>
           ${city.ctes.map(cte => `
             <div style="background: #F9FAFB; border-radius: 4px; padding: 8px; margin-bottom: 8px; font-size: 10px; border: 1px solid #F3F4F6;">
               <div style="display: flex; justify-content: space-between; font-weight: bold; color: #374151; margin-bottom: 4px;">
-                <span>CT-e: ${cte.serie}/${cte.numero}</span>
+                <span>${t('dashboard.map.cte')} ${cte.serie}/${cte.numero}</span>
               </div>
               <p style="color: #4B5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 2px 0;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><path d="M10 17h4V5H2v12h3"></path><path d="M20 17h2v-9h-5V5H10"></path><path d="M15 13H5"></path><circle cx="6.5" cy="17.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
@@ -140,7 +142,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
               </p>
               <p style="color: #6B7280; margin: 0;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                Data: ${new Date(cte.emissao).toLocaleDateString('pt-BR')}
+                ${t('dashboard.map.date')} ${new Date(cte.emissao).toLocaleDateString('pt-BR')}
               </p>
             </div>
           `).join('')}
@@ -155,15 +157,15 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
         </h4>
         <div style="font-size: 12px;">
           <p style="display: flex; justify-content: space-between; margin: 0 0 4px 0;">
-            <span style="color: #6B7280;">Custo Total:</span>
+            <span style="color: #6B7280;">${t('dashboard.map.totalCost')}</span>
             <span style="font-weight: 600; color: #DC2626;">R$ ${city.custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           </p>
           <p style="display: flex; justify-content: space-between; margin: 0 0 4px 0;">
-            <span style="color: #6B7280;">Volume:</span>
+            <span style="color: #6B7280;">${t('dashboard.map.volume')}</span>
             <span style="font-weight: 500;">${city.volumeKg.toLocaleString('pt-BR')} Kg</span>
           </p>
           <p style="display: flex; justify-content: space-between; border-bottom: 1px solid #E5E7EB; padding-bottom: 8px; margin: 0;">
-            <span style="color: #6B7280;">Entregas Totais:</span>
+            <span style="color: #6B7280;">${t('dashboard.map.totalDeliveriesMap')}</span>
             <span style="font-weight: 500;">${city.totalEntregas}</span>
           </p>
           ${cteHtml}
@@ -179,7 +181,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       const data = await dashboardService.getMapaCustos(filters);
       setMapData(data || []);
     } catch (e) {
-      setError('Falha ao carregar dados geográficos do Dashboard.');
+      setError(t('dashboard.map.loadingError'));
     } finally {
       setLoading(false);
     }
@@ -227,7 +229,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center gap-3">
         <AlertCircle size={20} />
-        <p>Erro ao inicializar o Google Maps. Verifique a chave de API ou conexão.</p>
+        <p>{t('dashboard.map.mapInitError')}</p>
       </div>
     );
   }
@@ -246,9 +248,9 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mapa de Densidade Financeira</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dashboard.map.densityMap')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Distribuição de Custo de Frete por Destino (Top 50 cidades)
+              {t('dashboard.map.densityMapDesc')}
             </p>
           </div>
         </div>
@@ -256,18 +258,18 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
         <div className="relative w-full" style={containerStyle}>
           {isContextLoading ? (
             <div className="absolute inset-0 z-10 w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
-               <p className="text-gray-400">Carregando permissões...</p>
+               <p className="text-gray-400">{t('dashboard.map.loadingPermissions')}</p>
             </div>
           ) : !isActive ? (
             <div className="absolute inset-0 z-10 w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
               <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
                 <AlertCircle className="w-10 h-10 text-yellow-500 mb-2" />
-                <h3 className="text-yellow-800 font-semibold text-lg">Integração Google Maps Premium não habilitada</h3>
+                <h3 className="text-yellow-800 font-semibold text-lg">{t('dashboard.map.integrationDisabled')}</h3>
                 <p className="text-yellow-700 text-sm">
-                  Para visualizar a densidade financeira geolocalizada entre as 50 principais cidades, solicite a ativação ao administrador em:
+                  {t('dashboard.map.integrationDisabledMessage')}
                 </p>
                 <span className="text-yellow-800 font-medium bg-yellow-100 px-3 py-1 rounded-md text-xs mt-1">
-                  Menu {'>'} Inovações & Sugestões {'>'} Ativar Recurso
+                  {t('dashboard.map.integrationMenuPath')}
                 </span>
               </div>
             </div>
@@ -275,7 +277,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
             <>
               {(loading || !isLoaded) && (
                 <div className="absolute inset-0 z-10 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center animate-pulse">
-                   <p className="text-gray-400">Carregando mapa...</p>
+                   <p className="text-gray-400">{t('dashboard.map.loadingMap')}</p>
                 </div>
               )}
               <div
@@ -289,14 +291,14 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
       
       {/* Top 10 List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top 10 Cidades Destino Mais Onerosas</h3>
+         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.map.top10Cities')}</h3>
          <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cidade / UF</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Custo de Frete</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Cargas</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dashboard.map.cityUf')}</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dashboard.map.freightCost')}</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dashboard.map.totalLoads')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">

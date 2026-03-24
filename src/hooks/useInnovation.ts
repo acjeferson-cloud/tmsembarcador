@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
+import { isInnovationActivated } from '../services/innovationsService';
 
 export const INNOVATION_IDS = {
   WHATSAPP: '7808f41c-0a0e-445d-bc21-9ab29de310dc',
@@ -39,20 +39,10 @@ export function useInnovation(innovationId: string, userId?: number | string) {
           } catch (e) {}
         }
 
-        const { data, error } = await (supabase as any).from('user_innovations')
-          .select('is_active')
-          .eq('organization_id', orgId)
-          .eq('environment_id', envId)
-          .eq('establishment_code', estabCode)
-          .eq('innovation_id', innovationId)
-          .eq('is_active', true)
-          .maybeSingle();
-          
-        const active = !error && !!data;
-        console.log('[useInnovation] DB result:', { innovationId, active, data, error, orgId, envId, estabCode });
+        const active = await isInnovationActivated(numericUserId, innovationId, orgId, envId, estabCode);
+        
         setIsActive(active);
       } catch (error) {
-        console.error('[useInnovation] erro fatal ao checar', error);
         setIsActive(false);
       } finally {
         setIsLoading(false);

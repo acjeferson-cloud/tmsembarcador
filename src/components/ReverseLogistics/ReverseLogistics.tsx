@@ -312,7 +312,6 @@ const ReverseLogistics: React.FC = () => {
           <ReverseLogisticsActions
             selectedCount={selectedOrders.length}
             onBulkAction={(action) => {
-              console.log('Bulk action:', action, selectedOrders);
               setSelectedOrders([]);
             }}
           />

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ExternalLink, Clock, RefreshCw, ChevronLeft, ChevronRight, Newspaper } from 'lucide-react';
 import { NewsService, NewsItem, formatRelativeDate, truncateText } from '../../services/newsService';
 
 export const NewsCarousel: React.FC = () => {
+  const { t } = useTranslation();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,7 +97,7 @@ export const NewsCarousel: React.FC = () => {
         <div className="flex items-center justify-center h-64">
           <div className="flex flex-col items-center">
             <RefreshCw size={32} className="text-blue-500 animate-spin mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Carregando notícias de logística...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('controlTower.news.loading')}</p>
           </div>
         </div>
       </div>
@@ -111,11 +113,11 @@ export const NewsCarousel: React.FC = () => {
             <Newspaper size={20} className="text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notícias de Logística</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('controlTower.news.title')}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Últimas atualizações do setor
+              {t('controlTower.news.subtitle')}
               {lastUpdate && (
-                <span className="ml-2">• Atualizado {formatRelativeDate(lastUpdate.toISOString())}</span>
+                <span className="ml-2">• {t('controlTower.news.updated', { date: formatRelativeDate(lastUpdate.toISOString()) })}</span>
               )}
             </p>
           </div>
@@ -130,7 +132,7 @@ export const NewsCarousel: React.FC = () => {
                 ? 'bg-blue-100 text-blue-600' 
                 : 'bg-gray-100 text-gray-600'
             }`}
-            title={isAutoPlaying ? 'Pausar rotação automática' : 'Ativar rotação automática'}
+            title={isAutoPlaying ? t('controlTower.news.pauseAutoplay') : t('controlTower.news.startAutoplay')}
           >
             {isAutoPlaying ? '⏸️' : '▶️'}
           </button>
@@ -140,7 +142,7 @@ export const NewsCarousel: React.FC = () => {
             onClick={handleRefresh}
             disabled={isLoading}
             className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors disabled:opacity-50"
-            title="Atualizar notícias"
+            title={t('controlTower.news.refresh')}
           >
             <RefreshCw size={16} className={`text-gray-600 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -153,7 +155,7 @@ export const NewsCarousel: React.FC = () => {
           <button
             onClick={goToPrevious}
             className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
-            title="Página anterior"
+            title={t('controlTower.news.prevPage')}
           >
             <ChevronLeft size={20} className="text-gray-600 dark:text-gray-400" />
           </button>
@@ -173,7 +175,7 @@ export const NewsCarousel: React.FC = () => {
           <button
             onClick={goToNext}
             className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-700 transition-colors"
-            title="Próxima página"
+            title={t('controlTower.news.nextPage')}
           >
             <ChevronRight size={20} className="text-gray-600 dark:text-gray-400" />
           </button>
@@ -236,7 +238,7 @@ export const NewsCarousel: React.FC = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
               >
-                <span>Ler mais</span>
+                <span>{t('controlTower.news.readMore')}</span>
                 <ExternalLink size={12} />
               </a>
             </div>
@@ -249,7 +251,7 @@ export const NewsCarousel: React.FC = () => {
         <div className="mt-4 flex items-center justify-center">
           <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
             <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-            <span>Rotação automática ativa (30s)</span>
+            <span>{t('controlTower.news.autoplayActive')}</span>
           </div>
         </div>
       )}
@@ -257,13 +259,15 @@ export const NewsCarousel: React.FC = () => {
       {/* Footer info */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>
-          {news.length} notícias • Atualização automática a cada 3 horas
+          {t('controlTower.news.footerInfo', { count: news.length })}
         </span>
         {lastUpdate && (
           <span>
-            Última atualização: {lastUpdate.toLocaleTimeString('pt-BR', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
+            {t('controlTower.news.lastUpdate', { 
+              time: lastUpdate.toLocaleTimeString(undefined, { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) 
             })}
           </span>
         )}

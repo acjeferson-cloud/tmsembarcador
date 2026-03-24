@@ -192,13 +192,11 @@ export const NPSConfiguration: React.FC = () => {
       return;
     }
 
-    console.log('🔍 [NPSConfig] Verificando estabelecimento ID:', estabelecimentoId);
 
     let estabId = estabelecimentoId;
 
     if (!estabId) {
       console.error('❌ [NPSConfig] estabelecimentoId está vazio!');
-      console.log('📋 LocalStorage tms-current-establishment:', localStorage.getItem('tms-current-establishment'));
 
       // Tentar carregar novamente e obter o ID
       estabId = await loadConfig();
@@ -215,7 +213,6 @@ export const NPSConfiguration: React.FC = () => {
 
     try {
       setIsSendingTest(true);
-      console.log('✅ [NPSConfig] Iniciando envio de teste com estabelecimento ID:', estabId);
 
       // Buscar dados do estabelecimento SEMPRE COM A VERSÃO MAIS RECENTE
       const { supabase } = await import('../../lib/supabase');
@@ -229,14 +226,10 @@ export const NPSConfiguration: React.FC = () => {
         console.error('Erro ao buscar estabelecimento:', fetchError);
       }
 
-      console.log('Dados do estabelecimento (fresco do banco):', {
-        razao_social: estabelecimentoData?.razao_social,
-      });
 
       // Priorizar logo_nps_base64 para emails NPS
       let logoNps = null;
 
-      console.log('Logo NPS selecionado: Usando logo padrão');
 
       // Buscar transportadora de exemplo do banco
       const { data: transportadoraData } = await supabase
@@ -245,15 +238,8 @@ export const NPSConfiguration: React.FC = () => {
         .limit(1)
         .maybeSingle();
 
-      console.log('🚀 [NPSConfig] Antes de criar pesquisa - Verificando autenticação...');
       const { data: authCheck } = await supabase.auth.getSession();
-      console.log('🔐 [NPSConfig] Status de autenticação:', {
-        autenticado: !!authCheck?.session,
-        email: authCheck?.session?.user?.email,
-        accessToken: authCheck?.session?.access_token ? 'Presente' : 'Ausente'
-      });
 
-      console.log('📋 [NPSConfig] Gerando registro fantasma de teste de Pesquisa NPS com token para validação...');
 
       const tokenGerado = Array.from({ length: 32 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 32);
 
@@ -268,7 +254,6 @@ export const NPSConfiguration: React.FC = () => {
           status: "pendente",
           establishment_id: estabelecimentoId,
         });
-        console.log('✅ Pesquisa de Teste inserida no banco com sucesso!');
       } catch (err) {
         console.error('⚠️ [NPSConfig] Erro ao criar pesquisa de teste no banco:', err);
       }
@@ -344,7 +329,6 @@ export const NPSConfiguration: React.FC = () => {
         emailHtml
       );
 
-      console.log('Resultado do envio:', resultado);
 
       let mensagem = resultado.message || `${t('nps.config.messages.testEmailSuccess')}${testEmail}!`;
 

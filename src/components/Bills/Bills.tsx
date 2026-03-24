@@ -110,7 +110,9 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         valorCTes: parseFloat(bill.total_value?.toString() || '0'),
         valorDesconto: parseFloat(bill.discount_value?.toString() || '0'),
         valorCusto: bill.calculated_cost || parseFloat(bill.paid_value?.toString() || '0'),
-        cteCount: bill.cteCount || 0
+        cteCount: bill.cteCount || 0,
+        tolerancia_valor_fatura: bill.tolerancia_valor_fatura || 0,
+        tolerancia_percentual_fatura: bill.tolerancia_percentual_fatura || 0
       }));
 
       setBills(formattedBills);

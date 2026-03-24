@@ -10,14 +10,12 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('✅ Service Worker registrado:', registration.scope);
 
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('🔄 Nova versão disponível. Recarregue a página para atualizar.');
 
                 if (confirm('Nova versão disponível! Deseja atualizar agora?')) {
                   newWorker.postMessage({ type: 'SKIP_WAITING' });

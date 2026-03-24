@@ -22,7 +22,6 @@ export const autoXmlImportService = {
       const total = result.total || 0;
 
       if (result.logs) {
-         console.log('=== LOGS DA EDGE FUNCTION ===', result.logs);
       }
 
       if (totalNfe > 0 || totalCte > 0) {

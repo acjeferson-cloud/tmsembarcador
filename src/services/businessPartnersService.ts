@@ -223,11 +223,6 @@ export const businessPartnersService = {
         ativo: partnerData.status === 'active'
       };
 
-      console.log('[businessPartnersService] Creating partner with DB data:', {
-        ...partnerDbData,
-        limite_credito: partnerDbData.limite_credito,
-        notas_adicionais: partnerDbData.notas_adicionais
-      });
 
 
       const { data: newPartner, error: partnerError } = await supabase
@@ -468,11 +463,6 @@ export const businessPartnersService = {
 
       partnerDbData.updated_at = new Date().toISOString();
 
-      console.log('[businessPartnersService] Updating partner id', id, 'with DB data:', {
-        ...partnerDbData,
-        limite_credito: partnerDbData.limite_credito,
-        notas_adicionais: partnerDbData.notas_adicionais
-      });
 
       const { error: partnerError } = await supabase
         .from('business_partners')

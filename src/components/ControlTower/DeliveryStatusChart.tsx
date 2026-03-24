@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const hourlyData = [
@@ -16,26 +17,27 @@ const hourlyData = [
   { hour: '22:00', entregas: 12, coletadas: 10 },
 ];
 
-const statusData = [
-  { name: 'Em Trânsito', value: 35, color: '#3B82F6' },
-  { name: 'Entregue', value: 45, color: '#10B981' },
-  { name: 'Atrasado', value: 12, color: '#EF4444' },
-  { name: 'Aguardando', value: 8, color: '#F59E0B' },
-];
-
 export const DeliveryStatusChart: React.FC = () => {
+  const { t } = useTranslation();
+
+  const statusData = [
+    { name: t('controlTower.kpis.inTransit'), value: 35, color: '#3B82F6' },
+    { name: t('controlTower.kpis.delivered'), value: 45, color: '#10B981' },
+    { name: t('controlTower.kpis.delayed'), value: 12, color: '#EF4444' },
+    { name: t('controlTower.kpis.waitingCollection'), value: 8, color: '#F59E0B' },
+  ];
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Status das Entregas - Tempo Real</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('controlTower.deliveryStatus.title')}</h3>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Entregas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('controlTower.deliveryStatus.deliveries')}</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Coletadas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('controlTower.deliveryStatus.collected')}</span>
           </div>
         </div>
       </div>
@@ -43,7 +45,7 @@ export const DeliveryStatusChart: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hourly Chart */}
         <div className="lg:col-span-2">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Entregas por Hora (Últimas 24h)</h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">{t('controlTower.deliveryStatus.hourlyChartTitle')}</h4>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={hourlyData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -58,7 +60,7 @@ export const DeliveryStatusChart: React.FC = () => {
 
         {/* Status Pie Chart */}
         <div>
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Distribuição de Status</h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">{t('controlTower.deliveryStatus.statusDistribution')}</h4>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
@@ -74,7 +76,7 @@ export const DeliveryStatusChart: React.FC = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => [`${value}%`, 'Percentual']} />
+              <Tooltip formatter={(value) => [`${value}%`, t('controlTower.deliveryStatus.percent')]} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-4 space-y-2">

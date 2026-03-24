@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, Clock, Truck, ShieldAlert } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { dashboardService, DashboardFilters, DashboardFunilStatus, DashboardMetricasOperacionais } from '../../services/dashboardService';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   filters: DashboardFilters;
 }
 
 export const DashboardOperational: React.FC<Props> = ({ filters }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [funil, setFunil] = useState<DashboardFunilStatus[]>([]);
   const [metricas, setMetricas] = useState<DashboardMetricasOperacionais | null>(null);
@@ -30,21 +32,21 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
       setFunil(funilData);
       setMetricas(metricasData);
     } catch (e: any) {
-      setError('Falha ao carregar visão operacional.');
+      setError(t('dashboard.operational.loadingError'));
     } finally {
       setLoading(false);
     }
   };
 
   const statusLabels: Record<string, string> = {
-    'pendente': 'Pedido Realizado',
-    'processando': 'Pedido Faturado',
-    'aguardando_coleta': 'Aguardando Coleta',
-    'coletado': 'Coletado pela Transportadora',
-    'em_transito': 'Em Transporte',
-    'saiu_entrega': 'Saiu para Entrega',
-    'entregue': 'Entrega Realizada',
-    'cancelado': 'Cancelado'
+    'pendente': t('dashboard.operational.status.pending'),
+    'processando': t('dashboard.operational.status.processing'),
+    'aguardando_coleta': t('dashboard.operational.status.awaiting_collection'),
+    'coletado': t('dashboard.operational.status.collected'),
+    'em_transito': t('dashboard.operational.status.in_transit'),
+    'saiu_entrega': t('dashboard.operational.status.out_for_delivery'),
+    'entregue': t('dashboard.operational.status.delivered'),
+    'cancelado': t('dashboard.operational.status.canceled')
   };
 
   const getStatusColor = (status: string) => {
@@ -100,7 +102,7 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Lead Time Médio (Dias)</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('dashboard.operational.leadTime')}</p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{metricas ? metricas.leadTimeDias : '0'}</p>
           </div>
           <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
@@ -110,7 +112,7 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">SLA de Coleta (Horas Atraso)</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('dashboard.operational.collectionSla')}</p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{metricas ? metricas.slaColetaAtrasoHoras : '0'}h</p>
           </div>
           <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
@@ -120,7 +122,7 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Volume em Backlog</p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('dashboard.operational.backlogVolume')}</p>
             <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{metricas ? metricas.backlogVolume : '0'}</p>
           </div>
           <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
@@ -133,7 +135,7 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
         
         {/* Funil Visual Direto */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Pipeline de Logística (Funil)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">{t('dashboard.operational.pipeline')}</h3>
           
           <div className="flex flex-col space-y-4">
             {orderedFunil.map((item) => {
@@ -160,14 +162,14 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
             })}
             
             {orderedFunil.length === 0 && (
-               <div className="text-center text-gray-400 py-8">Nenhum pedido no período</div>
+               <div className="text-center text-gray-400 py-8">{t('dashboard.operational.noOrders')}</div>
             )}
           </div>
         </div>
 
         {/* Distribuição (Gráfico de Pizza) */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Composição de Status</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('dashboard.operational.statusComposition')}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -195,7 +197,7 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
         
         {/* Top Ocorrências / Falhas */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:col-span-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top 5 Ocorrências / Motivos de Falha</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.operational.topOccurrences')}</h3>
           {metricas && metricas.topOcorrencias.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={metricas.topOcorrencias} layout="vertical" margin={{ top: 0, right: 30, left: 30, bottom: 0 }}>
@@ -203,14 +205,14 @@ export const DashboardOperational: React.FC<Props> = ({ filters }) => {
                 <XAxis type="number" stroke="#6B7280" axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="descricao" stroke="#6B7280" axisLine={false} tickLine={false} width={150} />
                 <Tooltip 
-                  formatter={(value: any) => [value, 'Eventos']}
+                  formatter={(value: any) => [value, t('dashboard.operational.events')]}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                 />
-                <Bar dataKey="quantidade" name="Ocorrências" fill="#EF4444" radius={[0, 4, 4, 0]} barSize={20} />
+                <Bar dataKey="quantidade" name={t('dashboard.operational.occurrences')} fill="#EF4444" radius={[0, 4, 4, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-40 flex items-center justify-center text-gray-400">Nenhuma ocorrência registrada no período.</div>
+            <div className="h-40 flex items-center justify-center text-gray-400">{t('dashboard.operational.noOccurrences')}</div>
           )}
         </div>
 

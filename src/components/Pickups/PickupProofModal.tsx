@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Camera, Trash2, ZoomIn, FileText, Info, MessageSquare, Scale, Image as ImageIcon, PenTool, CheckCircle, AlertCircle, Save } from 'lucide-react';
 import { SignatureCanvas } from '../common/SignatureCanvas';
 import { pickupProofService, PickupProof } from '../../services/pickupProofService';
@@ -15,9 +16,9 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
   pickup,
   onClose,
   onSuccess,
-  userId,
-  userName
+  userId
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'details' | 'observations' | 'legal' | 'photos' | 'signature'>('details');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,7 +48,6 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
     try {
       const proof = await pickupProofService.getByPickupId(pickup.id);
       if (proof) {
-        console.log('📄 Comprovante existente carregado:', proof);
         setExistingProof(proof);
         setCollectorName(proof.collector_name);
         setCollectorDocument(proof.collector_document || '');
@@ -61,7 +61,6 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
         setSignatureDate(proof.signature_date || '');
         setLegalTermsAccepted(proof.legal_terms_accepted);
       } else {
-        console.log('📄 Nenhum comprovante existente - novo registro');
         setDriverName(pickup.driver_name || '');
         setVehiclePlate(pickup.vehicle_plate || '');
       }
@@ -74,55 +73,49 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
   const handlePhotoUpload = async (photoNumber: 1 | 2 | 3, file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('Por favor, selecione apenas arquivos de imagem');
+      setError(t('pickups.proofModal.photos.errorType'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('A imagem deve ter no máximo 5MB');
+      setError(t('pickups.proofModal.photos.errorSize'));
       return;
     }
 
     setIsLoading(true);
     setError('');
-    console.log(`📤 Iniciando upload da foto ${photoNumber}...`);
 
     try {
       const result = await pickupProofService.uploadPhoto(pickup.id, file, photoNumber);
-      console.log(`📤 Resultado do upload foto ${photoNumber}:`, result);
 
       if (result.success && result.url) {
-        console.log(`✅ URL da foto ${photoNumber}:`, result.url.substring(0, 100));
 
         // Atualizar o estado imediatamente
         if (photoNumber === 1) {
           setPhoto1(result.url);
-          console.log('📷 Photo1 atualizada');
         }
         if (photoNumber === 2) {
           setPhoto2(result.url);
-          console.log('📷 Photo2 atualizada');
         }
         if (photoNumber === 3) {
           setPhoto3(result.url);
-          console.log('📷 Photo3 atualizada');
         }
 
-        setSuccess(`Foto ${photoNumber} adicionada com sucesso!`);
+        setSuccess(t('pickups.proofModal.photos.successAdd'));
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.error || 'Erro ao fazer upload da foto');
+        setError(result.error || t('pickups.proofModal.photos.errorUpload'));
       }
     } catch (err) {
       console.error('❌ Erro ao fazer upload da foto:', err);
-      setError('Erro ao fazer upload da foto');
+      setError(t('pickups.proofModal.photos.errorUpload'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePhotoDelete = async (photoNumber: 1 | 2 | 3, url: string) => {
-    if (!confirm('Deseja realmente excluir esta foto?')) return;
+    if (!confirm(t('pickups.proofModal.photos.deleteConfirm'))) return;
 
     setIsLoading(true);
     try {
@@ -132,10 +125,10 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
       if (photoNumber === 2) setPhoto2('');
       if (photoNumber === 3) setPhoto3('');
 
-      setSuccess('Foto excluída com sucesso!');
+      setSuccess(t('pickups.proofModal.photos.successDelete'));
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Erro ao excluir foto');
+      setError(t('pickups.proofModal.photos.errorDelete'));
     } finally {
       setIsLoading(false);
     }
@@ -152,13 +145,13 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
       if (result.success && result.url) {
         setSignature(result.url);
         setSignatureDate(new Date().toISOString());
-        setSuccess('Assinatura salva com sucesso!');
+        setSuccess(t('pickups.proofModal.signature.success'));
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.error || 'Erro ao salvar assinatura');
+        setError(result.error || t('pickups.proofModal.signature.errorSave'));
       }
     } catch (err) {
-      setError('Erro ao salvar assinatura');
+      setError(t('pickups.proofModal.signature.errorSave'));
     } finally {
       setIsLoading(false);
     }
@@ -168,13 +161,13 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
     setError('');
 
     if (!collectorName) {
-      setError('Nome do coletor é obrigatório');
+      setError(t('pickups.proofModal.legal.errorNameRequired'));
       setActiveTab('legal');
       return;
     }
 
     if (!legalTermsAccepted) {
-      setError('Você deve aceitar os termos legais');
+      setError(t('pickups.proofModal.legal.errorTermsRequired'));
       setActiveTab('legal');
       return;
     }
@@ -201,16 +194,14 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
       let result;
       if (existingProof) {
-        console.log('✏️ Atualizando comprovante existente:', existingProof.id);
         result = await pickupProofService.update(pickup.id, proofData);
       } else {
-        console.log('➕ Criando novo comprovante');
         result = await pickupProofService.create(proofData);
       }
 
       if (result.success) {
-        const action = existingProof ? 'atualizado' : 'salvo';
-        setSuccess(`Comprovante ${action} com sucesso!`);
+        const actionMsg = existingProof ? t('pickups.proofModal.messages.updateSuccess') : t('pickups.proofModal.messages.saveSuccess');
+        setSuccess(actionMsg);
 
         // Recarregar o comprovante para pegar o ID atualizado
         await loadProof();
@@ -223,11 +214,11 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           onClose();
         }, 1500);
       } else {
-        setError(result.error || 'Erro ao salvar comprovante');
+        setError(result.error || t('pickups.proofModal.messages.errorSave'));
       }
     } catch (err) {
       console.error('❌ Erro ao salvar comprovante:', err);
-      setError('Erro ao salvar comprovante');
+      setError(t('pickups.proofModal.messages.errorSave'));
     } finally {
       setIsSaving(false);
     }
@@ -245,7 +236,6 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             onLoad={() => console.log(`🖼️ Foto ${photoNumber} carregada com sucesso`)}
             onError={(e) => {
               console.error(`❌ Erro ao carregar foto ${photoNumber}:`, e);
-              console.log(`URL que falhou: ${photoUrl.substring(0, 100)}...`);
             }}
           />
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-2">
@@ -280,8 +270,8 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           className="hidden"
         />
         <Camera className="w-8 h-8 text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600 dark:text-gray-400">Adicionar Foto {photoNumber}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-400">Câmera ou Upload</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{t('pickups.proofModal.photos.addPhoto', { number: photoNumber })}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-500 dark:text-gray-400">{t('pickups.proofModal.photos.cameraOrUpload')}</p>
       </label>
     );
   };
@@ -311,11 +301,11 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <FileText className="w-6 h-6" />
-                Comprovante de Coleta
+                {t('pickups.proofModal.title')}
               </h2>
               {existingProof && (
                 <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-full">
-                  Editando
+                  {t('pickups.proofModal.editingBadge')}
                 </span>
               )}
             </div>
@@ -324,7 +314,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             </p>
             {existingProof && (
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Comprovante já registrado - você pode editar as informações
+                {t('pickups.proofModal.alreadyRegistered')}
               </p>
             )}
           </div>
@@ -365,7 +355,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             }`}
           >
             <Info size={18} />
-            Detalhes
+            {t('pickups.proofModal.tabs.details')}
           </button>
           <button
             onClick={() => setActiveTab('observations')}
@@ -376,7 +366,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             }`}
           >
             <MessageSquare size={18} />
-            Observações
+            {t('pickups.proofModal.tabs.observations')}
           </button>
           <button
             onClick={() => setActiveTab('legal')}
@@ -387,7 +377,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             }`}
           >
             <Scale size={18} />
-            Informações Legais
+            {t('pickups.proofModal.tabs.legal')}
           </button>
           <button
             onClick={() => setActiveTab('photos')}
@@ -398,7 +388,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             }`}
           >
             <ImageIcon size={18} />
-            Fotos ({[photo1, photo2, photo3].filter(p => p).length}/3)
+            {t('pickups.proofModal.tabs.photos', { count: [photo1, photo2, photo3].filter(p => p).length })}
           </button>
           <button
             onClick={() => setActiveTab('signature')}
@@ -409,7 +399,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             }`}
           >
             <PenTool size={18} />
-            Assinatura {signature && '✓'}
+            {t('pickups.proofModal.tabs.signature')} {signature && '✓'}
           </button>
         </div>
 
@@ -419,13 +409,13 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           {activeTab === 'details' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
-                Detalhes da Coleta
+                {t('pickups.proofModal.details.title')}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Código da Coleta
+                    {t('pickups.proofModal.details.pickupCode')}
                   </label>
                   <input
                     type="text"
@@ -437,7 +427,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Transportador
+                    {t('pickups.proofModal.details.carrier')}
                   </label>
                   <input
                     type="text"
@@ -449,26 +439,26 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Motorista
+                    {t('pickups.proofModal.details.driverLabel')}
                   </label>
                   <input
                     type="text"
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
-                    placeholder="Nome do motorista"
+                    placeholder={t('pickups.proofModal.details.driverPlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Veículo
+                    {t('pickups.proofModal.details.vehicleLabel')}
                   </label>
                   <input
                     type="text"
                     value={vehiclePlate}
                     onChange={(e) => setVehiclePlate(e.target.value)}
-                    placeholder="Placa"
+                    placeholder={t('pickups.proofModal.details.vehiclePlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
@@ -480,17 +470,17 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           {activeTab === 'observations' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
-                Observações da Coleta
+                {t('pickups.proofModal.observations.title')}
               </h3>
               <textarea
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
-                placeholder="Digite observações sobre a coleta, ocorrências ou detalhes importantes..."
+                placeholder={t('pickups.proofModal.observations.placeholder')}
                 rows={12}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Use este espaço para registrar informações importantes sobre o processo de coleta
+                {t('pickups.proofModal.observations.hint')}
               </p>
             </div>
           )}
@@ -499,18 +489,18 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           {activeTab === 'legal' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
-                Informações Legais
+                {t('pickups.proofModal.legal.title')}
               </h3>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nome do Coletor *
+                  {t('pickups.proofModal.legal.collectorNameLabel')}
                 </label>
                 <input
                   type="text"
                   value={collectorName}
                   onChange={(e) => setCollectorName(e.target.value)}
-                  placeholder="Nome completo"
+                  placeholder={t('pickups.proofModal.legal.collectorNamePlaceholder')}
                   required
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
@@ -518,13 +508,13 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CPF do Coletor
+                  {t('pickups.proofModal.legal.collectorDocumentLabel')}
                 </label>
                 <input
                   type="text"
                   value={collectorDocument}
                   onChange={(e) => setCollectorDocument(e.target.value)}
-                  placeholder="000.000.000-00"
+                  placeholder={t('pickups.proofModal.legal.collectorDocumentPlaceholder')}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -539,11 +529,10 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
                   />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                      Aceite dos Termos Legais
+                      {t('pickups.proofModal.legal.termsTitle')}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Declaro que recebi a mercadoria em perfeitas condições e estou de acordo com os termos e condições da coleta.
-                      Esta assinatura tem validade legal e representa meu consentimento formal.
+                      {t('pickups.proofModal.legal.termsDescription')}
                     </p>
                   </div>
                 </label>
@@ -554,7 +543,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
                   <div className="flex items-center gap-2 text-green-800 dark:text-green-300">
                     <CheckCircle size={20} />
                     <div>
-                      <p className="font-medium">Comprovante assinado</p>
+                      <p className="font-medium">{t('pickups.proofModal.legal.signedAt')}</p>
                       <p className="text-sm">
                         {new Date(signatureDate).toLocaleString('pt-BR')}
                       </p>
@@ -569,7 +558,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           {activeTab === 'photos' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
-                Fotos da Coleta
+                {t('pickups.proofModal.photos.title')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderPhotoCard(photo1, 1)}
@@ -578,8 +567,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
               </div>
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
                 <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <strong>Dicas:</strong> Tire fotos claras da mercadoria, veículo e localização.
-                  Máximo de 3 fotos, até 5MB cada. Suporta captura direta da câmera ou upload de arquivo.
+                  {t('pickups.proofModal.photos.tips')}
                 </p>
               </div>
             </div>
@@ -589,7 +577,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
           {activeTab === 'signature' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
-                Assinatura Digital
+                {t('pickups.proofModal.signature.title')}
               </h3>
 
               {signature ? (
@@ -600,19 +588,19 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
                       <CheckCircle size={16} />
-                      Assinatura registrada em {signatureDate ? new Date(signatureDate).toLocaleString('pt-BR') : '-'}
+                      {t('pickups.proofModal.signature.registeredAt', { date: signatureDate ? new Date(signatureDate).toLocaleString() : '-' })}
                     </p>
                     <button
                       type="button"
                       onClick={() => {
-                        if (confirm('Deseja refazer a assinatura?')) {
+                        if (confirm(t('pickups.proofModal.signature.redoConfirm'))) {
                           setSignature('');
                           setSignatureDate('');
                         }
                       }}
                       className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 underline"
                     >
-                      Refazer assinatura
+                      {t('pickups.proofModal.signature.redo')}
                     </button>
                   </div>
                 </div>
@@ -624,8 +612,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
                   />
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mt-4">
                     <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                      <strong>Atenção:</strong> A assinatura digital tem validade legal.
-                      Assine dentro do campo acima usando mouse ou toque na tela.
+                      <strong>{t('pickups.proofModal.signature.warningTitle')}</strong> {t('pickups.proofModal.signature.warningDesc')}
                     </p>
                   </div>
                 </div>
@@ -641,7 +628,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             disabled={isSaving}
             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
           >
-            Cancelar
+            {t('pickups.proofModal.actions.cancel')}
           </button>
           <button
             onClick={handleSave}
@@ -651,12 +638,12 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             {isSaving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                {existingProof ? 'Atualizando...' : 'Salvando...'}
+                {existingProof ? t('pickups.proofModal.actions.updating') : t('pickups.proofModal.actions.saving')}
               </>
             ) : (
               <>
                 <Save size={18} />
-                {existingProof ? 'Atualizar Comprovante' : 'Salvar Comprovante'}
+                {existingProof ? t('pickups.proofModal.actions.update') : t('pickups.proofModal.actions.save')}
               </>
             )}
           </button>

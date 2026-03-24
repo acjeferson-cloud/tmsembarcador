@@ -18,6 +18,12 @@ const resources = {
   }
 };
 
+const originalLog = console.log;
+console.log = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('i18next is maintained')) return;
+  originalLog(...args);
+};
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -41,5 +47,7 @@ i18n
       useSuspense: false
     }
   });
+
+console.log = originalLog;
 
 export default i18n;

@@ -22,6 +22,9 @@ interface CTe {
   chaveAcesso: string;
   nfesReferenciadas: number;
   tpCTe: string;
+  tolerancia_valor_cte?: number;
+  tolerancia_percentual_cte?: number;
+  direction?: 'outbound' | 'inbound' | 'reverse';
 }
 
 interface CTesTableProps {
@@ -151,13 +154,47 @@ export const CTesTable = React.memo<CTesTableProps>(({
 
   // Get value comparison color
   const getValueComparisonColor = (cte: CTe) => {
-    if (cte.valorCTe === cte.valorCusto) return 'text-green-600';
+    const diffAmount = cte.valorCTe - cte.valorCusto;
     
-    const diff = calculateDifference(cte);
-    if (diff === 0) return 'text-green-600';
+    // Prevent float precision issues (do not ignore 1 cent)
+    if (Math.abs(diffAmount) < 0.001) return 'text-green-600';
     
-    // Assuming a tolerance of ±5%
-    if (Math.abs(diff) <= 5) return 'text-yellow-600';
+    // Divergences: can be positive (overcharge) or negative (undercharge)
+    const diffPercent = calculateDifference(cte);
+    const maxVal = Number(cte.tolerancia_valor_cte || 0);
+    const maxPct = Number(cte.tolerancia_percentual_cte || 0);
+
+    const absDiffAmount = Math.abs(diffAmount);
+    const absDiffPercent = Math.abs(diffPercent);
+
+
+
+    // If no tolerances are configured, any overcharge/undercharge is a divergence
+    if (maxVal === 0 && maxPct === 0) {
+
+      return 'text-red-600';
+    }
+
+    const isWithinAmount = maxVal > 0 && absDiffAmount <= maxVal;
+    const isWithinPercent = maxPct > 0 && absDiffPercent <= maxPct;
+
+    const exceedsAmount = maxVal > 0 && absDiffAmount > maxVal;
+    const exceedsPercent = maxPct > 0 && absDiffPercent > maxPct;
+
+    // Se ultrapassar QUALQUER uma das tolerâncias configuradas, é divergência grave (Vermelho)
+    if (exceedsAmount || exceedsPercent) {
+
+      return 'text-red-600';
+    }
+
+    // Se não ultrapassou, mas está dentro de alguma tolerância configurada (Amarelo)
+    if (isWithinAmount || isWithinPercent) {
+
+      return 'text-yellow-600';
+    }
+    
+    // Exceeds tolerances / Fallback
+
     return 'text-red-600';
   };
 
@@ -523,7 +560,14 @@ export const CTesTable = React.memo<CTesTableProps>(({
                   {cte.serie}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {cte.numero}
+                  <div className="flex items-center space-x-2">
+                    <span>{cte.numero}</span>
+                    {cte.direction === 'reverse' && (
+                      <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800" title="Logística Reversa">
+                        ⮌ Reversa
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(cte.dataEmissao)}

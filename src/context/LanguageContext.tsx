@@ -36,11 +36,11 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
           if (loginLanguage && availableLanguages.includes(loginLanguage)) {
             defaultLang = loginLanguage;
-            console.log('🌐 Usando idioma selecionado no login:', defaultLang);
+
           } else {
             const browserLang = navigator.language.split('-')[0] as SupportedLanguage;
             defaultLang = availableLanguages.includes(browserLang) ? browserLang : 'pt';
-            console.log('🌐 Usando idioma do navegador:', defaultLang);
+
           }
 
           setLanguageState(defaultLang);
@@ -103,7 +103,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
         if (loginLanguage && availableLanguages.includes(loginLanguage)) {
           defaultLang = loginLanguage;
-          console.log('🌐 Mantendo idioma selecionado após logout:', defaultLang);
+
         } else {
           const browserLang = navigator.language.split('-')[0] as SupportedLanguage;
           defaultLang = availableLanguages.includes(browserLang) ? browserLang : 'pt';

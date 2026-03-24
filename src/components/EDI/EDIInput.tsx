@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Upload, FileText, CheckCircle, AlertCircle, X, Info, RefreshCw, FileUp, Database } from 'lucide-react';
 import { doccobImportService } from '../../services/doccobImportService';
@@ -20,9 +21,11 @@ interface EDIFile {
 }
 
 export const EDIInput: React.FC = () => {
+  const { t } = useTranslation();
+
   const breadcrumbItems = [
     { label: 'EDI' },
-    { label: 'Entrada', current: true }
+    { label: t('ediInbound.pageTitle'), current: true }
   ];
 
   const [selectedLayout, setSelectedLayout] = useState<EDILayoutType | ''>(() => {
@@ -55,7 +58,7 @@ export const EDIInput: React.FC = () => {
     const newFiles = Array.from(e.target.files).filter(file => file.type === 'text/plain' || file.name.endsWith('.txt'));
     
     if (newFiles.length === 0) {
-      setToast({ message: 'Por favor, selecione apenas arquivos .txt', type: 'error' });
+      setToast({ message: t('ediInbound.messages.onlyTxtAllowed'), type: 'error' });
       return;
     }
     
@@ -77,7 +80,7 @@ export const EDIInput: React.FC = () => {
     setIsDragActive(false);
     
     if (!selectedLayout) {
-      setToast({ message: 'Por favor, selecione um tipo de importação primeiro', type: 'warning' });
+      setToast({ message: t('ediInbound.messages.selectImportTypeFirst'), type: 'warning' });
       return;
     }
     
@@ -86,7 +89,7 @@ export const EDIInput: React.FC = () => {
     );
     
     if (droppedFiles.length === 0) {
-      setToast({ message: 'Por favor, arraste apenas arquivos .txt', type: 'error' });
+      setToast({ message: t('ediInbound.messages.dragOnlyTxtAllowed'), type: 'error' });
       return;
     }
     
@@ -177,8 +180,8 @@ export const EDIInput: React.FC = () => {
                   ...f, 
                   status: isValid ? 'success' : 'error',
                   message: isValid 
-                    ? `Arquivo ${selectedLayout} válido` 
-                    : `Arquivo não corresponde ao layout ${selectedLayout}`,
+                    ? t('ediInbound.messages.validFile', { layout: selectedLayout }) 
+                    : t('ediInbound.messages.invalidFile', { layout: selectedLayout }),
                   layout: selectedLayout as EDILayoutType
                 } 
               : f
@@ -241,13 +244,13 @@ export const EDIInput: React.FC = () => {
   const getLayoutDescription = (layout: EDILayoutType): string => {
     switch (layout) {
       case 'NOTFIS':
-        return 'Importação de NFs emitidas para a empresa embarcadora';
+        return t('ediInbound.layouts.notfisDesc');
       case 'CONEMB':
-        return 'Importação de CT-es emitidos pelos transportadores';
+        return t('ediInbound.layouts.conembDesc');
       case 'OCOREN':
-        return 'Recebimento de status logísticos das entregas via EDI';
+        return t('ediInbound.layouts.ocorenDesc');
       case 'DOCCOB':
-        return 'Importação de faturas consolidadas de fretes';
+        return t('ediInbound.layouts.doccobDesc');
       default:
         return '';
     }
@@ -255,12 +258,12 @@ export const EDIInput: React.FC = () => {
 
   const handleProcessAll = async () => {
     if (files.length === 0) {
-      setToast({ message: 'Não há arquivos para processar', type: 'warning' });
+      setToast({ message: t('ediInbound.messages.noFilesToProcess'), type: 'warning' });
       return;
     }
     
     if (files.some(f => f.status === 'uploading' || f.status === 'validating')) {
-      setToast({ message: 'Aguarde o término do processamento de todos os arquivos', type: 'warning' });
+      setToast({ message: t('ediInbound.messages.waitProcessing'), type: 'warning' });
       return;
     }
     
@@ -268,7 +271,7 @@ export const EDIInput: React.FC = () => {
     
     const validFiles = files.filter(f => f.status === 'success');
     if (validFiles.length === 0) {
-      setToast({ message: 'Não há arquivos válidos para processar', type: 'error' });
+      setToast({ message: t('ediInbound.messages.noValidFilesToProcess'), type: 'error' });
       setIsProcessing(false);
       return;
     }
@@ -289,14 +292,14 @@ export const EDIInput: React.FC = () => {
 
       setIsProcessing(false);
       if (allErrors.length === 0) {
-        setToast({ message: `Processamento concluído: ${totalProcessed} fatura(s) importada(s) com sucesso e ${totalCTesLinked} CT-e(s) vinculado(s).`, type: 'success' });
+        setToast({ message: t('ediInbound.messages.doccobProcessed', { processed: totalProcessed, linked: totalCTesLinked }), type: 'success' });
       } else {
-        setToast({ message: `Processamento com avisos: ${totalProcessed} fatura(s) importada(s).\nErros encontrados:\n${allErrors.join('\n')}`, type: 'warning' });
+        setToast({ message: t('ediInbound.messages.doccobProcessedWarnings', { processed: totalProcessed, errors: allErrors.join('\n') }), type: 'warning' });
       }
     } else {
       // Simulate processing for other layout types
       setTimeout(() => {
-        setToast({ message: `Processamento de ${selectedLayout} concluído (Simulado)`, type: 'success' });
+        setToast({ message: t('ediInbound.messages.simulatedProcessing', { layout: selectedLayout }), type: 'success' });
         setIsProcessing(false);
       }, 2000);
     }
@@ -305,7 +308,7 @@ export const EDIInput: React.FC = () => {
   const exportErrorReport = () => {
     const errorFiles = files.filter(f => f.status === 'error');
     if (errorFiles.length === 0) {
-      setToast({ message: 'Não há erros para exportar', type: 'warning' });
+      setToast({ message: t('ediInbound.messages.noErrorsToExport'), type: 'warning' });
       return;
     }
     
@@ -335,14 +338,14 @@ export const EDIInput: React.FC = () => {
       )}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">EDIs de Entrada</h1>
-          <p className="text-gray-600 dark:text-gray-400">Importe e processe arquivos EDI conforme os layouts homologados</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('ediInbound.pageTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('ediInbound.pageSubtitle')}</p>
         </div>
       </div>
 
       {/* Layout Selection */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Seleção do Tipo de Importação</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('ediInbound.layoutSelection')}</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="relative">
@@ -360,8 +363,8 @@ export const EDIInput: React.FC = () => {
               className="flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 dark:bg-gray-900"
             >
               <FileText size={32} className="text-blue-600 mb-2" />
-              <span className="font-medium text-gray-900 dark:text-white">Notas Fiscais</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Layout: NOTFIS</span>
+              <span className="font-medium text-gray-900 dark:text-white">{t('ediInbound.layouts.notfisTitle')}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('ediInbound.layouts.notfisSubtitle')}</span>
             </label>
           </div>
           
@@ -380,8 +383,8 @@ export const EDIInput: React.FC = () => {
               className="flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 dark:bg-gray-900"
             >
               <FileText size={32} className="text-green-600 mb-2" />
-              <span className="font-medium text-gray-900 dark:text-white">Conhecimentos</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Layout: CONEMB</span>
+              <span className="font-medium text-gray-900 dark:text-white">{t('ediInbound.layouts.conembTitle')}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('ediInbound.layouts.conembSubtitle')}</span>
             </label>
           </div>
           
@@ -400,8 +403,8 @@ export const EDIInput: React.FC = () => {
               className="flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 dark:bg-gray-900"
             >
               <FileText size={32} className="text-orange-600 mb-2" />
-              <span className="font-medium text-gray-900 dark:text-white">Ocorrências</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Layout: OCOREN</span>
+              <span className="font-medium text-gray-900 dark:text-white">{t('ediInbound.layouts.ocorenTitle')}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('ediInbound.layouts.ocorenSubtitle')}</span>
             </label>
           </div>
           
@@ -420,8 +423,8 @@ export const EDIInput: React.FC = () => {
               className="flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 dark:bg-gray-900"
             >
               <FileText size={32} className="text-purple-600 mb-2" />
-              <span className="font-medium text-gray-900 dark:text-white">Faturas</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">Layout: DOCCOB</span>
+              <span className="font-medium text-gray-900 dark:text-white">{t('ediInbound.layouts.doccobTitle')}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('ediInbound.layouts.doccobSubtitle')}</span>
             </label>
           </div>
         </div>
@@ -431,7 +434,7 @@ export const EDIInput: React.FC = () => {
             <div className="flex items-start space-x-2">
               <Info size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-blue-800 font-medium">Layout selecionado: {selectedLayout}</p>
+                <p className="text-sm text-blue-800 font-medium">{t('ediInbound.selectedLayout')}: {selectedLayout}</p>
                 <p className="text-xs text-blue-700 mt-1">
                   {getLayoutDescription(selectedLayout as EDILayoutType)}
                 </p>
@@ -444,7 +447,7 @@ export const EDIInput: React.FC = () => {
       {/* File Upload */}
       {selectedLayout && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upload de Arquivos</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('ediInbound.upload.title')}</h2>
           
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
@@ -458,16 +461,16 @@ export const EDIInput: React.FC = () => {
           >
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Arraste e solte seus arquivos EDI aqui
+              {t('ediInbound.upload.dragDrop')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              ou clique para selecionar arquivos
+              {t('ediInbound.upload.orClick')}
             </p>
             <button
               onClick={() => fileInputRef.current?.click()}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
-              Selecionar Arquivos
+              {t('ediInbound.upload.selectFiles')}
             </button>
             <input
               ref={fileInputRef}
@@ -478,21 +481,21 @@ export const EDIInput: React.FC = () => {
               className="hidden"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-              Apenas arquivos .txt são aceitos. Tamanho máximo: 10MB por arquivo.
+              {t('ediInbound.upload.requirements')}
             </p>
           </div>
           
           {/* Observations */}
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Observações (opcional)
+              {t('ediInbound.upload.observationsLabel')}
             </label>
             <textarea
               value={observations}
               onChange={(e) => setObservations(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Informações adicionais sobre este lote de arquivos..."
+              placeholder={t('ediInbound.upload.observationsPlaceholder')}
             />
           </div>
         </div>
@@ -502,13 +505,13 @@ export const EDIInput: React.FC = () => {
       {files.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Arquivos Enviados</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('ediInbound.stats.title')}</h2>
             <button
-              onClick={clearAllFiles}
+               onClick={clearAllFiles}
               className="text-red-600 hover:text-red-800 text-sm flex items-center space-x-1"
             >
               <X size={16} />
-              <span>Limpar Todos</span>
+              <span>{t('ediInbound.stats.clearAll')}</span>
             </button>
           </div>
           
@@ -517,7 +520,7 @@ export const EDIInput: React.FC = () => {
             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('ediInbound.stats.total')}</p>
                   <p className="text-2xl font-semibold text-gray-900 dark:text-white">{files.length}</p>
                 </div>
                 <FileText size={24} className="text-gray-400" />
@@ -527,7 +530,7 @@ export const EDIInput: React.FC = () => {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600">Processando</p>
+                  <p className="text-sm font-medium text-blue-600">{t('ediInbound.stats.processing')}</p>
                   <p className="text-2xl font-semibold text-blue-900">{processingCount}</p>
                 </div>
                 <RefreshCw size={24} className={`text-blue-400 ${processingCount > 0 ? 'animate-spin' : ''}`} />
@@ -537,7 +540,7 @@ export const EDIInput: React.FC = () => {
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600">Sucesso</p>
+                  <p className="text-sm font-medium text-green-600">{t('ediInbound.stats.success')}</p>
                   <p className="text-2xl font-semibold text-green-900">{successCount}</p>
                 </div>
                 <CheckCircle size={24} className="text-green-400" />
@@ -547,7 +550,7 @@ export const EDIInput: React.FC = () => {
             <div className="bg-red-50 p-4 rounded-lg border border-red-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-red-600">Erros</p>
+                  <p className="text-sm font-medium text-red-600">{t('ediInbound.stats.errors')}</p>
                   <p className="text-2xl font-semibold text-red-900">{errorCount}</p>
                 </div>
                 <AlertCircle size={24} className="text-red-400" />
@@ -561,19 +564,19 @@ export const EDIInput: React.FC = () => {
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Arquivo
+                    {t('ediInbound.table.file')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Tamanho
+                    {t('ediInbound.table.size')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Layout
+                    {t('ediInbound.table.layout')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('ediInbound.table.status')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ações
+                    {t('ediInbound.table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -598,7 +601,7 @@ export const EDIInput: React.FC = () => {
                         <div className="ml-2">
                           {file.status === 'uploading' && (
                             <div className="flex flex-col">
-                              <span className="text-sm text-blue-600">Enviando...</span>
+                              <span className="text-sm text-blue-600">{t('ediInbound.table.uploading')}</span>
                               <div className="w-24 bg-gray-200 rounded-full h-1.5 mt-1">
                                 <div 
                                   className="bg-blue-600 h-1.5 rounded-full" 
@@ -610,7 +613,7 @@ export const EDIInput: React.FC = () => {
                           
                           {file.status === 'validating' && (
                             <div className="flex flex-col">
-                              <span className="text-sm text-blue-600">Validando...</span>
+                              <span className="text-sm text-blue-600">{t('ediInbound.table.validating')}</span>
                               <div className="w-24 bg-gray-200 rounded-full h-1.5 mt-1">
                                 <div 
                                   className="bg-blue-600 h-1.5 rounded-full" 
@@ -621,11 +624,11 @@ export const EDIInput: React.FC = () => {
                           )}
                           
                           {file.status === 'success' && (
-                            <span className="text-sm text-green-600">Validado com sucesso</span>
+                            <span className="text-sm text-green-600">{t('ediInbound.table.success')}</span>
                           )}
                           
                           {file.status === 'error' && (
-                            <span className="text-sm text-red-600">{file.message || 'Erro na validação'}</span>
+                            <span className="text-sm text-red-600">{file.message || t('ediInbound.table.errorDefault')}</span>
                           )}
                         </div>
                       </div>
@@ -635,7 +638,7 @@ export const EDIInput: React.FC = () => {
                         onClick={() => removeFile(file.id)}
                         className="text-red-600 hover:text-red-900"
                       >
-                        Remover
+                        {t('ediInbound.table.remove')}
                       </button>
                     </td>
                   </tr>
@@ -652,7 +655,7 @@ export const EDIInput: React.FC = () => {
                 className="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors flex items-center space-x-2"
               >
                 <FileUp size={16} />
-                <span>Exportar Relatório de Erros</span>
+                <span>{t('ediInbound.actions.exportReport')}</span>
               </button>
             )}
             
@@ -664,12 +667,12 @@ export const EDIInput: React.FC = () => {
               {isProcessing ? (
                 <>
                   <RefreshCw size={16} className="animate-spin" />
-                  <span>Processando...</span>
+                  <span>{t('ediInbound.actions.processing')}</span>
                 </>
               ) : (
                 <>
                   <Database size={16} />
-                  <span>Processar Arquivos</span>
+                  <span>{t('ediInbound.actions.processFiles')}</span>
                 </>
               )}
             </button>
@@ -679,67 +682,66 @@ export const EDIInput: React.FC = () => {
 
       {/* Information Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">Sobre Layouts EDI</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('ediInbound.about.title')}</h3>
         <p className="text-blue-800 mb-4">
-          Os arquivos EDI (Electronic Data Interchange) permitem a troca de informações entre empresas de forma padronizada.
-          Cada layout tem uma finalidade específica no processo logístico.
+          {t('ediInbound.about.description')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">NOTFIS</p>
-            <p className="text-blue-700">Notas fiscais emitidas</p>
+            <p className="font-semibold text-blue-900">{t('ediInbound.about.notfisTitle')}</p>
+            <p className="text-blue-700">{t('ediInbound.about.notfisDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">CONEMB</p>
-            <p className="text-blue-700">Conhecimentos de transporte</p>
+            <p className="font-semibold text-blue-900">{t('ediInbound.about.conembTitle')}</p>
+            <p className="text-blue-700">{t('ediInbound.about.conembDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">OCOREN</p>
-            <p className="text-blue-700">Ocorrências na entrega</p>
+            <p className="font-semibold text-blue-900">{t('ediInbound.about.ocorenTitle')}</p>
+            <p className="text-blue-700">{t('ediInbound.about.ocorenDesc')}</p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <p className="font-semibold text-blue-900">DOCCOB</p>
-            <p className="text-blue-700">Faturas de frete</p>
+            <p className="font-semibold text-blue-900">{t('ediInbound.about.doccobTitle')}</p>
+            <p className="text-blue-700">{t('ediInbound.about.doccobDesc')}</p>
           </div>
         </div>
       </div>
 
       {/* Technical Requirements */}
       <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Requisitos Técnicos</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('ediInbound.requirements.title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Formatos Aceitos</h4>
+            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('ediInbound.requirements.formats')}</h4>
             <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Arquivos de texto (.txt)</span>
+                <span>{t('ediInbound.requirements.formatTxt')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Codificação UTF-8 ou ASCII</span>
+                <span>{t('ediInbound.requirements.formatEncoding')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Tamanho máximo: 10MB por arquivo</span>
+                <span>{t('ediInbound.requirements.formatSize')}</span>
               </li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Processamento</h4>
+            <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{t('ediInbound.requirements.processing')}</h4>
             <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Validação automática de layout</span>
+                <span>{t('ediInbound.requirements.procValidation')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Registro de logs para auditoria</span>
+                <span>{t('ediInbound.requirements.procLogs')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <CheckCircle size={16} className="text-green-500" />
-                <span>Relatório detalhado de erros</span>
+                <span>{t('ediInbound.requirements.procReport')}</span>
               </li>
             </ul>
           </div>

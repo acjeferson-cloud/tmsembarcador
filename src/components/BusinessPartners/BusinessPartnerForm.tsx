@@ -143,12 +143,10 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         if (cleanCEP.length === 8) {
           finalCep = cleanCEP.replace(/^(\d{5})(\d{3})$/, "$1-$2");
           try {
-            console.log('Verificando cidade pelo CEP:', cleanCEP);
             cityData = await findOrCreateCityByCEP(cleanCEP);
             if (cityData) {
               cityName = cityData.name;
               stateName = cityData.stateAbbreviation;
-              console.log('Cidade validada/criada:', cityName);
             }
             
             const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
@@ -265,11 +263,6 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
       address_type: addr.type || addr.address_type || 'commercial'
     }));
 
-    console.log('[BusinessPartnerForm] Submitting partner data:', {
-      ...formData,
-      creditLimit: formData.creditLimit,
-      notes: formData.notes
-    });
 
     onSave({
       ...formData,
@@ -402,7 +395,6 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         return;
       }
 
-      console.log('📍 [BusinessPartnerForm] Dados da cidade retornados:', cityData);
 
       // Buscar dados adicionais do ViaCEP para preencher rua e bairro
       const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);

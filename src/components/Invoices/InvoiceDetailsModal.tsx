@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, Clock, User, MapPin, Building, Receipt, Loader, Package, Hash, Scale } from 'lucide-react';
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
+import { InvoiceReverseModal } from './InvoiceReverseModal';
 import { supabase } from '../../lib/supabase';
 
 interface Invoice {
   id: number;
   status: string;
+  direction?: 'outbound' | 'inbound' | 'reverse';
   baseCusto: string;
   statusColeta: string;
   serie: string;
@@ -45,12 +48,15 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   onPrint,
   onDownload
 }) => {
+  const { t } = useTranslation();
+
   const [activeTab, setActiveTab] = useState<'details' | 'costs' | 'ctes'>('details');
   const [customer, setCustomer] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [ctes, setCtes] = useState<any[]>([]);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isLoadingCtes, setIsLoadingCtes] = useState(false);
+  const [showReverseModal, setShowReverseModal] = useState(false);
 
   useEffect(() => {
     if (isOpen && activeTab === 'details') {
@@ -190,9 +196,9 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const getBaseCustoLabel = (baseCusto: string) => {
     switch (baseCusto) {
       case 'tabela':
-        return 'Tabela de Frete';
+        return t('invoices.filters.freightTable');
       case 'negociacao':
-        return 'Negociação Individual';
+        return t('invoices.filters.individualNegotiation');
       default:
         return baseCusto;
     }
@@ -202,9 +208,9 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const getStatusColetaLabel = (statusColeta: string) => {
     switch (statusColeta) {
       case 'disponivel':
-        return 'Disponível para Coleta';
+        return t('invoices.status.disponivelColeta');
       case 'realizada':
-        return 'Coleta Realizada';
+        return t('invoices.status.coletaRealizada');
       default:
         return statusColeta;
     }
@@ -216,22 +222,32 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
           <div className="flex items-center space-x-2">
             <FileText size={24} className="text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Detalhes da Nota Fiscal</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t("invoices.details.title")}</h2>
           </div>
           <div className="flex items-center space-x-3">
+            {invoice.direction !== 'reverse' && (
+              <button
+                onClick={() => setShowReverseModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
+                title="Iniciar fluxo de logística reversa para esta nota"
+              >
+                <span className="font-bold text-lg leading-none">⮌</span>
+                <span>{t("Início Reversa", "Iniciar Reversa")}</span>
+              </button>
+            )}
             <button
               onClick={onPrint}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Printer size={16} />
-              <span>Imprimir DANFE</span>
+              <span>{t("invoices.details.printDanfe")}</span>
             </button>
             <button
               onClick={onDownload}
               className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
             >
               <Download size={16} />
-              <span>Download XML</span>
+              <span>{t("invoices.details.downloadXml")}</span>
             </button>
             <button
               onClick={onClose}
@@ -255,7 +271,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <FileText size={16} />
-                <span>Detalhes da Nota Fiscal</span>
+                <span>{t("invoices.details.tabDetails")}</span>
               </div>
             </button>
             <button
@@ -268,7 +284,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <Receipt size={16} />
-                <span>Custos de Frete</span>
+                <span>{t("invoices.details.tabCosts")}</span>
               </div>
             </button>
             <button
@@ -281,7 +297,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <Truck size={16} />
-                <span>CT-es Vinculados</span>
+                <span>{t("invoices.details.tabCtes")}</span>
               </div>
             </button>
           </nav>
@@ -294,7 +310,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{invoice.numero}</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Série: {invoice.serie} | Emissão: {formatDate(invoice.dataEmissao)}</p>
+                  <p className="text-gray-600 dark:text-gray-400">{t("invoices.details.serie")}: {invoice.serie} | {t("invoices.details.issueDate")}: {formatDate(invoice.dataEmissao)}</p>
                 </div>
                 <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
                   {getStatusLabel(invoice.status)}
@@ -307,26 +323,26 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                 <div className="space-y-6">
                   {/* Basic Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.basicInfo")}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <Calendar className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Data de Emissão</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.issueDate")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatDate(invoice.dataEmissao)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Calendar className="text-green-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Data de Entrada</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.entryDate")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatDate(invoice.dataEntrada)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <FileText className="text-purple-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Chave de Acesso</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.accessKey")}</p>
                           <p className="font-medium text-gray-900 dark:text-white font-mono text-xs break-all">{invoice.chaveAcesso}</p>
                         </div>
                       </div>
@@ -334,7 +350,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                         <div className="flex items-center space-x-3">
                           <FileText className="text-indigo-500 flex-shrink-0" size={20} />
                           <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Tipo da Nota</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.invoiceType")}</p>
                             <p className="font-medium text-gray-900 dark:text-white">{invoice.tipoNota}</p>
                           </div>
                         </div>
@@ -343,7 +359,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                         <div className="flex items-center space-x-3">
                           <Receipt className="text-teal-500 flex-shrink-0" size={20} />
                           <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Natureza da Operação</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.operationNature")}</p>
                             <p className="font-medium text-gray-900 dark:text-white">{invoice.naturezaOperacao}</p>
                           </div>
                         </div>
@@ -352,7 +368,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                         <div className="flex items-center space-x-3">
                           <Hash className="text-amber-500 flex-shrink-0" size={20} />
                           <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Número do Pedido</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.orderNumber")}</p>
                             <p className="font-medium text-gray-900 dark:text-white">{invoice.numeroPedido}</p>
                           </div>
                         </div>
@@ -361,7 +377,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                         <div className="flex items-center space-x-3">
                           <Calendar className="text-rose-500 flex-shrink-0" size={20} />
                           <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Previsão de Entrega</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.expectedDelivery")}</p>
                             <p className="font-medium text-gray-900 dark:text-white">{formatDate(invoice.previsaoEntrega)}</p>
                           </div>
                         </div>
@@ -371,26 +387,26 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   
                   {/* Transportador Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações do Transportador</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.carrierInfo")}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <Truck className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Transportador</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.carrier")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{invoice.transportador}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <DollarSign className="text-green-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Base para Custo</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.costBase")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{getBaseCustoLabel(invoice.baseCusto)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Truck className="text-orange-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Status da Coleta</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.collectionStatus")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{getStatusColetaLabel(invoice.statusColeta)}</p>
                         </div>
                       </div>
@@ -402,26 +418,26 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                 <div className="space-y-6">
                   {/* Cliente Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações do Cliente</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.customerInfo")}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <User className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Cliente</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.customer")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{invoice.cliente}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <MapPin className="text-red-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Cidade de Destino</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.destCity")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{invoice.cidadeDestino}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <MapPin className="text-purple-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">UF de Destino</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.destState")}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{invoice.ufDestino}</p>
                         </div>
                       </div>
@@ -430,18 +446,18 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   
                   {/* Financial Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Financeiras</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.financialInfo")}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <DollarSign className="text-green-500 flex-shrink-0" size={20} />
                         <div className="w-full">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Valor Total da NF-e</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.totalNfeValue")}</p>
                           <p className="text-2xl font-bold text-green-600">{formatCurrency(invoice.valorNFe)}</p>
                         </div>
                       </div>
                       {(invoice.icmsValue || invoice.pisValue || invoice.cofinsValue) && (
                         <div className="pt-3 border-t border-gray-300 space-y-2">
-                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Tributos</p>
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{t("invoices.details.taxes")}</p>
                           {invoice.icmsValue !== undefined && invoice.icmsValue > 0 && (
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-gray-600 dark:text-gray-400">ICMS</span>
@@ -467,20 +483,20 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
 
                   {/* Cargo Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações de Carga</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.cargoInfo")}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <Scale className="text-orange-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Peso Total</p>
-                          <p className="font-medium text-gray-900 dark:text-white">{invoice.peso ? `${invoice.peso.toFixed(3)} kg` : 'Não informado'}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.totalWeight")}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{invoice.peso ? `${invoice.peso.toFixed(3)} kg` : t('invoices.details.notInformed')}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Package className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Volumes</p>
-                          <p className="font-medium text-gray-900 dark:text-white">{invoice.volumes || 'Não informado'}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.volumes")}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{invoice.volumes || t('invoices.details.notInformed')}</p>
                         </div>
                       </div>
                     </div>
@@ -493,40 +509,40 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <Building className="mr-2 text-blue-600" size={20} />
-                    Dados Completos do Cliente
+                    {t("invoices.details.fullCustomerData")}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Razão Social / Nome</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.razao_social || customer.name || 'Não informado'}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.companyName")}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.razao_social || customer.name || t('invoices.details.notInformed')}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ/CPF</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.cnpj_cpf || customer.cnpj || 'Não informado'}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.cnpj_cpf || customer.cnpj || t('invoices.details.notInformed')}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">CEP</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{customer.cep || customer.zip_code || 'Não informado'}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{customer.cep || customer.zip_code || t('invoices.details.notInformed')}</p>
                     </div>
                     <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Endereço</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.address")}</p>
                       <p className="font-medium text-gray-900 dark:text-white">
                         {customer.logradouro || customer.address || ''}{customer.numero || customer.number ? `, ${customer.numero || customer.number}` : ''}{customer.bairro || customer.neighborhood ? ` - ${customer.bairro || customer.neighborhood}` : ''}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Cidade / UF</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.cityState")}</p>
                       <p className="font-medium text-gray-900 dark:text-white">{customer.cidade || customer.city || ''} / {customer.estado || customer.state || ''}</p>
                     </div>
                     {customer.phone && (
                       <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Telefone</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.phone")}</p>
                         <p className="font-medium text-gray-900 dark:text-white">{customer.phone}</p>
                       </div>
                     )}
                     {customer.email && (
                       <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">E-mail</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t("invoices.details.email")}</p>
                         <p className="font-medium text-gray-900 dark:text-white">{customer.email}</p>
                       </div>
                     )}
@@ -544,20 +560,20 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                       <Package className="mr-2 text-blue-600" size={20} />
-                      Itens da Nota Fiscal ({products.length} {products.length === 1 ? 'item' : 'itens'})
+                      {t("invoices.details.invoiceItems", { count: products.length })}
                     </h4>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50 dark:bg-gray-900">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descrição</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantidade</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unidade</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor Unit.</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor Total</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.item")}</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.code")}</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.description")}</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.quantity")}</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.unit")}</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.unitValue")}</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("invoices.details.totalValue")}</th>
                           <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">NCM</th>
                         </tr>
                       </thead>
@@ -586,7 +602,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                       <tfoot className="bg-gray-50 dark:bg-gray-900">
                         <tr>
                           <td colSpan={6} className="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">
-                            Total dos Itens:
+                            {t("invoices.details.itemsTotal")}:
                           </td>
                           <td className="px-4 py-3 text-right text-lg font-bold text-green-600">
                             {formatCurrency(products.reduce((sum, p) => sum + (p.total_value || p.valor_total || 0), 0))}
@@ -602,8 +618,8 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                   <div className="flex items-center space-x-3">
                     <Package className="text-yellow-600" size={24} />
                     <div>
-                      <p className="text-sm font-medium text-yellow-800">Nenhum item encontrado</p>
-                      <p className="text-xs text-yellow-600 mt-1">Esta nota fiscal não possui itens cadastrados.</p>
+                      <p className="text-sm font-medium text-yellow-800">{t("invoices.details.noItemsFound")}</p>
+                      <p className="text-xs text-yellow-600 mt-1">{t("invoices.details.noItemsDescription")}</p>
                     </div>
                   </div>
                 </div>
@@ -611,20 +627,20 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
 
               {/* Status Timeline */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Histórico de Status</h4>
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.statusHistory")}</h4>
                 <div className="relative">
                   {/* Timeline line */}
                   <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                   
                   <div className="space-y-6">
                     {[
-                      { status: 'emitida', label: 'Nota Fiscal Emitida', date: '15/01/2025 08:30', active: invoice.status === 'emitida', completed: true },
-                      { status: 'coletada', label: 'Em Coleta', date: '15/01/2025 14:45', active: invoice.status === 'coletada', completed: ['coletada', 'em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'em_transito_origem', label: 'Em Trânsito - Saindo da Origem', date: '15/01/2025 16:20', active: invoice.status === 'em_transito_origem', completed: ['em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'em_transito_rota', label: 'Em Trânsito na Rodovia', date: '16/01/2025 08:15', active: invoice.status === 'em_transito_rota', completed: ['em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'chegada_destino', label: 'Chegada na Cidade de Destino', date: '17/01/2025 10:30', active: invoice.status === 'chegada_destino', completed: ['chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'saiu_entrega', label: 'Saiu para Entrega', date: '17/01/2025 14:00', active: invoice.status === 'saiu_entrega', completed: ['saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'entregue', label: 'Entregue', date: '17/01/2025 16:45', active: invoice.status === 'entregue', completed: ['entregue'].includes(invoice.status) }
+                      { status: 'emitida', label: t('invoices.status.emitida'), date: '15/01/2025 08:30', active: invoice.status === 'emitida', completed: true },
+                      { status: 'coletada', label: t('invoices.status.emColeta'), date: '15/01/2025 14:45', active: invoice.status === 'coletada', completed: ['coletada', 'em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
+                      { status: 'em_transito_origem', label: t('invoices.status.emTransitoOrigem'), date: '15/01/2025 16:20', active: invoice.status === 'em_transito_origem', completed: ['em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
+                      { status: 'em_transito_rota', label: t('invoices.status.emTransitoRodovia'), date: '16/01/2025 08:15', active: invoice.status === 'em_transito_rota', completed: ['em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
+                      { status: 'chegada_destino', label: t('invoices.status.chegouDestino'), date: '17/01/2025 10:30', active: invoice.status === 'chegada_destino', completed: ['chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
+                      { status: 'saiu_entrega', label: t('invoices.status.saiuParaEntrega'), date: '17/01/2025 14:00', active: invoice.status === 'saiu_entrega', completed: ['saiu_entrega', 'entregue'].includes(invoice.status) },
+                      { status: 'entregue', label: t('invoices.status.entregue'), date: '17/01/2025 16:45', active: invoice.status === 'entregue', completed: ['entregue'].includes(invoice.status) }
                     ].map((step, index) => (
                       <div key={index} className="relative flex items-start space-x-4">
                         {/* Timeline dot */}
@@ -693,7 +709,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
               {/* CT-es Table */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">CT-es Vinculados à Nota Fiscal</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{t("invoices.details.linkedCtesTitle")}</h4>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -701,22 +717,22 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Número
+                          {t("invoices.table.number")}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Série
+                          {t("invoices.table.serie")}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Data Emissão
+                          {t("invoices.table.issueDate")}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Valor
+                          {t("invoices.table.nfeValue")}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Status
+                          {t("invoices.table.status")}
                         </th>
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Ações
+                          {t("invoices.table.actions")}
                         </th>
                       </tr>
                     </thead>
@@ -724,14 +740,14 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                       {isLoadingCtes ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                            Carregando CT-es...
+                            {t("invoices.details.loadingCtes")}
                           </td>
                         </tr>
                       ) : ctes.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                             <Truck size={48} className="mx-auto text-gray-400 mb-4" />
-                            <p className="text-gray-600 dark:text-gray-400">Nenhum CT-e vinculado encontrado.</p>
+                            <p className="text-gray-600 dark:text-gray-400">{t("invoices.details.noCtesFound")}</p>
                           </td>
                         </tr>
                       ) : (
@@ -780,15 +796,15 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total de CT-es</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t("invoices.details.totalCtes")}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{ctes.length}</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Total</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t("invoices.details.totalValue")}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0))}</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Médio</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t("invoices.details.avgValue")}</p>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">
                         {formatCurrency(ctes.reduce((sum, cte) => sum + cte.valor, 0) / ctes.length)}
                       </p>
@@ -800,6 +816,16 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           )}
         </div>
       </div>
+
+      <InvoiceReverseModal 
+        isOpen={showReverseModal} 
+        onClose={() => setShowReverseModal(false)}
+        invoice={invoice as any}
+        onSuccess={() => {
+          setShowReverseModal(false);
+          onClose(); // Fechar o atual para recarregar a grid
+        }} 
+      />
     </div>
   );
 };

@@ -20,10 +20,6 @@ export async function setSessionContext(
       environmentId = selectedEnvId;
     }
 
-    console.log('🔐 [sessionContext] Configurando contexto da sessão:', {
-      organizationId,
-      environmentId
-    });
 
     const { data, error } = await supabase.rpc('set_session_context', {
       p_organization_id: organizationId,
@@ -35,7 +31,6 @@ export async function setSessionContext(
       return { success: false, error: error.message };
     }
 
-    console.log('✅ [sessionContext] Contexto configurado com sucesso:', data);
     return { success: true };
   } catch (error) {
     console.error('❌ [sessionContext] Erro ao configurar contexto:', error);
@@ -85,7 +80,6 @@ export async function getUserOrganizationAndEnvironment(email: string): Promise<
   error?: string;
 }> {
   try {
-    console.log('🔍 [sessionContext] Buscando organização do usuário:', email);
 
     const { data, error } = await supabase.rpc('get_user_organization_and_environment', {
       p_email: email
@@ -101,12 +95,6 @@ export async function getUserOrganizationAndEnvironment(email: string): Promise<
       return { success: false, error: data.error };
     }
 
-    console.log('✅ [sessionContext] Organização encontrada:', {
-      organizationId: data.organization_id,
-      environmentId: data.environment_id,
-      userId: data.user_id,
-      userName: data.user_name
-    });
 
     return {
       success: true,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Truck, AlertTriangle, Clock, Navigation } from 'lucide-react';
 import GoogleMap from '../Maps/GoogleMap';
 
@@ -15,6 +16,7 @@ interface Vehicle {
 }
 
 export const RealTimeMap: React.FC = () => {
+  const { t } = useTranslation();
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     {
       id: 'V001',
@@ -61,9 +63,9 @@ export const RealTimeMap: React.FC = () => {
   ]);
 
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [mapCenter, setMapCenter] = useState({ lat: -23.5505, lng: -46.6333 }); // São Paulo como padrão
+  const [mapCenter] = useState({ lat: -23.5505, lng: -46.6333 }); // São Paulo como padrão
 
-  const [alerts, setAlerts] = useState([
+  const [alerts] = useState([
     {
       id: 1,
       vehicleId: 'V002',
@@ -115,21 +117,21 @@ export const RealTimeMap: React.FC = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'moving': return 'Em Movimento';
-      case 'stopped': return 'Parado';
-      case 'delayed': return 'Atrasado';
-      case 'delivered': return 'Entregue';
-      default: return 'Desconhecido';
+      case 'moving': return t('controlTower.map.moving');
+      case 'stopped': return t('controlTower.map.stopped');
+      case 'delayed': return t('controlTower.map.delayed');
+      case 'delivered': return t('controlTower.map.delivered');
+      default: return t('controlTower.map.unknown');
     }
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mapa em Tempo Real</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('controlTower.map.realTimeMap')}</h3>
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">Ao vivo</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('controlTower.map.live')}</span>
         </div>
       </div>
 
@@ -156,7 +158,7 @@ export const RealTimeMap: React.FC = () => {
               onClick={() => setSelectedVehicle(null)}
               className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
             >
-              Ver Todos
+              {t('controlTower.map.viewAll')}
             </button>
           </div>
         </div>
@@ -164,7 +166,7 @@ export const RealTimeMap: React.FC = () => {
 
       {/* Vehicle List */}
       <div className="space-y-3">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Veículos Ativos ({vehicles.length})</h4>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('controlTower.map.activeVehicles')} ({vehicles.length})</h4>
         {vehicles.map((vehicle) => (
           <div
             key={vehicle.id}
@@ -191,7 +193,7 @@ export const RealTimeMap: React.FC = () => {
               </span>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{vehicle.lastUpdate}</p>
               {vehicle.stoppedTime && (
-                <p className="text-xs text-red-600">Parado: {Math.floor(vehicle.stoppedTime / 60)}h {vehicle.stoppedTime % 60}m</p>
+                <p className="text-xs text-red-600">{t('controlTower.map.stoppedFor', { hours: Math.floor(vehicle.stoppedTime / 60), minutes: vehicle.stoppedTime % 60 })}</p>
               )}
             </div>
           </div>
@@ -202,11 +204,11 @@ export const RealTimeMap: React.FC = () => {
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div className="text-center p-3 bg-green-50 rounded-lg">
           <p className="text-2xl font-bold text-green-600">{vehicles.filter(v => v.status === 'moving').length}</p>
-          <p className="text-sm text-green-700">Em Movimento</p>
+          <p className="text-sm text-green-700">{t('controlTower.map.moving')}</p>
         </div>
         <div className="text-center p-3 bg-red-50 rounded-lg">
           <p className="text-2xl font-bold text-red-600">{alerts.length}</p>
-          <p className="text-sm text-red-700">Alertas Ativos</p>
+          <p className="text-sm text-red-700">{t('controlTower.map.activeAlerts')}</p>
         </div>
       </div>
     </div>

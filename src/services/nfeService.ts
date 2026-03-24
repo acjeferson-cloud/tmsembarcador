@@ -36,6 +36,7 @@ export interface NFeWithCustomer extends NFe {
     codigo: string;
     razao_social: string;
     cnpj: string;
+    metadata?: any;
   };
   products?: Array<{
     id: string;
@@ -64,7 +65,8 @@ export const nfeService = {
             id,
             codigo,
             razao_social,
-            cnpj
+            cnpj,
+            metadata
           ),
           products:invoices_nfe_products(
             id,
@@ -115,7 +117,8 @@ export const nfeService = {
           id: invoice.carrier.id,
           codigo: invoice.carrier.codigo,
           razao_social: invoice.carrier.razao_social,
-          cnpj: invoice.carrier.cnpj
+          cnpj: invoice.carrier.cnpj,
+          metadata: invoice.carrier.metadata
         } : undefined,
         products: (invoice.products || []).map((p: any) => ({
           id: p.id,
@@ -143,7 +146,8 @@ export const nfeService = {
             id,
             razao_social,
             cnpj,
-            codigo
+            codigo,
+            metadata
           ),
           products:invoices_nfe_products(*)
         `)

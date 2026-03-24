@@ -21,7 +21,6 @@ export function SaasEnvironmentsView() {
 
   async function loadOrganizations() {
     try {
-      console.log('[SAAS_ENVIRONMENTS_VIEW] Carregando organizações...');
 
       const { data, error } = await supabase
         .from('saas_organizations')
@@ -41,7 +40,6 @@ export function SaasEnvironmentsView() {
         status: org.status
       }));
 
-      console.log('[SAAS_ENVIRONMENTS_VIEW] Organizações carregadas:', mapped);
       setOrganizations(mapped);
     } catch (err) {
       console.error('[SAAS_ENVIRONMENTS_VIEW] Error loading organizations:', err);

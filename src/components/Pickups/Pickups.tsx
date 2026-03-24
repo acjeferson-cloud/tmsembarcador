@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, Package, RefreshCw, Send } from 'lucide-react';
 import { PickupsFilters } from './PickupsFilters';
 import { PickupsTable } from './PickupsTable';
@@ -15,6 +16,8 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
 
 export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
+  const { t } = useTranslation();
+
   const { user } = useAuth();
   
   useActivityLogger('Coletas', 'Acesso', 'Acessou a Gestão de Coletas');
@@ -40,8 +43,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
   });
 
   const breadcrumbItems = [
-    { label: 'Documentos Operacionais' },
-    { label: 'Coletas', current: true }
+    { label: t('pickups.breadcrumb.operationalDocs') },
+    { label: t('pickups.breadcrumb.pickups'), current: true }
   ];
 
   // Load pickups from Supabase
@@ -136,7 +139,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
   const handleBulkAction = async (action: string) => {
     if (selectedPickups.length === 0) {
-      setToast({ message: 'Por favor, selecione pelo menos uma coleta para realizar esta ação.', type: 'warning' });
+      setToast({ message: t('pickups.messages.selectAtLeastOneAction'), type: 'warning' });
       return;
     }
 
@@ -148,7 +151,6 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         let errorMessages: string[] = [];
         for (const pickupId of selectedPickups) {
           const data = await pickupsService.getById(pickupId);
-          console.log('DEBUG: Carrier Email fetched:', data?.carrier_email, data);
           if (data && data.carrier_email) {
             const fullPickup = {
                ...data,
@@ -211,16 +213,16 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setConfirmDialog({
           isOpen: true,
           action: 'cancelar',
-          title: 'Cancelar Coleta(s)',
-          message: `Deseja realmente cancelar ${selectedPickups.length} coleta(s)?`,
+          title: t('pickups.dialogs.cancelBulkTitle'),
+          message: t('pickups.dialogs.cancelBulkMessage', { count: selectedPickups.length }),
           targetIds: selectedPickups
         });
       } else if (action === 'realizar') {
         setConfirmDialog({
           isOpen: true,
           action: 'realizar',
-          title: 'Marcar como Realizada(s)',
-          message: `Deseja marcar ${selectedPickups.length} coleta(s) como REALIZADA(s)?`,
+          title: t('pickups.dialogs.doneBulkTitle'),
+          message: t('pickups.dialogs.doneBulkMessage', { count: selectedPickups.length }),
           targetIds: selectedPickups
         });
       } else if (action === 'print' || action === 'download') {
@@ -250,7 +252,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         const validPickups = fullPickupsToPrint.filter(p => !!(p && p.id));
         
         if (validPickups.length === 0) {
-           setToast({ message: 'Não foi possível recuperar os dados completos das coletas selecionadas.', type: 'error' });
+           setToast({ message: t('pickups.messages.errorFetchData'), type: 'error' });
            setIsLoading(false);
            return;
         }
@@ -269,7 +271,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
       }
     } catch (error) {
       console.error('Erro na ação em lote:', error);
-      setToast({ message: 'Erro ao processar a ação solicitada.', type: 'error' });
+      setToast({ message: t('pickups.messages.errorProcessAction'), type: 'error' });
     } finally {
       setIsLoading(false);
       setSelectedPickups([]);
@@ -300,8 +302,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setConfirmDialog({
             isOpen: true,
             action: 'realizar',
-            title: 'Marcar como Realizada',
-            message: `Deseja marcar a coleta ${pickup.numeroColeta} como REALIZADA?`,
+            title: t('pickups.dialogs.doneSingleTitle'),
+            message: t('pickups.dialogs.doneSingleMessage', { numero: pickup.numeroColeta }),
             targetIds: [pickupId.toString()]
           });
           break;
@@ -309,8 +311,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setConfirmDialog({
             isOpen: true,
             action: 'cancelar',
-            title: 'Cancelar Coleta',
-            message: `Deseja realmente cancelar a coleta ${pickup.numeroColeta}?`,
+            title: t('pickups.dialogs.cancelSingleTitle'),
+            message: t('pickups.dialogs.cancelSingleMessage', { numero: pickup.numeroColeta }),
             targetIds: [pickupId.toString()]
           });
           break;
@@ -318,8 +320,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setConfirmDialog({
             isOpen: true,
             action: 'delete',
-            title: 'Excluir Coleta',
-            message: `Tem certeza que deseja excluir a coleta ${pickup.numeroColeta}? Esta ação removerá a coleta e o vínculo com todas as respectivas Notas Fiscais.`,
+            title: t('pickups.dialogs.deleteSingleTitle'),
+            message: t('pickups.dialogs.deleteSingleMessage', { numero: pickup.numeroColeta }),
             targetIds: [pickupId.toString()]
           });
           break;
@@ -388,7 +390,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         }
         
         if (successCount > 0) {
-          const actionMsg = confirmDialog.action === 'realizar' ? 'marcada(s) como realizada(s)' : 'cancelada(s)';
+          const actionMsg = confirmDialog.action === 'realizar' ? t('pickups.messages.markedAsDone') : t('pickups.messages.markedAsCanceled');
           setToast({ message: `${successCount} coleta(s) ${actionMsg}.`, type: 'success' });
           setPickups(prev => prev.map(pickup => {
             if (confirmDialog.targetIds.includes(pickup.id)) {
@@ -413,8 +415,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Coletas</h1>
-          <p className="text-gray-600 dark:text-gray-400">Acompanhe e gerencie todas as coletas por transportador</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('pickups.header.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('pickups.header.subtitle')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -423,7 +425,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
-            <span>{isLoading ? 'Carregando...' : 'Atualizar'}</span>
+            <span>{isLoading ? t('pickups.actions.loading') : t('pickups.actions.refresh')}</span>
           </button>
         </div>
       </div>
@@ -433,7 +435,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Coletas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('pickups.kpis.total')}</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{pickups.length}</p>
             </div>
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -445,7 +447,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Emitidas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('pickups.status.emitida')}</p>
               <p className="text-2xl font-semibold text-gray-600 dark:text-gray-400 mt-1">
                 {pickups.filter(pickup => pickup.status === 'emitida').length}
               </p>
@@ -459,7 +461,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Solicitadas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('pickups.status.solicitada')}</p>
               <p className="text-2xl font-semibold text-blue-400 dark:text-blue-400 mt-1">
                 {pickups.filter(pickup => pickup.status === 'solicitada').length}
               </p>
@@ -473,7 +475,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Realizadas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('pickups.status.realizada')}</p>
               <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
                 {pickups.filter(pickup => pickup.status === 'realizada').length}
               </p>
@@ -487,7 +489,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('pickups.status.cancelada')}</p>
               <p className="text-2xl font-semibold text-red-600 dark:text-red-400 mt-1">
                 {pickups.filter(pickup => pickup.status === 'cancelada').length}
               </p>
@@ -556,8 +558,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        confirmText={confirmDialog.action === 'cancelar' ? 'Sim, Cancelar' : confirmDialog.action === 'delete' ? 'Sim, Excluir' : 'Sim, Marcar como Realizada'}
-        cancelText="Voltar"
+        confirmText={confirmDialog.action === 'cancelar' ? t('pickups.dialogs.yesCancel') : confirmDialog.action === 'delete' ? t('pickups.dialogs.yesDelete') : t('pickups.dialogs.yesDone')}
+        cancelText={t('pickups.dialogs.back')}
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />

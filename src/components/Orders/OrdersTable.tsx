@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit, Calculator, Trash2 } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 import { formatCurrency } from '../../utils/formatters';
@@ -47,6 +48,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
   canEdit,
   isLoading
 }) => {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState<keyof Order>('dataEmissao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -173,17 +175,17 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'emitido':
-        return 'Emitido';
+        return t('orders.status.emitido');
       case 'coletado':
-        return 'Em Coleta';
+        return t('orders.status.coletado');
       case 'em_transito':
-        return 'Em Trânsito';
+        return t('orders.status.em_transito');
       case 'saiu_entrega':
-        return 'Saiu p/Entrega';
+        return t('orders.status.saiu_entrega');
       case 'entregue':
-        return 'Entregue';
+        return t('orders.status.entregue');
       case 'cancelado':
-        return 'Cancelado';
+        return t('orders.status.cancelado');
       default:
         return status;
     }
@@ -236,7 +238,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   </div>
                 </th>
                 <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ações
+                  {t('orders.table.actions')}
                 </th>
                 <th 
                   scope="col" 
@@ -244,7 +246,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Status</span>
+                    <span>{t('orders.table.status')}</span>
                     {sortField === 'status' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -256,7 +258,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('serie')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Série</span>
+                    <span>{t('orders.table.serie')}</span>
                     {sortField === 'serie' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -268,14 +270,14 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('numero')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Número</span>
+                    <span>{t('orders.table.number')}</span>
                     {sortField === 'numero' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
                   </div>
                 </th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Cód. Rastreamento
+                  {t('orders.table.trackingCode')}
                 </th>
                 <th 
                   scope="col" 
@@ -283,7 +285,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('dataEmissao')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Data Emissão</span>
+                    <span>{t('orders.table.issueDate')}</span>
                     {sortField === 'dataEmissao' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -295,7 +297,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('dataEntrada')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Data Entrada</span>
+                    <span>{t('orders.table.entryDate')}</span>
                     {sortField === 'dataEntrada' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -307,7 +309,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('dataPrevisaoEntrega')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Previsão Entrega</span>
+                    <span>{t('orders.table.expectedDate')}</span>
                     {sortField === 'dataPrevisaoEntrega' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -319,7 +321,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('transportador')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Transportador</span>
+                    <span>{t('orders.table.carrier')}</span>
                     {sortField === 'transportador' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -331,7 +333,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('valorPedido')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Valor Pedido</span>
+                    <span>{t('orders.table.orderValue')}</span>
                     {sortField === 'valorPedido' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -343,7 +345,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('valorFrete')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Valor Custo</span>
+                    <span>{t('orders.table.freightValue')}</span>
                     {sortField === 'valorFrete' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -355,7 +357,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('cliente')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Cliente</span>
+                    <span>{t('orders.table.customer')}</span>
                     {sortField === 'cliente' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -367,7 +369,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('cidadeDestino')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Cidade Destino</span>
+                    <span>{t('orders.table.destCity')}</span>
                     {sortField === 'cidadeDestino' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -379,7 +381,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                   onClick={() => handleSort('ufDestino')}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>UF Destino</span>
+                    <span>{t('orders.table.destState')}</span>
                     {sortField === 'ufDestino' && (
                       sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                     )}
@@ -406,7 +408,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         onClick={() => onAction(order.id, 'view-details')}
                         disabled={isLoading}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                        title="Visualizar Detalhes"
+                        title={t('orders.table.viewDetails')}
                       >
                         <Eye size={16} />
                       </button>
@@ -416,7 +418,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         onClick={() => onAction(order.id, 'print')}
                         disabled={isLoading}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20"
-                        title="Imprimir Pedido"
+                        title={t('orders.table.printOrder')}
                       >
                         <Printer size={16} />
                       </button>
@@ -426,7 +428,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         onClick={() => onAction(order.id, 'download')}
                         disabled={isLoading}
                         className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                        title="Download Pedido"
+                        title={t('orders.table.downloadOrder')}
                       >
                         <Download size={16} />
                       </button>
@@ -436,7 +438,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         onClick={() => handleShowRelationshipMap(order)}
                         disabled={isLoading}
                         className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                        title="Mapa de Relações"
+                        title={t('orders.table.relationshipMap')}
                       >
                         <Share2 size={16} />
                       </button>
@@ -447,7 +449,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                           onClick={() => toggleActionMenu(order.id)}
                           disabled={isLoading}
                           className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
-                          title="Mais ações"
+                          title={t('orders.table.moreActions')}
                         >
                           <MoreHorizontal size={16} />
                         </button>
@@ -469,7 +471,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                                   className="w-full text-left px-4 py-2 text-sm text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 flex items-center space-x-2"
                                 >
                                   <Edit size={14} />
-                                  <span>Editar Pedido</span>
+                                  <span>{t('orders.table.editOrder')}</span>
                                 </button>
                               )}
 
@@ -483,7 +485,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                                 className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center space-x-2"
                               >
                                 <Calculator size={14} />
-                                <span>Recalcular Pedido</span>
+                                <span>{t('orders.table.recalcOrder')}</span>
                               </button>
 
                               <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
@@ -498,7 +500,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"
                               >
                                 <Trash2 size={14} />
-                                <span>Excluir Pedido</span>
+                                <span>{t('orders.table.deleteOrder')}</span>
                               </button>
                             </div>
                           </div>
@@ -557,17 +559,17 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
         <div className="px-3 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 sm:px-6 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              Mostrando <span className="font-medium">{paginatedOrders.length}</span> de <span className="font-medium">{orders.length}</span> registros
+              {t('orders.table.showing')} <span className="font-medium">{paginatedOrders.length}</span> {t('orders.table.of')} <span className="font-medium">{orders.length}</span> {t('orders.table.records')}
             </span>
             <select
               value={rowsPerPage}
               onChange={(e) => setRowsPerPage(Number(e.target.value))}
               className="text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
             >
-              <option value={10}>10 por página</option>
-              <option value={25}>25 por página</option>
-              <option value={50}>50 por página</option>
-              <option value={100}>100 por página</option>
+              <option value={10}>10 {t('orders.table.perPage')}</option>
+              <option value={25}>25 {t('orders.table.perPage')}</option>
+              <option value={50}>50 {t('orders.table.perPage')}</option>
+              <option value={100}>100 {t('orders.table.perPage')}</option>
             </select>
           </div>
           <div className="flex items-center space-x-2">
@@ -576,17 +578,17 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
               disabled={currentPage === 1 || isLoading}
               className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Anterior
+              {t('orders.table.prev')}
             </button>
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
+              {t('orders.table.page')} <span className="font-medium">{currentPage}</span> {t('orders.table.of')} <span className="font-medium">{totalPages}</span>
             </span>
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages || isLoading}
               className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Próximo
+              {t('orders.table.next')}
             </button>
           </div>
         </div>

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Package, Truck, DollarSign, TrendingUp, AlertCircle, Percent, Scale, AlertTriangle, FileWarning } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line } from 'recharts';
 import { dashboardService, DashboardFilters, DashboardExecutiveKPIs, DashboardEvolucaoCusto, DashboardTopTransportadora } from '../../services/dashboardService';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   filters: DashboardFilters;
 }
 
 export const DashboardExecutive: React.FC<Props> = ({ filters }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [kpis, setKpis] = useState<DashboardExecutiveKPIs | null>(null);
   const [evolucao, setEvolucao] = useState<DashboardEvolucaoCusto[]>([]);
@@ -34,7 +36,7 @@ export const DashboardExecutive: React.FC<Props> = ({ filters }) => {
       setTopCarriers(topCarriersData);
 
     } catch (e: any) {
-      setError('Falha ao carregar visão executiva. Verifique a conexão.');
+      setError(t('dashboard.executive.loadingError'));
     } finally {
       setLoading(false);
     }
@@ -42,49 +44,49 @@ export const DashboardExecutive: React.FC<Props> = ({ filters }) => {
 
   const kpiCardsData = [
     {
-      title: 'Despesa de Frete (R$)',
+      title: t('dashboard.executive.freightExpense'),
       value: kpis ? `R$ ${kpis.custoTotalFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00',
       icon: DollarSign,
       color: 'blue'
     },
     {
-      title: 'Embarques (Pedido)',
+      title: t('dashboard.executive.shipments'),
       value: kpis ? kpis.totalEmbarques.toLocaleString('pt-BR') : '0',
       icon: Package,
       color: 'purple'
     },
     {
-      title: 'Ticket Médio (R$/Pedido)',
+      title: t('dashboard.executive.averageTicket'),
       value: kpis ? `R$ ${kpis.ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00',
       icon: TrendingUp,
       color: 'orange'
     },
     {
-      title: 'SLA (On-Time in Full)',
+      title: t('dashboard.executive.sla'),
       value: kpis ? `${kpis.slaOtif.toFixed(1)}%` : '0%',
       icon: Truck,
       color: (kpis && kpis.slaOtif >= 95) ? 'green' : (kpis && kpis.slaOtif >= 90 ? 'orange' : 'red')
     },
     {
-      title: 'Representatividade (Frete/Mercadoria)',
+      title: t('dashboard.executive.representativity'),
       value: kpis ? `${kpis.representatividade.toFixed(2)}%` : '0%',
       icon: Percent,
       color: 'blue'
     },
     {
-      title: 'Custo Operacional (R$/Kg)',
+      title: t('dashboard.executive.operationalCost'),
       value: kpis ? `R$ ${kpis.custoKg.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00',
       icon: Scale,
       color: 'orange'
     },
     {
-      title: 'Custo em Divergências',
+      title: t('dashboard.executive.divergenceCost'),
       value: kpis ? `R$ ${kpis.custoDivergencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'R$ 0,00',
       icon: AlertTriangle,
       color: (kpis && kpis.custoDivergencia > 0) ? 'red' : 'green'
     },
     {
-      title: 'Taxas Extras / Acessórias (%)',
+      title: t('dashboard.executive.extraFees'),
       value: kpis ? `${kpis.taxasExtrasPercent.toFixed(2)}%` : '0%',
       icon: FileWarning,
       color: 'red'
@@ -142,7 +144,7 @@ export const DashboardExecutive: React.FC<Props> = ({ filters }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Evolução de Custos (Composed Chart) */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:col-span-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Evolução de Custos Operacionais</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.executive.costEvolution')}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart data={evolucao}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -151,30 +153,30 @@ export const DashboardExecutive: React.FC<Props> = ({ filters }) => {
               <YAxis yAxisId="right" orientation="right" stroke="#6B7280" axisLine={false} tickLine={false} />
               <Tooltip 
                  formatter={(value: any, name: string) => {
-                   if (name === "Custo Faturado") return [`R$ ${Number(value).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, name];
+                   if (name === t('dashboard.executive.billedCost')) return [`R$ ${Number(value).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, name];
                    return [value, name];
                  }}
                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
               />
-              <Bar yAxisId="left" dataKey="custo" name="Custo Faturado" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="entregas" name="Vol. CT-es" stroke="#10B981" strokeWidth={3} dot={{r: 4}} />
+              <Bar yAxisId="left" dataKey="custo" name={t('dashboard.executive.billedCost')} fill="#3B82F6" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="entregas" name={t('dashboard.executive.cteVolume')} stroke="#10B981" strokeWidth={3} dot={{r: 4}} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
 
         {/* Top Transportadoras */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Share de Transportadoras</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.executive.carrierShare')}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topCarriers} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
               <XAxis type="number" stroke="#6B7280" axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
               <YAxis type="category" dataKey="nome" stroke="#6B7280" axisLine={false} tickLine={false} width={100} />
               <Tooltip 
-                 formatter={(value: any, name: string) => [`R$ ${Number(value).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 'Faturamento']}
+                 formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, t('dashboard.executive.revenue')]}
                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
               />
-              <Bar dataKey="valor" name="Custo" fill="#8B5CF6" radius={[0, 4, 4, 0]} barSize={20} />
+              <Bar dataKey="valor" name={t('dashboard.executive.cost')} fill="#8B5CF6" radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>
           </ResponsiveContainer>
         </div>

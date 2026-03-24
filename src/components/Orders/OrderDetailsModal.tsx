@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, Clock, User, MapPin, Package, ShoppingCart } from 'lucide-react';
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { orderPdfService } from '../../services/orderPdfService';
@@ -33,6 +34,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onClose,
   order
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'details' | 'items' | 'freight'>('details');
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -76,17 +78,17 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'emitido':
-        return 'Emitido';
+        return t('orders.status.emitido');
       case 'coletado':
-        return 'Em Coleta';
+        return t('orders.status.coletado');
       case 'em_transito':
-        return 'Em Trânsito';
+        return t('orders.status.em_transito');
       case 'saiu_entrega':
-        return 'Saiu p/Entrega';
+        return t('orders.status.saiu_entrega');
       case 'entregue':
-        return 'Entregue';
+        return t('orders.status.entregue');
       case 'cancelado':
-        return 'Cancelado';
+        return t('orders.status.cancelado');
       default:
         return status;
     }
@@ -127,7 +129,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
           <div className="flex items-center space-x-2">
             <ShoppingCart size={24} className="text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Detalhes do Pedido</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('orders.details.title')}</h2>
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -136,7 +138,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
             >
               <Printer size={16} />
-              <span>{isProcessing ? 'Processando...' : 'Imprimir Pedido'}</span>
+              <span>{isProcessing ? t('orders.actions.processing') : t('orders.table.printOrder')}</span>
             </button>
             <button
               onClick={() => handleDocumentAction('download')}
@@ -144,7 +146,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
             >
               <Download size={16} />
-              <span>{isProcessing ? 'Baixando...' : 'Download Pedido'}</span>
+              <span>{isProcessing ? t('orders.actions.processing') : t('orders.table.downloadOrder')}</span>
             </button>
             <button
               onClick={onClose}
@@ -168,7 +170,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <FileText size={16} />
-                <span>Detalhes do Pedido</span>
+                <span>{t('orders.details.tabs.details')}</span>
               </div>
             </button>
             <button
@@ -181,7 +183,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <Package size={16} />
-                <span>Itens do Pedido</span>
+                <span>{t('orders.details.tabs.items')}</span>
               </div>
             </button>
             <button
@@ -194,7 +196,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             >
               <div className="flex items-center space-x-2">
                 <Truck size={16} />
-                <span>Custos de Frete</span>
+                <span>{t('orders.details.tabs.freight')}</span>
               </div>
             </button>
           </nav>
@@ -207,7 +209,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{order.numero}</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Emissão: {formatDate(order.dataEmissao)} | Previsão de Entrega: {formatDate(order.dataPrevisaoEntrega)}</p>
+                  <p className="text-gray-600 dark:text-gray-400">{t('orders.table.issueDate')}: {formatDate(order.dataEmissao)} | {t('orders.table.expectedDate')}: {formatDate(order.dataPrevisaoEntrega)}</p>
                 </div>
                 <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
                   {getStatusLabel(order.status)}
@@ -220,33 +222,33 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <div className="space-y-6">
                   {/* Basic Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Básicas</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('orders.details.basicInfo')}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <Calendar className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Data de Emissão</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.issueDate')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatDate(order.dataEmissao)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Calendar className="text-green-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Data de Entrada</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.entryDate')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatDate(order.dataEntrada)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Calendar className="text-orange-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Previsão de Entrega</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.expectedDate')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatDate(order.dataPrevisaoEntrega)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <FileText className="text-purple-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Chave de Acesso</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.form.accessKey')}</p>
                           <p className="font-medium text-gray-900 dark:text-white font-mono text-xs break-all">{order.chaveAcesso}</p>
                         </div>
                       </div>
@@ -255,19 +257,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   
                   {/* Transportador Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações do Transportador</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('orders.details.carrierInfo')}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <Truck className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Transportador</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.carrier')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{order.transportador}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <DollarSign className="text-green-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Valor do Frete</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.freightValue')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(order.valorFrete)}</p>
                         </div>
                       </div>
@@ -279,26 +281,26 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <div className="space-y-6">
                   {/* Cliente Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações do Cliente</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('orders.details.customerInfo')}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <User className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Cliente</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.customer')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{order.cliente}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <MapPin className="text-red-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Cidade de Destino</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.destCity')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{order.cidadeDestino}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <MapPin className="text-purple-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">UF de Destino</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.destState')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{order.ufDestino}</p>
                         </div>
                       </div>
@@ -307,26 +309,26 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   
                   {/* Financial Info */}
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informações Financeiras</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('orders.details.financialInfo')}</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
                         <DollarSign className="text-green-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Valor do Pedido</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.orderValue')}</p>
                           <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(order.valorPedido)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <DollarSign className="text-blue-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Valor do Frete</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.table.freightValue')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(order.valorFrete)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <DollarSign className="text-purple-500 flex-shrink-0" size={20} />
                         <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Valor Total</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.form.totalPrice')}</p>
                           <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(order.valorPedido + order.valorFrete)}</p>
                         </div>
                       </div>
@@ -337,18 +339,18 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               
               {/* Status Timeline */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Histórico de Status</h4>
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('orders.details.timeline')}</h4>
                 <div className="relative">
                   {/* Timeline line */}
                   <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                   
                   <div className="space-y-6">
                     {[
-                      { status: 'emitido', label: 'Pedido Emitido', date: '15/01/2025 08:30', active: order.status === 'emitido', completed: ['coletado', 'em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'coletado', label: 'Em Coleta', date: '15/01/2025 14:45', active: order.status === 'coletado', completed: ['em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'em_transito', label: 'Em Trânsito', date: '16/01/2025 08:15', active: order.status === 'em_transito', completed: ['saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'saiu_entrega', label: 'Saiu p/Entrega', date: '17/01/2025 14:00', active: order.status === 'saiu_entrega', completed: ['entregue'].includes(order.status) },
-                      { status: 'entregue', label: 'Entregue', date: '17/01/2025 16:45', active: order.status === 'entregue', completed: order.status === 'entregue' }
+                      { status: 'emitido', label: t('orders.status.emitido'), date: '15/01/2025 08:30', active: order.status === 'emitido', completed: ['coletado', 'em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
+                      { status: 'coletado', label: t('orders.status.coletado'), date: '15/01/2025 14:45', active: order.status === 'coletado', completed: ['em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
+                      { status: 'em_transito', label: t('orders.status.em_transito'), date: '16/01/2025 08:15', active: order.status === 'em_transito', completed: ['saiu_entrega', 'entregue'].includes(order.status) },
+                      { status: 'saiu_entrega', label: t('orders.status.saiu_entrega'), date: '17/01/2025 14:00', active: order.status === 'saiu_entrega', completed: ['entregue'].includes(order.status) },
+                      { status: 'entregue', label: t('orders.status.entregue'), date: '17/01/2025 16:45', active: order.status === 'entregue', completed: order.status === 'entregue' }
                     ].map((step, index) => (
                       <div key={index} className="relative flex items-start space-x-4">
                         {/* Timeline dot */}
@@ -412,7 +414,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               {/* Items Table */}
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Itens do Pedido</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{t('orders.details.itemsTitle')}</h4>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -420,19 +422,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Código
+                          {t('orders.details.columns.code')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Descrição
+                          {t('orders.details.columns.description')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Quantidade
+                          {t('orders.details.columns.quantity')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Valor Unitário
+                          {t('orders.details.columns.unitValue')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Valor Total
+                          {t('orders.details.columns.totalValue')}
                         </th>
                       </tr>
                     </thead>
@@ -465,17 +467,17 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total de Itens</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('orders.details.summary.totalItems')}</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">{items.length}</p>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor dos Itens</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('orders.details.summary.itemsValue')}</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
                       {formatCurrency(items.reduce((sum, item) => sum + ((item.total_price || item.valorTotal) || ((item.quantity || item.quantidade || 0) * (item.unit_price || item.valorUnitario || 0))), 0))}
                     </p>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Valor Total do Pedido</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('orders.details.summary.totalOrderValue')}</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
                       {formatCurrency(items.reduce((sum, item) => sum + ((item.total_price || item.valorTotal) || ((item.quantity || item.quantidade || 0) * (item.unit_price || item.valorUnitario || 0))), 0) + (order.valorFrete || 0))}
                     </p>
@@ -490,9 +492,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               ) : (
                 <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-12 text-center">
                   <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Sem custo de frete</h3>
+                  <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">{t('orders.details.noFreight')}</h3>
                   <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                    Nenhum custo de frete calculado ou salvo para este pedido.
+                    {t('orders.details.noFreightDesc')}
                   </p>
                 </div>
               )}

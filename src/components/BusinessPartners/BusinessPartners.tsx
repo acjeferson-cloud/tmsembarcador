@@ -99,8 +99,6 @@ const BusinessPartners: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    console.log('🗑️ [BusinessPartners] handleDelete chamado com ID:', id);
-    console.log('🗑️ [BusinessPartners] Tipo do ID:', typeof id);
 
     // Buscar o nome do parceiro para exibir na confirmação
     const partner = businessPartners.find(p => p.id === id);
@@ -110,19 +108,14 @@ const BusinessPartners: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-    console.log('🗑️ [BusinessPartners] confirmDelete chamado');
-    console.log('🗑️ [BusinessPartners] Dialog state:', confirmDialog);
 
     if (confirmDialog.partnerId) {
-      console.log('🗑️ [BusinessPartners] Chamando businessPartnersService.delete com ID:', confirmDialog.partnerId);
 
       try {
         const partner = businessPartners.find(p => p.id === confirmDialog.partnerId);
         const result = await businessPartnersService.delete(confirmDialog.partnerId);
-        console.log('🗑️ [BusinessPartners] Resultado da exclusão:', result);
 
         if (result.success) {
-          console.log('✅ [BusinessPartners] Exclusão bem-sucedida, recarregando lista...');
           if (partner) {
             await logDelete('businessPartner', confirmDialog.partnerId, partner, 1, 'Administrador');
           }
@@ -144,9 +137,6 @@ const BusinessPartners: React.FC = () => {
 
   const handleSave = async (partnerData: any) => {
     try {
-      console.log('💾 [BusinessPartners] handleSave chamado com dados:', partnerData);
-      console.log('💾 [BusinessPartners] Contatos recebidos:', partnerData.contacts);
-      console.log('💾 [BusinessPartners] Endereços recebidos:', partnerData.addresses);
 
       const dataToSave = {
         name: partnerData.name,
@@ -205,9 +195,6 @@ const BusinessPartners: React.FC = () => {
         })) || []
       };
 
-      console.log('💾 [BusinessPartners] Dados preparados para salvar:', dataToSave);
-      console.log('💾 [BusinessPartners] Contatos preparados:', dataToSave.contacts);
-      console.log('💾 [BusinessPartners] Endereços preparados:', dataToSave.addresses);
 
       if (editingPartner?.id) {
         const result = await businessPartnersService.update(editingPartner.id, dataToSave, 1);

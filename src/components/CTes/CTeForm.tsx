@@ -184,7 +184,6 @@ export const CTeForm: React.FC<CTeFormProps> = ({
           if (cteComplete) {
             const calculation = await freightCostCalculator.calculateCTeCost(cteComplete);
             await freightCostCalculator.saveCostsToCTe(result.id, calculation);
-            console.log('✅ Custos calculados e salvos automaticamente');
           }
         } catch (calcError) {
           console.error('⚠️ Erro ao calcular custos:', calcError);
@@ -314,31 +313,17 @@ export const CTeForm: React.FC<CTeFormProps> = ({
 
         // Buscar transportador pelo CNPJ do emitente
         let carrierId = formData.carrier_id;
-        console.log('CNPJ do emitente extraído do XML:', parsedData.emitter_cnpj);
-        console.log('carrier_id atual no formData:', formData.carrier_id);
 
         if (parsedData.emitter_cnpj) {
-          console.log('Buscando transportador pelo CNPJ:', parsedData.emitter_cnpj);
           const carrier = await carriersService.getByCnpj(parsedData.emitter_cnpj);
-          console.log('Resultado da busca:', carrier);
 
           if (carrier) {
             carrierId = carrier.id;
-            console.log(`✅ Transportador encontrado: ${carrier.codigo} - ${carrier.razao_social} (ID: ${carrier.id})`);
           } else {
-            console.log(`❌ Transportador não encontrado para CNPJ: ${parsedData.emitter_cnpj}`);
           }
         } else {
-          console.log('⚠️ CNPJ do emitente não encontrado no XML');
         }
 
-        console.log('carrierId que será usado no formData:', carrierId);
-        console.log('📦 Dados da carga extraídos do XML:', {
-          peso: parsedData.cargo_weight,
-          valor: parsedData.cargo_value,
-          volume: parsedData.cargo_volume,
-          m3: parsedData.cargo_m3
-        });
 
         // Preencher o formulário com os dados do XML
         setFormData(prev => ({
@@ -435,7 +420,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
                     establishment_code: inv.establishment_code || '',
                     invoice_type: inv.invoice_type || 'Saída',
                     series: inv.series || '',
-                    number: inv.number?.substring(25, 34) || '',
+                    number: inv.number?.substring(25, 34).replace(/^0+/, '') || '',
                     cost_value: inv.cost_value || 0,
                     observations: `NF-e não encontrada no banco - Chave: ${inv.number}`
                   };

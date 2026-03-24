@@ -1,536 +1,352 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, HelpCircle, BarChart3, MapPin, TrendingUp } from 'lucide-react';
-import { getCurrentSessionContext } from '../../lib/sessionContext';
-import { isDemoOrganizationSync } from '../../utils/organizationHelpers';
-
-interface SimulationFilters {
-  period: string;
-  route: string;
-  originState: string;
-  originCity: string;
-  destinationState: string;
-  destinationCity: string;
-  weightRange: string;
-  simulatedCarrier: string;
-  simulatedMethod: string;
-  maxCostVariation: number;
-  maxTimeVariation: number;
-  maxSLAVariation: number;
-  prioritizedMetric: 'cost' | 'time' | 'sla';
-  optimizationType: 'new' | 'existing';
-}
+import { Calculator, HelpCircle, BarChart3, AlertCircle, Loader2, Play, MapPin, TrendingUp, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { logisticsSimulatorService, SimulationResult } from '../../services/logisticsSimulatorService';
+import { carriersService, Carrier } from '../../services/carriersService';
 
 const LogisticsSimulator: React.FC = () => {
-  const [filters, setFilters] = useState<SimulationFilters>({
-    period: 'last60days',
-    route: 'all',
-    originState: 'all',
-    originCity: 'all',
-    destinationState: 'all',
-    destinationCity: 'all',
-    weightRange: 'all',
-    simulatedCarrier: 'all',
-    simulatedMethod: 'all',
-    maxCostVariation: 0,
-    maxTimeVariation: 0,
-    maxSLAVariation: 0,
-    prioritizedMetric: 'time',
-    optimizationType: 'new'
-  });
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [results, setResults] = useState<SimulationResult[]>([]);
+  const [totalProcessed, setTotalProcessed] = useState(0);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
-  // Dados de demonstração - Mostra apenas para organization de demonstração
-  const [optimizationStats, setOptimizationStats] = useState({
-    totalOrders: 0,
-    optimizedOrders: 0,
-    optimizationRate: 0,
-    totalMethods: 0,
-    optimizedMethods: 0,
-    methodOptimizationRate: 0,
-    totalRoutes: 0,
-    optimizedRoutes: 0,
-    routeOptimizationRate: 0
-  });
+  // Initialize dates
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
 
-  const [regionData, setRegionData] = useState<Array<{ region: string; percentage: number; orders: number }>>([]);
+  const [startDate, setStartDate] = useState(thirtyDaysAgo.toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+  const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
 
-  // Carregar dados mockados apenas para organization de demonstração
   useEffect(() => {
-    const loadDemoData = async () => {
-      const context = await getCurrentSessionContext();
-      const isDemo = isDemoOrganizationSync(context.organizationId);
-
-      if (isDemo) {
-        setOptimizationStats({
-          totalOrders: 2093902,
-          optimizedOrders: 93961,
-          optimizationRate: 4.5,
-          totalMethods: 33,
-          optimizedMethods: 17,
-          methodOptimizationRate: 51.5,
-          totalRoutes: 42105,
-          optimizedRoutes: 8134,
-          routeOptimizationRate: 19.3
-        });
-
-        setRegionData([
-          { region: 'SUDESTE', percentage: 63.13, orders: 59319 },
-          { region: 'SUL', percentage: 19.48, orders: 18301 },
-          { region: 'CENTRO-OESTE', percentage: 9.47, orders: 8900 },
-          { region: 'NORDESTE', percentage: 7.92, orders: 7441 }
-        ]);
+    const loadCarriers = async () => {
+      try {
+        const fetchedCarriers = await carriersService.getAll();
+        setCarriers(fetchedCarriers.filter(c => c.status === 'ativo'));
+      } catch (err) {
+        console.error('Failed to load carriers', err);
       }
     };
-
-    loadDemoData();
+    loadCarriers();
   }, []);
 
-  const handleFilterChange = (key: keyof SimulationFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const toggleCarrier = (id: string) => {
+    setSelectedCarriers(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
   };
 
+  const handleSimulate = async () => {
+    if (selectedCarriers.length < 2) {
+      setError(t('logisticsSimulator.errors.minCarriers'));
+      return;
+    }
+    if (!startDate || !endDate) {
+      setError(t('logisticsSimulator.errors.selectPeriod'));
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResults([]);
+
+    try {
+      const response = await logisticsSimulatorService.simulateBatch({
+        period: 'custom',
+        startDate,
+        endDate,
+        carrierIds: selectedCarriers,
+        route: 'all',
+        originState: 'all',
+        originCity: 'all',
+        destinationState: 'all',
+        destinationCity: 'all',
+        weightRange: 'all'
+      });
+
+      if (response.success) {
+        // Enforce carrier names into result
+        const populatedResults = response.results.map(r => {
+           const c = carriers.find(c => c.id === r.carrierId);
+           return { ...r, carrierName: c?.razao_social || t('logisticsSimulator.unknownCarrier') };
+        });
+        setResults(populatedResults);
+        setTotalProcessed(response.totalOrdersProcessed);
+      } else {
+        setError(response.error || t('logisticsSimulator.errors.simulation'));
+      }
+    } catch (err: any) {
+      setError(err.message || t('logisticsSimulator.errors.unexpected'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // KPI Calculations
+  const validResults = results.filter(r => r.totalCost > 0);
+  const bestOption = validResults.length > 0 ? validResults[0] : null; 
+  const worstOption = validResults.length > 0 ? validResults[validResults.length - 1] : null;
+  const potentialSavings = bestOption && worstOption ? worstOption.totalCost - bestOption.totalCost : 0;
+  const potentialSavingsPct = bestOption && worstOption && worstOption.totalCost > 0 
+    ? (potentialSavings / worstOption.totalCost) * 100 
+    : 0;
+
   return (
-    <div className="p-8">
+    <div className="p-8 pb-24 h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <Calculator className="w-8 h-8 text-blue-600" />
-            Simulador Logístico
+            {t('logisticsSimulator.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Análise comparativa entre transportadoras e simulação de cenários logísticos
+            {t('logisticsSimulator.subtitle')}
           </p>
         </div>
-        <button className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200">
+        <button 
+          onClick={() => setShowHelpModal(true)}
+          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 bg-white border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+        >
           <HelpCircle className="w-5 h-5" />
+          <span className="font-medium">{t('logisticsSimulator.helpButton')}</span>
         </button>
       </div>
 
-      {/* Filters Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        {/* Period Filter */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Últimos 60 dias
-          </label>
-          <select
-            value={filters.period}
-            onChange={(e) => handleFilterChange('period', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="last30days">Últimos 30 dias</option>
-            <option value="last60days">Últimos 60 dias</option>
-            <option value="last90days">Últimos 90 dias</option>
-          </select>
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 flex items-start">
+          <AlertCircle className="w-5 h-5 text-red-500 mr-3 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">{t('logisticsSimulator.attention')}</h3>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
         </div>
+      )}
 
-        {/* Route Filter */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Rota (cidade)
-          </label>
-          <select
-            value={filters.route}
-            onChange={(e) => handleFilterChange('route', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">Todos</option>
-            <option value="sp-rj">São Paulo - Rio de Janeiro</option>
-            <option value="sp-mg">São Paulo - Minas Gerais</option>
-          </select>
-        </div>
-
-        {/* Origin State/City */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            UF | Cidade origem
-          </label>
-          <select
-            value={filters.originState}
-            onChange={(e) => handleFilterChange('originState', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">Todos</option>
-            <option value="SP">São Paulo</option>
-            <option value="RJ">Rio de Janeiro</option>
-            <option value="MG">Minas Gerais</option>
-          </select>
-        </div>
-
-        {/* Destination State/City */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            UF | Cidade destino
-          </label>
-          <select
-            value={filters.destinationState}
-            onChange={(e) => handleFilterChange('destinationState', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">Todos</option>
-            <option value="SP">São Paulo</option>
-            <option value="RJ">Rio de Janeiro</option>
-            <option value="MG">Minas Gerais</option>
-          </select>
-        </div>
-
-        {/* Weight Range */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Faixa de peso
-          </label>
-          <select
-            value={filters.weightRange}
-            onChange={(e) => handleFilterChange('weightRange', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">Todos</option>
-            <option value="0-10">0-10 kg</option>
-            <option value="10-50">10-50 kg</option>
-            <option value="50+">50+ kg</option>
-          </select>
-        </div>
-
-        {/* Simulated Carrier */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Transportadora simulada
-          </label>
-          <select
-            value={filters.simulatedCarrier}
-            onChange={(e) => handleFilterChange('simulatedCarrier', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">Todos</option>
-            <option value="correios">Correios</option>
-            <option value="jadlog">Jadlog</option>
-            <option value="total">Total Express</option>
-          </select>
-        </div>
-
-        {/* Simulated Method */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Método simulado
-          </label>
-          <select
-            value={filters.simulatedMethod}
-            onChange={(e) => handleFilterChange('simulatedMethod', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">Todos</option>
-            <option value="express">Expresso</option>
-            <option value="standard">Padrão</option>
-            <option value="economic">Econômico</option>
-          </select>
+      {/* Warning Notice as requested by User */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex items-start">
+        <Calculator className="w-5 h-5 text-blue-500 mr-3 mt-0.5" />
+        <div>
+          <h3 className="text-sm font-medium text-blue-800">{t('logisticsSimulator.calculation.title')}</h3>
+          <p className="text-sm text-blue-700 mt-1">
+            {t('logisticsSimulator.calculation.text1')}
+            <strong> {t('logisticsSimulator.calculation.text2')}</strong>
+          </p>
         </div>
       </div>
 
-      {/* Variation Sliders */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Cost Variation */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Custo (melhor variação até)
-          </label>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400">R$ 0,00</span>
-            <div className="flex-1 relative">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={filters.maxCostVariation}
-                onChange={(e) => handleFilterChange('maxCostVariation', parseInt(e.target.value))}
-                className="w-full h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs">
-                R$ {filters.maxCostVariation.toFixed(2)}
-              </div>
-            </div>
+      {/* Config Section */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-8 shadow-sm">
+        <h2 className="text-lg font-semibold mb-6 flex items-center gap-2 text-gray-800">
+          <MapPin className="w-5 h-5 text-gray-500" />
+          {t('logisticsSimulator.config.title')}
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('logisticsSimulator.config.startDate')}</label>
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('logisticsSimulator.config.endDate')}</label>
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
           </div>
         </div>
 
-        {/* Time Variation */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Prazo (melhor variação até)
-          </label>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400">0,00</span>
-            <div className="flex-1 relative">
-              <input
-                type="range"
-                min="0"
-                max="30"
-                value={filters.maxTimeVariation}
-                onChange={(e) => handleFilterChange('maxTimeVariation', parseInt(e.target.value))}
-                className="w-full h-2 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs">
-                {filters.maxTimeVariation} dias
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* SLA Variation */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            SLA (melhor variação até)
-          </label>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400">0,0</span>
-            <div className="flex-1 relative">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={filters.maxSLAVariation}
-                onChange={(e) => handleFilterChange('maxSLAVariation', parseInt(e.target.value))}
-                className="w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs">
-                {filters.maxSLAVariation}%
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Optimization Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Optimization Type */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-            Otimização com tabelas
-          </label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleFilterChange('optimizationType', 'new')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                filters.optimizationType === 'new'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              {t('logisticsSimulator.config.selectCarriers')}
+            </label>
+            <button 
+              onClick={() => {
+                if (selectedCarriers.length === carriers.length) {
+                  setSelectedCarriers([]);
+                } else {
+                  setSelectedCarriers(carriers.map(c => c.id));
+                }
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
             >
-              Novas
-            </button>
-            <button
-              onClick={() => handleFilterChange('optimizationType', 'existing')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                filters.optimizationType === 'existing'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Vigentes
+              {selectedCarriers.length === carriers.length ? t('logisticsSimulator.config.deselectAll') : t('logisticsSimulator.config.selectAll')}
             </button>
           </div>
-        </div>
-
-        {/* Prioritized Metric */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-            Métrica priorizada
-          </label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleFilterChange('prioritizedMetric', 'cost')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                filters.prioritizedMetric === 'cost'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Custo
-            </button>
-            <button
-              onClick={() => handleFilterChange('prioritizedMetric', 'time')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                filters.prioritizedMetric === 'time'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Prazo
-            </button>
-            <button
-              onClick={() => handleFilterChange('prioritizedMetric', 'sla')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
-                filters.prioritizedMetric === 'sla'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              SLA
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* General Overview Tab */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mb-8">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <div className="flex">
-            <button className="px-6 py-4 text-sm font-medium text-green-600 border-b-2 border-green-600 bg-green-50">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                Otimização geral
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-6">
-            <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Qtd. pedidos</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {optimizationStats.totalOrders.toLocaleString()}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Qtd. pedidos otimizados</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {optimizationStats.optimizedOrders.toLocaleString()}
-              </div>
-              <div className="text-sm text-green-600 font-medium">
-                {optimizationStats.optimizationRate}%
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Qtd. métodos</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {optimizationStats.totalMethods}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Qtd. métodos otimizados</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {optimizationStats.optimizedMethods}
-              </div>
-              <div className="text-sm text-green-600 font-medium">
-                {optimizationStats.methodOptimizationRate}%
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Qtd. rotas</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {optimizationStats.totalRoutes.toLocaleString()}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Qtd. rotas otimizadas</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {optimizationStats.optimizedRoutes.toLocaleString()}
-              </div>
-              <div className="text-sm text-green-600 font-medium">
-                {optimizationStats.routeOptimizationRate}%
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Maps and Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Origin Map */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-blue-600" />
-            Origem
-          </h3>
-          <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Mapa do Brasil - Origem</p>
-              <p className="text-sm">Visualização das regiões de origem</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Origin Distribution Chart */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            Distribuição e qtd. pedidos otimizados por Região | UF | Cidade origem
-          </h3>
-          <div className="space-y-4">
-            {regionData.map((region, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <div className="w-20 text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  {region.region}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                      <div
-                        className="h-full bg-green-600 rounded-full transition-all duration-500"
-                        style={{ width: `${region.percentage}%` }}
-                      />
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[60px]">
-                      {region.percentage}%
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 min-w-[50px]">
-                      {region.orders.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto p-2 border rounded-lg bg-gray-50">
+            {carriers.map(c => (
+              <label key={c.id} className={`flex items-center gap-3 p-3 bg-white rounded-lg border cursor-pointer hover:bg-blue-50 transition-colors ${selectedCarriers.includes(c.id) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'}`}>
+                <input 
+                  type="checkbox" 
+                  checked={selectedCarriers.includes(c.id)}
+                  onChange={() => toggleCarrier(c.id)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700 truncate">{c.codigo ? `${c.codigo} - ` : ''}{c.razao_social || c.fantasia}</span>
+              </label>
             ))}
           </div>
         </div>
 
-        {/* Destination Map */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-red-600" />
-            Destino
-          </h3>
-          <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Mapa do Brasil - Destino</p>
-              <p className="text-sm">Visualização das regiões de destino</p>
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={handleSimulate}
+            disabled={loading || selectedCarriers.length < 2}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5 fill-current" />}
+            {loading ? t('logisticsSimulator.run.processing') : t('logisticsSimulator.run.start')}
+          </button>
+        </div>
+      </div>
+
+      {/* Results Section */}
+      {results.length > 0 && (
+        <div className="space-y-8 animate-fade-in">
+          {/* Header Results */}
+          <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-gray-800">
+              <BarChart3 className="w-6 h-6 text-green-600" />
+              {t('logisticsSimulator.results.title')}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-lg border-l-4 border-green-500 shadow-sm">
+              <div className="text-sm text-gray-500 font-medium tracking-wide min-h-[40px]">{t('logisticsSimulator.results.bestOption.title')}</div>
+              <div className="text-2xl font-bold text-gray-900 mt-2 truncate">{bestOption?.carrierName}</div>
+              <div className="text-sm font-medium text-green-600 mt-1">{t('logisticsSimulator.results.bestOption.totalCost')}{bestOption?.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg border-l-4 border-blue-500 shadow-sm">
+              <div className="text-sm text-gray-500 font-medium tracking-wide min-h-[40px]">{t('logisticsSimulator.results.potentialSavings.title')}</div>
+              <div className="text-2xl font-bold text-blue-600 mt-2">
+                {potentialSavings.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </div>
+              <div className="text-sm font-medium text-blue-800 mt-1">{potentialSavingsPct.toFixed(1)}{t('logisticsSimulator.results.potentialSavings.marginSaved')}</div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg border-l-4 border-purple-500 shadow-sm">
+              <div className="text-sm text-gray-500 font-medium tracking-wide min-h-[40px]">{t('logisticsSimulator.results.efficiency.title')}</div>
+              <div className="text-2xl font-bold text-gray-900 mt-2">{totalProcessed}</div>
+              <div className="text-sm font-medium text-purple-600 mt-1">{t('logisticsSimulator.results.efficiency.description')}</div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-gray-800">
+               <TrendingUp className="w-5 h-5 text-gray-500" />
+               {t('logisticsSimulator.results.chart.title')}
+             </h3>
+             <div className="space-y-6">
+                {results.map((res) => {
+                  // calculate width relative to the worst option (which is max cost)
+                  const pct = worstOption?.totalCost ? (res.totalCost / worstOption.totalCost) * 100 : 0;
+                  const isBest = validResults.length > 0 && res.carrierId === bestOption?.carrierId;
+
+                  return (
+                    <div key={res.carrierId} className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-sm font-medium">
+                        <span className="text-gray-700">{res.carrierName} {isBest && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">{t('logisticsSimulator.results.chart.winner')}</span>} {res.totalCost === 0 && <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">{t('logisticsSimulator.results.chart.noRates')}</span>}</span>
+                        <span className="text-gray-900">{res.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden flex">
+                        <div 
+                           className={`h-full rounded-full transition-all duration-1000 ${isBest ? 'bg-green-500' : 'bg-blue-400'}`} 
+                           style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{t('logisticsSimulator.results.chart.averageCost')}{res.averageCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+                <Calculator className="w-6 h-6 text-blue-600" />
+                {t('logisticsSimulator.helpModal.title')}
+              </h2>
+              <button 
+                onClick={() => setShowHelpModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 text-gray-700 dark:text-gray-300">
+              <p className="text-base">
+                {t('logisticsSimulator.helpModal.strategy')}
+                <strong className="text-blue-700 dark:text-blue-400">{t('logisticsSimulator.helpModal.strategyBold')}</strong>
+                {t('logisticsSimulator.helpModal.strategyEnd')}
+              </p>
+              
+              <ol className="space-y-4 list-decimal list-inside marker:text-blue-600 marker:font-bold">
+                <li className="pl-2">
+                  <span className="font-semibold text-gray-900 dark:text-white">{t('logisticsSimulator.helpModal.step1Title')}</span>
+                  {t('logisticsSimulator.helpModal.step1Text')}
+                </li>
+                <li className="pl-2">
+                  <span className="font-semibold text-gray-900 dark:text-white">{t('logisticsSimulator.helpModal.step2Title')}</span>
+                  {t('logisticsSimulator.helpModal.step2Text')}
+                </li>
+                <li className="pl-2">
+                  <span className="font-semibold text-gray-900 dark:text-white">{t('logisticsSimulator.helpModal.step3Title')}</span>
+                  {t('logisticsSimulator.helpModal.step3Text')}
+                </li>
+                <li className="pl-2">
+                  <span className="font-semibold text-gray-900 dark:text-white">{t('logisticsSimulator.helpModal.step4Title')}</span>
+                  {t('logisticsSimulator.helpModal.step4Text')}
+                  <strong className="text-green-700 dark:text-green-400">{t('logisticsSimulator.helpModal.step4Bold')}</strong>
+                  {t('logisticsSimulator.helpModal.step4End')}
+                  <strong className="text-purple-700 dark:text-purple-400">{t('logisticsSimulator.helpModal.step4BoldSavings')}</strong>
+                </li>
+              </ol>
+
+              <div className="mt-8 bg-blue-50 dark:bg-blue-900/30 rounded-lg p-5 border border-blue-100 dark:border-blue-800/50 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                  {t('logisticsSimulator.helpModal.exampleTitle')}
+                </h4>
+                <p className="text-sm text-blue-900 dark:text-blue-100 leading-relaxed">
+                  {t('logisticsSimulator.helpModal.exampleText')}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+              <button 
+                onClick={() => setShowHelpModal(false)}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm"
+              >
+                {t('logisticsSimulator.helpModal.close')}
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Destination Distribution Chart */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            Distribuição e qtd. pedidos otimizados por Região | UF | Cidade destino
-          </h3>
-          <div className="space-y-4">
-            {regionData.map((region, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <div className="w-20 text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  {region.region}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                      <div
-                        className="h-full bg-green-600 rounded-full transition-all duration-500"
-                        style={{ width: `${region.percentage}%` }}
-                      />
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[60px]">
-                      {region.percentage}%
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 min-w-[50px]">
-                      {region.orders.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

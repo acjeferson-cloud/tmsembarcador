@@ -598,6 +598,8 @@ export interface Invoice {
   xml_content: string | null;
   xml_processado: boolean;
   status: 'pendente' | 'processada' | 'em_coleta' | 'coletada' | 'em_transito' | 'entregue' | 'cancelada' | 'rejeitada';
+  direction: 'outbound' | 'inbound' | 'reverse';
+  original_invoice_id: string | null;
   observacoes: string | null;
   metadata: Record<string, any>;
   created_at: string;
@@ -642,6 +644,7 @@ export interface Cte {
   divergencia_valores: boolean;
   valor_divergencia: number;
   motivo_divergencia: string | null;
+  direction: 'outbound' | 'inbound' | 'reverse';
   observacoes: string | null;
   metadata: Record<string, any>;
   created_at: string;

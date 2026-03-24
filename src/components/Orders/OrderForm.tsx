@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Info, DollarSign, Users, Package, CheckCircle, AlertCircle, Save, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ordersService, OrderDeliveryStatus, Order } from '../../services/ordersService';
 import { carriersService } from '../../services/carriersService';
 import { businessPartnersService } from '../../services/businessPartnersService';
@@ -28,6 +29,7 @@ interface OrderItem {
 }
 
 export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, order }) => {
+  const { t } = useTranslation();
   const { currentEstablishment, user } = useAuth();
   const [activeTab, setActiveTab] = useState<'basic' | 'customer' | 'products' | 'values'>('basic');
   const [carriers, setCarriers] = useState<any[]>([]);
@@ -100,13 +102,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
   }, []);
 
   useEffect(() => {
-    console.log('customerData.state mudou para:', customerData.state);
   }, [customerData.state]);
 
   useEffect(() => {
     if (order) {
-      console.log('=============== RECUPERANDO PEDIDO PARA EDICAO ===============');
-      console.log('Order Data Props:', JSON.parse(JSON.stringify(order)));
       
       const safeDataPedido = order.issue_date ? order.issue_date.split('T')[0] : new Date().toISOString().split('T')[0];
       const safeDataEntrada = order.entry_date ? order.entry_date.split('T')[0] : new Date().toISOString().split('T')[0];
@@ -159,7 +158,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
       // Load order items if they exist
       if (order.items && order.items.length > 0) {
-        console.log('Carregando produtos do pedido:', order.items);
         setProducts(order.items);
       }
     }
@@ -175,13 +173,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
       setCarriers(carriersData);
       const clientList = customersData.filter((c: any) => c.type === 'customer' || c.type === 'both');
-      console.log('Total de clientes carregados:', clientList.length);
-      console.log('Primeiros 3 clientes:', clientList.slice(0, 3).map((c: any) => ({ name: c.name, type: c.type })));
       setCustomers(clientList);
       setFilteredCustomers(clientList);
 
-      console.log('Estados carregados:', statesData.length);
-      console.log('Primeiros 5 estados:', statesData.slice(0, 5).map((s: any) => ({ abbreviation: s.abbreviation, name: s.name })));
       setStates(statesData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -214,13 +208,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
   };
 
   const selectCustomer = (customer: any) => {
-    console.log('=== SELECIONANDO CLIENTE ===');
-    console.log('Cliente completo:', customer);
-    console.log('Endereços do cliente:', customer.addresses);
 
     const primaryAddress = customer.addresses?.find((a: any) => a.is_primary) || customer.addresses?.[0] || {};
-    console.log('Endereço principal:', primaryAddress);
-    console.log('Estado do endereço:', primaryAddress.state);
 
     const customerDataToSet = {
       name: customer.name || '',
@@ -236,8 +225,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
       email: customer.email || ''
     };
 
-    console.log('Dados do cliente a serem setados:', customerDataToSet);
-    console.log('Estado específico:', customerDataToSet.state);
 
     setFormData(prev => ({
       ...prev,
@@ -258,9 +245,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
     setCustomerSearchTerm(searchValue);
     setShowCustomerDropdown(true);
 
-    console.log('=== BUSCA DE CLIENTES ===');
-    console.log('Termo de busca:', searchValue);
-    console.log('Total de clientes disponíveis:', customers.length);
 
     if (searchValue.trim() === '') {
       setFilteredCustomers(customers);
@@ -281,8 +265,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
              city.includes(searchLower);
     });
 
-    console.log('Clientes filtrados:', filtered.length);
-    console.log('Primeiros 3 resultados:', filtered.slice(0, 3).map(c => c.name));
     setFilteredCustomers(filtered);
   };
 
@@ -366,7 +348,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
   };
 
   const handleSubmit = async () => {
-    console.log('=== INICIANDO SALVAMENTO DO PEDIDO ===');
 
     if (!formData.order_number) {
       setError('Por favor, informe o número do pedido.');
@@ -392,8 +373,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
       return;
     }
 
-    console.log('Dados do formulário:', formData);
-    console.log('Produtos:', products);
 
     setIsSubmitting(true);
     setError('');
@@ -408,7 +387,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
       // Executar automaticamente o cálculo de custo de frete se tivermos peso e valor
       if (Number(formData.weight) > 0 && products.length > 0) {
         // Tentar usar o zip_code de customerData, ou destination_city caso zip_code esteja vazio
-        console.log('Calculando cotação de frete no pedido...');
         try {
           const results = await freightQuoteService.calculateQuote(
             {
@@ -436,18 +414,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 carrierId = selectedQuote.carrierId;
                 carrierName = selectedQuote.carrierName;
                 finalFreightValue = selectedQuote.totalValue;
-                console.log('Utilizando transportadora selecionada manualmente pelo usuário:', carrierName, finalFreightValue);
               } else {
                 carrierId = formData.carrier_id;
                 carrierName = formData.carrier_name || 'Sem transportador';
                 finalFreightValue = Number(formData.freight_value) || 0;
-                console.log('Transportadora selecionada manualmente mantida (nenhuma tarifa automática aplicável encontrada).');
               }
             } else {
               finalFreightValue = results[0].totalValue;
               carrierId = bestCarrierId;
               carrierName = results[0].carrierName;
-              console.log('Cotação Calculada Com Sucesso. Transportadora Vencedora:', carrierName, finalFreightValue);
             }
           }
         } catch (calcError) {
@@ -495,20 +470,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
         created_by: userId
       };
 
-      console.log('Dados do pedido preparados:', orderData);
 
       if (order && order.id) {
         // Update existing order
-        console.log('Atualizando pedido existente:', order.id);
         const previousStatus = order.status;
         const result = await ordersService.update(order.id, orderData as Partial<Order>);
-        console.log('Resultado da atualização:', result);
 
         if (result.success) {
           // Update order items
-          console.log('Atualizando itens do pedido...');
           const itemsResult = await ordersService.updateItems(order.id, products);
-          console.log('Resultado da atualização dos itens:', itemsResult);
 
           if (!itemsResult.success) {
             console.error('Erro ao atualizar itens:', itemsResult.error);
@@ -518,10 +488,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
           // Verificar se o status mudou para "emitido"
           if (previousStatus !== 'emitido' && orderData.status === 'emitido') {
-            console.log('Status alterado para EMITIDO - disparando notificações...');
             const notificationResult = await orderNotificationService.sendOrderCreatedNotifications(order.id);
             if (notificationResult.success) {
-              console.log('Notificações enviadas com sucesso!');
             } else {
               console.error('Erro ao enviar notificações:', notificationResult.error);
             }
@@ -536,17 +504,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
         }
       } else {
         // Create new order
-        console.log('Criando novo pedido...');
         const result = await ordersService.create(orderData as any);
-        console.log('Resultado da criação:', result);
 
         if (result.success && result.id) {
-          console.log('Pedido criado com ID:', result.id);
 
           if (products.length > 0) {
-            console.log('Adicionando itens ao pedido...');
             const itemsResult = await ordersService.addItems(result.id, products);
-            console.log('Resultado dos itens:', itemsResult);
 
             if (!itemsResult.success) {
               console.error('Erro ao adicionar itens:', itemsResult.error);
@@ -555,10 +518,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
           // Verificar se o status é "emitido" na criação
           if (orderData.status === 'emitido') {
-            console.log('Pedido criado com status EMITIDO - disparando notificações...');
             const notificationResult = await orderNotificationService.sendOrderCreatedNotifications(result.id);
             if (notificationResult.success) {
-              console.log('Notificações enviadas com sucesso!');
             } else {
               console.error('Erro ao enviar notificações:', notificationResult.error);
             }
@@ -604,8 +565,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{order ? 'Editar Pedido' : 'Novo Pedido'}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha os dados do pedido</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{order ? t('orders.form.editOrder') : t('orders.form.newOrder')}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('orders.form.fillOrderData')}</p>
               </div>
             </div>
             <button
@@ -614,7 +575,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
               className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save className="w-4 h-4" />
-              <span>{isSubmitting ? 'Salvando...' : 'Salvar Pedido'}</span>
+              <span>{isSubmitting ? t('orders.form.saving') : t('orders.form.save')}</span>
             </button>
           </div>
         </div>
@@ -647,7 +608,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 >
                   <div className="flex items-center space-x-2">
                     <Info size={16} />
-                    <span>Dados Básicos</span>
+                    <span>{t('orders.form.generalInfo')}</span>
                   </div>
                 </button>
                 <button
@@ -660,7 +621,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 >
                   <div className="flex items-center space-x-2">
                     <Users size={16} />
-                    <span>Cliente</span>
+                    <span>{t('orders.table.customer')}</span>
                   </div>
                 </button>
                 <button
@@ -673,7 +634,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 >
                   <div className="flex items-center space-x-2">
                     <Package size={16} />
-                    <span>Itens ({products.length})</span>
+                    <span>{t('orders.form.products')} ({products.length})</span>
                   </div>
                 </button>
                 <button
@@ -686,7 +647,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 >
                   <div className="flex items-center space-x-2">
                     <DollarSign size={16} />
-                    <span>Valores</span>
+                    <span>{t('orders.form.values')}</span>
                   </div>
                 </button>
               </nav>
@@ -697,35 +658,29 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Série
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.table.serie')}</label>
                       <input
                         type="text"
                         value={formData.serie || ''}
                         onChange={(e) => handleInputChange('serie', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Ex: 1"
+                        placeholder={t('orders.form.seriePlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Número do Pedido *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.orderNumber')}</label>
                       <input
                         type="text"
                         value={formData.order_number}
                         onChange={(e) => handleInputChange('order_number', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Ex: PED-2024-001"
+                        placeholder={t('orders.form.orderNumberPlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Código de Rastreamento
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.trackingCode')}</label>
                       <input
                         type="text"
                         value={formData.tracking_code}
@@ -733,32 +688,28 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         readOnly
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
-                        placeholder="Gerado automaticamente"
+                        placeholder={t('orders.form.trackingCodeGenerated')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Status *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.status')}</label>
                       <select
                         value={formData.status}
                         onChange={(e) => handleInputChange('status', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="emitido">Emitido</option>
-                        <option value="coletado">Em Coleta</option>
-                        <option value="em_transito">Em Trânsito</option>
-                        <option value="saiu_entrega">Saiu p/Entrega</option>
-                        <option value="entregue">Entregue</option>
-                        <option value="cancelado">Cancelado</option>
+                        <option value="emitido">{t('orders.statusOptions.issued')}</option>
+                        <option value="coletado">{t('orders.statusOptions.collected')}</option>
+                        <option value="em_transito">{t('orders.statusOptions.inTransit')}</option>
+                        <option value="saiu_entrega">{t('orders.statusOptions.outForDelivery')}</option>
+                        <option value="entregue">{t('orders.statusOptions.delivered')}</option>
+                        <option value="cancelado">{t('orders.statusOptions.canceled')}</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Data de Emissão *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.issueDate')}</label>
                       <input
                         type="date"
                         value={formData.issue_date}
@@ -768,9 +719,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Data de Entrada *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.table.entryDate')} *</label>
                       <input
                         type="date"
                         value={formData.entry_date}
@@ -780,9 +729,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Previsão de Entrega
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.table.expectedDate')}</label>
                       <input
                         type="date"
                         value={formData.expected_delivery}
@@ -792,15 +739,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Transportadora
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.carrier')}</label>
                       <select
                         value={formData.carrier_id}
                         onChange={(e) => handleInputChange('carrier_id', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="">Selecione uma transportadora</option>
+                        <option value="">{t('orders.form.selectCarrier')}</option>
                         {carriers.map((carrier) => (
                           <option key={carrier.id} value={carrier.id}>
                             {carrier.codigo} - {carrier.razao_social}
@@ -810,15 +755,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Observações
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.observations')}</label>
                       <textarea
                         value={formData.observations}
                         onChange={(e) => handleInputChange('observations', e.target.value)}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Observações adicionais sobre o pedido..."
+                        placeholder={t('orders.form.obsPlaceholder')}
                       />
                     </div>
                   </div>
@@ -829,21 +772,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                 <div className="space-y-6">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                     <p className="text-sm text-blue-800">
-                      <strong>Selecione um cliente existente</strong> ou preencha os dados manualmente abaixo.
+                      <span dangerouslySetInnerHTML={{ __html: t('orders.form.addCustomerMsg') }} />
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="col-span-3 relative customer-search-container">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Selecionar Cliente Cadastrado
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.selectCustomerBtn')}</label>
                       <input
                         type="text"
                         value={customerSearchTerm}
                         onChange={(e) => handleCustomerSearch(e.target.value)}
                         onFocus={() => setShowCustomerDropdown(true)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Digite para buscar cliente por nome, CNPJ ou cidade..."
+                        placeholder={t("orders.form.customerSearchPlaceholder")}
                       />
                       {showCustomerDropdown && filteredCustomers.length > 0 && (
                         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -869,29 +810,23 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         </div>
                       )}
                       {showCustomerDropdown && filteredCustomers.length === 0 && customerSearchTerm && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
-                          Nenhum cliente encontrado
-                        </div>
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">{t('orders.form.noCustomersFound')}</div>
                       )}
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Nome / Razão Social *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.customerName')}</label>
                       <input
                         type="text"
                         value={customerData.name}
                         onChange={(e) => handleCustomerDataChange('name', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Digite o nome do cliente"
+                        placeholder={t('orders.form.customerNamePlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        CNPJ / CPF
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.document')}</label>
                       <input
                         type="text"
                         value={customerData.cnpj}
@@ -902,22 +837,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Endereço
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.address')}</label>
                       <input
                         type="text"
                         value={customerData.address}
                         onChange={(e) => handleCustomerDataChange('address', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Rua, Avenida..."
+                        placeholder={t('orders.form.addressPlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Número
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.number')}</label>
                       <input
                         type="text"
                         value={customerData.number}
@@ -928,54 +859,46 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Complemento
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.complement')}</label>
                       <input
                         type="text"
                         value={customerData.complement}
                         onChange={(e) => handleCustomerDataChange('complement', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Apto, Sala, Bloco..."
+                        placeholder={t('orders.form.complementPlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Bairro
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.neighborhood')}</label>
                       <input
                         type="text"
                         value={customerData.neighborhood}
                         onChange={(e) => handleCustomerDataChange('neighborhood', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Centro"
+                        placeholder={t('orders.form.neighborhoodPlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Cidade *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.city')}</label>
                       <input
                         type="text"
                         value={customerData.city}
                         onChange={(e) => handleCustomerDataChange('city', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="São Paulo"
+                        placeholder={t('orders.form.cityPlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Estado *
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.state')}</label>
                       <select
                         value={customerData.state}
                         onChange={(e) => handleCustomerDataChange('state', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="">Selecione o estado</option>
+                        <option value="">{t('orders.form.selectState')}</option>
                         {states.map((state: any) => (
                           <option key={state.abbreviation} value={state.abbreviation}>
                             {state.abbreviation} - {state.name}
@@ -985,9 +908,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        CEP
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.zipCode')}</label>
                       <input
                         type="text"
                         value={customerData.zip_code}
@@ -998,9 +919,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Telefone
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.phone')}</label>
                       <input
                         type="text"
                         value={customerData.phone}
@@ -1011,15 +930,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Email
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.email')}</label>
                       <input
                         type="email"
                         value={customerData.email}
                         onChange={(e) => handleCustomerDataChange('email', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="cliente@email.com"
+                        placeholder={t('orders.form.emailPlaceholder')}
                       />
                     </div>
                   </div>
@@ -1029,28 +946,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
               {activeTab === 'products' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Adicione os itens deste pedido
-                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('orders.form.addProductsMsg')}</p>
                     <button
                       onClick={addProduct}
                       className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
                       <Plus size={16} />
-                      <span>Adicionar Item</span>
+                      <span>{t('orders.form.addProductBtn')}</span>
                     </button>
                   </div>
 
                   {products.length === 0 ? (
                     <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
                       <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">Nenhum item adicionado</p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">{t('orders.form.noProductsMsg')}</p>
                       <button
                         onClick={addProduct}
                         className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         <Plus size={16} />
-                        <span>Adicionar Primeiro Item</span>
+                        <span>{t('orders.form.addFirstProductBtn')}</span>
                       </button>
                     </div>
                   ) : (
@@ -1058,13 +973,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Código</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição</th>
-                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Qtd</th>
-                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Peso (kg)</th>
-                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Cubagem (m³)</th>
-                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Valor Unit.</th>
-                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Valor Total</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.productCode')}</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.productDescription')}</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.quantity')}</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.weight')}</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.cubicMeters')}</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.unitPrice')}</th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('orders.form.totalPrice')}</th>
                             <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Ações</th>
                           </tr>
                         </thead>
@@ -1077,7 +992,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                                   value={product.product_code}
                                   onChange={(e) => updateProduct(index, 'product_code', e.target.value)}
                                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                  placeholder="Código"
+                                  placeholder={t('orders.form.productCodePlaceholder')}
                                 />
                               </td>
                               <td className="py-3 px-4">
@@ -1086,7 +1001,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                                   value={product.product_description}
                                   onChange={(e) => updateProduct(index, 'product_description', e.target.value)}
                                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                  placeholder="Descrição do item"
+                                  placeholder={t('orders.form.productDescPlaceholder')}
                                 />
                               </td>
                               <td className="py-3 px-4">
@@ -1136,7 +1051,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                                 <button
                                   onClick={() => removeProduct(index)}
                                   className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  title="Remover item"
+                                  title={t('orders.form.removeItem')}
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -1146,9 +1061,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         </tbody>
                         <tfoot>
                           <tr className="border-t-2 border-gray-300 bg-gray-50 dark:bg-gray-900">
-                            <td colSpan={6} className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white text-right">
-                              Total dos Itens:
-                            </td>
+                            <td colSpan={6} className="py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white text-right">{t('orders.form.totalProductsValue')}</td>
                             <td className="py-3 px-4 text-sm font-bold text-gray-900 dark:text-white text-right">
                               {formatCurrency(totalProductsValue)}
                             </td>
@@ -1166,9 +1079,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2">
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <label className="block text-sm font-medium text-blue-900 mb-2">
-                          Valor Total do Pedido
-                        </label>
+                        <label className="block text-sm font-medium text-blue-900 mb-2">{t('orders.form.orderTotalValue')}</label>
                         <div className="text-3xl font-bold text-blue-900">
                           {formatCurrency(formData.order_value + formData.freight_value)}
                         </div>
@@ -1176,22 +1087,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Valor dos Itens
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.details.summary.itemsValue')}</label>
                       <input
                         type="text"
                         value={formatCurrency(totalProductsValue)}
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900 font-semibold"
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Calculado automaticamente</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('orders.form.calculatedAutoHint')}</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Valor do Frete Estimado
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.freightEstimatedValue')}</label>
                       <input
                         type="number"
                         value={formData.freight_value}
@@ -1200,16 +1107,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         min="0"
                         step="0.01"
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Será sobrescrito pelo cálculo automático se o peso for preenchido</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('orders.form.freightEstimatedHint')}</p>
                     </div>
 
                     <div className="col-span-2 border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                      <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Dados da Carga (para cálculo de frete automático)</h4>
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('orders.form.cargoDataHint')}</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Peso Total (kg)
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.weight')}</label>
                           <input
                             type="text"
                             value={formData.weight || 0}
@@ -1218,9 +1123,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Quantidade de Volumes
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.volumesQty')}</label>
                           <input
                             type="text"
                             value={formData.volume_qty || 1}
@@ -1245,15 +1148,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     <div className="col-span-2 mt-4">
                       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-green-900">Valor do Pedido (sem frete):</span>
+                          <span className="text-sm font-medium text-green-900">{t('orders.form.orderValueWithoutFreight')}</span>
                           <span className="text-lg font-bold text-green-900">{formatCurrency(formData.order_value)}</span>
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-sm font-medium text-green-900">Valor do Frete:</span>
+                          <span className="text-sm font-medium text-green-900">{t('orders.table.freightValue')}:</span>
                           <span className="text-lg font-bold text-green-900">{formatCurrency(formData.freight_value)}</span>
                         </div>
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-green-300">
-                          <span className="text-base font-semibold text-green-900">Total Geral:</span>
+                          <span className="text-base font-semibold text-green-900">{t('orders.form.totalGeneral')}</span>
                           <span className="text-2xl font-bold text-green-900">
                             {formatCurrency(formData.order_value + formData.freight_value)}
                           </span>
