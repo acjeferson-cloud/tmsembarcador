@@ -1,726 +1,189 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Settings, TrendingUp, Users, MessageSquare, Mail, Send, TestTube, Info } from 'lucide-react';
-import { npsService, NPSConfig } from '../../services/npsService';
-import { npsEmailTemplateService } from '../../services/npsEmailTemplateService';
-import { InlineMessage } from '../common/InlineMessage';
+import { 
+  Settings, Search, Calendar, Filter, Clock, CheckCircle, 
+  XCircle, AlertCircle, RefreshCcw, Send, CheckSquare, X, Play, Activity
+} from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { npsCxService, NpsDispatch, NpsSettings } from '../../services/npsCxService';
 import { Toast, ToastType } from '../common/Toast';
-import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
-import { useAuth } from '../../hooks/useAuth';
-import { getBaseUrl } from '../../utils/urlHelpers';
+import Breadcrumbs from '../Layout/Breadcrumbs';
 
-export const NPSConfiguration: React.FC = () => {
+export const NPSConfiguration = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const { isActive: npsActive, isLoading: npsLoading } = useInnovation(
-    INNOVATION_IDS.NPS,
-    user?.id
-  );
-  const [config, setConfig] = useState<Partial<NPSConfig>>({
-    nps_cliente_ativo: true,
-    nps_interno_ativo: true,
-    canais_envio: {
-      whatsapp: true,
-      email: false,
-    },
-    periodicidade_calculo: 'mensal',
-    pesos_criterios: {
-      pontualidade: 0.40,
-      ocorrencias: 0.30,
-      comunicacao: 0.15,
-      pod: 0.15,
-    },
-    dias_para_expirar: 7,
+  
+  // Settings State
+  const [settings, setSettings] = useState<NpsSettings>({
+    automation_active: false,
+    delay_hours: 24,
+    expiration_days: 7
   });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [configSuccess, setConfigSuccess] = useState(false);
 
-  const [estabelecimentoId, setEstabelecimentoId] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  // Grid State
+  const [dispatches, setDispatches] = useState<NpsDispatch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    searchText: ''
+  });
+  
+  // Resend / Cancel State
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isTestingJob, setIsTestingJob] = useState(false);
+
+  // Toast Notifications
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [validationError, setValidationError] = useState<string>('');
-  const [showTestModal, setShowTestModal] = useState(false);
-  const [testEmail, setTestEmail] = useState('');
-  const [isSendingTest, setIsSendingTest] = useState(false);
+
+  const breadcrumbItems = [
+    { label: t('NPS / Customer Experience') },
+    { label: t('Configurações e Disparos'), current: true }
+  ];
 
   useEffect(() => {
-    loadConfig();
+    loadData();
   }, []);
 
-  const loadConfig = async (): Promise<string | null> => {
+  const loadData = async () => {
+    setIsLoading(true);
     try {
-      const estabelecimentoStr = localStorage.getItem('tms-current-establishment');
-      if (!estabelecimentoStr) {
-        console.warn('⚠️ [NPSConfig] Nenhum estabelecimento selecionado no localStorage');
-        return null;
+      const [settingsData, dispatchesData] = await Promise.all([
+        npsCxService.getSettings(),
+        npsCxService.getDispatches({ status: filters.status, searchText: filters.searchText })
+      ]);
+      
+      if (settingsData) {
+        setSettings(settingsData);
       }
-
-      const estabelecimento = JSON.parse(estabelecimentoStr);
-      const codigo = estabelecimento.codigo;
-
-      if (!codigo) {
-        console.warn('⚠️ [NPSConfig] Estabelecimento sem código:', estabelecimento);
-        return null;
-      }
-
-
-
-      // Buscar estabelecimento (o contexto é configurado automaticamente)
-      const { supabase } = await import('../../lib/supabase');
-      const { data, error } = await supabase
-        .from('establishments')
-        .select('id, codigo, razao_social, organization_id, environment_id')
-        .eq('codigo', codigo)
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error('❌ [NPSConfig] Erro ao buscar estabelecimento:', error);
-        console.error('   Código:', error.code);
-        console.error('   Mensagem:', error.message);
-        console.error('   Detalhes:', error.details);
-
-        if (error.code === 'PGRST116') {
-          setToast({
-            message: `Múltiplos estabelecimentos encontrados com código ${codigo}. Verifique o contexto da sessão.`,
-            type: 'error',
-          });
-        } else {
-          setToast({
-            message: 'Erro ao buscar estabelecimento. Tente novamente',
-            type: 'error',
-          });
-        }
-        return null;
-      }
-
-      if (!data?.id) {
-        console.warn('⚠️ [NPSConfig] Estabelecimento não encontrado com código:', codigo);
-        setToast({
-          message: `Estabelecimento não encontrado nesta organização/ambiente`,
-          type: 'error',
-        });
-        return null;
-      }
-
-
-      setEstabelecimentoId(data.id);
-
-      const existingConfig = await npsService.getConfig(data.id);
-      if (existingConfig) {
-        setConfig(existingConfig);
-      }
-
-      return data.id;
+      setDispatches(dispatchesData);
     } catch (error) {
-      console.error('❌ [NPSConfig] Erro ao carregar configuração:', error);
-      setToast({
-        message: 'Erro ao carregar configuração. Tente novamente',
-        type: 'error',
-      });
-      return null;
-    }
-  };
-
-  const handleSave = async () => {
-    if (!npsActive) {
-      setToast({
-        message: 'Recurso não contratado. Ative em Inovações & Sugestões.',
-        type: 'error',
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setValidationError('');
-
-      const totalPesos =
-        config.pesos_criterios!.pontualidade +
-        config.pesos_criterios!.ocorrencias +
-        config.pesos_criterios!.comunicacao +
-        config.pesos_criterios!.pod;
-
-      if (Math.abs(totalPesos - 1) > 0.01) {
-        setValidationError(t('nps.config.messages.weightsMustBe100'));
-        return;
-      }
-
-      await npsService.saveConfig({
-        ...config,
-        establishment_id: estabelecimentoId,
-      });
-
-      setToast({
-        message: t('nps.config.messages.configSavedSuccess'),
-        type: 'success',
-      });
-    } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-      setToast({
-        message: t('nps.config.messages.configSaveError'),
-        type: 'error',
-      });
+      console.error('Erro ao carregar dados NPS CX:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePesoChange = (campo: string, valor: number) => {
-    setConfig({
-      ...config,
-      pesos_criterios: {
-        ...config.pesos_criterios!,
-        [campo]: valor,
-      },
-    });
-    setValidationError('');
-  };
-
-  const handleSendTest = async () => {
-    if (!npsActive) {
-      setToast({
-        message: 'Recurso não contratado. Ative em Inovações & Sugestões.',
-        type: 'error',
-      });
-      return;
-    }
-
-    if (!testEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
-      setToast({
-        message: t('nps.config.messages.enterValidEmail'),
-        type: 'error',
-      });
-      return;
-    }
-
-
-    let estabId = estabelecimentoId;
-
-    if (!estabId) {
-      console.error('❌ [NPSConfig] estabelecimentoId está vazio!');
-
-      // Tentar carregar novamente e obter o ID
-      estabId = await loadConfig();
-
-      // Verificar se conseguimos obter o ID
-      if (!estabId) {
-        setToast({
-          message: t('nps.config.messages.establishmentNotFound'),
-          type: 'error',
-        });
-        return;
-      }
-    }
-
+  const handleSearch = async () => {
     try {
-      setIsSendingTest(true);
-
-      // Buscar dados do estabelecimento SEMPRE COM A VERSÃO MAIS RECENTE
-      const { supabase } = await import('../../lib/supabase');
-      const { data: estabelecimentoData, error: fetchError } = await supabase
-        .from('establishments')
-        .select('razao_social, cnpj, codigo')
-        .eq('id', estabId)
-        .maybeSingle();
-
-      if (fetchError) {
-        console.error('Erro ao buscar estabelecimento:', fetchError);
-      }
-
-
-      // Priorizar logo_nps_base64 para emails NPS
-      let logoNps = null;
-
-
-      // Buscar transportadora de exemplo do banco
-      const { data: transportadoraData } = await supabase
-        .from('carriers')
-        .select('id, razao_social, fantasia')
-        .limit(1)
-        .maybeSingle();
-
-      const { data: authCheck } = await supabase.auth.getSession();
-
-
-      const tokenGerado = Array.from({ length: 32 }, () => Math.random().toString(36).substring(2)).join('').substring(0, 32);
-
-      try {
-        await npsService.criarPesquisaCliente({
-          cliente_nome: "Cliente Teste",
-          cliente_email: testEmail,
-          cliente_telefone: "11999999999",
-          transportador_id: transportadoraData?.id || null,
-          canal_envio: "email",
-          token_pesquisa: tokenGerado,
-          status: "pendente",
-          establishment_id: estabelecimentoId,
-        });
-      } catch (err) {
-        console.error('⚠️ [NPSConfig] Erro ao criar pesquisa de teste no banco:', err);
-      }
-
-      // Gerar HTML com o template profissional
-      const emailHtml = npsEmailTemplateService.generateNPSEmail(
-        {
-          clienteNome: 'Cliente Teste',
-          transportadoraNome: transportadoraData?.fantasia || transportadoraData?.razao_social || 'Transportadora Exemplo',
-          numeroPedido: `PED-${Math.floor(Math.random() * 10000)}`,
-          dataEntrega: new Date().toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          }),
-          tokenPesquisa: tokenGerado,
-          itensPedido: [
-            {
-              codigo: 'SKU-4380',
-              descricao: 'Notebook Dell Inspiron',
-              quantidade: 2,
-              valorUnitario: 1635.00,
-              valorTotal: 3270.00
-            },
-            {
-              codigo: 'SKU-7741',
-              descricao: 'Smartphone Samsung Galaxy',
-              quantidade: 3,
-              valorUnitario: 981.00,
-              valorTotal: 2943.00
-            },
-            {
-              codigo: 'SKU-9698',
-              descricao: 'Monitor LG 24"',
-              quantidade: 2,
-              valorUnitario: 2098.00,
-              valorTotal: 4196.00
-            },
-            {
-              codigo: 'SKU-1640',
-              descricao: 'Teclado Mecânico Logitech',
-              quantidade: 4,
-              valorUnitario: 453.00,
-              valorTotal: 1812.00
-            },
-            {
-              codigo: 'SKU-8480',
-              descricao: 'Mouse Gamer Razer',
-              quantidade: 1,
-              valorUnitario: 1811.00,
-              valorTotal: 1811.00
-            }
-          ],
-          totalItens: 5,
-          valorProdutos: 14032.00,
-          valorTotalPedido: 14526.00,
-          estabelecimento: {
-            razaoSocial: estabelecimentoData?.razao_social || 'Sua Empresa',
-            cnpj: estabelecimentoData?.cnpj,
-            codigo: estabelecimentoData?.codigo,
-            logoBase64: logoNps
-          }
-        },
-        getBaseUrl()
-      );
-
-      const emailSubject = 'Avalie sua experiência - Pesquisa de Satisfação';
-
-      const resultado = await npsService.enviarEmailNPS(
-        estabId,
-        testEmail,
-        emailSubject,
-        emailHtml
-      );
-
-
-      let mensagem = resultado.message || `${t('nps.config.messages.testEmailSuccess')}${testEmail}!`;
-
-      if (resultado.note) {
-        mensagem += `\n\n${resultado.note}`;
-      }
-
-      if (resultado.details) {
-        mensagem += `\n${resultado.details}`;
-      }
-
-      setToast({
-        message: mensagem,
-        type: 'success',
+      setIsLoading(true);
+      const data = await npsCxService.getDispatches({ 
+        status: filters.status, 
+        searchText: filters.searchText 
       });
-
-      setShowTestModal(false);
-      setTestEmail('');
-    } catch (error: any) {
-      console.error('Erro completo ao enviar teste:', error);
-      const errorMessage = error?.message || t('nps.config.messages.testEmailError');
-      setToast({
-        message: errorMessage,
-        type: 'error',
-      });
+      setDispatches(data);
+    } catch (error) {
+      console.error('Erro ao pesquisar:', error);
     } finally {
-      setIsSendingTest(false);
+      setIsLoading(false);
     }
   };
 
-  const totalPesos = config.pesos_criterios
-    ? Object.values(config.pesos_criterios).reduce((a, b) => a + b, 0)
-    : 0;
+  const handleSaveSettings = async () => {
+    setIsSavingConfig(true);
+    setConfigSuccess(false);
+    try {
+      const savedSettings = await npsCxService.saveSettings(settings);
+      setSettings(savedSettings);
+      setConfigSuccess(true);
+      setToast({ message: 'Regras de automação salvas com sucesso!', type: 'success' });
+      setTimeout(() => setConfigSuccess(false), 3000);
+    } catch (error: any) {
+      console.error('Erro ao salvar settings:', error);
+      let errMsg = error.message || 'Erro desconhecido ao salvar configurações Automáticas de NPS.';
+      // Dica para cenário de tabela não existente:
+      if (errMsg.includes('relation "public.nps_settings" does not exist')) {
+         errMsg = 'A tabela nps_settings não existe no banco. Por favor, rode a migração SQL gerada no Supabase!';
+      }
+      setToast({ message: errMsg, type: 'error' });
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
+  const handleResend = async (id: string, currentEmail: string) => {
+    const newEmail = prompt('Confirmar reenvio para E-mail:', currentEmail);
+    if (newEmail === null) return; // Cancelled
+    
+    setProcessingId(id);
+    try {
+      await npsCxService.resendNps(id, newEmail !== currentEmail ? newEmail : undefined);
+      setToast({ message: 'Disparo agendado para reenvio com sucesso na próxima janela do robô.', type: 'info' });
+      loadData(); // refresh grid
+    } catch (error: any) {
+      console.error('Erro ao reenviar NPS:', error);
+      setToast({ message: 'Erro ao agendar reenvio: ' + (error.message || 'Desconhecido'), type: 'error' });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!confirm('Deseja cancelar o envio deste NPS? A Nota Fiscal não será avaliada.')) return;
+    
+    setProcessingId(id);
+    try {
+      await npsCxService.cancelNps(id);
+      setToast({ message: 'NPS cancelado com sucesso.', type: 'info' });
+      loadData(); // refresh grid
+    } catch (error: any) {
+      console.error('Erro ao cancelar NPS:', error);
+      setToast({ message: 'Erro ao cancelar disparo: ' + (error.message || 'Desconhecido'), type: 'error' });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleTestDispatch = async () => {
+    setIsTestingJob(true);
+    try {
+       const res = await npsCxService.triggerTestScheduler();
+       setToast({ 
+         message: `Teste concluído! Envios realizados: ${res.sent || 0}. Erros encontrados: ${res.errors || 0}.`, 
+         type: res.errors > 0 ? 'warning' : 'success' 
+       });
+       loadData();
+    } catch (error: any) {
+       console.error('Falha no Teste do Schedule:', error);
+       setToast({ 
+         message: 'Erro no teste. Verifique se a Edge Function nps-scheduler foi instanciada no Supabase. Detalhes: ' + error.message, 
+         type: 'error' 
+       });
+    } finally {
+       setIsTestingJob(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pendente':
+        return <span className="px-2 py-1 flex items-center gap-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800"><Clock size={12}/> Pendente</span>;
+      case 'enviado':
+        return <span className="px-2 py-1 flex items-center gap-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800"><Send size={12}/> Enviado</span>;
+      case 'respondido':
+        return <span className="px-2 py-1 flex items-center gap-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"><CheckCircle size={12}/> Respondido</span>;
+      case 'expirado':
+        return <span className="px-2 py-1 flex items-center gap-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700"><Clock size={12}/> Expirado</span>;
+      case 'erro':
+        return <span className="px-2 py-1 flex items-center gap-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"><AlertCircle size={12}/> Erro/Cancelado</span>;
+      default:
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{status}</span>;
+    }
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '-';
+    try {
+      return format(parseISO(dateStr), "dd/MM/yyyy HH:mm");
+    } catch (e) {
+      return '-';
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <TrendingUp className="w-7 h-7 text-blue-600" />
-            {t('nps.config.title')}
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {t('nps.config.subtitle')}
-          </p>
-        </div>
-      </div>
-
-      {/* Innovation Notice */}
-      {!npsActive && !npsLoading && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
-          <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-yellow-800">
-              <strong>{t('nps.dashboard.notActiveWarningTitle')}</strong> {t('nps.config.notActiveWarningDesc')}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Settings className="w-5 h-5 text-blue-600" />
-              {t('nps.config.generalConfigs')}
-            </h3>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {t('nps.config.npsClientFinal')}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {t('nps.config.npsClientDesc')}
-                    </p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.nps_cliente_ativo}
-                    onChange={(e) => setConfig({ ...config, nps_cliente_ativo: e.target.checked })}
-                    disabled={!npsActive}
-                    className="sr-only peer disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {t('nps.config.npsInternalAuto')}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {t('nps.config.npsInternalAutoDesc')}
-                    </p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.nps_interno_ativo}
-                    onChange={(e) => setConfig({ ...config, nps_interno_ativo: e.target.checked })}
-                    disabled={!npsActive}
-                    className="sr-only peer disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {config.nps_cliente_ativo && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                {t('nps.config.sendChannels')}
-              </h3>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-gray-900 dark:text-white">{t('nps.config.whatsapp')}</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.canais_envio?.whatsapp}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          canais_envio: {
-                            ...config.canais_envio!,
-                            whatsapp: e.target.checked,
-                          },
-                        })
-                      }
-                      disabled={!npsActive}
-                      className="sr-only peer disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-gray-900 dark:text-white">{t('nps.config.email')}</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.canais_envio?.email}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          canais_envio: {
-                            ...config.canais_envio!,
-                            email: e.target.checked,
-                          },
-                        })
-                      }
-                      disabled={!npsActive}
-                      className="sr-only peer disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('nps.config.daysToExpireLabel')}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="30"
-                  value={config.dias_para_expirar}
-                  onChange={(e) => setConfig({ ...config, dias_para_expirar: parseInt(e.target.value) })}
-                  disabled={!npsActive}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <div className="mt-2">
-                  <InlineMessage type="info" message={t('nps.config.daysToExpireInfo')} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {config.nps_interno_ativo && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                {t('nps.config.npsInternalConfigs')}
-              </h3>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('nps.config.calculationPeriodicity')}
-                </label>
-                <select
-                  value={config.periodicidade_calculo}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      periodicidade_calculo: e.target.value as 'semanal' | 'quinzenal' | 'mensal',
-                    })
-                  }
-                  disabled={!npsActive}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="semanal">{t('nps.config.weekly')}</option>
-                  <option value="quinzenal">{t('nps.config.biweekly')}</option>
-                  <option value="mensal">{t('nps.config.monthly')}</option>
-                </select>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                  {t('nps.config.evaluationWeights')}
-                </h4>
-                <div className="mb-3">
-                  {totalPesos === 1 ? (
-                    <InlineMessage
-                      type="success"
-                      message={`Total: ${(totalPesos * 100).toFixed(0)}% - ${t('nps.config.validConfig')}`}
-                    />
-                  ) : (
-                    <InlineMessage
-                      type="warning"
-                      message={`Total: ${(totalPesos * 100).toFixed(0)}% - ${t('nps.config.totalMustBe100')}`}
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('nps.config.punctuality')}{(config.pesos_criterios!.pontualidade * 100).toFixed(0)}%
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={config.pesos_criterios!.pontualidade}
-                      onChange={(e) => handlePesoChange('pontualidade', parseFloat(e.target.value))}
-                      disabled={!npsActive}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('nps.config.occurrences')}{(config.pesos_criterios!.ocorrencias * 100).toFixed(0)}%
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={config.pesos_criterios!.ocorrencias}
-                      onChange={(e) => handlePesoChange('ocorrencias', parseFloat(e.target.value))}
-                      disabled={!npsActive}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('nps.config.communication')}{(config.pesos_criterios!.comunicacao * 100).toFixed(0)}%
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={config.pesos_criterios!.comunicacao}
-                      onChange={(e) => handlePesoChange('comunicacao', parseFloat(e.target.value))}
-                      disabled={!npsActive}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('nps.config.podConfirmation')}{(config.pesos_criterios!.pod * 100).toFixed(0)}%
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={config.pesos_criterios!.pod}
-                      onChange={(e) => handlePesoChange('pod', parseFloat(e.target.value))}
-                      disabled={!npsActive}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {validationError && (
-                <div className="mt-4">
-                  <InlineMessage type="error" message={validationError} />
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => setShowTestModal(true)}
-              disabled={!npsActive || !config.canais_envio?.email}
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <TestTube className="w-5 h-5" />
-              {t('nps.config.testNpsSend')}
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!npsActive || isLoading || totalPesos !== 1}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save className="w-5 h-5" />
-              {isLoading ? t('nps.config.saving') : t('nps.config.saveConfigs')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {showTestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <TestTube className="w-6 h-6 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {t('nps.config.modalTest.title')}
-              </h3>
-            </div>
-
-            <div className="mb-4">
-              <InlineMessage
-                type="info"
-                message={t('nps.config.modalTest.infoMsg')}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('nps.config.modalTest.testEmailLabel')}
-              </label>
-              <input
-                type="email"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowTestModal(false);
-                  setTestEmail('');
-                }}
-                disabled={isSendingTest}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-              >
-                {t('nps.config.modalTest.cancel')}
-              </button>
-              <button
-                onClick={handleSendTest}
-                disabled={isSendingTest || !testEmail}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="w-5 h-5" />
-                {isSendingTest ? t('nps.config.modalTest.creating') : t('nps.config.modalTest.createTest')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <Breadcrumbs items={breadcrumbItems} />
       {toast && (
         <Toast
           message={toast.message}
@@ -728,6 +191,252 @@ export const NPSConfiguration: React.FC = () => {
           onClose={() => setToast(null)}
         />
       )}
+      
+      {/* HEADER E CONFIGURAÇÕES REVISADO */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+              <Settings className="text-blue-600 dark:text-blue-400" size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customer Experience Automations</h1>
+              <p className="text-gray-500 dark:text-gray-400">Configure e gerencie o disparo de Pesquisas de Satisfação baseado em Notas Entregues.</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+             <button
+               onClick={handleTestDispatch}
+               disabled={isTestingJob}
+               title="Dispara manualmente a rotina que avalia envios de e-mails em lote sem esperar 1 hora"
+               className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors font-medium border border-indigo-700"
+             >
+               {isTestingJob ? <RefreshCcw className="animate-spin" size={18} /> : <Activity size={18} />}
+               <span className="hidden sm:inline">{isTestingJob ? 'Rodando Robô...' : 'Forçar Disparo Agora (Job)'}</span>
+             </button>
+          </div>
+        </div>
+        
+        <div className="p-6 bg-gray-50 dark:bg-gray-800/50">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Automação de Disparo</label>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setSettings({...settings, automation_active: !settings.automation_active})}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    settings.automation_active ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      settings.automation_active ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-medium ${settings.automation_active ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {settings.automation_active ? 'Robô Ativado' : 'Robô Pausado'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Ative para permitir que o sistema avalie automaticamente Notas Entregues.</p>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Delay para envio (Horas)</label>
+              <input 
+                type="number" 
+                min="0"
+                value={settings.delay_hours}
+                onChange={e => setSettings({...settings, delay_hours: Number(e.target.value)})}
+                className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-2">Tempo após a confirmação do evento de Entrega.</p>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiração (Dias)</label>
+              <input 
+                type="number" 
+                min="1"
+                value={settings.expiration_days}
+                onChange={e => setSettings({...settings, expiration_days: Number(e.target.value)})}
+                className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-2">Validade do token do usuário para responder a pesquisa.</p>
+            </div>
+
+            <div className="flex items-end">
+              <button 
+                onClick={handleSaveSettings}
+                disabled={isSavingConfig}
+                className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+              >
+                {isSavingConfig ? <RefreshCcw className="animate-spin" size={18} /> : <CheckSquare size={18} />}
+                <span>{isSavingConfig ? 'Salvando...' : 'Salvar Regras'}</span>
+              </button>
+            </div>
+          </div>
+          {configSuccess && (
+            <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-lg text-sm flex items-center justify-center">
+              Revisão de automação salva com sucesso! O Robô refletirá essa configuração em sua próxima rodada (A cada hora).
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* PAINEL DE FILTROS */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Gestão Operacional de Disparos</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="col-span-2 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por Nº da Nota ou E-mail do Cliente..."
+              value={filters.searchText}
+              onChange={(e) => setFilters({ ...filters, searchText: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="pl-10 w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
+            />
+          </div>
+          <div>
+            <select
+              value={filters.status}
+              onChange={(e) => {
+                setFilters({ ...filters, status: e.target.value });
+                setTimeout(handleSearch, 100);
+              }}
+              className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-black dark:text-white appearance-none"
+            >
+              <option value="all">Todos os Status</option>
+              <option value="pendente">Pendente de Envio</option>
+              <option value="enviado">Enviado (Aguardando Resposta)</option>
+              <option value="respondido">Respondido</option>
+              <option value="expirado">Expirado</option>
+              <option value="erro">Com Erro</option>
+            </select>
+          </div>
+          <button 
+            onClick={handleSearch}
+            className="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <Filter size={18} />
+            <span>Pesquisar</span>
+          </button>
+        </div>
+      </div>
+
+      {/* GRID DOS ENVIOS */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 relative">
+            <thead className="bg-gray-50 dark:bg-gray-800/50">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nota Fiscal / Cliente</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">E-mail</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status NPS</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Últ. Atualização</th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Score</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <RefreshCcw className="animate-spin mx-auto mb-4" size={24} />
+                    Carregando listagem de Customer Experience...
+                  </td>
+                </tr>
+              ) : dispatches.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    Nenhuma pesquisa de NPS rastreada para os critérios selecionados.
+                    <br /> <span className="text-xs text-gray-400">As Notas Entregues aparecerão aqui assim que o evento de status ocorrer para avaliarmos a resposta do seu cliente!</span>
+                  </td>
+                </tr>
+              ) : (
+                dispatches.map((dispatch) => (
+                  <tr key={dispatch.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          NF {dispatch.invoices_nfe?.numero || '-'}
+                        </span>
+                        <span className="text-xs text-gray-500 truncate max-w-xs">
+                          {dispatch.invoices_nfe?.customer?.[0]?.razao_social || 'Cliente não identificado'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {dispatch.recipient_email || <span className="text-red-500 text-xs font-medium">Sem-Email Cadastrado</span>}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(dispatch.status)}
+                      {dispatch.error_reason && (
+                        <p className="text-[10px] text-red-500 mt-1 max-w-[150px] truncate" title={dispatch.error_reason}>
+                          {dispatch.error_reason}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                       <span className="text-xs text-gray-500 dark:text-gray-400">
+                         {formatDate(dispatch.dispatched_at || dispatch.scheduled_for || dispatch.created_at)}
+                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        dispatch.score === null ? 'bg-gray-100 text-gray-400 dark:bg-gray-800' :
+                        dispatch.score >= 9 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' :
+                        dispatch.score >= 7 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' :
+                        'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
+                      }`}>
+                        {dispatch.score !== null ? dispatch.score : '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {(dispatch.status === 'pendente' || dispatch.status === 'erro' || dispatch.status === 'enviado') && (
+                        <div className="flex justify-end gap-2">
+                           <button
+                             onClick={() => handleResend(dispatch.id, dispatch.recipient_email || '')}
+                             disabled={processingId === dispatch.id}
+                             title="Forçar Reenvio"
+                             className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                           >
+                             <Play size={16} />
+                           </button>
+                           {dispatch.status === 'pendente' && (
+                            <button
+                               onClick={() => handleCancel(dispatch.id)}
+                               disabled={processingId === dispatch.id}
+                               title="Cancelar Agendamento"
+                               className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                             >
+                               <X size={16} />
+                             </button>
+                           )}
+                        </div>
+                      )}
+                      {dispatch.status === 'respondido' && (
+                        <button
+                          title="Visualizar Resposta/Feedback"
+                          className="text-sm font-medium text-blue-600 hover:underline"
+                          onClick={() => alert(`Feedback Registrado pelo Cliente: \n\n"${dispatch.feedback || 'Sem comentários adicionais.'}"`)}
+                        >
+                          Ver Feedback
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
     </div>
   );
 };

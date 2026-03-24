@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircle, Clock, User, MapPin, Building, Receipt, Loader, Package, Hash, Scale } from 'lucide-react';
+import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, User, MapPin, Building, Receipt, Loader, Package, Hash, Scale, ClipboardCheck } from 'lucide-react';
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { InvoiceReverseModal } from './InvoiceReverseModal';
 import { supabase } from '../../lib/supabase';
+import { UnifiedTrackingTimeline } from '../Shared/UnifiedTrackingTimeline';
+import { ViewOccurrencesModal } from './ViewOccurrencesModal';
 
 interface Invoice {
   id: number;
@@ -31,6 +33,8 @@ interface Invoice {
   tipoNota?: string;
   previsaoEntrega?: string;
   freight_results?: any[];
+  metadata?: any;
+  number?: string;
 }
 
 interface InvoiceDetailsModalProps {
@@ -57,6 +61,8 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isLoadingCtes, setIsLoadingCtes] = useState(false);
   const [showReverseModal, setShowReverseModal] = useState(false);
+  const [showOccurrencesModal, setShowOccurrencesModal] = useState(false);
+  const [fullInvoice, setFullInvoice] = useState<any>(null);
 
   useEffect(() => {
     if (isOpen && activeTab === 'details') {
@@ -109,8 +115,10 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
       if (error) throw error;
 
       if (data) {
+        console.log('[InvoiceDetailsModal] Full invoice loaded:', data.numero, 'order_number:', data.order_number, 'numero_pedido:', data.numero_pedido, 'status:', data.status);
         setCustomer(data.customer?.[0] || null);
         setProducts(data.products || []);
+        setFullInvoice(data);
       }
     } catch (error) {
       console.error('Erro ao carregar detalhes da nota fiscal:', error);
@@ -235,6 +243,13 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
                 <span>{t("Início Reversa", "Iniciar Reversa")}</span>
               </button>
             )}
+            <button
+              onClick={() => setShowOccurrencesModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
+            >
+              <ClipboardCheck size={16} />
+              <span className="hidden sm:inline">Ver Comprovante</span>
+            </button>
             <button
               onClick={onPrint}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm"
@@ -627,77 +642,17 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
 
               {/* Status Timeline */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t("invoices.details.statusHistory")}</h4>
-                <div className="relative">
-                  {/* Timeline line */}
-                  <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                  
-                  <div className="space-y-6">
-                    {[
-                      { status: 'emitida', label: t('invoices.status.emitida'), date: '15/01/2025 08:30', active: invoice.status === 'emitida', completed: true },
-                      { status: 'coletada', label: t('invoices.status.emColeta'), date: '15/01/2025 14:45', active: invoice.status === 'coletada', completed: ['coletada', 'em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'em_transito_origem', label: t('invoices.status.emTransitoOrigem'), date: '15/01/2025 16:20', active: invoice.status === 'em_transito_origem', completed: ['em_transito_origem', 'em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'em_transito_rota', label: t('invoices.status.emTransitoRodovia'), date: '16/01/2025 08:15', active: invoice.status === 'em_transito_rota', completed: ['em_transito_rota', 'chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'chegada_destino', label: t('invoices.status.chegouDestino'), date: '17/01/2025 10:30', active: invoice.status === 'chegada_destino', completed: ['chegada_destino', 'saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'saiu_entrega', label: t('invoices.status.saiuParaEntrega'), date: '17/01/2025 14:00', active: invoice.status === 'saiu_entrega', completed: ['saiu_entrega', 'entregue'].includes(invoice.status) },
-                      { status: 'entregue', label: t('invoices.status.entregue'), date: '17/01/2025 16:45', active: invoice.status === 'entregue', completed: ['entregue'].includes(invoice.status) }
-                    ].map((step, index) => (
-                      <div key={index} className="relative flex items-start space-x-4">
-                        {/* Timeline dot */}
-                        <div className={`
-                          relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm
-                          ${step.active 
-                            ? 'bg-blue-600 text-white' 
-                            : step.completed 
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-200 text-gray-400'
-                          }
-                        `}>
-                          {step.active ? (
-                            <Clock size={20} />
-                          ) : step.completed ? (
-                            <CheckCircle size={20} />
-                          ) : (
-                            <Clock size={20} />
-                          )}
-                        </div>
-                        
-                        {/* Event content */}
-                        <div className="flex-1 min-w-0">
-                          <div className={`
-                            p-4 rounded-lg border-2 transition-all
-                            ${step.active 
-                              ? 'border-blue-200 bg-blue-50' 
-                              : step.completed 
-                                ? 'border-green-200 bg-green-50' 
-                                : 'border-gray-200 bg-gray-50'
-                            }
-                          `}>
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <h4 className={`
-                                  font-semibold
-                                  ${step.active 
-                                    ? 'text-blue-900' 
-                                    : step.completed 
-                                      ? 'text-green-900' 
-                                      : 'text-gray-700'
-                                  }
-                                `}>
-                                  {step.label}
-                                </h4>
-                              </div>
-                              <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-                                <div>{step.date}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                {isLoadingDetails ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader size={24} className="animate-spin text-blue-600" />
                   </div>
-```
-                </div>
+                ) : (
+                  <UnifiedTrackingTimeline 
+                    documentType="nfe" 
+                    documentValue={invoice.numero || invoice.number} 
+                    documentObj={fullInvoice || invoice}
+                  />
+                )}
               </div>
             </div>
           ) : activeTab === 'costs' ? (
@@ -826,6 +781,14 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
           onClose(); // Fechar o atual para recarregar a grid
         }} 
       />
+
+      {showOccurrencesModal && (
+        <ViewOccurrencesModal
+          isOpen={showOccurrencesModal}
+          onClose={() => setShowOccurrencesModal(false)}
+          invoice={fullInvoice || invoice}
+        />
+      )}
     </div>
   );
 };

@@ -51,7 +51,9 @@ const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   cteCount: 0,
   freight_results: nfe.freight_results || [],
   tolerancia_valor_fatura: nfe.carrier?.metadata?.tolerancia_valor_fatura || 0,
-  tolerancia_percentual_fatura: nfe.carrier?.metadata?.tolerancia_percentual_fatura || 0
+  tolerancia_percentual_fatura: nfe.carrier?.metadata?.tolerancia_percentual_fatura || 0,
+  order_number: (nfe as any).order_number || (nfe as any).numero_pedido,
+  order_serie: (nfe as any).order_serie
 });
 
 const mapNFeToElectronicDoc = (nfe: any): any => {
@@ -1069,6 +1071,9 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             }
           }}
           invoiceNumber={invoices.find(i => i.id === selectedInvoiceForOccurrence)?.numero || ''}
+          invoiceId={selectedInvoiceForOccurrence}
+          carrierName={invoices.find(i => i.id === selectedInvoiceForOccurrence)?.transportador || ''}
+          userId={Number(user?.id) || undefined}
         />
       )}
     </div>

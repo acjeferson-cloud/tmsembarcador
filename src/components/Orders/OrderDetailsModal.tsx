@@ -4,6 +4,7 @@ import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircl
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { orderPdfService } from '../../services/orderPdfService';
 import { ordersService } from '../../services/ordersService';
+import { UnifiedTrackingTimeline } from '../Shared/UnifiedTrackingTimeline';
 
 interface Order {
   id: number;
@@ -340,73 +341,11 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               {/* Status Timeline */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('orders.details.timeline')}</h4>
-                <div className="relative">
-                  {/* Timeline line */}
-                  <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                  
-                  <div className="space-y-6">
-                    {[
-                      { status: 'emitido', label: t('orders.status.emitido'), date: '15/01/2025 08:30', active: order.status === 'emitido', completed: ['coletado', 'em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'coletado', label: t('orders.status.coletado'), date: '15/01/2025 14:45', active: order.status === 'coletado', completed: ['em_transito', 'saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'em_transito', label: t('orders.status.em_transito'), date: '16/01/2025 08:15', active: order.status === 'em_transito', completed: ['saiu_entrega', 'entregue'].includes(order.status) },
-                      { status: 'saiu_entrega', label: t('orders.status.saiu_entrega'), date: '17/01/2025 14:00', active: order.status === 'saiu_entrega', completed: ['entregue'].includes(order.status) },
-                      { status: 'entregue', label: t('orders.status.entregue'), date: '17/01/2025 16:45', active: order.status === 'entregue', completed: order.status === 'entregue' }
-                    ].map((step, index) => (
-                      <div key={index} className="relative flex items-start space-x-4">
-                        {/* Timeline dot */}
-                        <div className={`
-                          relative z-10 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm
-                          ${step.active 
-                            ? 'bg-blue-600 text-white' 
-                            : step.completed 
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-200 text-gray-400'
-                          }
-                        `}>
-                          {step.active ? (
-                            <Clock size={20} />
-                          ) : step.completed ? (
-                            <CheckCircle size={20} />
-                          ) : (
-                            <Clock size={20} />
-                          )}
-                        </div>
-                        
-                        {/* Event content */}
-                        <div className="flex-1 min-w-0">
-                          <div className={`
-                            p-4 rounded-lg border-2 transition-all
-                            ${step.active 
-                              ? 'border-blue-200 bg-blue-50' 
-                              : step.completed 
-                                ? 'border-green-200 bg-green-50' 
-                                : 'border-gray-200 bg-gray-50'
-                            }
-                          `}>
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <h4 className={`
-                                  font-semibold
-                                  ${step.active 
-                                    ? 'text-blue-900' 
-                                    : step.completed 
-                                      ? 'text-green-900' 
-                                      : 'text-gray-700'
-                                  }
-                                `}>
-                                  {step.label}
-                                </h4>
-                              </div>
-                              <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-                                <div>{step.date}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <UnifiedTrackingTimeline 
+                  documentType="order" 
+                  documentValue={order.numero} 
+                  documentObj={order}
+                />
               </div>
             </div>
           ) : activeTab === 'items' ? (

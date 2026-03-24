@@ -1,30 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Calendar, Clock, Camera, Upload, AlertCircle, FileText } from 'lucide-react';
+import { X, Calendar, Clock, Upload, AlertCircle, FileText, Info } from 'lucide-react';
 import { occurrencesService } from '../../services/occurrencesService';
-import { supabase } from '../../lib/supabase';
+import { DeliveryProofModal } from './DeliveryProofModal';
 
 interface OccurrenceInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (occurrenceData: any) => Promise<void>;
   invoiceNumber: string;
+  invoiceId?: string;
+  carrierName?: string;
+  userId?: number;
 }
 
 export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  invoiceNumber
+  invoiceNumber,
+  invoiceId,
+  carrierName,
+  userId
 }) => {
   const { t } = useTranslation();
 
   const [occurrencesList, setOccurrencesList] = useState<any[]>([]);
   const [selectedOccurrenceId, setSelectedOccurrenceId] = useState('');
+  const [showDeliveryProof, setShowDeliveryProof] = useState(false);
+  const [pendingOccurrence, setPendingOccurrence] = useState<any>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(new Date().toTimeString().substring(0, 5));
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [observacao, setObservacao] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,42 +51,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  const uploadPhoto = async (): Promise<string | null> => {
-    if (!photoFile) return null;
-    
-    try {
-      const fileExt = photoFile.name.split('.').pop();
-      const fileName = `occurrence_${invoiceNumber}_${Date.now()}.${fileExt}`;
-      const filePath = `invoices_occurrences/${fileName}`;
-
-      const { error: uploadError } = await (supabase as any).storage
-        .from('pickup-proofs')
-        .upload(filePath, photoFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = (supabase as any).storage
-        .from('pickup-proofs')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (err) {
-      console.error('Erro no upload da foto', err);
-      throw new Error(t('invoices.modals.occurrence.errorPhoto'));
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,28 +70,53 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
     setIsLoading(true);
 
     try {
-      let photoUrl = null;
-      if (photoFile) {
-        photoUrl = await uploadPhoto();
-      }
-
       const occurrenceDef = occurrencesList.find(o => o.id === selectedOccurrenceId);
-
-      await onSave({
+      
+      const payload = {
         codigo: occurrenceDef?.codigo,
         descricao: occurrenceDef?.descricao,
         data_ocorrencia: `${date}T${time}:00`,
-        foto_url: photoUrl,
+        observacao: observacao.trim() || undefined,
         criado_em: new Date().toISOString()
-      });
+      };
 
-      onClose();
+      if (occurrenceDef && ['001', '002'].includes(occurrenceDef.codigo) && invoiceId && userId) {
+        setPendingOccurrence(payload);
+        setShowDeliveryProof(true);
+      } else {
+        await onSave(payload);
+        onClose();
+      }
     } catch (err: any) {
       setError(err.message || t('invoices.modals.occurrence.errorSave'));
     } finally {
       setIsLoading(false);
     }
   };
+
+  const selectedOccurrenceDef = occurrencesList.find(o => o.id === selectedOccurrenceId);
+  const isDelivery = selectedOccurrenceDef && ['001', '002'].includes(selectedOccurrenceDef.codigo);
+
+  if (showDeliveryProof && invoiceId && userId) {
+    return (
+      <DeliveryProofModal
+        invoiceId={invoiceId}
+        invoiceNumber={invoiceNumber}
+        carrierName={carrierName}
+        userId={userId}
+        onClose={() => {
+          setPendingOccurrence(null);
+          setShowDeliveryProof(false);
+        }}
+        onSuccess={async () => {
+          if (pendingOccurrence) {
+            await onSave(pendingOccurrence);
+          }
+          onClose();
+        }}
+      />
+    );
+  }
 
   if (!isOpen) return null;
 
@@ -172,6 +169,13 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
               </select>
             </div>
 
+            {isDelivery && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 flex items-start gap-3 mt-4">
+                <Info size={20} className="flex-shrink-0 mt-0.5" />
+                <p className="text-sm">Esta ocorrência exige o preenchimento do <strong>Comprovante de Entrega</strong>. Você será direcionado para a próxima tela após "Continuar".</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -207,36 +211,15 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('invoices.modals.occurrence.photo')}
+                Observação
               </label>
-              
-              {!photoPreview ? (
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group cursor-pointer relative">
-                  <div className="space-y-1 text-center">
-                    <Camera className="mx-auto h-12 w-12 text-gray-400 group-hover:text-indigo-500 transition-colors" />
-                    <div className="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
-                      <label htmlFor="photo-upload" className="relative cursor-pointer bg-transparent rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none">
-                        <span>{t('invoices.modals.occurrence.uploadPhoto')}</span>
-                        <input id="photo-upload" name="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
-                      </label>
-                    </div>
-                    <p className="text-xs text-gray-500">{t('invoices.modals.occurrence.photoHint')}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-2 relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
-                  <img src={photoPreview} alt="Preview" className="w-full h-48 object-contain" />
-                  <div className="absolute top-2 right-2 flex space-x-2">
-                    <label htmlFor="photo-change" className="p-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full shadow-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <Camera size={16} />
-                      <input id="photo-change" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
-                    </label>
-                    <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null); }} className="p-2 bg-white dark:bg-gray-800 text-red-600 hover:text-red-700 rounded-full shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <textarea
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+                placeholder="Detalhes opcionais sobre a ocorrência..."
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+              />
             </div>
 
           </form>
@@ -263,7 +246,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
                 <span>{t('invoices.form.saving')}</span>
               </>
             ) : (
-              <span>{t('invoices.modals.occurrence.title')}</span>
+              <span>{isDelivery ? "Continuar para Comprovante" : t('invoices.modals.occurrence.title')}</span>
             )}
           </button>
         </div>

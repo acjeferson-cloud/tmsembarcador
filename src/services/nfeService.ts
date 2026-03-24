@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { deliveryNotificationHandler } from './deliveryNotificationHandler';
+import { trackingService } from './trackingService';
 
 interface NFe {
   id: string;
@@ -18,6 +19,7 @@ interface NFe {
   icms_value: number;
   status: string;
   xml_data?: any;
+  metadata?: any;
   created_at: string;
   updated_at: string;
 }
@@ -94,6 +96,8 @@ export const nfeService = {
         access_key: invoice.chave_acesso,
         issue_date: invoice.data_emissao,
         operation_nature: invoice.natureza_operacao,
+        order_number: invoice.order_number || invoice.numero_pedido,
+        order_serie: invoice.order_serie,
         weight: invoice.peso_total || 0,
         volumes: invoice.quantidade_volumes || 1,
         cubic_meters: invoice.cubagem_total || (invoice.products || []).reduce((acc: number, p: any) => acc + (Number(p.cubagem) || 0), 0),
@@ -103,6 +107,7 @@ export const nfeService = {
         icms_value: invoice.valor_icms || 0,
         status: invoice.situacao,
         xml_data: invoice.xml_content,
+        metadata: invoice.metadata,
         created_at: invoice.created_at,
         updated_at: invoice.updated_at,
         carrier_id: invoice.carrier_id,
@@ -180,6 +185,7 @@ export const nfeService = {
         icms_value: data.valor_icms || 0,
         status: data.situacao,
         xml_data: data.xml_content,
+        metadata: data.metadata,
         created_at: data.created_at,
         updated_at: data.updated_at,
         carrier_id: data.carrier_id,
@@ -279,6 +285,7 @@ export const nfeService = {
         icms_value: invoice.valor_icms || 0,
         status: invoice.situacao,
         xml_data: invoice.xml_content,
+        metadata: invoice.metadata,
         created_at: invoice.created_at,
         updated_at: invoice.updated_at,
         carrier_id: invoice.carrier_id,
@@ -365,6 +372,7 @@ export const nfeService = {
         icms_value: invoice.valor_icms || 0,
         status: invoice.situacao,
         xml_data: invoice.xml_content,
+        metadata: invoice.metadata,
         created_at: invoice.created_at,
         updated_at: invoice.updated_at,
         carrier_id: invoice.carrier_id,
@@ -433,6 +441,7 @@ export const nfeService = {
         icms_value: invoice.valor_icms || 0,
         status: invoice.situacao,
         xml_data: invoice.xml_content,
+        metadata: invoice.metadata,
         created_at: invoice.created_at,
         updated_at: invoice.updated_at,
         carrier_id: invoice.carrier_id,
@@ -487,22 +496,17 @@ export const nfeService = {
         occurrences
       };
 
-      const isDelivered = occurrenceData.codigo === '001' || occurrenceData.codigo === '002';
-      const newStatus = isDelivered ? 'entregue' : invoice.situacao;
-
       const { error: updateError } = await (supabase as any)
         .from('invoices_nfe')
         .update({
           metadata: updatedMetadata,
-          situacao: newStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', invoiceId);
 
       if (updateError) throw updateError;
       
-      // Se for entregue e tiver pedido vinculado, atualiza o pedido também
-      if (isDelivered && invoice.order_number) {
+      if (invoice.order_number) {
          try {
            const { data: orderData } = await (supabase as any)
              .from('orders')
@@ -515,16 +519,25 @@ export const nfeService = {
              const orderOccurrences = orderMetadata.occurrences || [];
              orderOccurrences.push(newOccurrence);
              
+             const isDelivered = occurrenceData.codigo === '001' || occurrenceData.codigo === '002';
+             const dataEntrega = isDelivered ? { data_entrega_realizada: occurrenceData.data_ocorrencia } : {};
+             
              await (supabase as any).from('orders').update({
-               status: 'entregue',
                metadata: { ...orderMetadata, occurrences: orderOccurrences },
-               data_entrega_realizada: occurrenceData.data_ocorrencia,
+               ...dataEntrega,
                updated_at: new Date().toISOString()
              }).eq('id', orderData.id);
            }
           } catch (e) {
-             console.error('Erro ao atualizar status do pedido relacionado', e);
+             console.error('Erro ao atualizar metadata do pedido relacionado', e);
           }
+      }
+
+      // Sincroniza o status consolidado de toda a timeline com o banco
+      try {
+        await trackingService.syncDocumentTrackingStatus('nfe', invoiceId, invoice.numero);
+      } catch (err) {
+        console.error('Erro ao sincronizar status global na NFe', err);
       }
 
       // Disparar notificação automatizada "fire-and-forget"

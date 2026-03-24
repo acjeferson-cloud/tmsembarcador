@@ -152,6 +152,8 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
   );
 };
 
+import { aiInsightService } from '../../services/aiInsightService';
+
 export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> = ({
   partnerId,
   partnerName,
@@ -243,49 +245,27 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
 
     setIsGeneratingInsight(true);
     setShowAIModal(true);
+    setAiInsight('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await aiInsightService.generateInsight({
+        partnerId: partnerId,
+        partnerName: partnerName,
+        type: 'business_partner'
+      });
 
-      const totalDeliveries = kpiData.deliveriesCompleted + kpiData.deliveriesPending;
-      const completionRate = ((kpiData.deliveriesCompleted / totalDeliveries) * 100).toFixed(1);
-      const conversionRate = ((kpiData.totalInvoices / kpiData.totalOrders) * 100).toFixed(1);
-
-      const insight = `📊 ANÁLISE DE RELACIONAMENTO - ${partnerName}
-Tipo: ${getTypeLabel(partnerType)}
-
-🎯 Resumo Executivo:
-${partnerName} demonstra um relacionamento comercial ativo e consistente, com ${kpiData.totalOrders} pedidos registrados e ${kpiData.totalInvoices} notas fiscais emitidas no período analisado.
-
-📈 Indicadores de Desempenho:
-• Taxa de conversão pedido → NF-e: ${conversionRate}%
-• Taxa de conclusão de entregas: ${completionRate}%
-• ${kpiData.totalCtes} CT-e emitidos demonstrando movimentação constante
-• ${kpiData.totalBills} faturas processadas no período
-
-✅ Pontos Fortes:
-• Volume consistente de operações (${kpiData.totalOrders} pedidos)
-• ${kpiData.deliveriesCompleted} entregas concluídas com sucesso
-• ${kpiData.totalPickups} coletas realizadas, indicando logística ativa
-• Apenas ${kpiData.deliveriesPending} entregas pendentes (${((kpiData.deliveriesPending / totalDeliveries) * 100).toFixed(1)}% do total)
-
-${kpiData.deliveriesPending > 20 ? `⚠️ Pontos de Atenção:
-• ${kpiData.deliveriesPending} entregas pendentes - monitorar para garantir cumprimento de prazos
-• Revisar processos de logística para reduzir pendências` : '✓ Operação sem pontos críticos de atenção'}
-
-💡 Recomendações:
-1. ${partnerType === 'customer' || partnerType === 'both' ? 'Implementar programa de fidelização baseado no volume de operações' : 'Avaliar possibilidade de ampliação de fornecimento'}
-2. Otimizar processo de conversão pedido → nota fiscal
-3. ${kpiData.deliveriesPending > 15 ? 'Priorizar finalização de entregas pendentes' : 'Manter padrão de excelência nas entregas'}
-4. Analisar oportunidades de cross-selling/up-selling
-
-📊 Projeção:
-Com base no histórico, o parceiro apresenta tendência de crescimento sustentável. ${partnerType === 'customer' || partnerType === 'both' ? 'É um cliente estratégico que merece atenção especial e iniciativas de relacionamento.' : 'É um fornecedor confiável com capacidade de atender demanda crescente.'}`;
-
-      setAiInsight(insight);
-    } catch (error) {
+      if (response.error) {
+        setToast({ message: response.error, type: 'error' });
+      } else {
+        setAiInsight(response.insight);
+        if (response.cached) {
+          console.log('Insight carregado do cache (últimas 24h)');
+        }
+      }
+    } catch (error: any) {
       console.error('Erro ao gerar insight:', error);
       setAiInsight('');
+      setToast({ message: error.message || 'Erro ao gerar análise com IA', type: 'error' });
     } finally {
       setIsGeneratingInsight(false);
     }

@@ -1,0 +1,57 @@
+import pg from 'pg';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const { Pool } = pg;
+const pool = new Pool({ 
+  connectionString: process.env.VITE_SUPABASE_URL.replace('https://', 'postgres://postgres:' + process.env.SUPABASE_DB_PASSWORD + '@db.') 
+});
+
+async function run() {
+  const query = `
+CREATE OR REPLACE FUNCTION public.save_nps_settings(p_payload JSONB)
+RETURNS JSONB AS $$
+DECLARE
+    v_env_id UUID;
+    v_org_id UUID;
+    v_result JSONB;
+BEGIN
+    v_env_id := (p_payload->>'environment_id')::UUID;
+    v_org_id := (p_payload->>'organization_id')::UUID;
+
+    INSERT INTO public.nps_settings (
+        environment_id,
+        organization_id,
+        automation_active,
+        delay_hours,
+        expiration_days
+    ) VALUES (
+        v_env_id,
+        v_org_id,
+        COALESCE((p_payload->>'automation_active')::BOOLEAN, false),
+        COALESCE((p_payload->>'delay_hours')::INTEGER, 24),
+        COALESCE((p_payload->>'expiration_days')::INTEGER, 7)
+    )
+    ON CONFLICT (environment_id) DO UPDATE SET
+        automation_active = EXCLUDED.automation_active,
+        delay_hours = EXCLUDED.delay_hours,
+        expiration_days = EXCLUDED.expiration_days,
+        updated_at = NOW()
+    RETURNING to_jsonb(nps_settings.*) INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+  `;
+
+  try {
+    await pool.query(query);
+    console.log('Function updated successfully');
+  } catch (err) {
+    console.error('Error updating function:', err);
+  } finally {
+    pool.end();
+  }
+}
+
+run();

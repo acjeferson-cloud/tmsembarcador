@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { trackingService } from './trackingService';
 
 interface ParsedCTeData {
   // Dados básicos
@@ -508,6 +509,25 @@ export const cteXmlService = {
 
         if (invoicesError) {
           console.error('Erro ao inserir notas fiscais do CT-e:', invoicesError);
+        } else {
+           // Promove o status de rastreamento das notas vinculadas (ex: Em transporte)
+           for (const inv of parsedData.invoices) {
+              if (!inv.number) continue;
+              try {
+                const { data: foundInvoice } = await (supabase as any)
+                   .from('invoices_nfe')
+                   .select('id, numero')
+                   .or(`numero.eq.${inv.number},chave_acesso.eq.${inv.number}`)
+                   .limit(1)
+                   .maybeSingle();
+                   
+                if (foundInvoice) {
+                   await trackingService.syncDocumentTrackingStatus('nfe', foundInvoice.id, foundInvoice.numero);
+                }
+              } catch (err) {
+                 console.error('Erro ao sincronizar status da invoice via CTe', err);
+              }
+           }
         }
       }
 

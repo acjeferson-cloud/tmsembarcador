@@ -19,6 +19,7 @@ import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { Toast } from '../common/Toast';
 
 interface CarrierVision360Props {
+  carrierId: string;
   carrierName: string;
 }
 
@@ -133,7 +134,9 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
   );
 };
 
-export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierName }) => {
+import { aiInsightService } from '../../services/aiInsightService';
+
+export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, carrierName }) => {
   const { t } = useTranslation();
   const { isActive: openaiActive } = useInnovation(INNOVATION_IDS.OPENAI);
   const [dateRange, setDateRange] = useState({
@@ -196,36 +199,26 @@ export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierName 
 
     setIsGeneratingInsight(true);
     setShowAIModal(true);
+    setAiInsight('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await aiInsightService.generateInsight({
+        partnerId: carrierId,
+        partnerName: carrierName,
+        type: 'carrier'
+      });
 
-      const insight = `📊 ANÁLISE DE DESEMPENHO - ${carrierName}
-
-🎯 Resumo Executivo:
-O transportador ${carrierName} apresenta um desempenho sólido no período analisado, com uma taxa de pontualidade de ${kpiData.punctualityRate}% e ${kpiData.totalDeliveries} entregas realizadas.
-
-✅ Pontos Fortes:
-• Taxa de pontualidade acima de 90%, indicando consistência operacional
-• ${kpiData.deliveredToday} entregas realizadas hoje, demonstrando alta produtividade
-• Apenas ${kpiData.delayed} entregas atrasadas (${((kpiData.delayed / kpiData.totalDeliveries) * 100).toFixed(1)}% do total)
-
-⚠️ Pontos de Atenção:
-• ${kpiData.awaitingPickup} entregas aguardando coleta - considerar otimização da logística de coleta
-• ${kpiData.inTransit} entregas em trânsito - monitorar para garantir cumprimento de prazos
-
-📈 Recomendações:
-1. Implementar alertas proativos para coletas pendentes
-2. Analisar rotas das entregas atrasadas para identificar gargalos
-3. Manter o padrão de qualidade atual com processos bem definidos
-4. Considerar expansão da capacidade dado o volume crescente
-
-💡 Tendência:
-Com base nos dados, o transportador demonstra capacidade de crescimento sustentável. A manutenção da taxa de pontualidade acima de 90% é um diferencial competitivo importante.`;
-
-      setAiInsight(insight);
-    } catch (error) {
+      if (response.error) {
+        setToast({ message: response.error, type: 'error' });
+      } else {
+        setAiInsight(response.insight);
+        if (response.cached) {
+          console.log('Insight carregado do cache (últimas 24h)');
+        }
+      }
+    } catch (error: any) {
       setAiInsight('');
+      setToast({ message: error.message || 'Erro ao gerar análise com IA', type: 'error' });
     } finally {
       setIsGeneratingInsight(false);
     }

@@ -145,7 +145,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
       </div>
 
       {activeTab === 'vision360' ? (
-        <CarrierVision360 carrierName={carrier.razao_social} />
+        <CarrierVision360 carrierId={carrier.id} carrierName={carrier.razao_social} />
       ) : activeTab === 'details' ? (
         <div className="space-y-6">
           {/* Header Card */}
