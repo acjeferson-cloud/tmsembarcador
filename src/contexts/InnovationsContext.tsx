@@ -70,9 +70,13 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
       }
 
       if (data) {
-        // Filtrar apenas inovações que possuam uma chave vinculada
+        // Filtrar apenas inovações que possuam uma chave vinculada,
+        // suportando tanto o formato objeto direto (1:1) quanto array vindo do Supabase
         const keys = data
-          .map((row: any) => row.innovation?.innovation_key)
+          .map((row: any) => {
+            const inn = Array.isArray(row.innovation) ? row.innovation[0] : row.innovation;
+            return inn?.innovation_key;
+          })
           .filter(Boolean);
         
         setActiveInnovationKeys(keys);

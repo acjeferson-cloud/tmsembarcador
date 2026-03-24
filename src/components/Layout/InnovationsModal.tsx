@@ -39,8 +39,8 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   const [history, setHistory] = useState<InnovationHistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   
-  const orgId = user?.organization_id || localStorage.getItem('tms-selected-org-id') || '';
-  const envId = user?.environment_id || localStorage.getItem('tms-selected-env-id') || '';
+  const orgId = user?.organization_id || localStorage.getItem('tms-selected-organization') || '';
+  const envId = user?.environment_id || localStorage.getItem('tms-selected-environment') || '';
   const estabCode = currentEstablishment?.codigo || '0000';
 
   const isAdmin = 
