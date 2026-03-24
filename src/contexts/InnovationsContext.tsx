@@ -57,7 +57,7 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
       const { data, error } = await (supabase as any).from('user_innovations')
         .select(`
           innovation_id,
-          innovations ( innovation_key )
+          innovation:innovations ( innovation_key )
         `)
         .eq('organization_id', orgId)
         .eq('environment_id', envId)
@@ -72,7 +72,7 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
       if (data) {
         // Filtrar apenas inovações que possuam uma chave vinculada
         const keys = data
-          .map((row: any) => row.innovations?.innovation_key)
+          .map((row: any) => row.innovation?.innovation_key)
           .filter(Boolean);
         
         setActiveInnovationKeys(keys);
