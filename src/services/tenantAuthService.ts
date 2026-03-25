@@ -81,7 +81,14 @@ class TenantAuthService {
 
   async loginSaasAdmin(email: string, password: string): Promise<SaasAdminLoginResponse> {
     try {
-      // 1. Authenticate with Supabase Auth natively
+      // 1. BLOCKS CHECK (Brute Force / Rate Limit protection)
+      const { data: isBlocked } = await supabase.rpc('check_saas_login_block', { p_email: email });
+      if (isBlocked) {
+        // Generic error message to prevent enumeration or revealing block status precisely
+        return { success: false, error: 'Muitas tentativas falhas. Por segurança, aguarde 15 minutos para tentar novamente.' };
+      }
+
+      // 2. Authenticate with Supabase Auth natively
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -89,17 +96,18 @@ class TenantAuthService {
 
       if (authError) {
         logger.error('SaaS admin auth login error', authError, 'TenantAuthService');
+        await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: false, p_type: 'password' });
         return {
           success: false,
-          error: authError.message,
+          error: 'Usuário ou senha inválidos.',
         };
       }
 
       if (!authData.session || !authData.user) {
-        return { success: false, error: 'Falha na autenticação. Nenhuma sessão retornada.' };
+        return { success: false, error: 'Usuário ou senha inválidos.' };
       }
 
-      // 2. We don't verify saas_admins yet, but we should make sure the user is actually a saas_admin
+      // 3. We don't verify saas_admins yet, but we should make sure the user is actually a saas_admin
       // This is natively verified if the migration set raw_app_meta_data.is_saas_admin = true
       const isSaasAdminFlag = authData.user.app_metadata?.is_saas_admin === true;
       const saasAdminId = authData.user.app_metadata?.saas_admin_id;
@@ -113,8 +121,9 @@ class TenantAuthService {
           .single();
           
         if (adminError || !adminRecord || !adminRecord.ativo) {
+          await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: false, p_type: 'password' });
           await supabase.auth.signOut();
-          return { success: false, error: 'Acesso negado. Usuário não é um administrador SaaS ativo.' };
+          return { success: false, error: 'Usuário ou senha inválidos.' };
         }
 
         // Update metadata explicitly
@@ -125,6 +134,8 @@ class TenantAuthService {
           },
         });
 
+        // Registration of successful authentication (fallback), resetting failed attempts counters
+        await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: true, p_type: 'password' });
         logger.info(`SaaS admin logged in (fallback metadata sync): ${email}`, 'TenantAuthService');
         return {
           success: true,
@@ -135,7 +146,10 @@ class TenantAuthService {
         };
       }
 
-      // 3. Verificação do Status de MFA
+      // Registration of successful authentication, resetting failed attempts counters
+      await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: true, p_type: 'password' });
+
+      // 4. Verificação do Status de MFA
       const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       let needsMfaSetup = false;
       let needsMfaChallenge = false;
@@ -170,7 +184,7 @@ class TenantAuthService {
       logger.error('Admin login exception', error, 'TenantAuthService');
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Usuário ou senha inválidos.',
       };
     }
   }

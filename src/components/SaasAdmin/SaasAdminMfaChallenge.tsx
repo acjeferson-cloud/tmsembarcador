@@ -36,6 +36,12 @@ export const SaasAdminMfaChallenge: React.FC<SaasAdminMfaChallengeProps> = ({ on
     setError(null);
 
     try {
+      // 1. BLOCKS CHECK (Brute Force / Rate Limit protection)
+      const { data: isBlocked } = await supabase.rpc('check_saas_login_block', { p_email: adminEmail });
+      if (isBlocked) {
+        throw new Error('Muitas tentativas falhas. Por segurança, aguarde 15 minutos para tentar novamente.');
+      }
+
       if (isBackupMode) {
         // Backup code flow
         // 1. Hash the code
@@ -66,6 +72,7 @@ export const SaasAdminMfaChallenge: React.FC<SaasAdminMfaChallengeProps> = ({ on
           { changes: { method: 'backup_code', email: adminEmail } }
         );
 
+        await supabase.rpc('register_saas_login_attempt', { p_email: adminEmail, p_success: true, p_type: 'mfa' });
         onChallengeSuccess();
         return;
       }
@@ -93,6 +100,7 @@ export const SaasAdminMfaChallenge: React.FC<SaasAdminMfaChallengeProps> = ({ on
         { changes: { method: 'totp' } }
       );
 
+      await supabase.rpc('register_saas_login_attempt', { p_email: adminEmail, p_success: true, p_type: 'mfa' });
       onChallengeSuccess();
     } catch (err: any) {
       console.error('MFA error', err);
@@ -104,7 +112,8 @@ export const SaasAdminMfaChallenge: React.FC<SaasAdminMfaChallengeProps> = ({ on
         { changes: { error: err.message, isBackupMode } }
       ).catch(e => console.error('Failed to log mfa error', e));
 
-      setError(err.message || 'Código inválido. Tente novamente.');
+      await supabase.rpc('register_saas_login_attempt', { p_email: adminEmail, p_success: false, p_type: 'mfa' });
+      setError(err.message === 'Usuário ou senha inválidos.' ? err.message : 'Código inválido. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
