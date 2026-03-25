@@ -266,48 +266,43 @@ export const Cities: React.FC = () => {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200">
-                <p className="font-semibold text-purple-900">Norte</p>
-                <p className="text-purple-700">{stats.byRegion?.Norte || 0} localidades</p>
-                <div className="mt-1 text-xs text-purple-600">
-                  <div>Cidades: {stats.byRegion?.Norte ? Math.floor((stats.byRegion.Norte * 0.6)) : 0}</div>
-                  <div>Distritos: {stats.byRegion?.Norte ? Math.floor((stats.byRegion.Norte * 0.3)) : 0}</div>
-                  <div>Povoados: {stats.byRegion?.Norte ? Math.floor((stats.byRegion.Norte * 0.1)) : 0}</div>
+                <p className="font-semibold text-purple-900 mb-1">Norte</p>
+                <div className="text-xs text-purple-600">
+                  <div>Cidades: {stats.byRegionAndType?.Norte?.cidade || 0}</div>
+                  <div>Distritos: {stats.byRegionAndType?.Norte?.distrito || 0}</div>
+                  <div>Povoados: {stats.byRegionAndType?.Norte?.povoado || 0}</div>
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200">
-                <p className="font-semibold text-purple-900">Nordeste</p>
-                <p className="text-purple-700">{stats.byRegion?.Nordeste || 0} localidades</p>
-                <div className="mt-1 text-xs text-purple-600">
-                  <div>Cidades: {stats.byRegion?.Nordeste ? Math.floor((stats.byRegion.Nordeste * 0.6)) : 0}</div>
-                  <div>Distritos: {stats.byRegion?.Nordeste ? Math.floor((stats.byRegion.Nordeste * 0.3)) : 0}</div>
-                  <div>Povoados: {stats.byRegion?.Nordeste ? Math.floor((stats.byRegion.Nordeste * 0.1)) : 0}</div>
+                <p className="font-semibold text-purple-900 mb-1">Nordeste</p>
+                <div className="text-xs text-purple-600">
+                  <div>Cidades: {stats.byRegionAndType?.Nordeste?.cidade || 0}</div>
+                  <div>Distritos: {stats.byRegionAndType?.Nordeste?.distrito || 0}</div>
+                  <div>Povoados: {stats.byRegionAndType?.Nordeste?.povoado || 0}</div>
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200">
-                <p className="font-semibold text-purple-900">Centro-Oeste</p>
-                <p className="text-purple-700">{stats.byRegion?.['Centro-Oeste'] || 0} localidades</p>
-                <div className="mt-1 text-xs text-purple-600">
-                  <div>Cidades: {stats.byRegion?.['Centro-Oeste'] ? Math.floor((stats.byRegion['Centro-Oeste'] * 0.6)) : 0}</div>
-                  <div>Distritos: {stats.byRegion?.['Centro-Oeste'] ? Math.floor((stats.byRegion['Centro-Oeste'] * 0.3)) : 0}</div>
-                  <div>Povoados: {stats.byRegion?.['Centro-Oeste'] ? Math.floor((stats.byRegion['Centro-Oeste'] * 0.1)) : 0}</div>
+                <p className="font-semibold text-purple-900 mb-1">Centro-Oeste</p>
+                <div className="text-xs text-purple-600">
+                  <div>Cidades: {stats.byRegionAndType?.['Centro-Oeste']?.cidade || 0}</div>
+                  <div>Distritos: {stats.byRegionAndType?.['Centro-Oeste']?.distrito || 0}</div>
+                  <div>Povoados: {stats.byRegionAndType?.['Centro-Oeste']?.povoado || 0}</div>
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200">
-                <p className="font-semibold text-purple-900">Sudeste</p>
-                <p className="text-purple-700">{stats.byRegion?.Sudeste || 0} localidades</p>
-                <div className="mt-1 text-xs text-purple-600">
-                  <div>Cidades: {stats.byRegion?.Sudeste ? Math.floor((stats.byRegion.Sudeste * 0.8)) : 0}</div>
-                  <div>Distritos: {stats.byRegion?.Sudeste ? Math.floor((stats.byRegion.Sudeste * 0.15)) : 0}</div>
-                  <div>Povoados: {stats.byRegion?.Sudeste ? Math.floor((stats.byRegion.Sudeste * 0.05)) : 0}</div>
+                <p className="font-semibold text-purple-900 mb-1">Sudeste</p>
+                <div className="text-xs text-purple-600">
+                  <div>Cidades: {stats.byRegionAndType?.Sudeste?.cidade || 0}</div>
+                  <div>Distritos: {stats.byRegionAndType?.Sudeste?.distrito || 0}</div>
+                  <div>Povoados: {stats.byRegionAndType?.Sudeste?.povoado || 0}</div>
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200">
-                <p className="font-semibold text-purple-900">Sul</p>
-                <p className="text-purple-700">{stats.byRegion?.Sul || 0} localidades</p>
-                <div className="mt-1 text-xs text-purple-600">
-                  <div>Cidades: {stats.byRegion?.Sul ? Math.floor((stats.byRegion.Sul * 0.8)) : 0}</div>
-                  <div>Distritos: {stats.byRegion?.Sul ? Math.floor((stats.byRegion.Sul * 0.15)) : 0}</div>
-                  <div>Povoados: {stats.byRegion?.Sul ? Math.floor((stats.byRegion.Sul * 0.05)) : 0}</div>
+                <p className="font-semibold text-purple-900 mb-1">Sul</p>
+                <div className="text-xs text-purple-600">
+                  <div>Cidades: {stats.byRegionAndType?.Sul?.cidade || 0}</div>
+                  <div>Distritos: {stats.byRegionAndType?.Sul?.distrito || 0}</div>
+                  <div>Povoados: {stats.byRegionAndType?.Sul?.povoado || 0}</div>
                 </div>
               </div>
             </div>

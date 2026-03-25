@@ -14,6 +14,7 @@ interface CityDBRecord {
   ativo?: boolean;
   created_at: string;
   updated_at: string;
+  zip_code_ranges?: any[];
 }
 
 const formatZipCode = (zip: string): string => {
@@ -29,6 +30,18 @@ const dbRecordToCity = (record: CityDBRecord, stateName?: string, stateAbbr?: st
   if (!stateName || !stateAbbr || !region) {
   }
 
+  let zipStart = '';
+  let zipEnd = '';
+  if (record.zip_code_ranges && record.zip_code_ranges.length > 0) {
+    const allZipCodes = record.zip_code_ranges.flatMap((r: any) => [r.start_zip, r.end_zip]).filter(Boolean);
+    if (allZipCodes.length > 0) {
+      const minZip = Math.min(...allZipCodes.map((z: string) => parseInt(z)));
+      const maxZip = Math.max(...allZipCodes.map((z: string) => parseInt(z)));
+      zipStart = formatZipCode(minZip.toString().padStart(8, '0'));
+      zipEnd = formatZipCode(maxZip.toString().padStart(8, '0'));
+    }
+  }
+
   return {
     id: record.id,
     name: record.nome,
@@ -38,8 +51,8 @@ const dbRecordToCity = (record: CityDBRecord, stateName?: string, stateAbbr?: st
     stateAbbreviation: stateAbbr || 'XX',
     region: region || 'REGIÃO NÃO INFORMADA',
     type: 'cidade',
-    zipCodeStart: '',
-    zipCodeEnd: '',
+    zipCodeStart: zipStart,
+    zipCodeEnd: zipEnd,
     zipCodeRanges: null
   };
 };
@@ -106,6 +119,10 @@ export const fetchCities = async (
           sigla,
           nome,
           regiao
+        ),
+        zip_code_ranges (
+          start_zip,
+          end_zip
         )
       `, { count: 'exact' });
 
@@ -441,31 +458,63 @@ export const importCitiesFromAlagoas = async (cities: BrazilianCity[]) => {
 
 export const getCitiesStats = async () => {
   try {
-    const { data: allCities, error } = await supabase
-      .from('cities')
-      .select(`
-        id,
-        states:state_id (
-          sigla,
-          regiao
-        )
-      `);
+    let allCities: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (error) throw error;
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('cities')
+        .select(`
+          id,
+          states:state_id (
+            sigla,
+            regiao
+          )
+        `)
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        allCities = [...allCities, ...data];
+        from += pageSize;
+        hasMore = data.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
 
     const stats = {
       total: allCities?.length || 0,
       byType: { cidade: allCities?.length || 0 } as Record<string, number>,
       byRegion: {} as Record<string, number>,
-      byState: {} as Record<string, number>
+      byState: {} as Record<string, number>,
+      byRegionAndType: {} as Record<string, { cidade: number, distrito: number, povoado: number }>
     };
 
     allCities?.forEach((city: any) => {
       const region = city.states?.regiao;
       const state = city.states?.sigla;
+      const type = 'cidade'; // Assumindo 'cidade' pois não há coluna tipo no momento
 
       if (region) {
         stats.byRegion[region] = (stats.byRegion[region] || 0) + 1;
+
+        if (!stats.byRegionAndType[region]) {
+          stats.byRegionAndType[region] = { cidade: 0, distrito: 0, povoado: 0 };
+        }
+
+        if (type.includes('cidad') || type.includes('munic')) {
+          stats.byRegionAndType[region].cidade++;
+        } else if (type.includes('distrito')) {
+          stats.byRegionAndType[region].distrito++;
+        } else if (type.includes('povoado')) {
+          stats.byRegionAndType[region].povoado++;
+        } else {
+          stats.byRegionAndType[region].cidade++; // fallback
+        }
       }
       if (state) {
         stats.byState[state] = (stats.byState[state] || 0) + 1;
@@ -474,7 +523,13 @@ export const getCitiesStats = async () => {
 
     return stats;
   } catch (error) {
-    return { total: 0, byType: {}, byRegion: {}, byState: {} };
+    return { 
+      total: 0, 
+      byType: {}, 
+      byRegion: {}, 
+      byState: {},
+      byRegionAndType: {}
+    };
   }
 };
 
