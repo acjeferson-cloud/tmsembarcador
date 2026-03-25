@@ -11,7 +11,8 @@ import {
   Palette,
   Package,
   Layers,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import { SaasAdminDashboard } from './SaasAdminDashboard';
 import { SaasTenantsManagement } from './SaasTenantsManagement';
@@ -20,11 +21,23 @@ import { WhiteLabelManagement } from './WhiteLabelManagement';
 import { SaasPlansManager } from './SaasPlansManager';
 import { SaasEnvironmentsView } from './SaasEnvironmentsView';
 import { InnovationsCrud } from '../Innovations/InnovationsCrud';
+import { tenantAuthService } from '../../services/tenantAuthService';
 
 type TabType = 'dashboard' | 'tenants' | 'plans' | 'environments' | 'whitelabel' | 'databases' | 'metrics' | 'logs' | 'alerts' | 'innovations' | 'settings';
 
 export function SaasAdminConsole() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+
+  const handleLogout = async () => {
+    try {
+      await tenantAuthService.logout();
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+      // Fallback reload just in case
+      window.location.reload();
+    }
+  };
 
   const tabs = [
     { id: 'dashboard' as TabType, label: 'Dashboard', icon: LayoutDashboard },
@@ -55,6 +68,14 @@ export function SaasAdminConsole() {
                 <Activity className="w-5 h-5 text-green-400" />
                 <span className="text-sm font-medium">Sistema Online</span>
               </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors shadow-sm"
+                title="Sair do painel global"
+              >
+                <LogOut className="w-4 h-4 text-white" />
+                <span className="text-sm font-medium text-white">Sair</span>
+              </button>
             </div>
           </div>
         </div>
