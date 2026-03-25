@@ -28,6 +28,7 @@ export interface Establishment {
   emailConfig?: EmailConfig;
   organizationId?: string;
   environmentId?: string;
+  establishment_id?: string;
 }
 
 // Dados iniciais

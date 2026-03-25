@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { changeLogsService } from './changeLogsService';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 export interface License {
   id: string;
@@ -36,9 +38,15 @@ export interface UserWithLicense {
 export const licensesService = {
   async getLicenseConfig(): Promise<License | null> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) return null;
-      const userData = JSON.parse(savedUser);
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const organizationId = userData.organization_id;
 
       if (!organizationId) {

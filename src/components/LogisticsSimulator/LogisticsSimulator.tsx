@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, HelpCircle, BarChart3, AlertCircle, Loader2, Play, MapPin, TrendingUp, X } from 'lucide-react';
+import { Calculator, HelpCircle, BarChart3, AlertCircle, Loader2, Play, MapPin, TrendingUp, X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { logisticsSimulatorService, SimulationResult } from '../../services/logisticsSimulatorService';
 import { carriersService, Carrier } from '../../services/carriersService';
+import { businessPartnersService } from '../../services/businessPartnersService';
+import { getCitiesByState } from '../../services/citiesService';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 
 const LogisticsSimulator: React.FC = () => {
   const { t } = useTranslation();
@@ -21,17 +24,42 @@ const LogisticsSimulator: React.FC = () => {
   const [startDate, setStartDate] = useState(thirtyDaysAgo.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
   const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
+  const [businessPartners, setBusinessPartners] = useState<any[]>([]);
+
+  // Advanced Filters
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [modal, setModal] = useState('all');
+  const [businessPartnerId, setBusinessPartnerId] = useState('');
+  const [destinationState, setDestinationState] = useState('all');
+  const [destinationCity, setDestinationCity] = useState('');
+  const [cities, setCities] = useState<any[]>([]);
+  const [minWeight, setMinWeight] = useState<string>('');
+  const [maxWeight, setMaxWeight] = useState<string>('');
+  const [minValue, setMinValue] = useState<string>('');
+  const [maxValue, setMaxValue] = useState<string>('');
 
   useEffect(() => {
-    const loadCarriers = async () => {
+    if (destinationState && destinationState !== 'all') {
+      getCitiesByState(destinationState).then((res: any) => setCities(res));
+    } else {
+      setCities([]);
+    }
+  }, [destinationState]);
+
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        const fetchedCarriers = await carriersService.getAll();
+        const [fetchedCarriers, fetchedBps] = await Promise.all([
+          carriersService.getAll(),
+          businessPartnersService.getAll()
+        ]);
         setCarriers(fetchedCarriers.filter(c => c.status === 'ativo'));
+        setBusinessPartners(fetchedBps.filter((bp: any) => bp.status === 'ativo' || bp.ativo));
       } catch (err) {
-        console.error('Failed to load carriers', err);
+        console.error('Failed to load initial data', err);
       }
     };
-    loadCarriers();
+    loadData();
   }, []);
 
   const toggleCarrier = (id: string) => {
@@ -63,16 +91,25 @@ const LogisticsSimulator: React.FC = () => {
         route: 'all',
         originState: 'all',
         originCity: 'all',
-        destinationState: 'all',
-        destinationCity: 'all',
-        weightRange: 'all'
+        destinationState,
+        destinationCity: destinationCity.trim() !== '' ? destinationCity : 'all',
+        weightRange: 'all',
+        modal,
+        businessPartnerId: businessPartnerId !== '' ? businessPartnerId : undefined,
+        minWeight: minWeight !== '' ? Number(minWeight) : undefined,
+        maxWeight: maxWeight !== '' ? Number(maxWeight) : undefined,
+        minValue: minValue !== '' ? Number(minValue) : undefined,
+        maxValue: maxValue !== '' ? Number(maxValue) : undefined
       });
 
       if (response.success) {
         // Enforce carrier names into result
-        const populatedResults = response.results.map(r => {
-           const c = carriers.find(c => c.id === r.carrierId);
-           return { ...r, carrierName: c?.razao_social || t('logisticsSimulator.unknownCarrier') };
+        const populatedResults = response.results.map((r: any) => {
+           if (r.carrierName && r.carrierName !== 'Transportadora') {
+             return r;
+           }
+           const c = carriers.find(c => c.id === (r.originalCarrierId || r.carrierId));
+           return { ...r, carrierName: c?.razao_social || c?.fantasia || t('logisticsSimulator.unknownCarrier') };
         });
         setResults(populatedResults);
         setTotalProcessed(response.totalOrdersProcessed);
@@ -198,6 +235,139 @@ const LogisticsSimulator: React.FC = () => {
               </label>
             ))}
           </div>
+        </div>
+
+        {/* Advanced Filters Toggle */}
+        <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-6">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            <Filter className="w-4 h-4" />
+            {t('logisticsSimulator.config.advancedFilters', 'Filtros Avançados (Opcional)')}
+            {showAdvancedFilters ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+          </button>
+          
+          {showAdvancedFilters && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in bg-gray-50 dark:bg-gray-800/50 p-5 rounded-lg border border-gray-100 dark:border-gray-700">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.modal', 'Modalidade')}</label>
+                <AutocompleteSelect
+                  options={[
+                    { value: 'all', label: typeof t === 'function' ? t('logisticsSimulator.filters.allModals', 'Todos os Modais') as string : 'Todos os Modais' },
+                    { value: 'Rodoviário', label: 'Rodoviário' },
+                    { value: 'Aéreo', label: 'Aéreo' },
+                    { value: 'Aquaviário', label: 'Aquaviário' },
+                    { value: 'Ferroviário', label: 'Ferroviário' }
+                  ]}
+                  value={modal}
+                  onChange={(val) => setModal(val)}
+                  placeholder={typeof t === 'function' ? t('logisticsSimulator.filters.allModals', 'Todos os Modais') as string : 'Todos os Modais'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.businessPartner', 'Parceiro de Negócio (Cliente)')}</label>
+                <AutocompleteSelect
+                  options={[
+                    { value: '', label: typeof t === 'function' ? t('logisticsSimulator.filters.allPartners', 'Todos os Clientes') as string : 'Todos os Clientes' },
+                    ...businessPartners.map(bp => ({
+                      value: bp.id,
+                      label: `${bp.codigo ? `${bp.codigo} - ` : ''}${bp.razao_social || bp.fantasia || bp.nome}`
+                    }))
+                  ]}
+                  value={businessPartnerId}
+                  onChange={(val) => setBusinessPartnerId(val)}
+                  placeholder={typeof t === 'function' ? t('logisticsSimulator.filters.allPartners', 'Todos os Clientes') as string : 'Todos os Clientes'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.destinationState', 'UF Destino')}</label>
+                <AutocompleteSelect
+                  options={[
+                    { value: 'all', label: typeof t === 'function' ? t('logisticsSimulator.filters.allStates', 'Todos os Estados') as string : 'Todos os Estados' },
+                    ...['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => ({
+                      value: uf,
+                      label: uf
+                    }))
+                  ]}
+                  value={destinationState}
+                  onChange={(val) => setDestinationState(val)}
+                  placeholder={typeof t === 'function' ? t('logisticsSimulator.filters.allStates', 'Todos os Estados') as string : 'Todos os Estados'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.destinationCity', 'Cidade Destino')}</label>
+                <AutocompleteSelect
+                  options={[
+                    { value: '', label: typeof t === 'function' ? t('logisticsSimulator.filters.allCities', 'Todas as Cidades') as string : 'Todas as Cidades' },
+                    ...cities.map((city) => ({
+                      value: city.name,
+                      label: city.name
+                    }))
+                  ]}
+                  value={destinationCity === 'all' ? '' : destinationCity}
+                  onChange={(val) => setDestinationCity(val === '' ? 'all' : val)}
+                  placeholder={typeof t === 'function' ? t('logisticsSimulator.filters.cityPlaceholder', 'Ex: São Paulo') as string : 'Ex: São Paulo'}
+                  disabled={destinationState === 'all'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.minWeight', 'Peso Mín (kg)')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={minWeight}
+                  onChange={(e) => setMinWeight(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.maxWeight', 'Peso Máx (kg)')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ilimitado"
+                  value={maxWeight}
+                  onChange={(e) => setMaxWeight(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.minValue', 'Valor Mín (R$)')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={minValue}
+                  onChange={(e) => setMinValue(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('logisticsSimulator.filters.maxValue', 'Valor Máx (R$)')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ilimitado"
+                  value={maxValue}
+                  onChange={(e) => setMaxValue(e.target.value)}
+                  className="w-full p-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 flex justify-end">

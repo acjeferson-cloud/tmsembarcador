@@ -249,7 +249,7 @@ class EnvironmentsService {
 
   /**
    * Deleta um environment permanentemente (CUIDADO!)
-   * Isso deletará TODOS os dados associados ao environment
+   * Chama a RPC delete_environment_cascade para limpar mais de 30 tabelas atreladas
    */
   async hardDelete(id: string): Promise<void> {
     const environment = await this.getById(id);
@@ -262,10 +262,10 @@ class EnvironmentsService {
       throw new Error('Não é possível deletar o ambiente de produção');
     }
 
-    const { error } = await supabase
-      .from('saas_environments')
-      .delete()
-      .eq('id', id);
+    // @ts-ignore - The RPC function was added manually via SQL migration
+    const { error } = await supabase.rpc('delete_environment_cascade', {
+      p_environment_id: id
+    });
 
     if (error) throw error;
   }
@@ -291,24 +291,27 @@ class EnvironmentsService {
     throw new Error('Funcionalidade de clonagem ainda não implementada');
   }
 
-  /**
-   * Obtém estatísticas de uso de um environment
-   */
   async getStats(environmentId: string): Promise<{
     total_users: number;
     total_establishments: number;
     total_carriers: number;
     total_invoices: number;
     total_orders: number;
+    total_pickups: number;
+    total_ctes: number;
+    total_bills: number;
     storage_used_mb: number;
   }> {
     // Contadores
-    const [users, establishments, carriers, invoices, orders] = await Promise.all([
+    const [users, establishments, carriers, invoices, orders, pickups, ctes, bills] = await Promise.all([
       supabase.from('users').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
       supabase.from('establishments').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
       supabase.from('carriers').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
       supabase.from('invoices_nfe').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
+      supabase.from('pickups').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
+      supabase.from('invoices_cte').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
+      supabase.from('bills').select('id', { count: 'exact', head: true }).eq('environment_id', environmentId),
     ]);
 
     return {
@@ -317,6 +320,9 @@ class EnvironmentsService {
       total_carriers: carriers.count || 0,
       total_invoices: invoices.count || 0,
       total_orders: orders.count || 0,
+      total_pickups: pickups.count || 0,
+      total_ctes: ctes.count || 0,
+      total_bills: bills.count || 0,
       storage_used_mb: 0, // TODO: Calcular storage real
     };
   }

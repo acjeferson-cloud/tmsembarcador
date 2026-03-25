@@ -38,10 +38,13 @@ export const npsCxService = {
     try {
       await ensureSessionContext();
       const context = await TenantContextHelper.getCurrentContext();
-      if (!context?.environmentId) throw new Error('Contexto não encontrado');
+      if (!context?.environmentId || !context?.establishmentId) {
+        throw new Error('Contexto incompleto. Ambiente e Estabelecimento são obrigatórios.');
+      }
 
       const { data, error } = await (supabase as any).rpc('get_nps_settings', {
-        p_environment_id: context.environmentId
+        p_environment_id: context.environmentId,
+        p_establishment_id: context.establishmentId
       });
 
       if (error) throw error;
@@ -56,12 +59,15 @@ export const npsCxService = {
     try {
       await ensureSessionContext();
       const context = await TenantContextHelper.getCurrentContext();
-      if (!context?.environmentId) throw new Error('Contexto não encontrado');
+      if (!context?.environmentId || !context?.establishmentId) {
+         throw new Error('Contexto incompleto. Ambiente e Estabelecimento são obrigatórios.');
+      }
 
       const payload = {
             ...settings,
             environment_id: context.environmentId,
             organization_id: context.organizationId,
+            establishment_id: context.establishmentId,
             updated_at: new Date().toISOString()
       };
 
@@ -100,6 +106,7 @@ export const npsCxService = {
           )
         `)
         .eq('environment_id', context.environmentId)
+        .eq('establishment_id', context.establishmentId)
         .order('created_at', { ascending: false });
 
       if (filters?.status && filters.status !== 'all') {
@@ -190,8 +197,16 @@ export const npsCxService = {
     try {
       await ensureSessionContext();
       if (!supabase) throw new Error('Supabase client is not available');
+      const context = await TenantContextHelper.getCurrentContext();
       
-      const { data, error } = await supabase.functions.invoke('nps-scheduler');
+      const { data, error } = await supabase.functions.invoke('nps-scheduler', {
+        body: { 
+           manualTrigger: true, 
+           environment_id: context?.environmentId,
+           establishment_id: context?.establishmentId,
+           appUrl: window.location.origin
+        }
+      });
       
       if (error) {
         let details = error.message;

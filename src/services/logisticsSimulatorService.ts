@@ -11,6 +11,12 @@ export interface SimulationFilters {
   destinationState: string;
   destinationCity: string;
   weightRange: string;
+  modal?: string;
+  businessPartnerId?: string;
+  minWeight?: number;
+  maxWeight?: number;
+  minValue?: number;
+  maxValue?: number;
 }
 
 export interface SimulationResult {
@@ -62,10 +68,18 @@ export const logisticsSimulatorService = {
         endDate: filters.endDate,
         carrierIds: filters.carrierIds,
         organizationId,
-        environmentId
+        environmentId,
+        modal: filters.modal !== 'all' ? filters.modal : undefined,
+        businessPartnerId: filters.businessPartnerId,
+        destinationState: filters.destinationState !== 'all' ? filters.destinationState : undefined,
+        destinationCity: filters.destinationCity !== 'all' ? filters.destinationCity : undefined,
+        minWeight: filters.minWeight,
+        maxWeight: filters.maxWeight,
+        minValue: filters.minValue,
+        maxValue: filters.maxValue
       };
 
-      const { data, error } = await supabase.functions.invoke('simulate-freight-batch', {
+      const { data, error } = await supabase!.functions.invoke('simulate-freight-batch', {
         body: payload
       });
 

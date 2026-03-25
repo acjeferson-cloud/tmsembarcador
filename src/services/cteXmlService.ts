@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { trackingService } from './trackingService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 interface ParsedCTeData {
   // Dados básicos
@@ -438,9 +439,16 @@ export const cteXmlService = {
 
   async importCTeToDatabase(parsedData: ParsedCTeData, establishmentId: string) {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { data: cteData, error: cteError } = await (supabase as any)
         .from('ctes_complete')
         .insert({
+          organization_id: ctx?.organizationId,
+          environment_id: ctx?.environmentId,
           establishment_id: establishmentId,
           number: parsedData.number,
           series: parsedData.series,
@@ -498,6 +506,8 @@ export const cteXmlService = {
           .from('ctes_invoices')
           .insert(
             parsedData.invoices.map(invoice => ({
+              organization_id: ctx?.organizationId,
+              environment_id: ctx?.environmentId,
               cte_id: cteData.id,
               establishment_code: invoice.establishment_code,
               invoice_type: invoice.invoice_type,
@@ -537,6 +547,7 @@ export const cteXmlService = {
         await electronicDocumentsService.create({
           document_type: 'CTe',
           model: '57',
+          establishment_id: ctx?.establishmentId || undefined,
           document_number: parsedData.number,
           series: parsedData.series,
           access_key: parsedData.access_key,

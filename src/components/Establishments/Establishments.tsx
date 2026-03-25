@@ -59,23 +59,10 @@ export const Establishments: React.FC = () => {
       } catch (parseError) {
         setEstablishments([]);
         return;
-      }
-
-      // Buscar estabelecimentos permitidos para o usuário
-      const { data: userRecord, error: userError } = await supabase
-        .from('users')
-        .select('estabelecimentos_permitidos')
-        .eq('email', userEmail)
-        .maybeSingle();
-      // Buscar todos os estabelecimentos via service
+      }      // Buscar todos os estabelecimentos via service (o RLS e o backend governam a visibilidade)
       let data = await establishmentsService.getAll();
-      // Filtrar por estabelecimentos permitidos (se houver)
-      if (userRecord?.estabelecimentos_permitidos && userRecord.estabelecimentos_permitidos.length > 0) {
-        const allowedIds = userRecord.estabelecimentos_permitidos;
-        const beforeFilterCount = data.length;
-        data = data.filter(est => allowedIds.includes(est.id));
-      } else {
-      }
+      
+      console.log('👀 [Establishments.tsx] setEstablishments chamado com', data.length, 'itens');
       setEstablishments(data);
     } catch (error) {
       setToast({ message: t('establishments.messages.loadError'), type: 'error' });
@@ -89,11 +76,18 @@ export const Establishments: React.FC = () => {
   };
 
   const filteredEstablishments = establishments.filter(establishment => {
-    const matchesSearch = establishment.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         establishment.fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         establishment.cnpj.includes(searchTerm) ||
-                         establishment.codigo.toString().includes(searchTerm) ||
-                         establishment.cep.includes(searchTerm);
+    const searchLow = searchTerm.toLowerCase();
+    const razao = (establishment.razao_social || '').toLowerCase();
+    const fantasia = (establishment.fantasia || establishment.nome_fantasia || '').toLowerCase();
+    const cnpj = establishment.cnpj || '';
+    const codigo = (establishment.codigo || '').toString();
+    const cep = establishment.cep || '';
+    
+    const matchesSearch = razao.includes(searchLow) ||
+                         fantasia.includes(searchLow) ||
+                         cnpj.includes(searchTerm) ||
+                         codigo.includes(searchTerm) ||
+                         cep.includes(searchTerm);
     const matchesState = stateFilter === 'Todos' || establishment.estado === stateFilter;
     return matchesSearch && matchesState;
   });

@@ -29,25 +29,13 @@ export interface LogFilters {
  */
 async function getContextIds(): Promise<{ organizationId: string | null; environmentId: string | null }> {
   try {
-    const savedUser = localStorage.getItem('tms-user');
-    if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        if (userData.organization_id && userData.environment_id) {
-           return {
-             organizationId: userData.organization_id,
-             environmentId: userData.environment_id
-           };
-        }
-    }
-
-    // Fallback original
-    const context = await TenantContextHelper.getCurrentContext();
-    if (!context) {
+    const ctx = await TenantContextHelper.getCurrentContext();
+    if (!ctx || !ctx.organizationId || !ctx.environmentId) {
       return { organizationId: null, environmentId: null };
     }
     return {
-      organizationId: context.organizationId,
-      environmentId: context.environmentId
+      organizationId: ctx.organizationId,
+      environmentId: ctx.environmentId
     };
   } catch (error) {
     return { organizationId: null, environmentId: null };

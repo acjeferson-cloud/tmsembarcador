@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { findOrCreateCityByCEP } from './citiesService';
 import { freightQuoteService } from './freightQuoteService';
 import { electronicDocumentsService } from './electronicDocumentsService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface NFeXmlData {
   invoiceType: string;
@@ -236,6 +237,11 @@ export const importNFeToDatabase = async (
   carrierId?: string
 ): Promise<{ success: boolean; invoiceId?: string; error?: string }> => {
   try {
+    const ctx = await TenantContextHelper.getCurrentContext();
+    if (ctx && ctx.organizationId && ctx.environmentId) {
+      await TenantContextHelper.setSessionContext(ctx);
+    }
+
     if (!organizationId || !environmentId) {
       throw new Error('Contexto de organização/ambiente não encontrado');
     }
@@ -244,6 +250,8 @@ export const importNFeToDatabase = async (
       .from('invoices_nfe')
       .select('id')
       .eq('chave_acesso', nfeData.accessKey)
+      .eq('organization_id', organizationId)
+      .eq('environment_id', environmentId)
       .maybeSingle();
 
     if (searchError) throw searchError;
@@ -434,6 +442,7 @@ export const importNFeToDatabase = async (
         await electronicDocumentsService.create({
           document_type: 'NFe',
           model: '55',
+          establishment_id: establishmentId,
           document_number: nfeData.number,
           series: nfeData.series,
           access_key: nfeData.accessKey,

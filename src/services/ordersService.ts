@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { setSessionContext } from '../lib/sessionContext';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface Order {
   id?: string;
@@ -121,18 +122,10 @@ const mapOrderFromDb = (dbOrder: any): Order => {
 export const ordersService = {
   async getAll(): Promise<Order[]> {
     try {
-      let orgId: string | undefined;
-      let envId: string | undefined;
-
-      const storedUser = localStorage.getItem('tms-user');
-      if (storedUser) {
-        const userObj = JSON.parse(storedUser);
-        orgId = userObj.organization_id || userObj.user?.organization_id;
-        envId = userObj.environment_id || userObj.user?.environment_id;
-        
-        if (orgId && envId) {
-          await setSessionContext(orgId, envId);
-        }
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        // Atualiza a sessão no banco para garantir compatibilidade
+        await TenantContextHelper.setSessionContext(ctx);
       }
 
       let query = supabase
@@ -143,11 +136,14 @@ export const ordersService = {
           carriers (razao_social)
         `);
 
-      if (orgId) {
-        query = query.eq('organization_id', orgId);
+      if (ctx?.organizationId) {
+        query = query.eq('organization_id', ctx.organizationId);
       }
-      if (envId) {
-        query = query.eq('environment_id', envId);
+      if (ctx?.environmentId) {
+        query = query.eq('environment_id', ctx.environmentId);
+      }
+      if (ctx?.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
       }
 
       const { data, error } = await query.order('data_pedido', { ascending: false });
@@ -193,17 +189,10 @@ export const ordersService = {
 
   async create(order: Order): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Dados de acesso incompletos. Contate o suporte ou faça login novamente.');
       }
-      const userData = JSON.parse(savedUser);
-      if (!userData.organization_id || !userData.environment_id) {
-        throw new Error('Dados de organização incompletos. Contate o suporte.');
-      }
-
-
-
 
       const { delivery_status, ...orderData } = order;
 
@@ -218,9 +207,9 @@ export const ordersService = {
       else if (orderData.status as any === 'emitido') dbStatus = 'processando'; // Map emitido to processando if it exists
 
       const dataToInsert = {
-        organization_id: userData.organization_id,
-        environment_id: userData.environment_id,
-        establishment_id: userData.establishment_id || null,
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null,
         serie: orderData.serie || null,
         numero_pedido: String(orderData.order_number || ''),
         business_partner_id: orderData.customer_id || null,
@@ -299,13 +288,9 @@ export const ordersService = {
 
   async update(id: string, order: Partial<Order>): Promise<{ success: boolean; error?: string }> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
-      }
-      const userData = JSON.parse(savedUser);
-      if (!userData.organization_id || !userData.environment_id) {
-        throw new Error('Dados de organização incompletos. Contate o suporte.');
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Dados de acesso incompletos. Contate o suporte ou faça login novamente.');
       }
       
       const { delivery_status, ...orderData } = order;
@@ -410,20 +395,15 @@ export const ordersService = {
 
   async addItems(orderId: string, items: any[]): Promise<{ success: boolean; error?: string }> {
     try {
-
-
-
-
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Dados de acesso incompletos para adicionar itens.');
       }
-      const userData = JSON.parse(savedUser);
 
       const itemsToInsert = items.map(item => ({
         order_id: orderId,
-        organization_id: userData.organization_id,
-        environment_id: userData.environment_id,
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
         produto_codigo: item.product_code || null,
         produto_descricao: item.product_description,
         quantidade: Number(item.quantity) || 1,
@@ -434,7 +414,7 @@ export const ordersService = {
         cubagem: Number(item.cubic_meters) || 0
       }));
 
-      await setSessionContext(userData.organization_id, userData.environment_id);
+      await TenantContextHelper.setSessionContext(ctx);
 
       const { error } = await supabase
         .from('order_items')
@@ -473,16 +453,15 @@ export const ordersService = {
 
       // Insert new items
       if (items.length > 0) {
-        const savedUser = localStorage.getItem('tms-user');
-        if (!savedUser) {
-          throw new Error('Usuário não autenticado. Faça login novamente.');
+        const ctx = await TenantContextHelper.getCurrentContext();
+        if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+          throw new Error('Dados de acesso incompletos para atualizar itens.');
         }
-        const userData = JSON.parse(savedUser);
 
         const itemsToInsert = items.map(item => ({
           order_id: orderId,
-          organization_id: userData.organization_id,
-          environment_id: userData.environment_id,
+          organization_id: ctx.organizationId,
+          environment_id: ctx.environmentId,
           produto_codigo: item.product_code || null,
           produto_descricao: item.product_description,
           quantidade: Number(item.quantity) || 1,
@@ -493,7 +472,7 @@ export const ordersService = {
           cubagem: Number(item.cubic_meters) || 0
         }));
 
-        await setSessionContext(userData.organization_id, userData.environment_id);
+        await TenantContextHelper.setSessionContext(ctx);
 
         const { error: insertError } = await supabase
           .from('order_items')

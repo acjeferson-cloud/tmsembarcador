@@ -4,6 +4,8 @@ import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCirc
 import { DeployAgent } from '../DeployAgent/DeployAgent';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
 import { implementationService } from '../../services/implementationService';
+import { carriersService, Carrier } from '../../services/carriersService';
+import { freightRatesService, FreightRateTable } from '../../services/freightRatesService';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast } from '../common/Toast';
 import { useTranslation } from 'react-i18next';
@@ -54,11 +56,51 @@ const ImplementationCenter: React.FC = () => {
     nfeXmlNetworkAddress: '',
     fiscalModule: 'skill'
   });
+  
+  // Freight Adjustment state
+  const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [selectedCarrierAdjustment, setSelectedCarrierAdjustment] = useState('');
+  const [carrierTables, setCarrierTables] = useState<FreightRateTable[]>([]);
+  const [selectedTablesToAdjust, setSelectedTablesToAdjust] = useState<string[]>([]);
+  const [isLoadingTables, setIsLoadingTables] = useState(false);
 
   // Carregar configuração ERP do banco ao montar componente
   useEffect(() => {
     loadERPConfig();
+    loadCarriers();
   }, []);
+
+  const loadCarriers = async () => {
+    try {
+      const data = await carriersService.getAll();
+      setCarriers(data.filter(c => c.status === 'ativo'));
+    } catch (err) {
+      console.error('Failed to load active carriers:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCarrierAdjustment) {
+      loadCarrierTables(selectedCarrierAdjustment);
+    } else {
+      setCarrierTables([]);
+      setSelectedTablesToAdjust([]);
+    }
+  }, [selectedCarrierAdjustment]);
+
+  const loadCarrierTables = async (carrierId: string) => {
+    setIsLoadingTables(true);
+    try {
+      const data = await freightRatesService.getTablesByCarrier(carrierId);
+      // Filter active tables or let them adjust inactive ones too? Let's show all tables for precision
+      setCarrierTables(data);
+      setSelectedTablesToAdjust(['all']);
+    } catch (err) {
+      console.error('Falha ao carregar tabelas', err);
+    } finally {
+      setIsLoadingTables(false);
+    }
+  };
 
   const loadERPConfig = async () => {
     const config = await implementationService.getERPConfig();
@@ -172,24 +214,35 @@ const ImplementationCenter: React.FC = () => {
     try {
       const value = adjustmentType === 'percentage' ? parseFloat(adjustmentValue) : null;
 
+      const payloadTables = selectedTablesToAdjust.includes('all') 
+        ? carrierTables.map(t => t.id) 
+        : selectedTablesToAdjust;
+
+      if (!payloadTables.length) {
+        setToast({ type: 'error', message: 'Nenhuma tabela selecionada para reajuste.' });
+        setIsUploading(false);
+        return;
+      }
+
       const result = await implementationService.applyFreightAdjustment(
+        payloadTables,
         adjustmentType,
         value,
         user.id,
         `Reajuste ${adjustmentType === 'percentage' ? `de ${value}%` : 'manual'} aplicado`
       );
 
-      setImportResults([{
-        success: result.success,
-        message: result.message,
-        recordsProcessed: result.affectedTables
-      }]);
+      if (result.success) {
+        setToast({ type: 'success', message: result.message });
+        setAdjustmentValue('');
+        setSelectedTablesToAdjust([]);
+        setSelectedCarrierAdjustment('');
+      } else {
+        setToast({ type: 'error', message: result.message });
+      }
     } catch (error) {
       console.error('Erro ao aplicar reajuste:', error);
-      setImportResults([{
-        success: false,
-        message: t('implementationCenter.messages.adjustError')
-      }]);
+      setToast({ type: 'error', message: t('implementationCenter.messages.adjustError') });
     } finally {
       setIsUploading(false);
     }
@@ -422,19 +475,51 @@ const ImplementationCenter: React.FC = () => {
 
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tabelas a Reajustar
+              Transportadora
             </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="all">Todas as Tabelas Ativas</option>
-              <option value="sp-capital">SP Capital - Expressa</option>
-              <option value="rj-interior">RJ Interior - Econômica</option>
-              <option value="mg-metro">MG Metropolitana - Premium</option>
+            <select
+              value={selectedCarrierAdjustment}
+              onChange={(e) => setSelectedCarrierAdjustment(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione uma transportadora...</option>
+              {carriers.map(c => (
+                <option key={c.id} value={c.id}>{c.razao_social} {c.fantasia ? `(${c.fantasia})` : ''}</option>
+              ))}
             </select>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Tabelas a Reajustar {isLoadingTables && <span className="text-xs text-blue-500 ml-2">(Carregando...)</span>}
+            </label>
+            <select 
+              multiple 
+              value={selectedTablesToAdjust}
+              onChange={(e) => {
+                const values = Array.from(e.target.selectedOptions, option => option.value);
+                if (values.includes('all')) {
+                  setSelectedTablesToAdjust(['all']);
+                } else {
+                  setSelectedTablesToAdjust(values.filter(v => v !== 'all'));
+                }
+              }}
+              disabled={!selectedCarrierAdjustment || isLoadingTables || carrierTables.length === 0}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+            >
+              <option value="all" className="font-semibold text-blue-600 border-b border-gray-200 pb-1 mb-1">
+                -- Todas as Tabelas da Transportadora --
+              </option>
+              {carrierTables.map(t => (
+                <option key={t.id} value={t.id}>{t.nome} ({t.status})</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500">Pressione e segure Ctrl/Cmd para selecionar múltiplas específicas.</p>
           </div>
 
           <button
             onClick={handleAdjustmentSubmit}
-            disabled={isUploading || (adjustmentType === 'percentage' && !adjustmentValue)}
+            disabled={isUploading || (adjustmentType === 'percentage' && !adjustmentValue) || !selectedCarrierAdjustment || carrierTables.length === 0}
             className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUploading ? (
@@ -1107,20 +1192,22 @@ const ImplementationCenter: React.FC = () => {
           />
         )}
 
-        {activeTab === 'adjustment' && renderAdjustmentSection()}
+        {activeTab === 'adjust-tables' && renderAdjustmentSection()}
       </div>
 
-      {/* Instructions */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('implementationCenter.deployAgent.uploader.howItWorks.title')}</h3>
-        <div className="space-y-2 text-blue-800">
-          <p>• <strong>1.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item1')}</p>
-          <p>• <strong>2.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item2')}</p>
-          <p>• <strong>3.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item3')}</p>
-          <p>• <strong>4.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item4')}</p>
-          <p>• <strong>5.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item5')}</p>
+      {/* Instructions Deploy Agent*/}
+      {activeTab === 'deploy-agent' && (
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('implementationCenter.deployAgent.uploader.howItWorks.title')}</h3>
+          <div className="space-y-2 text-blue-800">
+            <p>• <strong>1.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item1')}</p>
+            <p>• <strong>2.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item2')}</p>
+            <p>• <strong>3.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item3')}</p>
+            <p>• <strong>4.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item4')}</p>
+            <p>• <strong>5.</strong> {t('implementationCenter.deployAgent.uploader.howItWorks.item5')}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Toast Messages */}
       {toast && (

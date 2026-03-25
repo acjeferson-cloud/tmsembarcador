@@ -142,7 +142,8 @@ export const useAuth = () => {
                       tipo: est.tipo,
                       trackingPrefix: est.tracking_prefix || est.codigo,
                       organizationId: est.organization_id,
-                      environmentId: est.environment_id
+                      environmentId: est.environment_id,
+                      establishment_id: est.id
                     }));
 
                   if (dbEstablishments && dbEstablishments.length > 0) {
@@ -266,7 +267,10 @@ export const useAuth = () => {
                       cidade: est.cidade,
                       estado: est.estado,
                       tipo: est.tipo as 'matriz' | 'filial',
-                      trackingPrefix: est.tracking_prefix
+                      trackingPrefix: est.tracking_prefix,
+                      organizationId: dbUser.organization_id,
+                      environmentId: dbUser.environment_id,
+                      establishment_id: est.id
                     };
 
                     setCurrentEstablishment(establishment);
@@ -462,7 +466,8 @@ export const useAuth = () => {
               tipo: est.tipo,
               trackingPrefix: est.tracking_prefix || est.codigo,
               organizationId: est.organization_id,
-              environmentId: est.environment_id
+              environmentId: est.environment_id,
+              establishment_id: est.id
             }));
 
           if (!establishmentsError && dbEstablishments && dbEstablishments.length > 0) {
@@ -654,7 +659,8 @@ export const useAuth = () => {
               tipo: establishment.tipo as 'matriz' | 'filial',
               trackingPrefix: establishment.codigo,
               organizationId: establishment.organization_id,
-              environmentId: establishment.environment_id
+              environmentId: establishment.environment_id,
+              establishment_id: establishment.id
             };
 
             setCurrentEstablishment(mappedEstablishment);
@@ -754,7 +760,8 @@ export const useAuth = () => {
         tipo: est.tipo,
         trackingPrefix: est.tracking_prefix,
         organizationId: est.organization_id,
-        environmentId: est.environment_id
+        environmentId: est.environment_id,
+        establishment_id: est.id
       }));
 
       setAvailableEstablishments(allowedEstablishments);
@@ -764,6 +771,19 @@ export const useAuth = () => {
         const establishment = allowedEstablishments[0];
         setCurrentEstablishment(establishment);
         localStorage.setItem('tms-current-establishment', JSON.stringify(establishment));
+        if (establishment.establishment_id) {
+          localStorage.setItem('tms-selected-estab-id', establishment.establishment_id);
+        }
+        
+        // CRITICAL: Update the session context immediately
+        if (user && supabase) {
+          await supabase.rpc('set_session_context', {
+            p_organization_id: orgId,
+            p_environment_id: envId,
+            p_establishment_id: establishment.establishment_id || null
+          });
+        }
+        
         setShowEstablishmentSelector(false);
       } else {
         // Mostrar seletor de estabelecimentos
@@ -781,15 +801,31 @@ export const useAuth = () => {
       const establishment = availableEstablishments.find(est => est.id === establishmentId);
 
       if (!establishment) {
-
         return;
       }
 
       setCurrentEstablishment(establishment);
       localStorage.setItem('tms-current-establishment', JSON.stringify(establishment));
-      setShowEstablishmentSelector(false);
-    } catch (error) {
+      if (establishment.establishment_id) {
+        localStorage.setItem('tms-selected-estab-id', establishment.establishment_id);
+      }
+      
+      // CRITICAL: Update the session context immediately
+      if (user && supabase) {
+        await supabase.rpc('set_session_context', {
+          p_organization_id: establishment.organizationId || user.organization_id,
+          p_environment_id: establishment.environmentId || user.environment_id,
+          p_establishment_id: establishment.establishment_id || null
+        });
+      }
 
+      setShowEstablishmentSelector(false);
+      
+      // Force reload to apply new context across all services
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error) {
     }
   };
   

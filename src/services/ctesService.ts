@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-
+import { TenantContextHelper } from '../utils/tenantContext';
 interface CTe {
   id?: string;
   cte_number: string;
@@ -38,10 +38,18 @@ interface CTe {
 export const ctesService = {
   async getAll(): Promise<CTe[]> {
     try {
-      const { data, error } = await supabase
-        .from('ctes')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+      
+      let query = supabase.from('ctes').select('*');
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -53,6 +61,11 @@ export const ctesService = {
 
   async getById(id: string): Promise<CTe | null> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { data, error } = await supabase
         .from('ctes')
         .select('*')
@@ -69,10 +82,18 @@ export const ctesService = {
 
   async create(cte: CTe): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { data, error } = await supabase
         .from('ctes')
         .insert({
           ...cte,
+          organization_id: ctx?.organizationId,
+          environment_id: ctx?.environmentId,
+          establishment_id: ctx?.establishmentId || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -89,6 +110,11 @@ export const ctesService = {
 
   async update(id: string, cte: Partial<CTe>): Promise<{ success: boolean; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { error } = await supabase
         .from('ctes')
         .update({
@@ -107,6 +133,11 @@ export const ctesService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { error } = await supabase
         .from('ctes')
         .delete()

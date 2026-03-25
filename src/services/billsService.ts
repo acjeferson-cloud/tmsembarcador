@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface Bill {
   id: string;
@@ -31,8 +32,13 @@ export interface BillCteLink {
 export const billsService = {
   async getAll(): Promise<Bill[]> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       // 1. Fetch bills
-      const { data, error } = await (supabase as any)
+      let query = (supabase as any)
         .from('bills')
         .select(`
           *,
@@ -43,8 +49,13 @@ export const billsService = {
               carrier:carriers(metadata)
             )
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -97,6 +108,11 @@ export const billsService = {
 
   async getById(id: string): Promise<Bill | null> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { data, error } = await (supabase as any)
         .from('bills')
         .select('*')
@@ -113,6 +129,11 @@ export const billsService = {
   
   async getLinkedCtes(billId: string): Promise<any[]> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { data, error } = await (supabase as any)
         .from('bill_ctes')
         .select(`
@@ -144,6 +165,11 @@ export const billsService = {
 
   async updateStatus(id: string, status: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { error } = await (supabase as any)
         .from('bills')
         .update({ status: status as any })
@@ -158,6 +184,11 @@ export const billsService = {
   
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { error } = await (supabase as any)
         .from('bills')
         .delete()

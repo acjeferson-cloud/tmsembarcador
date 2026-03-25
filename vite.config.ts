@@ -72,9 +72,9 @@ export default defineConfig({
       'i18next-browser-languagedetector',
       'react',
       'react-dom',
-      '@supabase/supabase-js'
-    ],
-    exclude: ['lucide-react'],
+      '@supabase/supabase-js',
+      'lucide-react'
+    ]
   },
   build: {
     target: 'es2015',
@@ -103,7 +103,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   server: {
-    port: 5173,
+    port: 5175,
     host: true,
   },
 })

@@ -2,19 +2,23 @@ import { supabase } from '../lib/supabase';
 
 
 import { BusinessPartner } from '../types';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 export const businessPartnersService = {
   async getAll(): Promise<BusinessPartner[]> {
     try {
 
 
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-
-        return [];
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-
-      const userData = JSON.parse(savedUser);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const { organization_id, environment_id } = userData;
 
 
@@ -173,12 +177,15 @@ export const businessPartnersService = {
       const { contacts, addresses, ...partnerData } = partner;
 
       // Buscar dados do usuário do localStorage
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        return { success: false, error: 'Usuário não encontrado' };
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-
-      const userData = JSON.parse(savedUser);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const { organization_id, environment_id } = userData;
 
       if (!organization_id || !environment_id) {
@@ -415,12 +422,15 @@ export const businessPartnersService = {
       const { contacts, addresses, ...partnerData } = partner;
 
       // Buscar dados do usuário do localStorage
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        return { success: false, error: 'Usuário não encontrado' };
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-
-      const userData = JSON.parse(savedUser);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const { organization_id, environment_id } = userData;
 
 

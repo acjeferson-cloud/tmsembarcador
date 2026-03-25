@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { openaiTransactionsService } from './openaiTransactionsService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface OpenAIConfig {
   id?: string;
@@ -18,21 +19,21 @@ export interface OpenAIConfig {
 export const openaiService = {
   async getActiveConfig(): Promise<OpenAIConfig | null> {
     try {
-      // Get organization and environment from localStorage
-      const organizationId = localStorage.getItem('tms-selected-org-id');
-      const environmentId = localStorage.getItem('tms-selected-env-id');
-      let query = supabase
+      if (!supabase) return null;
+      const ctx = await TenantContextHelper.getCurrentContext();
+      let query = (supabase as any)
         .from('openai_config')
         .select('*')
         .eq('ativo', true);
 
-      // Filter by organization and environment if available
-      if (organizationId) {
-        query = query.eq('organization_id', organizationId);
-      }
-
-      if (environmentId) {
-        query = query.eq('environment_id', environmentId);
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      
+      // Strict establishment isolation if available
+      if (ctx?.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      } else {
+        query = query.is('establishment_id', null);
       }
 
       const { data, error } = await query
@@ -51,49 +52,81 @@ export const openaiService = {
 
   async saveConfig(config: OpenAIConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      // Get organization, environment and establishment from localStorage
-      const organizationId = localStorage.getItem('tms-selected-org-id');
-      const environmentId = localStorage.getItem('tms-selected-env-id');
-      const establishmentId = localStorage.getItem('establishmentId');
-      // Validate required fields
-      if (!organizationId || !environmentId) {
+      if (!supabase) throw new Error('Supabase indisponível');
+      const ctx = await TenantContextHelper.getCurrentContext();
+      
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         return {
           success: false,
           error: 'Dados de organização ou environment não encontrados. Faça login novamente.'
         };
       }
 
-      // Build the update query to deactivate existing configs for this org/env
-      let deactivateQuery = supabase
+      // First, deactivate any existing configs for this SAME exact hierarchy to ensure single source of truth
+      let deactivateQuery = (supabase as any)
         .from('openai_config')
         .update({ ativo: false })
-        .eq('ativo', true)
-        .eq('organization_id', organizationId)
-        .eq('environment_id', environmentId);
-
-      // Deactivate existing configs for this org/env
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
+        
+      if (ctx.establishmentId) {
+        deactivateQuery = deactivateQuery.eq('establishment_id', ctx.establishmentId);
+      } else {
+        deactivateQuery = deactivateQuery.is('establishment_id', null);
+      }
+      
       await deactivateQuery;
 
-      // Insert the new configuration with org/env/establishment context
-      const insertData = {
-        api_key: config.api_key,
-        modelo: config.modelo,
-        temperatura: config.temperatura,
-        max_tokens: config.max_tokens,
-        ativo: config.ativo,
-        organization_id: organizationId,
-        environment_id: environmentId,
-        establishment_id: establishmentId || config.establishment_id || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      const { error } = await supabase
-        .from('openai_config')
-        .insert(insertData);
+      // Check if a discrete record already exists to overwrite instead of insert
+      let checkQuery = (supabase as any).from('openai_config')
+        .select('id')
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
 
-      if (error) {
-        return { success: false, error: error.message };
+      if (ctx.establishmentId) {
+        checkQuery = checkQuery.eq('establishment_id', ctx.establishmentId);
+      } else {
+        checkQuery = checkQuery.is('establishment_id', null);
       }
+
+      const { data: existingRecords } = await checkQuery.limit(1);
+
+      if (existingRecords && existingRecords.length > 0) {
+        // OVERRIDE (Update)
+        const { error } = await (supabase as any)
+          .from('openai_config')
+          .update({
+             api_key: config.api_key,
+             modelo: config.modelo,
+             temperatura: config.temperatura,
+             max_tokens: config.max_tokens,
+             ativo: config.ativo,
+             updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecords[0].id);
+
+        if (error) return { success: false, error: error.message };
+      } else {
+        // DISCRETE CREATION (Insert)
+        const insertData = {
+          api_key: config.api_key,
+          modelo: config.modelo,
+          temperatura: config.temperatura,
+          max_tokens: config.max_tokens,
+          ativo: config.ativo,
+          organization_id: ctx.organizationId,
+          environment_id: ctx.environmentId,
+          establishment_id: ctx.establishmentId || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        const { error } = await (supabase as any)
+          .from('openai_config')
+          .insert(insertData);
+
+        if (error) return { success: false, error: error.message };
+      }
+
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Erro ao salvar configuração' };

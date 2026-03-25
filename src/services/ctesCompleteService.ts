@@ -102,7 +102,12 @@ export interface CTeWithRelations extends CTe {
 export const ctesCompleteService = {
   async getAll(): Promise<CTeWithRelations[]> {
     try {
-      const { data, error } = await (supabase as any)
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
+      let query = (supabase as any)
         .from('ctes_complete')
         .select(`
           *,
@@ -110,8 +115,13 @@ export const ctesCompleteService = {
           carrier_costs:ctes_carrier_costs(*),
           carrier:carriers(id, codigo, razao_social, metadata),
           establishment:establishments(id, codigo, razao_social)
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         throw error;
@@ -132,6 +142,11 @@ export const ctesCompleteService = {
 
   async getById(id: string): Promise<CTeWithRelations | null> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       const { data, error } = await supabase
         .from('ctes_complete')
         .select(`
@@ -154,10 +169,15 @@ export const ctesCompleteService = {
 
   async searchByNumberOrKey(searchTerm: string): Promise<CTeWithRelations[]> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       // Limpar o termo de busca
       const cleanTerm = searchTerm.trim().toUpperCase().replace(/\s+/g, '');
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('ctes_complete')
         .select(`
           *,
@@ -166,8 +186,13 @@ export const ctesCompleteService = {
           carrier:carriers(id, codigo, razao_social),
           establishment:establishments(id, codigo, razao_social)
         `)
-        .or(`number.ilike.%${cleanTerm}%,access_key.ilike.%${cleanTerm}%`)
-        .order('created_at', { ascending: false });
+        .or(`number.ilike.%${cleanTerm}%,access_key.ilike.%${cleanTerm}%`);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
 
@@ -183,13 +208,18 @@ export const ctesCompleteService = {
 
   async findByAccessKey(accessKey: string): Promise<CTeWithRelations | null> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       if (!accessKey?.trim()) return null;
 
       // Limpar a chave: remover espaços e converter para maiúsculas
       const cleanKey = accessKey.trim().toUpperCase().replace(/\s+/g, '');
 
       // Buscar usando ilike para case-insensitive
-      const { data, error } = await supabase
+      let query = supabase
         .from('ctes_complete')
         .select(`
           *,
@@ -198,8 +228,12 @@ export const ctesCompleteService = {
           carrier:carriers(id, codigo, razao_social),
           establishment:establishments(id, codigo, razao_social)
         `)
-        .ilike('access_key', cleanKey)
-        .maybeSingle();
+        .ilike('access_key', cleanKey);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       return data;
@@ -216,6 +250,7 @@ export const ctesCompleteService = {
       if (!tenantContext || !tenantContext.organizationId || !tenantContext.environmentId) {
         throw new Error('Contexto de organização/ambiente não encontrado');
       }
+      await TenantContextHelper.setSessionContext(tenantContext);
 
       const { organizationId, environmentId } = tenantContext;
 
@@ -341,6 +376,11 @@ export const ctesCompleteService = {
 
   async update(id: string, cte: Partial<CTe>): Promise<{ success: boolean; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       // Converter campos vazios para NULL para evitar conflitos de constraint UNIQUE
       const cleanedCte: any = {
         ...cte,
@@ -386,6 +426,11 @@ export const ctesCompleteService = {
 
   async delete(id: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
       // Get CTE data first so we can remove its electronic_documents counterpart by access_key
       const cte = await this.getById(id);
 

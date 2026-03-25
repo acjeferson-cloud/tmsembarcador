@@ -869,7 +869,8 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   <option value="">{t('common.select')} {t('establishments.title').toLowerCase()}</option>
                   {establishments
                     .filter(e => formData.estabelecimentosPermitidos.length === 0 || 
-                                formData.estabelecimentosPermitidos.includes(e.id))
+                                formData.estabelecimentosPermitidos.includes(e.id) ||
+                                formData.estabelecimentosPermitidos.includes(e.codigo))
                     .map(establishment => (
                       <option key={establishment.id} value={establishment.id}>
                         {establishment.codigo} - {establishment.fantasia || establishment.razao_social}

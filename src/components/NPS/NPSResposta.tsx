@@ -9,16 +9,14 @@ interface NPSRespostaProps {
 }
 
 const getNotaColor = (nota: number): string => {
-  if (nota <= 6) return 'bg-[#FF5722]';
-  if (nota <= 8) return 'bg-[#FFEB3B]';
-  return 'bg-[#4CAF50]';
+  if (nota <= 6) return 'bg-[#ef4444]'; // Red for detract
+  if (nota <= 8) return 'bg-[#facc15]'; // Yellow for passive
+  return 'bg-[#10b981]'; // Green for promoter
 };
-
-
 
 const getNotaTextColorOnBackground = (nota: number): string => {
   if (nota <= 6) return 'text-white';
-  if (nota <= 8) return 'text-gray-800';
+  if (nota <= 8) return 'text-gray-800'; 
   return 'text-white';
 };
 
@@ -49,7 +47,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const notaParam = urlParams.get('nota');
+    const notaParam = urlParams.get('nota') || urlParams.get('score');
     if (notaParam !== null) {
       const notaValue = parseInt(notaParam, 10);
       if (!isNaN(notaValue) && notaValue >= 0 && notaValue <= 10) {

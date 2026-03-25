@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface DashboardExecutiveKPIs {
   custoTotalFrete: number;
@@ -72,11 +73,15 @@ export const dashboardService = {
   async getExecutiveKPIs(filters: DashboardFilters): Promise<DashboardExecutiveKPIs | null> {
     try {
       if (!supabase) return null;
+      const context = await TenantContextHelper.getCurrentContext();
       const { data, error } = await supabase.rpc('get_dashboard_executivo_kpis', {
         p_start_date: filters.dateRange.start,
         p_end_date: filters.dateRange.end,
         p_carrier_id: filters.carrierId || null,
-        p_uf: filters.uf || null
+        p_uf: filters.uf || null,
+        p_organization_id: context?.organizationId || null,
+        p_environment_id: context?.environmentId || null,
+        p_establishment_id: context?.establishmentId || null
       } as any);
 
       if (error) {
@@ -94,11 +99,15 @@ export const dashboardService = {
   async getEvolucaoCustos(filters: DashboardFilters): Promise<DashboardEvolucaoCusto[]> {
     try {
       if (!supabase) return [];
+      const context = await TenantContextHelper.getCurrentContext();
       const { data, error } = await supabase.rpc('get_dashboard_evolucao_custos', {
         p_start_date: filters.dateRange.start,
         p_end_date: filters.dateRange.end,
         p_carrier_id: filters.carrierId || null,
-        p_uf: filters.uf || null
+        p_uf: filters.uf || null,
+        p_organization_id: context?.organizationId || null,
+        p_environment_id: context?.environmentId || null,
+        p_establishment_id: context?.establishmentId || null
       } as any);
 
       if (error) {
@@ -116,10 +125,14 @@ export const dashboardService = {
   async getTopTransportadoras(filters: DashboardFilters): Promise<DashboardTopTransportadora[]> {
     try {
       if (!supabase) return [];
+      const context = await TenantContextHelper.getCurrentContext();
       const { data, error } = await supabase.rpc('get_dashboard_top_transportadoras', {
         p_start_date: filters.dateRange.start,
         p_end_date: filters.dateRange.end,
-        p_uf: filters.uf || null
+        p_uf: filters.uf || null,
+        p_organization_id: context?.organizationId || null,
+        p_environment_id: context?.environmentId || null,
+        p_establishment_id: context?.establishmentId || null
       } as any);
 
       if (error) {
@@ -137,11 +150,15 @@ export const dashboardService = {
   async getFunilOperacional(filters: DashboardFilters): Promise<DashboardFunilStatus[]> {
     try {
       if (!supabase) return [];
+      const context = await TenantContextHelper.getCurrentContext();
       const { data, error } = await supabase.rpc('get_dashboard_funil_operacional', {
         p_start_date: filters.dateRange.start,
         p_end_date: filters.dateRange.end,
         p_carrier_id: filters.carrierId || null,
-        p_uf: filters.uf || null
+        p_uf: filters.uf || null,
+        p_organization_id: context?.organizationId || null,
+        p_environment_id: context?.environmentId || null,
+        p_establishment_id: context?.establishmentId || null
       } as any);
 
       if (error) {
@@ -159,11 +176,15 @@ export const dashboardService = {
   async getMetricasOperacionais(filters: DashboardFilters): Promise<DashboardMetricasOperacionais | null> {
     try {
       if (!supabase) return null;
+      const context = await TenantContextHelper.getCurrentContext();
       const { data, error } = await supabase.rpc('get_dashboard_metricas_operacionais', {
         p_start_date: filters.dateRange.start,
         p_end_date: filters.dateRange.end,
         p_carrier_id: filters.carrierId || null,
-        p_uf: filters.uf || null
+        p_uf: filters.uf || null,
+        p_organization_id: context?.organizationId || null,
+        p_environment_id: context?.environmentId || null,
+        p_establishment_id: context?.establishmentId || null
       } as any);
 
       if (error) {
@@ -181,10 +202,14 @@ export const dashboardService = {
   async getMapaCustos(filters: DashboardFilters): Promise<DashboardMapaCusto[]> {
     try {
       if (!supabase) return [];
+      const context = await TenantContextHelper.getCurrentContext();
       const { data, error } = await supabase.rpc('get_dashboard_mapa_custos', {
         p_start_date: filters.dateRange.start,
         p_end_date: filters.dateRange.end,
-        p_carrier_id: filters.carrierId || null
+        p_carrier_id: filters.carrierId || null,
+        p_organization_id: context?.organizationId || null,
+        p_environment_id: context?.environmentId || null,
+        p_establishment_id: context?.establishmentId || null
       } as any);
 
       if (error) {

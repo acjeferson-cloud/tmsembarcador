@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-
+import { TenantContextHelper } from '../utils/tenantContext';
 interface Invoice {
   id?: string;
   invoice_number: string;
@@ -33,10 +33,14 @@ interface Invoice {
 export const invoicesService = {
   async getAll(): Promise<Invoice[]> {
     try {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const ctx = await TenantContextHelper.getCurrentContext();
+      let query = supabase.from('invoices').select('*');
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];

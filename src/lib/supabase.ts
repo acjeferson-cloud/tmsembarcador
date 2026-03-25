@@ -146,6 +146,9 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
       dbUser.environment_id = selectedEnvId;
     }
 
+    const selectedEstabId = localStorage.getItem('tms-selected-estab-id');
+    const estabId = (selectedEstabId && selectedEstabId !== 'null') ? selectedEstabId : null;
+
     if (!dbUser.organization_id || !dbUser.environment_id) {
       console.warn('⚠️ Contexto retornado sem organization_id ou environment_id');
       isConfiguringContext = false;
@@ -156,7 +159,8 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
     const { data: result, error: rpcError } = await supabase.rpc('set_session_context', {
       p_organization_id: dbUser.organization_id,
       p_environment_id: dbUser.environment_id,
-      p_user_email: userEmail
+      p_user_email: userEmail,
+      p_establishment_id: estabId
     });
 
     if (rpcError) {

@@ -12,7 +12,6 @@ interface EnvironmentSelectorProps {
 
 export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
   email,
-  password,
   onSelect,
   onBack,
 }) => {
@@ -33,6 +32,37 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
       searchInputRef.current.focus();
     }
   }, [loading, environments.length]);
+
+  // Filtrar ambientes com base no termo de pesquisa
+  const filteredEnvironments = React.useMemo(() => {
+    return environments.filter((env) => {
+      if (!searchTerm.trim()) return true;
+
+      const search = searchTerm.toLowerCase();
+      return (
+        env.organization_nome.toLowerCase().includes(search) ||
+        env.organization_codigo.toLowerCase().includes(search) ||
+        env.environment_nome?.toLowerCase().includes(search) ||
+        false
+      );
+    });
+  }, [environments, searchTerm]);
+
+  // Agrupar por organização
+  const groupedEnvironments = React.useMemo(() => {
+    return filteredEnvironments.reduce((acc, env) => {
+      if (!acc[env.organization_codigo]) {
+        acc[env.organization_codigo] = {
+          organization_id: env.organization_id,
+          organization_codigo: env.organization_codigo,
+          organization_nome: env.organization_nome,
+          environments: [],
+        };
+      }
+      acc[env.organization_codigo].environments.push(env);
+      return acc;
+    }, {} as Record<string, { organization_id: string; organization_codigo: string; organization_nome: string; environments: UserEnvironment[] }>);
+  }, [filteredEnvironments]);
 
   async function loadEnvironments() {
     try {
@@ -145,32 +175,7 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
     );
   }
 
-  // Filtrar ambientes com base no termo de pesquisa
-  const filteredEnvironments = environments.filter((env) => {
-    if (!searchTerm.trim()) return true;
 
-    const search = searchTerm.toLowerCase();
-    return (
-      env.organization_nome.toLowerCase().includes(search) ||
-      env.organization_codigo.toLowerCase().includes(search) ||
-      env.environment_nome?.toLowerCase().includes(search) ||
-      false
-    );
-  });
-
-  // Agrupar por organização
-  const groupedEnvironments = filteredEnvironments.reduce((acc, env) => {
-    if (!acc[env.organization_codigo]) {
-      acc[env.organization_codigo] = {
-        organization_id: env.organization_id,
-        organization_codigo: env.organization_codigo,
-        organization_nome: env.organization_nome,
-        environments: [],
-      };
-    }
-    acc[env.organization_codigo].environments.push(env);
-    return acc;
-  }, {} as Record<string, { organization_id: string; organization_codigo: string; organization_nome: string; environments: UserEnvironment[] }>);
 
   const hasResults = Object.keys(groupedEnvironments).length > 0;
 
@@ -286,6 +291,8 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
                           <img
                             src={env.environment_logo_url}
                             alt={env.environment_nome}
+                            loading="lazy"
+                            decoding="async"
                             className="h-16 w-16 object-contain drop-shadow-lg"
                             onError={(e) => {
                               console.error('Erro ao carregar logo do ambiente:', env.environment_logo_url);

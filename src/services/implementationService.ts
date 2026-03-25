@@ -703,41 +703,138 @@ export const implementationService = {
   },
 
   async applyFreightAdjustment(
+    tableIds: string[],
     adjustmentType: 'percentage' | 'manual',
     adjustmentValue: number | null,
-    performedBy: number,
+    performedBy: number | string,
     notes?: string
   ): Promise<{ success: boolean; affectedTables: number; affectedRoutes: number; message: string }> {
+    if (!tableIds || tableIds.length === 0) {
+      return { success: false, affectedTables: 0, affectedRoutes: 0, message: 'Nenhuma tabela informada' };
+    }
+
     try {
-      // Aqui você implementaria a lógica real de aplicação do reajuste
-      // Por enquanto, vou simular
+      if (adjustmentType === 'manual') {
+        return { success: false, affectedTables: 0, affectedRoutes: 0, message: 'Reajuste manual ainda não implementado' };
+      }
 
-      const affectedTables = 15;
-      const affectedRoutes = 450;
+      const percentage = Number(adjustmentValue);
+      if (isNaN(percentage) || percentage === 0) {
+        return { success: false, affectedTables: 0, affectedRoutes: 0, message: 'Percentual inválido' };
+      }
 
-      // Criar registro do reajuste
+      const multiplier = 1 + (percentage / 100);
+
+      // Campos financeiros de freight_rates que devem ser ajustados
+      const rateMonetaryFields = [
+        'valor', 'pedagio_minimo', 'pedagio_por_kg', 'gris_minimo', 'seccat',
+        'despacho', 'itr', 'taxa_adicional', 'coleta_entrega', 'tde_trt',
+        'tas', 'taxa_suframa', 'valor_outros_minimo', 'taxa_outros_valor',
+        'taxa_outros_minima', 'frete_peso_minimo', 'frete_valor_minimo',
+        'frete_tonelada_minima', 'frete_m3_minimo', 'valor_total_minimo'
+      ];
+
+      // Campos financeiros de freight_rate_details
+      const detailMonetaryFields = [
+        'valor_faixa', 'frete_valor', 'frete_minimo', 'taxa_minima'
+      ];
+
+      let totalRoutesAffected = 0;
+
+      // Iterate through selected tables individually to prevent huge array limits
+      for (const tableId of tableIds) {
+        // Fetch all rates for this table
+        const { data: rates, error: ratesError } = await supabase
+          .from('freight_rates')
+          .select('*')
+          .eq('freight_rate_table_id', tableId);
+
+        if (ratesError) {
+          console.error(`Erro buscando rotas da tabela ${tableId}:`, ratesError);
+          continue;
+        }
+
+        if (!rates || rates.length === 0) continue;
+
+        const rateIds = rates.map(r => r.id);
+        
+        // 1. Prepare rate updates
+        const updatedRates = rates.map(rate => {
+          const newRate = { ...rate };
+          for (const field of rateMonetaryFields) {
+            if (typeof newRate[field] === 'number') {
+              newRate[field] = Number((newRate[field] * multiplier).toFixed(4));
+            }
+          }
+          // Remove campos que não podem ser feitos upsert se existirem virtualmente
+          delete newRate.freight_rate_table; 
+          newRate.updated_at = new Date().toISOString();
+          return newRate;
+        });
+
+        // Upsert rates in batches to prevent payload too large
+        for (let i = 0; i < updatedRates.length; i += 100) {
+          const batch = updatedRates.slice(i, i + 100);
+          const { error: upsertError } = await supabase.from('freight_rates').upsert(batch);
+          if (upsertError) console.error('Upsert rates error:', upsertError);
+        }
+
+        totalRoutesAffected += rates.length;
+
+        // Fetch details for these rates
+        // Paginando chamadas over rateIds (usually <= 100 per call for safe url length limit)
+        for (let i = 0; i < rateIds.length; i += 50) {
+          const batchRateIds = rateIds.slice(i, i + 50);
+          
+          const { data: details, error: detailsError } = await supabase
+            .from('freight_rate_details')
+            .select('*')
+            .in('freight_rate_id', batchRateIds);
+
+          if (!detailsError && details && details.length > 0) {
+            const updatedDetails = details.map(detail => {
+              const newDetail = { ...detail };
+              for (const field of detailMonetaryFields) {
+                if (typeof newDetail[field] === 'number') {
+                  newDetail[field] = Number((newDetail[field] * multiplier).toFixed(4));
+                }
+              }
+              return newDetail;
+            });
+
+            // Upsert details
+            for (let j = 0; j < updatedDetails.length; j += 100) {
+              const detailBatch = updatedDetails.slice(j, j + 100);
+              const { error: upsertDetailError } = await supabase.from('freight_rate_details').upsert(detailBatch);
+              if (upsertDetailError) console.error('Upsert details error:', upsertDetailError);
+            }
+          }
+        }
+      }
+
+      // Criar registro na auditoria
       await this.createFreightAdjustment({
         adjustment_type: adjustmentType,
         adjustment_value: adjustmentValue || undefined,
-        affected_tables: affectedTables,
-        affected_routes: affectedRoutes,
-        notes: notes || `Reajuste aplicado em ${new Date().toLocaleDateString()}`,
-        performed_by: performedBy
+        affected_tables: tableIds.length,
+        affected_routes: totalRoutesAffected,
+        notes: notes || `Reajuste de ${percentage}% aplicado`,
+        performed_by: Number(performedBy) || 0
       });
 
       return {
         success: true,
-        affectedTables,
-        affectedRoutes,
-        message: `Reajuste aplicado com sucesso em ${affectedTables} tabelas e ${affectedRoutes} rotas`
+        affectedTables: tableIds.length,
+        affectedRoutes: totalRoutesAffected,
+        message: `Reajuste aplicado com sucesso a ${tableIds.length} tabelas e ${totalRoutesAffected} tarifas vinculadas.`
       };
     } catch (error) {
-
+      console.error('Apply adjustment top-level error:', error);
       return {
         success: false,
         affectedTables: 0,
         affectedRoutes: 0,
-        message: 'Erro ao aplicar reajuste'
+        message: 'Erro interno gravíssimo ao aplicar reajuste.'
       };
     }
   },

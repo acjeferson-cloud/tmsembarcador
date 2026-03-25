@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Save, X, Trash2, Database, Activity, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react';
 import { Environment, environmentsService, CreateEnvironmentInput, UpdateEnvironmentInput } from '../../services/environmentsService';
 import { environmentLogoService } from '../../services/environmentLogoService';
+import { supabase } from '../../lib/supabase';
 
 interface SaasEnvironmentsManagerProps {
   organizationId: string;
@@ -15,6 +16,7 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [stats, setStats] = useState<Record<string, any>>({});
+  const [envEstablishments, setEnvEstablishments] = useState<Record<string, any[]>>({});
   const [uploadingLogo, setUploadingLogo] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<CreateEnvironmentInput>>({
@@ -36,13 +38,24 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
       const data = await environmentsService.getAll(organizationId);
       setEnvironments(data);
 
-      // Carregar stats para cada environment
+      // Carregar stats e estabelecimentos para cada environment
       const statsData: Record<string, any> = {};
+      const estDataMap: Record<string, any[]> = {};
+
       for (const env of data) {
         const envStats = await environmentsService.getStats(env.id);
         statsData[env.id] = envStats;
+
+        const { data: ests } = await supabase
+          .from('establishments')
+          .select('id, codigo, nome_fantasia, razao_social, ativo')
+          .eq('environment_id', env.id)
+          .order('codigo');
+        
+        estDataMap[env.id] = ests || [];
       }
       setStats(statsData);
+      setEnvEstablishments(estDataMap);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar environments');
     } finally {
@@ -97,7 +110,7 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Tem certeza que deseja desativar este environment? Os dados serão mantidos.')) {
+    if (!confirm('Tem certeza que deseja desativar este environment? Ele ficará oculto/inativo, mas os dados serão mantidos.')) {
       return;
     }
 
@@ -105,7 +118,21 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
       await environmentsService.softDelete(id);
       await loadEnvironments();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao deletar environment');
+      alert(err instanceof Error ? err.message : 'Erro ao desativar environment');
+    }
+  }
+
+  async function handleHardDelete(id: string) {
+    if (!confirm('ATENÇÃO: Você está prestes a EXCLUIR DEFINITIVAMENTE este ambiente e TODOS os seus dados (Pedidos, Clientes, Usuários, Faturas, etc).\n\nEssa ação é irreversível e destruirá todo o histórico desta organização vinculada.\n\nTem certeza absoluta?')) {
+      return;
+    }
+
+    try {
+      await environmentsService.hardDelete(id);
+      await loadEnvironments();
+      alert('Ambiente e todos os dados vinculados foram excluídos com sucesso!');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao excluir definitivamente o ambiente. Verifique se a constraint cascade foi aplicada no banco de dados.');
     }
   }
 
@@ -196,7 +223,7 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
             Ambientes - {organizationName}
           </h3>
           <p className="text-sm text-gray-400 mt-1">
-            Gerencie os ambientes (environments) desta organização
+            Organização: <code className="text-blue-400 bg-gray-800 px-1 py-0.5 rounded">{organizationId}</code>
           </p>
         </div>
         <button
@@ -330,6 +357,7 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
                       )}
                     </div>
                     <p className="text-sm text-gray-400 mb-1">Código: <code className="text-blue-400">{env.codigo}</code></p>
+                    <p className="text-xs text-gray-500 mb-1">Environment ID: <code className="text-gray-400 bg-gray-700/50 px-1 py-0.5 rounded">{env.id}</code></p>
                   </div>
                   <div className="flex gap-2 items-start">
                     {(() => {
@@ -370,11 +398,20 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
                     >
                       <Edit2 size={18} />
                     </button>
-                    {env.tipo !== 'producao' && (
+                    {env.tipo !== 'producao' && env.status === 'ativo' && (
                       <button
                         onClick={() => handleDelete(env.id)}
-                        className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                        title="Desativar"
+                        className="p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors"
+                        title="Desativar (Soft Delete)"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                    {env.tipo !== 'producao' && env.status === 'inativo' && (
+                      <button
+                        onClick={() => handleHardDelete(env.id)}
+                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Excluir Definitivamente (CASCATA DE DADOS)"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -485,26 +522,60 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
 
                 {/* Estatísticas */}
                 {stats[env.id] && (
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-700">
-                    <div>
-                      <div className="text-xs text-gray-400 mb-1">Usuários</div>
-                      <div className="text-lg font-semibold text-white">{stats[env.id].total_users}</div>
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mt-4 pt-4 border-t border-gray-700">
                     <div>
                       <div className="text-xs text-gray-400 mb-1">Estabelecimentos</div>
-                      <div className="text-lg font-semibold text-white">{stats[env.id].total_establishments}</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_establishments || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Usuários</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_users || 0}</div>
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">Transportadores</div>
-                      <div className="text-lg font-semibold text-white">{stats[env.id].total_carriers}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-400 mb-1">Notas Fiscais</div>
-                      <div className="text-lg font-semibold text-white">{stats[env.id].total_invoices}</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_carriers || 0}</div>
                     </div>
                     <div>
                       <div className="text-xs text-gray-400 mb-1">Pedidos</div>
-                      <div className="text-lg font-semibold text-white">{stats[env.id].total_orders}</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_orders || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Notas Fiscais</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_invoices || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Coletas</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_pickups || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">CT-es</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_ctes || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Faturas</div>
+                      <div className="text-lg font-semibold text-white">{stats[env.id].total_bills || 0}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Estabelecimentos (Company) */}
+                {envEstablishments[env.id] && envEstablishments[env.id].length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-700">
+                    <h5 className="text-sm font-semibold text-white mb-3">Companhias / Estabelecimentos do Ambiente</h5>
+                    <div className="space-y-2">
+                      {envEstablishments[env.id].map((est: any) => (
+                        <div key={est.id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-3 flex justify-between items-center hover:bg-gray-700/50 transition-colors">
+                          <div>
+                            <div className="text-sm text-white font-medium flex items-center gap-2">
+                              {est.codigo} - {est.nome_fantasia || est.razao_social}
+                              {!est.ativo && <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-[10px] font-semibold">INATIVO</span>}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              Company ID: <code className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-300">{est.id}</code>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

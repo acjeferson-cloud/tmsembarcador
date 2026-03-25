@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { usersService } from './usersService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 interface Pickup {
   id?: string;
@@ -55,14 +56,21 @@ interface CreatePickupResult {
 export const pickupsService = {
   async getAll(): Promise<Pickup[]> {
     try {
-      const { data, error } = await (supabase as any)
+      const ctx = await TenantContextHelper.getCurrentContext();
+      
+      let query = (supabase as any)
         .from('pickups')
         .select(`
           *,
           carrier:carriers(id, razao_social, codigo),
           pickup_invoices(count)
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       
@@ -210,6 +218,7 @@ export const pickupsService = {
   async createFromNfes(params: CreatePickupFromInvoicesParams): Promise<CreatePickupResult> {
     try {
       const { invoiceIds, establishmentId, userId } = params;
+      const ctx = await TenantContextHelper.getCurrentContext();
 
       if (!invoiceIds || invoiceIds.length === 0) {
         return { success: false, error: 'Nenhuma nota fiscal selecionada' };
@@ -313,6 +322,8 @@ export const pickupsService = {
         nextNum++;
 
         const pickupData = {
+          organization_id: ctx?.organizationId || null,
+          environment_id: ctx?.environmentId || null,
           establishment_id: establishmentId,
           carrier_id: group.carrierId,
           numero_coleta: pickupNumber,
@@ -390,6 +401,7 @@ export const pickupsService = {
   async createFromInvoices(params: CreatePickupFromInvoicesParams): Promise<CreatePickupResult> {
     try {
       const { invoiceIds, establishmentId, userId } = params;
+      const ctx = await TenantContextHelper.getCurrentContext();
 
       if (!invoiceIds || invoiceIds.length === 0) {
         return { success: false, error: 'Nenhuma nota fiscal selecionada' };
@@ -443,6 +455,8 @@ export const pickupsService = {
         nextNum++;
 
         const pickupData = {
+          organization_id: ctx?.organizationId || null,
+          environment_id: ctx?.environmentId || null,
           establishment_id: establishmentId,
           carrier_id: group.carrierId,
           numero_coleta: pickupNumber,
@@ -570,7 +584,9 @@ export const pickupsService = {
 
   async getByDateRange(startDate: string, endDate: string): Promise<Pickup[]> {
     try {
-      const { data, error } = await (supabase as any)
+      const ctx = await TenantContextHelper.getCurrentContext();
+      
+      let query = (supabase as any)
         .from('pickups')
         .select(`
           *,
@@ -578,8 +594,13 @@ export const pickupsService = {
           pickup_invoices(count)
         `)
         .gte('data_agendada', startDate)
-        .lte('data_agendada', endDate)
-        .order('data_agendada');
+        .lte('data_agendada', endDate);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('data_agendada');
 
       if (error) throw error;
       

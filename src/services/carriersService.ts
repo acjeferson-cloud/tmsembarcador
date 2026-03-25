@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { normalizarCNPJ } from '../utils/cnpj';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 export interface Carrier {
   id: string;
@@ -127,11 +129,15 @@ export const carriersService = {
   async getAll(): Promise<Carrier[]> {
     try {
       // Buscar contexto do localStorage
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        return [];
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-      const userData = JSON.parse(savedUser);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const { organization_id, environment_id, email, codigo } = userData;
       if (!organization_id || !environment_id) {
         return [];
@@ -258,11 +264,15 @@ export const carriersService = {
 
   async create(carrier: Omit<Carrier, 'id' | 'created_at' | 'updated_at'>): Promise<Carrier | null> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        throw new Error('Usuário não encontrado');
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-      const userData = JSON.parse(savedUser);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const metadata: any = {};
       if (carrier.modal_rodoviario) metadata.modal_rodoviario = true;
       if (carrier.modal_aereo) metadata.modal_aereo = true;

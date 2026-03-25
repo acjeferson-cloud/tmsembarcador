@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { setSessionContext } from '../lib/sessionContext';
 import { whatsappTransactionsService } from './whatsappTransactionsService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface WhatsAppConfig {
   id?: string;
@@ -14,6 +15,7 @@ export interface WhatsAppConfig {
   created_by?: string;
   organization_id?: string;
   environment_id?: string;
+  establishment_id?: string;
 }
 
 export interface WhatsAppTemplate {
@@ -32,6 +34,7 @@ export interface WhatsAppTemplate {
   created_by?: string;
   organization_id?: string;
   environment_id?: string;
+  establishment_id?: string;
 }
 
 interface WhatsAppMessageLog {
@@ -60,6 +63,7 @@ interface WhatsAppMessageLog {
   api_response?: any;
   organization_id?: string;
   environment_id?: string;
+  establishment_id?: string;
 }
 
 interface SendMessageParams {
@@ -73,57 +77,37 @@ interface SendMessageParams {
   templateVariables?: string[];
 }
 
-// Helper para obter organização e ambiente do contexto
-function getUserOrganization(): { organizationId: string; environmentId: string } | null {
-  try {
-    // Buscar do localStorage (salvo no login)
-    let orgId = localStorage.getItem('tms-selected-org-id');
-    let envId = localStorage.getItem('tms-selected-env-id');
-
-    if (!orgId || !envId) {
-      const userData = localStorage.getItem('tms-user');
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        orgId = orgId || parsedUser.organization_id;
-        envId = envId || parsedUser.environment_id;
-      }
-    }
-
-    if (!orgId || !envId) {
-      return null;
-    }
-
-    return {
-      organizationId: orgId,
-      environmentId: envId
-    };
-  } catch (error) {
-    return null;
-  }
-}
 
 class WhatsAppService {
   private readonly WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 
   async getActiveConfig(): Promise<WhatsAppConfig | null> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         return null;
       }
 
-      const { organizationId, environmentId } = userOrg;
-
       // CRÍTICO: Configurar contexto ANTES de buscar dados
-      const contextResult = await setSessionContext(organizationId, environmentId);
+      const contextResult = await setSessionContext(ctx.organizationId, ctx.environmentId);
       if (!contextResult.success) {
         return null;
       }
-      const { data, error } = await supabase
+      
+      let query = (supabase as any)
         .from('whatsapp_config')
         .select('*')
         .eq('is_active', true)
-        .eq('organization_id', organizationId)
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
+
+      if (ctx.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      } else {
+        query = query.is('establishment_id', null);
+      }
+
+      const { data, error } = await query
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -139,69 +123,83 @@ class WhatsAppService {
 
   async saveConfig(config: WhatsAppConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         throw new Error('Contexto de organização não encontrado');
       }
 
-      const { organizationId, environmentId } = userOrg;
-
       // CRÍTICO: Configurar o contexto de sessão ANTES de salvar
-      // Isso garante que as políticas RLS funcionem corretamente
-      const contextResult = await setSessionContext(organizationId, environmentId);
+      const contextResult = await setSessionContext(ctx.organizationId, ctx.environmentId);
       if (!contextResult.success) {
         throw new Error('Erro ao configurar contexto de sessão: ' + contextResult.error);
       }
-      const existingConfigResult = await supabase
+
+      // Deactivate siblings first
+      let deactivateQuery = (supabase as any)
+        .from('whatsapp_config')
+        .update({ is_active: false })
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
+        
+      if (ctx.establishmentId) {
+        deactivateQuery = deactivateQuery.eq('establishment_id', ctx.establishmentId);
+      } else {
+        deactivateQuery = deactivateQuery.is('establishment_id', null);
+      }
+      
+      await deactivateQuery;
+
+      let checkQuery = (supabase as any)
         .from('whatsapp_config')
         .select('id')
-        .eq('organization_id', organizationId)
-        .eq('environment_id', environmentId)
-        .maybeSingle();
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
 
-      const existingId = existingConfigResult?.data?.id;
-      const savePayload: any = {
-        access_token: config.access_token,
-        phone_number_id: config.phone_number_id,
-        business_account_id: config.business_account_id,
-        webhook_verify_token: config.webhook_verify_token,
-        is_active: true,
-        organization_id: organizationId,
-        environment_id: environmentId,
-        updated_at: new Date().toISOString()
-      };
-
-      if (!existingId) {
-        savePayload.created_by = config.created_by;
+      if (ctx.establishmentId) {
+        checkQuery = checkQuery.eq('establishment_id', ctx.establishmentId);
+      } else {
+        checkQuery = checkQuery.is('establishment_id', null);
       }
 
-      let saveError;
-      if (existingId) {
-        const { error } = await supabase
+      const existingConfigResult = await checkQuery.limit(1);
+      const existingRecords = existingConfigResult?.data;
+
+      if (existingRecords && existingRecords.length > 0) {
+        // OVERRIDE (Update)
+        const { error } = await (supabase as any)
           .from('whatsapp_config')
-          .update(savePayload)
-          .eq('id', existingId);
-        saveError = error;
+          .update({
+             access_token: config.access_token,
+             phone_number_id: config.phone_number_id,
+             business_account_id: config.business_account_id,
+             webhook_verify_token: config.webhook_verify_token,
+             is_active: true,
+             updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecords[0].id);
+
+        if (error) throw error;
       } else {
-        const { error } = await supabase
+        // DISCRETE CREATION (Insert)
+        const savePayload: any = {
+          access_token: config.access_token,
+          phone_number_id: config.phone_number_id,
+          business_account_id: config.business_account_id,
+          webhook_verify_token: config.webhook_verify_token,
+          is_active: true,
+          organization_id: ctx.organizationId,
+          environment_id: ctx.environmentId,
+          establishment_id: ctx.establishmentId || null,
+          created_by: config.created_by,
+          updated_at: new Date().toISOString()
+        };
+        const { error } = await (supabase as any)
           .from('whatsapp_config')
           .insert(savePayload);
         
-        if (error && error.code === '23505') {
-          const { error: updateError } = await supabase
-            .from('whatsapp_config')
-            .update(savePayload)
-            .eq('organization_id', organizationId)
-            .eq('environment_id', environmentId);
-          saveError = updateError;
-        } else {
-          saveError = error;
-        }
+        if (error) throw error;
       }
 
-      if (saveError) {
-        throw saveError;
-      }
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -214,7 +212,7 @@ class WhatsAppService {
     testStatus: string
   ): Promise<void> {
     try {
-      await supabase
+      await (supabase as any)
         .from('whatsapp_config')
         .update({
           test_status: testStatus,
@@ -431,14 +429,12 @@ class WhatsAppService {
 
   async logMessage(log: WhatsAppMessageLog): Promise<{ id: string } | null> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         return null;
       }
 
-      const { organizationId, environmentId } = userOrg;
-
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('whatsapp_messages_log')
         .insert({
           message_id: log.message_id,
@@ -463,8 +459,9 @@ class WhatsAppService {
           error_message: log.error_message,
           error_code: log.error_code,
           api_response: log.api_response,
-          organization_id: organizationId,
-          environment_id: environmentId
+          organization_id: ctx.organizationId,
+          environment_id: ctx.environmentId,
+          establishment_id: ctx.establishmentId || null
         })
         .select('id')
         .single();
@@ -495,24 +492,27 @@ class WhatsAppService {
 
   async getMessageLogs(orderId?: string): Promise<WhatsAppMessageLog[]> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         return [];
       }
 
-      const { organizationId, environmentId } = userOrg;
-
       // CRÍTICO: Configurar contexto ANTES de buscar dados
-      const contextResult = await setSessionContext(organizationId, environmentId);
+      const contextResult = await setSessionContext(ctx.organizationId, ctx.environmentId);
       if (!contextResult.success) {
         return [];
       }
 
-      let query = supabase
+      let query = (supabase as any)
         .from('whatsapp_messages_log')
         .select('*')
-        .eq('organization_id', organizationId)
-        .order('sent_at', { ascending: false });
+        .eq('organization_id', ctx.organizationId);
+        
+      if (ctx.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      }
+
+      query = query.order('sent_at', { ascending: false });
 
       if (orderId) {
         query = query.eq('order_id', orderId);
@@ -529,31 +529,32 @@ class WhatsAppService {
 
   async getTemplates(): Promise<WhatsAppTemplate[]> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         return [];
       }
 
-      const { organizationId, environmentId } = userOrg;
-
-      // CRÍTICO: Configurar contexto ANTES de buscar dados
-      const contextResult = await setSessionContext(organizationId, environmentId);
+      const contextResult = await setSessionContext(ctx.organizationId, ctx.environmentId);
       if (!contextResult.success) {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = (supabase as any)
         .from('whatsapp_templates')
         .select('*')
         .eq('is_active', true)
         .eq('approval_status', 'APPROVED')
-        .eq('organization_id', organizationId)
-        .order('template_name');
+        .eq('organization_id', ctx.organizationId);
+        
+      if (ctx.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      }
+
+      const { data, error } = await query.order('template_name');
 
       if (error) throw error;
 
-      // Garantir que todos os campos necessários existem
-      const templates = (data || []).map(t => ({
+      return (data || []).map((t: any) => ({
         ...t,
         template_name: t.template_name || '',
         template_language: t.template_language || 'pt_BR',
@@ -563,8 +564,6 @@ class WhatsAppService {
         is_active: t.is_active !== undefined ? t.is_active : true,
         description: t.description || ''
       }));
-
-      return templates;
     } catch (error) {
       return [];
     }
@@ -572,29 +571,30 @@ class WhatsAppService {
 
   async getAllTemplates(): Promise<WhatsAppTemplate[]> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         return [];
       }
 
-      const { organizationId, environmentId } = userOrg;
-
-      // CRÍTICO: Configurar contexto ANTES de buscar dados
-      const contextResult = await setSessionContext(organizationId, environmentId);
+      const contextResult = await setSessionContext(ctx.organizationId, ctx.environmentId);
       if (!contextResult.success) {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = (supabase as any)
         .from('whatsapp_templates')
         .select('*')
-        .eq('organization_id', organizationId)
-        .order('created_at', { ascending: false });
+        .eq('organization_id', ctx.organizationId);
+        
+      if (ctx.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Garantir que todos os campos necessários existem
-      const templates = (data || []).map(t => ({
+      return (data || []).map((t: any) => ({
         ...t,
         template_name: t.template_name || '',
         template_language: t.template_language || 'pt_BR',
@@ -603,8 +603,6 @@ class WhatsAppService {
         approval_status: t.approval_status || 'PENDING',
         is_active: t.is_active !== undefined ? t.is_active : true
       }));
-
-      return templates;
     } catch (error) {
       return [];
     }
@@ -612,21 +610,18 @@ class WhatsAppService {
 
   async saveTemplate(template: WhatsAppTemplate): Promise<{ success: boolean; error?: string }> {
     try {
-      const userOrg = getUserOrganization();
-      if (!userOrg) {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx?.organizationId || !ctx?.environmentId) {
         throw new Error('Usuário não autenticado');
       }
 
-      const { organizationId, environmentId } = userOrg;
-
-      // CRÍTICO: Configurar o contexto de sessão ANTES de salvar
-      const contextResult = await setSessionContext(organizationId, environmentId);
+      const contextResult = await setSessionContext(ctx.organizationId, ctx.environmentId);
       if (!contextResult.success) {
         throw new Error('Erro ao configurar contexto de sessão: ' + contextResult.error);
       }
 
       if (template.id) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('whatsapp_templates')
           .update({
             template_language: template.template_language,
@@ -645,7 +640,7 @@ class WhatsAppService {
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('whatsapp_templates')
           .insert({
             template_name: template.template_name,
@@ -660,8 +655,9 @@ class WhatsAppService {
             approval_status: template.approval_status,
             description: template.description,
             created_by: template.created_by,
-            organization_id: organizationId,
-            environment_id: environmentId
+            organization_id: ctx.organizationId,
+            environment_id: ctx.environmentId,
+            establishment_id: ctx.establishmentId || null
           });
 
         if (error) throw error;
@@ -678,7 +674,7 @@ class WhatsAppService {
 
   async deleteTemplate(templateId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('whatsapp_templates')
         .delete()
         .eq('id', templateId);

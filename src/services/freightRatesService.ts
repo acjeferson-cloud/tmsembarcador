@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 // Lista de campos válidos da tabela freight_rates
 const VALID_FREIGHT_RATE_FIELDS = [
@@ -231,13 +233,15 @@ export const freightRatesService = {
     // PASSO 1: VERIFICAR AUTENTICAÇÃO DO USUÁRIO
 
 
-    const savedUser = localStorage.getItem('tms-user');
-    if (!savedUser) {
-
-      throw new Error('Usuário não autenticado. Faça login novamente.');
-    }
-
-    const userData = JSON.parse(savedUser);
+    const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
 
 
     // PASSO 2: VALIDAR DADOS DE ORGANIZAÇÃO
@@ -466,11 +470,15 @@ export const freightRatesService = {
 
 
     // Obter dados do usuário para organization_id e environment_id
-    const savedUser = localStorage.getItem('tms-user');
-    if (!savedUser) {
-      throw new Error('Usuário não autenticado. Faça login novamente.');
-    }
-    const userData = JSON.parse(savedUser);
+    const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
 
     if (!userData.organization_id || !userData.environment_id) {
       throw new Error('Dados de organização incompletos. Contate o suporte.');
@@ -725,11 +733,15 @@ export const freightRatesService = {
     const filteredRate = filterValidFields(rateToCopy, VALID_FREIGHT_RATE_FIELDS);
 
     // Obter dados do usuário para organization_id e environment_id
-    const savedUser = localStorage.getItem('tms-user');
-    if (!savedUser) {
-      throw new Error('Usuário não autenticado. Faça login novamente.');
-    }
-    const userData = JSON.parse(savedUser);
+    const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
 
     if (!userData.organization_id || !userData.environment_id) {
       throw new Error('Dados de organização incompletos. Contate o suporte.');

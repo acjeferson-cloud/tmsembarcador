@@ -1470,6 +1470,10 @@
       "cepNotFound": "CEP não encontrado",
       "cepError": "Erro ao buscar CEP. Tente novamente.",
       "fillCarrierData": "Preencha os dados do transportador",
+      "emptyState": {
+        "title": "Nenhum transportador encontrado",
+        "subtitle": "Não há dados para exibir. Tente ajustar os filtros ou adicione um novo transportador."
+      },
       "logoText": "Sua logo de transportador",
       "tolerances": "Tolerâncias",
       "toleranceCteLabel": "Tolerância de Valor CT-e",

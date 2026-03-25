@@ -422,29 +422,27 @@ export const npsService = {
     return avaliacoes;
   },
 
-  async getPesquisaByToken(token: string): Promise<NPSPesquisaCliente | null> {
+  async getPesquisaByToken(token: string): Promise<any> {
     try {
-
-
       const { data, error } = await supabase
-        .from('nps_pesquisas_cliente')
+        .from('nps_dispatches')
         .select(`
-          *,
-          transportador:carriers(razao_social)
+          *
         `)
-        .eq('token_pesquisa', token)
+        .eq('token', token)
         .maybeSingle();
 
-
-
-      if (error) {
-
-        throw error;
+      if (data) {
+        // Mapear status do masculino-neutro (novo backend) para feminino (frontend legado espera)
+        if (data.status === 'respondido') {
+          data.status = 'respondida';
+        } else if (data.status === 'expirado') {
+          data.status = 'expirada';
+        }
       }
 
       return data;
     } catch (error) {
-
       throw error;
     }
   },
@@ -488,26 +486,78 @@ export const npsService = {
       opinioes?: NPSOpinioes;
       avaliar_anonimo?: boolean;
     }
-  ): Promise<NPSPesquisaCliente> {
+  ): Promise<any> {
     try {
-      const { data, error } = await supabase
-        .from('nps_pesquisas_cliente')
+      // 1. Atualizar a nova tabela event-driven
+      const { data: dispatchData, error: distError } = await supabase
+        .from('nps_dispatches')
         .update({
-          nota: resposta.nota,
-          comentario: resposta.comentario,
-          opinioes: resposta.opinioes,
-          avaliar_anonimo: resposta.avaliar_anonimo,
-          status: 'respondida',
-          data_resposta: new Date().toISOString()
+          score: resposta.nota,
+          feedback: resposta.comentario,
+          status: 'respondido',
+          updated_at: new Date().toISOString()
         })
-        .eq('token_pesquisa', token)
-        .select()
+        .eq('token', token)
+        .select(`
+          *,
+          invoices_nfe(
+            id,
+            numero,
+            carrier_id,
+            establishment_id,
+            customer:invoices_nfe_customers(razao_social, email)
+          )
+        `)
         .single();
+        
+      if (distError) throw distError;
 
-      if (error) throw error;
-      return data;
+      // 2. Injetar na tabela legada para não quebrar o Dashboard Analítico de NPS
+      if (dispatchData && dispatchData.invoices_nfe) {
+        const inv = dispatchData.invoices_nfe;
+        const customerRow = Array.isArray(inv.customer) ? inv.customer[0] : inv.customer;
+        
+        // Verifica se a pesquisa já existia no legado (caso um token seja reutilizado/re-enviado)
+        const { data: existingLegacy } = await supabase
+           .from('nps_pesquisas_cliente')
+           .select('id')
+           .eq('token_pesquisa', token)
+           .maybeSingle();
+           
+        if (!existingLegacy) {
+          await supabase.from('nps_pesquisas_cliente').insert({
+             pedido_id: inv.id || 'N/A', // Using invoice_id as pedido_id
+             transportador_id: inv.carrier_id || null,
+             establishment_id: inv.establishment_id,
+             cliente_nome: customerRow?.razao_social || dispatchData.recipient_email || 'Cliente Desconhecido',
+             cliente_email: dispatchData.recipient_email,
+             nota: resposta.nota,
+             comentario: resposta.comentario,
+             opinioes: resposta.opinioes,
+             avaliar_anonimo: resposta.avaliar_anonimo,
+             status: 'respondida',
+             data_envio: dispatchData.dispatched_at || dispatchData.created_at,
+             data_resposta: new Date().toISOString(),
+             canal_envio: dispatchData.channel || 'email',
+             token_pesquisa: token,
+             organization_id: dispatchData.organization_id,
+             environment_id: dispatchData.environment_id,
+             created_at: dispatchData.created_at
+          });
+        } else {
+          await supabase.from('nps_pesquisas_cliente').update({
+             nota: resposta.nota,
+             comentario: resposta.comentario,
+             opinioes: resposta.opinioes,
+             avaliar_anonimo: resposta.avaliar_anonimo,
+             status: 'respondida',
+             data_resposta: new Date().toISOString()
+          }).eq('token_pesquisa', token);
+        }
+      }
+
+      return dispatchData;
     } catch (error) {
-
       throw error;
     }
   },

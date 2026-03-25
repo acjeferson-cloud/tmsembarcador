@@ -2,6 +2,8 @@ import { supabase } from '../lib/supabase';
 import { freightCostCalculator } from './freightCostCalculator';
 import { holidaysService } from './holidaysService';
 import { findCityByCEPFromDatabase } from './citiesService';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 export interface QuoteParams {
   originCityId?: string;
@@ -127,6 +129,12 @@ export const freightQuoteService = {
 
     let originCityId: string | undefined = params.originCityId;
     let destinationCityId: string | undefined = params.destinationCityId;
+
+    // Ensure session context is set for RLS inside calculateQuote
+    const ctx = await TenantContextHelper.getCurrentContext();
+    if (ctx && ctx.organizationId && ctx.environmentId) {
+      await TenantContextHelper.setSessionContext(ctx);
+    }
 
     if (!originCityId && params.originZipCode) {
       const city = await this.findCityByZipCode(params.originZipCode);
@@ -299,13 +307,16 @@ export const freightQuoteService = {
 
 
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-
-        return;
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-
-      const userData = JSON.parse(savedUser);
+      await TenantContextHelper.setSessionContext(ctx);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const { organization_id, environment_id, codigo, nome, email } = userData;
 
       if (!organization_id || !environment_id) {
@@ -452,21 +463,24 @@ export const freightQuoteService = {
   },
 
   async getHistory(userId?: string, limit = 50): Promise<FreightQuoteHistory[]> {
-    const savedUser = localStorage.getItem('tms-user');
-    if (!savedUser) {
-
-      return [];
-    }
-
-    const userData = JSON.parse(savedUser);
+    const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
     const { organization_id, environment_id } = userData;
 
     if (!organization_id || !environment_id) {
-
       return [];
     }
 
-    const { data, error } = await supabase
+    await TenantContextHelper.setSessionContext(ctx);
+
+    let query = supabase
       .from('freight_quotes_history')
       .select(`
         *,
@@ -496,7 +510,13 @@ export const freightQuoteService = {
         )
       `)
       .eq('organization_id', organization_id)
-      .eq('environment_id', environment_id)
+      .eq('environment_id', environment_id);
+
+    if (userData.establishment_id) {
+      query = query.eq('establishment_id', userData.establishment_id);
+    }
+
+    const { data, error } = await query
       .order('quote_number', { ascending: false })
       .limit(limit);
 

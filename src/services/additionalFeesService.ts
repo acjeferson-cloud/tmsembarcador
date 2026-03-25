@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 export interface AdditionalFee {
   id: string;
@@ -46,11 +48,15 @@ export const additionalFeesService = {
   async create(fee: Omit<AdditionalFee, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>): Promise<AdditionalFee> {
     const { data: { user } } = await supabase.auth.getUser();
 
-    const savedUser = localStorage.getItem('tms-user');
-    if (!savedUser) {
-      throw new Error('Usuário não autenticado. Faça login novamente.');
-    }
-    const userData = JSON.parse(savedUser);
+    const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
     const organizationId = userData.organization_id;
     const environmentId = userData.environment_id;
 

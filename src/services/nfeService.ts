@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { deliveryNotificationHandler } from './deliveryNotificationHandler';
 import { trackingService } from './trackingService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 interface NFe {
   id: string;
@@ -52,7 +53,8 @@ export interface NFeWithCustomer extends NFe {
 export const nfeService = {
   async getAll(): Promise<NFeWithCustomer[]> {
     try {
-      const { data: invoices, error } = await (supabase as any)
+      const ctx = await TenantContextHelper.getCurrentContext();
+      let query = (supabase as any)
         .from('invoices_nfe')
         .select(`
           *,
@@ -77,8 +79,13 @@ export const nfeService = {
             valor_total,
             cubagem
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data: invoices, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
 
@@ -231,7 +238,8 @@ export const nfeService = {
 
   async searchByNumberOrKey(searchTerm: string): Promise<NFeWithCustomer[]> {
     try {
-      const { data, error } = await (supabase as any)
+      const ctx = await TenantContextHelper.getCurrentContext();
+      let query = (supabase as any)
         .from('invoices_nfe')
         .select(`
           *,
@@ -255,8 +263,13 @@ export const nfeService = {
             ncm
           )
         `)
-        .or(`numero.eq.${searchTerm},chave_acesso.eq.${searchTerm}`)
-        .order('created_at', { ascending: false });
+        .or(`numero.eq.${searchTerm},chave_acesso.eq.${searchTerm}`);
+
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
 

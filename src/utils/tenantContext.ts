@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 export interface TenantContext {
   organizationId: string;
   environmentId: string | null;
+  establishmentId: string | null;
   userEmail: string;
 }
 
@@ -23,6 +24,12 @@ export class TenantContextHelper {
       environment_id: data.environment_id as string | null,
       supabase_user_id: userEmail
     };
+  }
+
+  static isValidUUID(uuid: string | null | undefined): boolean {
+    if (!uuid) return false;
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return regex.test(uuid);
   }
 
   static async getCurrentContext(): Promise<TenantContext | null> {
@@ -61,11 +68,11 @@ export class TenantContextHelper {
       let organizationId = userProfile.organization_id;
       const selectedOrgId = localStorage.getItem('tms-selected-organization');
       
-      if (selectedOrgId && selectedOrgId !== 'null') {
+      if (selectedOrgId && this.isValidUUID(selectedOrgId)) {
         organizationId = selectedOrgId;
       }
 
-      if (!organizationId) {
+      if (!organizationId || !this.isValidUUID(organizationId)) {
         console.warn(`TenantContext: Perfil sem organization_id para o e-mail ${userEmail}`);
         return null;
       }
@@ -74,9 +81,9 @@ export class TenantContextHelper {
 
       const selectedEnvironmentId = localStorage.getItem('tms-selected-environment');
 
-      if (selectedEnvironmentId && selectedEnvironmentId !== 'null') {
+      if (selectedEnvironmentId && this.isValidUUID(selectedEnvironmentId)) {
         environmentId = selectedEnvironmentId;
-      } else if (userProfile.environment_id) {
+      } else if (userProfile.environment_id && this.isValidUUID(userProfile.environment_id)) {
         environmentId = userProfile.environment_id;
       } else {
         const { data: defaultEnv } = await (supabase as any)
@@ -89,9 +96,26 @@ export class TenantContextHelper {
         environmentId = defaultEnv?.id || null;
       }
 
+      let establishmentId: string | null = null;
+      
+      const selectedEstabId = localStorage.getItem('tms-selected-estab-id');
+      const currentEstabRaw = localStorage.getItem('tms-current-establishment');
+      
+      if (selectedEstabId && this.isValidUUID(selectedEstabId)) {
+        establishmentId = selectedEstabId;
+      } else if (currentEstabRaw) {
+        try {
+          const parsed = JSON.parse(currentEstabRaw);
+          if (parsed.establishment_id && this.isValidUUID(parsed.establishment_id)) {
+            establishmentId = parsed.establishment_id;
+          }
+        } catch (e) {}
+      }
+
       return {
         organizationId,
         environmentId,
+        establishmentId,
         userEmail: userEmail as string
       };
     } catch (error) {
@@ -110,12 +134,18 @@ export class TenantContextHelper {
     return context?.environmentId || null;
   }
 
+  static async getEstablishmentId(): Promise<string | null> {
+    const context = await this.getCurrentContext();
+    return context?.establishmentId || null;
+  }
+
   static async setSessionContext(context: TenantContext): Promise<void> {
     try {
       await (supabase as any).rpc('set_session_context', {
         p_organization_id: context.organizationId,
         p_environment_id: context.environmentId,
-        p_user_email: context.userEmail
+        p_user_email: context.userEmail,
+        p_establishment_id: context.establishmentId
       });
     } catch (error) {
 
@@ -190,16 +220,21 @@ export class TenantContextHelper {
     }
   }
 
-  static async switchContext(organizationId: string, environmentId: string | null, userEmail: string): Promise<void> {
+  static async switchContext(organizationId: string, environmentId: string | null, establishmentId: string | null, userEmail: string): Promise<void> {
     try {
       await this.setSessionContext({
         organizationId,
         environmentId,
+        establishmentId,
         userEmail
       });
 
       if (environmentId) {
         localStorage.setItem('tms-selected-environment', environmentId);
+      }
+      
+      if (establishmentId) {
+        localStorage.setItem('tms-selected-estab-id', establishmentId);
       }
 
       localStorage.setItem('tms-selected-organization', organizationId);
@@ -212,6 +247,7 @@ export class TenantContextHelper {
   }
 
   static clearContext(): void {
+    localStorage.removeItem('tms-selected-estab-id');
     localStorage.removeItem('tms-selected-environment');
     localStorage.removeItem('tms-selected-organization');
   }

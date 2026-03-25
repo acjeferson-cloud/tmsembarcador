@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
+import { setSessionContext } from '../lib/sessionContext';
 import { logoStorageService } from './logoStorageService';
-
+import { TenantContextHelper } from '../utils/tenantContext';
 export interface EmailConfig {
   email: string;
   username: string;
@@ -54,30 +55,17 @@ export interface Establishment {
   updated_by?: number;
 }
 
-// Helper para obter organização do usuário atual
-function getUserOrganization(): { organizationId: string; environmentId: string | null } | null {
+// Helper para obter organização do usuário atual - AGORA ASSÍCRONO
+async function getUserOrganization(): Promise<{ organizationId: string; environmentId: string | null } | null> {
   try {
-    const savedUser = localStorage.getItem('tms-user');
-    if (!savedUser) {
+    const ctx = await TenantContextHelper.getCurrentContext();
+    if (!ctx || !ctx.organizationId || !ctx.environmentId) {
       return null;
     }
-
-    let userData: any;
-    try {
-      userData = JSON.parse(savedUser);
-    } catch (parseError) {
-      return null;
-    }
-
-    if (!userData.organization_id) {
-      return null;
-    }
-
-    const result = {
-      organizationId: userData.organization_id,
-      environmentId: userData.environment_id || null
+    return {
+      organizationId: ctx.organizationId,
+      environmentId: ctx.environmentId
     };
-    return result;
   } catch (error) {
     return null;
   }
@@ -86,17 +74,25 @@ function getUserOrganization(): { organizationId: string; environmentId: string 
 export const establishmentsService = {
   async getAll(): Promise<Establishment[]> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
+      console.log('🔗 [establishmentsService.getAll] Iniciando busca...');
+      
+      const userOrg = await getUserOrganization();
+      console.log('🏢 [establishmentsService.getAll] Contexto recuperado:', userOrg);
+      
+      if (!userOrg) {
+        console.warn('⚠️ [establishmentsService.getAll] Abortando: sem userOrg');
         return [];
       }
+      
+      const { organizationId: organization_id, environmentId: environment_id } = userOrg;
 
-      const userData = JSON.parse(savedUser);
-      const { organization_id, environment_id, email, codigo } = userData;
-      if (!organization_id || !environment_id) {
-        return [];
-      }
+      console.log(`🔧 [establishmentsService.getAll] Configurando contexto da sessão org=${organization_id}, env=${environment_id}`);
+      const sessionRes = await setSessionContext(organization_id, environment_id);
+      console.log('🔧 [establishmentsService.getAll] Resultado do setSessionContext:', sessionRes);
+
       // Buscar estabelecimentos diretamente com filtros (RLS vai proteger)
+      console.log(`📡 [establishmentsService.getAll] Executando query supabase.from('establishments').select('*').eq('organization_id', ${organization_id}).eq('environment_id', ${environment_id})`);
+      
       const { data, error } = await supabase
         .from('establishments')
         .select('*')
@@ -104,10 +100,11 @@ export const establishmentsService = {
         .eq('environment_id', environment_id)
         .order('codigo', { ascending: true });
 
+      console.log('✅ [establishmentsService.getAll] Resposta do Supabase:', { data, error });
+
       if (error) {
+        console.error('❌ [establishmentsService.getAll] Erro do Supabase:', error);
         throw error;
-      }
-      if (data && data.length > 0) {
       }
 
       // Mapear para incluir campos legados para compatibilidade com UI
@@ -130,12 +127,16 @@ export const establishmentsService = {
 
   async getById(id: string): Promise<Establishment | null> {
     try {
-      const userOrg = getUserOrganization();
+      const userOrg = await getUserOrganization();
       if (!userOrg) {
         return null;
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const { data, error } = await supabase
         .from('establishments')
@@ -168,12 +169,16 @@ export const establishmentsService = {
 
   async getByCodigo(codigo: string): Promise<Establishment | null> {
     try {
-      const userOrg = getUserOrganization();
+      const userOrg = await getUserOrganization();
       if (!userOrg) {
         return null;
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const { data, error } = await supabase
         .from('establishments')
@@ -206,7 +211,7 @@ export const establishmentsService = {
 
   async create(establishment: Omit<Establishment, 'id' | 'created_at' | 'updated_at'>): Promise<Establishment | null> {
     try {
-      const userOrg = getUserOrganization();
+      const userOrg = await getUserOrganization();
       if (!userOrg) {
         throw new Error('Usuário não autenticado');
       }
@@ -216,6 +221,8 @@ export const establishmentsService = {
       if (!environmentId) {
         throw new Error('Environment ID não encontrado');
       }
+
+      await setSessionContext(organizationId, environmentId);
 
       const insertData: any = {
         codigo: establishment.codigo,
@@ -309,12 +316,16 @@ export const establishmentsService = {
 
   async update(id: string, establishment: Partial<Establishment>): Promise<Establishment | null> {
     try {
-      const userOrg = getUserOrganization();
+      const userOrg = await getUserOrganization();
       if (!userOrg) {
         throw new Error('Usuário não autenticado');
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const updateData: any = {
         updated_at: new Date().toISOString(),
@@ -478,7 +489,11 @@ export const establishmentsService = {
         throw new Error('Usuário não autenticado');
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const { error } = await supabase
         .from('establishments')
@@ -503,7 +518,11 @@ export const establishmentsService = {
         return '0001';
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const { data, error } = await supabase
         .from('establishments')
@@ -541,7 +560,11 @@ export const establishmentsService = {
         return [];
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const { data, error } = await supabase
         .from('establishments')
@@ -579,7 +602,11 @@ export const establishmentsService = {
         return [];
       }
 
-      const { organizationId } = userOrg;
+      const { organizationId, environmentId } = userOrg;
+
+      if (environmentId) {
+        await setSessionContext(organizationId, environmentId);
+      }
 
       const { data, error } = await supabase
         .from('establishments')

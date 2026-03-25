@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-  Settings, Search, Calendar, Filter, Clock, CheckCircle, 
-  XCircle, AlertCircle, RefreshCcw, Send, CheckSquare, X, Play, Activity
+  Settings, Search, Filter, Clock, CheckCircle, 
+  AlertCircle, RefreshCcw, Send, CheckSquare, X, Play, Activity
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { npsCxService, NpsDispatch, NpsSettings } from '../../services/npsCxService';
 import { Toast, ToastType } from '../common/Toast';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 
 export const NPSConfiguration = () => {
@@ -102,10 +102,23 @@ export const NPSConfiguration = () => {
     }
   };
 
-  const handleResend = async (id: string, currentEmail: string) => {
-    const newEmail = prompt('Confirmar reenvio para E-mail:', currentEmail);
-    if (newEmail === null) return; // Cancelled
-    
+  // Modal State
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [promptTarget, setPromptTarget] = useState<{ id: string, email: string, newEmail: string } | null>(null);
+  const [feedbackAlert, setFeedbackAlert] = useState<string | null>(null);
+
+  const initResend = (id: string, currentEmail: string) => {
+    setPromptTarget({ id, email: currentEmail, newEmail: currentEmail });
+  };
+
+  const initCancel = (id: string) => {
+    setCancelTarget(id);
+  };
+
+  const processResend = async () => {
+    if (!promptTarget) return;
+    const { id, email: currentEmail, newEmail } = promptTarget;
+    setPromptTarget(null);
     setProcessingId(id);
     try {
       await npsCxService.resendNps(id, newEmail !== currentEmail ? newEmail : undefined);
@@ -119,9 +132,10 @@ export const NPSConfiguration = () => {
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!confirm('Deseja cancelar o envio deste NPS? A Nota Fiscal não será avaliada.')) return;
-    
+  const processCancel = async () => {
+    if (!cancelTarget) return;
+    const id = cancelTarget;
+    setCancelTarget(null);
     setProcessingId(id);
     try {
       await npsCxService.cancelNps(id);
@@ -400,7 +414,7 @@ export const NPSConfiguration = () => {
                       {(dispatch.status === 'pendente' || dispatch.status === 'erro' || dispatch.status === 'enviado') && (
                         <div className="flex justify-end gap-2">
                            <button
-                             onClick={() => handleResend(dispatch.id, dispatch.recipient_email || '')}
+                             onClick={() => initResend(dispatch.id, dispatch.recipient_email || '')}
                              disabled={processingId === dispatch.id}
                              title="Forçar Reenvio"
                              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
@@ -409,7 +423,7 @@ export const NPSConfiguration = () => {
                            </button>
                            {dispatch.status === 'pendente' && (
                             <button
-                               onClick={() => handleCancel(dispatch.id)}
+                               onClick={() => initCancel(dispatch.id)}
                                disabled={processingId === dispatch.id}
                                title="Cancelar Agendamento"
                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
@@ -423,7 +437,7 @@ export const NPSConfiguration = () => {
                         <button
                           title="Visualizar Resposta/Feedback"
                           className="text-sm font-medium text-blue-600 hover:underline"
-                          onClick={() => alert(`Feedback Registrado pelo Cliente: \n\n"${dispatch.feedback || 'Sem comentários adicionais.'}"`)}
+                          onClick={() => setFeedbackAlert(dispatch.feedback || 'Sem comentários adicionais.')}
                         >
                           Ver Feedback
                         </button>
@@ -437,6 +451,63 @@ export const NPSConfiguration = () => {
         </div>
       </div>
       
+      {/* Modais Padrão TMS */}
+      <ConfirmDialog
+        isOpen={cancelTarget !== null}
+        title="Cancelar Envio"
+        message="Deseja cancelar o envio deste NPS? A Nota Fiscal não será avaliada."
+        onConfirm={processCancel}
+        onCancel={() => setCancelTarget(null)}
+        type="warning"
+      />
+
+      <ConfirmDialog
+        isOpen={feedbackAlert !== null}
+        title="Feedback Registrado pelo Cliente"
+        message={feedbackAlert || ''}
+        onConfirm={() => setFeedbackAlert(null)}
+        onCancel={() => setFeedbackAlert(null)}
+        type="info"
+        errorMode={true} /* usa o layout de 1 botao */
+      />
+
+      {promptTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 animate-fadeIn">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Confirmar reenvio para E-mail
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+              Revise ou altere o email de destino antes de disparar a pesquisa.
+            </p>
+            <input
+              type="email"
+              value={promptTarget.newEmail}
+              onChange={e => setPromptTarget({ ...promptTarget, newEmail: e.target.value })}
+              className="w-full px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white mb-6 outline-none transition-shadow"
+              placeholder="Ex: cliente@empresa.com"
+              autoFocus
+            />
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={() => setPromptTarget(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={processResend}
+                disabled={!promptTarget.newEmail}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Send size={16} />
+                <span>Confirmar Envio</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

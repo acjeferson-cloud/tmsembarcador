@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
+
 
 export interface RestrictedItem {
   id?: string;
@@ -34,11 +36,15 @@ export const restrictedItemsService = {
 
   async create(item: RestrictedItem): Promise<{ success: boolean; error?: string }> {
     try {
-      const savedUser = localStorage.getItem('tms-user');
-      if (!savedUser) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-      const userData = JSON.parse(savedUser);
+      const userData = {
+        organization_id: ctx.organizationId,
+        environment_id: ctx.environmentId,
+        establishment_id: ctx.establishmentId || null
+      };
       const organizationId = userData.organization_id;
       const environmentId = userData.environment_id;
 
