@@ -27,6 +27,8 @@ interface SaasAdminLoginResponse {
   name?: string;
   role?: string;
   is_saas_admin?: boolean;
+  needsMfaSetup?: boolean;
+  needsMfaChallenge?: boolean;
 }
 
 class TenantAuthService {
@@ -77,43 +79,93 @@ class TenantAuthService {
     }
   }
 
-  async loginSaasAdmin(email: string, passwordHash: string): Promise<SaasAdminLoginResponse> {
+  async loginSaasAdmin(email: string, password: string): Promise<SaasAdminLoginResponse> {
     try {
-      const { data, error } = await supabase.rpc('saas_admin_login', {
-        p_email: email,
-        p_password_hash: passwordHash,
+      // 1. Authenticate with Supabase Auth natively
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (error) {
-        logger.error('SaaS admin login error', error, 'TenantAuthService');
+      if (authError) {
+        logger.error('SaaS admin auth login error', authError, 'TenantAuthService');
         return {
           success: false,
-          error: error.message,
+          error: authError.message,
         };
       }
 
-      if (!data.success) {
-        return data;
+      if (!authData.session || !authData.user) {
+        return { success: false, error: 'Falha na autenticação. Nenhuma sessão retornada.' };
       }
 
-      const session = await supabase.auth.getSession();
-      if (session.data.session) {
-        const { error: updateError } = await supabase.auth.updateUser({
+      // 2. We don't verify saas_admins yet, but we should make sure the user is actually a saas_admin
+      // This is natively verified if the migration set raw_app_meta_data.is_saas_admin = true
+      const isSaasAdminFlag = authData.user.app_metadata?.is_saas_admin === true;
+      const saasAdminId = authData.user.app_metadata?.saas_admin_id;
+
+      if (!isSaasAdminFlag) {
+        // Fallback check against the DB just in case trigger didn't run or is fresh
+        const { data: adminRecord, error: adminError } = await supabase
+          .from('saas_admins')
+          .select('id, nome, ativo')
+          .eq('auth_user_id', authData.user.id)
+          .single();
+          
+        if (adminError || !adminRecord || !adminRecord.ativo) {
+          await supabase.auth.signOut();
+          return { success: false, error: 'Acesso negado. Usuário não é um administrador SaaS ativo.' };
+        }
+
+        // Update metadata explicitly
+        await supabase.auth.updateUser({
           data: {
             is_saas_admin: true,
-            saas_admin_id: data.admin_id,
-            role: data.role,
+            saas_admin_id: adminRecord.id,
           },
         });
 
-        if (updateError) {
-          logger.error('Error updating admin metadata', updateError, 'TenantAuthService');
+        logger.info(`SaaS admin logged in (fallback metadata sync): ${email}`, 'TenantAuthService');
+        return {
+          success: true,
+          admin_id: adminRecord.id,
+          email: email,
+          name: adminRecord.nome,
+          is_saas_admin: true
+        };
+      }
+
+      // 3. Verificação do Status de MFA
+      const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      let needsMfaSetup = false;
+      let needsMfaChallenge = false;
+
+      if (!mfaError && mfaData) {
+        if (mfaData.currentLevel === 'aal1') {
+          // Checa se tem fatores cadastrados e VERIFICADOS
+          const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+          if (!factorsError && factorsData) {
+            const verifiedTotp = factorsData.totp.filter(f => f.status === 'verified');
+            if (verifiedTotp.length > 0) {
+              needsMfaChallenge = true;
+            } else {
+              needsMfaSetup = true;
+            }
+          }
         }
       }
 
-      logger.info(`SaaS admin logged in: ${email}`, 'TenantAuthService');
+      logger.info(`SaaS admin logged in (AAL1): ${email}`, 'TenantAuthService');
 
-      return data;
+      return {
+          success: true,
+          admin_id: saasAdminId,
+          email: email,
+          name: authData.user.user_metadata?.name || 'Admin',
+          is_saas_admin: true,
+          needsMfaSetup,
+          needsMfaChallenge
+      };
     } catch (error) {
       logger.error('Admin login exception', error, 'TenantAuthService');
       return {
@@ -161,18 +213,37 @@ class TenantAuthService {
 
       const isSaasAdmin = session.user.app_metadata?.is_saas_admin === true;
 
-      if (isSaasAdmin) {
+      if (!isSaasAdmin) {
+        // Fallback for older RPC
+        const { data, error } = await supabase.rpc('is_saas_admin');
+        if (error || data !== true) return false;
+      }
+
+      // MFA Check: Require AAL2 for SaaS Admin access
+      const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      
+      // If user has AAL2 session, they are fully authenticated
+      if (mfaData?.currentLevel === 'aal2') {
         return true;
       }
 
-      const { data, error } = await supabase.rpc('is_saas_admin');
-
-      if (error) {
-        logger.error('Error checking saas admin', error, 'TenantAuthService');
-        return false;
+      // If user has NO factors enrolled, we might force them to setup, but technically
+      // SaasAdminLogin handles the setup. If they somehow bypass it, we block them here.
+      // Wait, what if they just used a backup code? We check the bypass token.
+      const bypassToken = localStorage.getItem('saas_admin_backup_bypass');
+      if (bypassToken) {
+        const tokenAge = Date.now() - parseInt(bypassToken);
+        // Valid for 24 hours
+        if (tokenAge < 24 * 60 * 60 * 1000) {
+          return true;
+        } else {
+          localStorage.removeItem('saas_admin_backup_bypass');
+        }
       }
 
-      return data === true;
+      logger.warn('Acesso negado: Administrador exigido nível MFA AAL2', 'TenantAuthService');
+      return false;
+
     } catch (error) {
       logger.error('Error in isSaasAdmin', error, 'TenantAuthService');
       return false;
@@ -181,6 +252,7 @@ class TenantAuthService {
 
   async logout(): Promise<void> {
     try {
+      localStorage.removeItem('saas_admin_backup_bypass');
       const { error } = await supabase.auth.signOut();
 
       if (error) {

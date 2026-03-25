@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Shield, Lock, Mail, AlertCircle } from 'lucide-react';
 import { tenantAuthService } from '../../services/tenantAuthService';
 import { logger } from '../../utils/logger';
+import { SaasAdminMfaSetup } from './SaasAdminMfaSetup';
+import { SaasAdminMfaChallenge } from './SaasAdminMfaChallenge';
 
 interface SaasAdminLoginProps {
   onLoginSuccess: () => void;
@@ -12,14 +14,9 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginStep, setLoginStep] = useState<'LOGIN' | 'MFA_SETUP' | 'MFA_CHALLENGE'>('LOGIN');
 
-  const hashPassword = async (password: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
+  // Removido: hashPassword não é mais necessário pois o Supabase Auth (GoTrue) lida com o hash BCrypt nativamente
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +24,20 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
     setIsLoading(true);
 
     try {
-      const passwordHash = await hashPassword(password);
-
-      const result = await tenantAuthService.loginSaasAdmin(email, passwordHash);
+      const result = await tenantAuthService.loginSaasAdmin(email, password);
 
       if (result.success) {
-        logger.info('SaaS Admin logged in successfully', 'SaasAdminLogin');
-        onLoginSuccess();
+        if (result.needsMfaSetup) {
+          logger.info('Admin needs MFA setup', 'SaasAdminLogin');
+          setLoginStep('MFA_SETUP');
+        } else if (result.needsMfaChallenge) {
+          logger.info('Admin needs MFA challenge', 'SaasAdminLogin');
+          setLoginStep('MFA_CHALLENGE');
+        } else {
+          // Já logado ou backend bypass
+          logger.info('SaaS Admin logged in successfully', 'SaasAdminLogin');
+          onLoginSuccess();
+        }
       } else {
         console.error('Login failed:', result.error);
         setError(result.error || 'Falha no login');
@@ -46,6 +50,33 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
       setIsLoading(false);
     }
   };
+
+  if (loginStep === 'MFA_SETUP') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+        <div className="max-w-md w-full mx-4">
+          <SaasAdminMfaSetup 
+            onSetupComplete={() => onLoginSuccess()} 
+            onCancel={() => setLoginStep('LOGIN')} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (loginStep === 'MFA_CHALLENGE') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+        <div className="max-w-md w-full mx-4">
+          <SaasAdminMfaChallenge 
+            adminEmail={email}
+            onChallengeSuccess={() => onLoginSuccess()} 
+            onCancel={() => setLoginStep('LOGIN')} 
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
