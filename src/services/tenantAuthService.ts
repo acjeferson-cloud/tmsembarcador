@@ -79,7 +79,7 @@ class TenantAuthService {
     }
   }
 
-  async loginSaasAdmin(email: string, password: string): Promise<SaasAdminLoginResponse> {
+  async loginSaasAdmin(email: string, password: string, captchaToken?: string): Promise<SaasAdminLoginResponse> {
     try {
       // 1. BLOCKS CHECK (Brute Force / Rate Limit protection)
       const { data: isBlocked } = await supabase.rpc('check_saas_login_block', { p_email: email });
@@ -92,6 +92,7 @@ class TenantAuthService {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       });
 
       if (authError) {

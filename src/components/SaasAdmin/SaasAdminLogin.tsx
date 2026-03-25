@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Shield, Lock, Mail, AlertCircle } from 'lucide-react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { tenantAuthService } from '../../services/tenantAuthService';
 import { logger } from '../../utils/logger';
 import { SaasAdminMfaSetup } from './SaasAdminMfaSetup';
@@ -15,8 +16,9 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loginStep, setLoginStep] = useState<'LOGIN' | 'MFA_SETUP' | 'MFA_CHALLENGE'>('LOGIN');
-
-  // Removido: hashPassword não é mais necessário pois o Supabase Auth (GoTrue) lida com o hash BCrypt nativamente
+  
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +26,19 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
     setIsLoading(true);
 
     try {
-      const result = await tenantAuthService.loginSaasAdmin(email, password);
+      let captchaToken = undefined;
+      
+      // Request invisible recaptcha resolution
+      if (recaptchaSiteKey && recaptchaRef.current) {
+        captchaToken = await recaptchaRef.current.executeAsync();
+        recaptchaRef.current.reset(); // reset for subsequent submissions if it fails
+        
+        if (!captchaToken) {
+          throw new Error('Falha na validação do reCAPTCHA (Anti-Bot). Verifique sua conexão e tente novamente.');
+        }
+      }
+
+      const result = await tenantAuthService.loginSaasAdmin(email, password, captchaToken || undefined);
 
       if (result.success) {
         if (result.needsMfaSetup) {
@@ -42,10 +56,10 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
         console.error('Login failed:', result.error);
         setError(result.error || 'Falha no login');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login exception:', err);
       logger.error('Login error', err, 'SaasAdminLogin');
-      setError('Erro ao fazer login. Tente novamente.');
+      setError(err.message || 'Erro ao fazer login. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -147,6 +161,16 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
                 <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
                 <p className="text-sm text-red-800">{error}</p>
               </div>
+            )}
+
+            {/* Invisible ReCAPTCHA */}
+            {recaptchaSiteKey && (
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                size="invisible"
+                sitekey={recaptchaSiteKey}
+                badge="bottomright"
+              />
             )}
 
             {/* Submit Button */}

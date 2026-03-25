@@ -22,11 +22,15 @@ import { SaasPlansManager } from './SaasPlansManager';
 import { SaasEnvironmentsView } from './SaasEnvironmentsView';
 import { InnovationsCrud } from '../Innovations/InnovationsCrud';
 import { tenantAuthService } from '../../services/tenantAuthService';
+import { useAdminSessionTimeout } from '../../hooks/useAdminSessionTimeout';
 
 type TabType = 'dashboard' | 'tenants' | 'plans' | 'environments' | 'whitelabel' | 'databases' | 'metrics' | 'logs' | 'alerts' | 'innovations' | 'settings';
 
 export function SaasAdminConsole() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+
+  // Activate strict session control for the entire SaaS Admin Console
+  useAdminSessionTimeout();
 
   const handleLogout = async () => {
     try {
