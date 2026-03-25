@@ -40,11 +40,9 @@ export const npsCxService = {
       const context = await TenantContextHelper.getCurrentContext();
       if (!context?.environmentId) throw new Error('Contexto não encontrado');
 
-      const { data, error } = await supabase
-        .from('nps_settings')
-        .select('*')
-        .eq('environment_id', context.environmentId)
-        .maybeSingle();
+      const { data, error } = await (supabase as any).rpc('get_nps_settings', {
+        p_environment_id: context.environmentId
+      });
 
       if (error) throw error;
       return data;
@@ -192,11 +190,21 @@ export const npsCxService = {
     try {
       await ensureSessionContext();
       if (!supabase) throw new Error('Supabase client is not available');
-      // Calls the Deno Edge function directly to process pending dispatches right now
+      
       const { data, error } = await supabase.functions.invoke('nps-scheduler');
       
       if (error) {
-        throw new Error(error.message || 'Erro ao invocar a Edge Function nps-scheduler');
+        let details = error.message;
+        try {
+           const ctx = (error as any).context;
+           if (ctx && typeof ctx.json === 'function') {
+             const body = await ctx.json();
+             if (body && body.error) details = body.error;
+           } else if (ctx && typeof ctx.text === 'function') {
+             details = await ctx.text();
+           }
+        } catch(e) {}
+        throw new Error(details || 'Erro ao invocar a Edge Function nps-scheduler');
       }
       
       return data || { sent: 0, errors: 0 };
