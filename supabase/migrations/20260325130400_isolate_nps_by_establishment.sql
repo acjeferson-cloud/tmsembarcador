@@ -29,6 +29,7 @@ ALTER TABLE public.nps_dispatches ADD COLUMN IF NOT EXISTS establishment_id UUID
 DELETE FROM public.nps_settings;
 
 ALTER TABLE public.nps_settings DROP CONSTRAINT IF EXISTS nps_settings_environment_id_key;
+ALTER TABLE public.nps_settings DROP CONSTRAINT IF EXISTS nps_settings_env_est_key;
 ALTER TABLE public.nps_settings ADD CONSTRAINT nps_settings_env_est_key UNIQUE (environment_id, establishment_id);
 
 -- 3. Backfill existing NPS Dispatches with Establishment from Invoice
