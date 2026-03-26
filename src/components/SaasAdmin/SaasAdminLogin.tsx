@@ -186,6 +186,11 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   Autenticando...
                 </>
+              ) : !captchaToken ? (
+                <>
+                  <Shield className="w-5 h-5 mr-2 opacity-50" />
+                  Aguardando Segurança (Cloudflare)...
+                </>
               ) : (
                 <>
                   <Shield className="w-5 h-5 mr-2" />
@@ -198,8 +203,13 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
           {/* Info */}
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-xs text-blue-800 text-center">
-                <strong>Acesso Restrito:</strong> Apenas administradores SaaS autorizados podem acessar este painel.
+              <p className="text-xs text-blue-800 text-center flex flex-col gap-2">
+                <span><strong>Acesso Restrito:</strong> Apenas administradores SaaS autorizados podem acessar este painel.</span>
+                {!captchaToken && (
+                  <span className="text-red-600 font-semibold mt-1">
+                    [!] O widget de segurança do Cloudflare falhou ao carregar. Desative AdBlockers ou verifique o domínio.
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -213,7 +223,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
             © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
           <span className="inline-block px-2 py-1 bg-gray-800 text-gray-500 text-xs rounded border border-gray-700 shadow-sm font-medium tracking-wide">
-            v1.26.0
+            v1.26.1
           </span>
         </div>
       </div>
