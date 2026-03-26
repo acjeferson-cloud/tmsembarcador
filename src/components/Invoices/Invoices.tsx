@@ -374,38 +374,42 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           
           let destZipCode = (nfeData.customer as any)?.cep ? (nfeData.customer as any).cep.replace(/\D/g, '') : undefined;
           
-          const results = await freightQuoteService.calculateQuote({
-            destinationZipCode: destZipCode,
-            weight,
-            volumeQty: volume_qty,
-            cargoValue: value,
-            cubicMeters: m3,
-            selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
-          });
-          
-          let updateData: any = { freight_results: results };
-          if (results && results.length > 0) {
-            if (nfeData.carrier_id) {
-              const selectedQuote = results.find(r => r.carrierId === nfeData.carrier_id);
-              if (selectedQuote) {
-                updateData.carrier_id = selectedQuote.carrierId;
-                updateData.valor_frete = selectedQuote.totalValue;
+          try {
+            const results = await freightQuoteService.calculateQuote({
+              destinationZipCode: destZipCode,
+              weight,
+              volumeQty: volume_qty,
+              cargoValue: value,
+              cubicMeters: m3,
+              selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+            });
+            
+            let updateData: any = { freight_results: results };
+            if (results && results.length > 0) {
+              if (nfeData.carrier_id) {
+                const selectedQuote = results.find(r => r.carrierId === nfeData.carrier_id);
+                if (selectedQuote) {
+                  updateData.carrier_id = selectedQuote.carrierId;
+                  updateData.valor_frete = selectedQuote.totalValue;
+                } else {
+                  updateData.carrier_id = nfeData.carrier_id;
+                  updateData.valor_frete = 0;
+                }
               } else {
-                updateData.carrier_id = nfeData.carrier_id;
-                updateData.valor_frete = 0;
+                updateData.carrier_id = results[0].carrierId;
+                updateData.valor_frete = results[0].totalValue;
               }
-            } else {
-              updateData.carrier_id = results[0].carrierId;
-              updateData.valor_frete = results[0].totalValue;
+            } else if (nfeData.carrier_id) {
+               updateData.carrier_id = nfeData.carrier_id;
+               updateData.valor_frete = 0;
+               updateData.freight_results = [];
             }
-          } else if (nfeData.carrier_id) {
-             updateData.carrier_id = nfeData.carrier_id;
-             updateData.valor_frete = 0;
-             updateData.freight_results = [];
+            
+            await (supabase as any).from('invoices_nfe').update(updateData).eq('id', invoiceId);
+            successCount++;
+          } catch (innerError) {
+             console.warn(`Skipping invoice ${invoiceId} due to quote error:`, innerError);
           }
-          
-          await (supabase as any).from('invoices_nfe').update(updateData).eq('id', invoiceId);
-          successCount++;
         }
         
         setToast({ message: `${successCount} nota(s) fiscal(is) recalculada(s) com sucesso!`, type: 'success' });
