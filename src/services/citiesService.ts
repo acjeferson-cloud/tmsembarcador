@@ -682,6 +682,7 @@ export const findCityByCEPFromDatabase = async (zipCode: string) => {
       `)
       .lte('start_zip', cleanZip)
       .gte('end_zip', cleanZip)
+      .limit(1)
       .maybeSingle();
 
     if (detailError) {
@@ -769,6 +770,7 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
         .eq('city_id', existingCity.id)
         .lte('start_zip', cleanZip)
         .gte('end_zip', cleanZip)
+        .limit(1)
         .maybeSingle();
 
       if (!existingRange) {
