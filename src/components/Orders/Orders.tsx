@@ -267,31 +267,35 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
                
                const destZipCode = orderData.destination_zip_code ? orderData.destination_zip_code.replace(/\D/g, '') : undefined;
                
-               const results = await freightQuoteService.calculateQuote(
-                  {
-                     destinationZipCode: destZipCode,
-                     weight,
-                     volumeQty: volume_qty,
-                     cubicMeters: cubic_meters,
-                     cargoValue: order_value,
-                     selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'] 
-                  },
-                  user?.supabaseUser?.id,
-                  user?.name,
-                  user?.email
-               );
+               try {
+                 const results = await freightQuoteService.calculateQuote(
+                    {
+                       destinationZipCode: destZipCode,
+                       weight,
+                       volumeQty: volume_qty,
+                       cubicMeters: cubic_meters,
+                       cargoValue: order_value,
+                       selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'] 
+                    },
+                    user?.supabaseUser?.id,
+                    user?.name,
+                    user?.email
+                 );
 
-               if (results && results.length > 0) {
-                   const bestCarrierId = results[0].carrierId;
-                   const finalFreightValue = results[0].totalValue;
-                   
-                   await ordersService.update(orderData.id, {
-                       freight_results: results,
-                       best_carrier_id: bestCarrierId,
-                       carrier_id: bestCarrierId,
-                       freight_value: finalFreightValue
-                   });
-                   successCount++;
+                 if (results && results.length > 0) {
+                     const bestCarrierId = results[0].carrierId;
+                     const finalFreightValue = results[0].totalValue;
+                     
+                     await ordersService.update(orderData.id, {
+                         freight_results: results,
+                         best_carrier_id: bestCarrierId,
+                         carrier_id: bestCarrierId,
+                         freight_value: finalFreightValue
+                     });
+                     successCount++;
+                 }
+               } catch (innerError) {
+                   console.warn(`Skipping order ${orderData.order_number} due to quote error:`, innerError);
                }
            }
            if (successCount > 0) {
