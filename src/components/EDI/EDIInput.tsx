@@ -4,6 +4,7 @@ import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Upload, FileText, CheckCircle, AlertCircle, X, Info, RefreshCw, FileUp, Database } from 'lucide-react';
 import { doccobImportService } from '../../services/doccobImportService';
 import { Toast, ToastType } from '../common/Toast';
+import { TenantContextHelper } from '../../utils/tenantContext';
 
 // EDI Layout types
 type EDILayoutType = 'NOTFIS' | 'CONEMB' | 'OCOREN' | 'DOCCOB';
@@ -282,7 +283,13 @@ export const EDIInput: React.FC = () => {
       let allErrors: string[] = [];
 
       for (const file of validFiles) {
-        const result = await doccobImportService.processFile(file.content);
+        const context = await TenantContextHelper.getCurrentContext();
+        const result = await doccobImportService.processFile(
+          file.content,
+          context?.organizationId || undefined,
+          context?.environmentId || undefined,
+          context?.establishmentId || undefined
+        );
         totalProcessed += result.billsProcessed;
         totalCTesLinked += result.ctesLinked;
         if (result.errors && result.errors.length > 0) {
