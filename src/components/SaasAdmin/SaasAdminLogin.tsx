@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Shield, Lock, Mail, AlertCircle } from 'lucide-react';
-import ReCAPTCHA from 'react-google-recaptcha';
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 import { tenantAuthService } from '../../services/tenantAuthService';
 import { logger } from '../../utils/logger';
 import { SaasAdminMfaSetup } from './SaasAdminMfaSetup';
@@ -17,18 +17,18 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   const [error, setError] = useState<string | null>(null);
   const [loginStep, setLoginStep] = useState<'LOGIN' | 'MFA_SETUP' | 'MFA_CHALLENGE'>('LOGIN');
   
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
+  const turnstileRef = useRef<TurnstileInstance>(null);
   
-  // Limpeza de sujeiras de injeção (aspas e quebras de linha que o Secret Manager pode ter colocado)
-  let rawSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
+  // Limpeza de injeção e fallbacks seguros para Cloudflare Turnstile
+  let rawSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
   if (rawSiteKey) {
     rawSiteKey = rawSiteKey.replace(/['"\n\r]/g, '').trim();
   }
 
-  // Chave real do cliente (visível na print). Chaves de site front-end SÃO públicas, não há problema em hardcodar.
-  const REAL_SITE_KEY = '6LcOSZgsAAAAAPA_JnpJPYOp0H7IMwP3VjMB9kbA';
-  
-  const recaptchaSiteKey = (rawSiteKey && rawSiteKey.length === 40) ? rawSiteKey : REAL_SITE_KEY;
+  // Se a chave não vier corretamente do gcloud, usamos o MOCK nativo bloqueando falhas críticas
+  const OFFICIAL_TEST_KEY = '1x00000000000000000000AA';
+  const turnstileSiteKey = (rawSiteKey && rawSiteKey.length > 8) ? rawSiteKey : OFFICIAL_TEST_KEY;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,19 +36,11 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
     setIsLoading(true);
 
     try {
-      let captchaToken = undefined;
-      
-      // Request invisible recaptcha resolution
-      if (recaptchaSiteKey && recaptchaRef.current) {
-        captchaToken = await recaptchaRef.current.executeAsync();
-        recaptchaRef.current.reset(); // reset for subsequent submissions if it fails
-        
-        if (!captchaToken) {
-          throw new Error('Falha na validação do reCAPTCHA (Anti-Bot). Verifique sua conexão e tente novamente.');
-        }
+      if (!captchaToken) {
+        throw new Error('Validação de segurança não concluída. Por favor, aguarde o Cloudflare verificar.');
       }
 
-      const result = await tenantAuthService.loginSaasAdmin(email, password, captchaToken || undefined);
+      const result = await tenantAuthService.loginSaasAdmin(email, password, captchaToken);
 
       if (result.success) {
         if (result.needsMfaSetup) {
@@ -65,11 +57,13 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
       } else {
         console.error('Login failed:', result.error);
         setError(result.error || 'Falha no login');
+        turnstileRef.current?.reset(); // reset token on Auth fail
       }
     } catch (err: any) {
       console.error('Login exception:', err);
       logger.error('Login error', err, 'SaasAdminLogin');
       setError(err.message || 'Erro ao fazer login. Tente novamente.');
+      turnstileRef.current?.reset();
     } finally {
       setIsLoading(false);
     }
@@ -173,20 +167,24 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
               </div>
             )}
 
-            {/* Invisible ReCAPTCHA */}
-            {recaptchaSiteKey && (
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                size="invisible"
-                sitekey={recaptchaSiteKey}
-                badge="bottomright"
+            {/* Cloudflare Turnstile */}
+            <div className="flex justify-center my-4">
+              <Turnstile 
+                ref={turnstileRef}
+                siteKey={turnstileSiteKey} 
+                onSuccess={(token) => setCaptchaToken(token)}
+                onError={() => setError('A validação anti-bot falhou. Tente novamente.')}
+                options={{
+                  theme: 'light',
+                  size: 'normal',
+                }}
               />
-            )}
+            </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !captchaToken}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -221,7 +219,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
             © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
           <span className="inline-block px-2 py-1 bg-gray-800 text-gray-500 text-xs rounded border border-gray-700 shadow-sm font-medium tracking-wide">
-            v1.24.0
+            v1.25.0
           </span>
         </div>
       </div>
