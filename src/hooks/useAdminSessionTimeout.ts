@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { tenantAuthService } from '../services/tenantAuthService';
 import { logger } from '../utils/logger';
@@ -14,15 +13,13 @@ const TIMEOUT_MS = sessionTimeoutMinutes * 60 * 1000;
  * 2. Invalidate session automatically upon critical changes via Supabase Events
  */
 export function useAdminSessionTimeout() {
-  const navigate = useNavigate();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleLogout = async (reason: string) => {
     logger.warn(`Admin Session ended due to: ${reason}`, 'SessionTimeout');
     await tenantAuthService.logout();
-    navigate('/login');
     // We reload to bypass caching and forcefully kick the user out at the entry level
-    window.location.reload();
+    window.location.href = '/';
   };
 
   const resetTimer = () => {
@@ -50,5 +47,5 @@ export function useAdminSessionTimeout() {
       domEvents.forEach(event => document.removeEventListener(event, resetTimer));
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 }
