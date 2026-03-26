@@ -19,16 +19,10 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const turnstileRef = useRef<TurnstileInstance>(null);
-  
-  // Limpeza de injeção e fallbacks seguros para Cloudflare Turnstile
-  let rawSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
-  if (rawSiteKey) {
-    rawSiteKey = rawSiteKey.replace(/['"\n\r]/g, '').trim();
-  }
 
-  // Se a chave não vier corretamente do gcloud, usamos o MOCK nativo bloqueando falhas críticas
-  const OFFICIAL_TEST_KEY = '1x00000000000000000000AA';
-  const turnstileSiteKey = (rawSiteKey && rawSiteKey.length > 8) ? rawSiteKey : OFFICIAL_TEST_KEY;
+  // Chave pública do Cloudflare Turnstile (fornecida pelo usuário)
+  // Como chaves de site (frontend) são públicas, podemos definir diretamente.
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACwBQV6TJ_GT5JcY906lPL6MQAM';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,7 +213,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
             © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
           <span className="inline-block px-2 py-1 bg-gray-800 text-gray-500 text-xs rounded border border-gray-700 shadow-sm font-medium tracking-wide">
-            v1.25.0
+            v1.26.0
           </span>
         </div>
       </div>
