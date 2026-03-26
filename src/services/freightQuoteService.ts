@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { freightCostCalculator } from './freightCostCalculator';
 import { holidaysService } from './holidaysService';
-import { findCityByCEPFromDatabase } from './citiesService';
+import { findOrCreateCityByCEP } from './citiesService';
 import { TenantContextHelper } from '../utils/tenantContext';
 
 
@@ -58,7 +58,7 @@ export const freightQuoteService = {
   async findCityByZipCode(zipCode: string): Promise<any> {
     const cleanZip = zipCode.replace(/\D/g, '');
 
-    const city = await findCityByCEPFromDatabase(cleanZip);
+    const city = await findOrCreateCityByCEP(cleanZip);
 
     if (!city) return null;
 

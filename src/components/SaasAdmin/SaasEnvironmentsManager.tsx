@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Save, X, Trash2, Database, Activity, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Save, X, Trash2, Database, Activity, AlertCircle, Upload, Image as ImageIcon, UserPlus } from 'lucide-react';
 import { Environment, environmentsService, CreateEnvironmentInput, UpdateEnvironmentInput } from '../../services/environmentsService';
 import { environmentLogoService } from '../../services/environmentLogoService';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SaasEnvironmentsManagerProps {
   organizationId: string;
@@ -10,6 +11,7 @@ interface SaasEnvironmentsManagerProps {
 }
 
 export function SaasEnvironmentsManager({ organizationId, organizationName }: SaasEnvironmentsManagerProps) {
+  const { user } = useAuth();
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +135,31 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
       alert('Ambiente e todos os dados vinculados foram excluídos com sucesso!');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Erro ao excluir definitivamente o ambiente. Verifique se a constraint cascade foi aplicada no banco de dados.');
+    }
+  }
+
+  async function handleLinkUser(envId: string) {
+    if (!user?.email) {
+      alert('Não foi possível identificar o seu e-mail de usuário.');
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase.rpc('link_saas_admin_to_environment', {
+        p_user_email: user.email,
+        p_target_environment_id: envId
+      });
+
+      if (error) throw error;
+      
+      if (data && data.success) {
+        alert('Usuário vinculado com sucesso! Você agora tem acesso a este ambiente.');
+        await loadEnvironments();
+      } else {
+        alert(data?.error || data?.message || 'Erro ao vincular usuário.');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao vincular usuário ao ambiente. Verifique sua conexão.');
     }
   }
 
@@ -391,6 +418,13 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
                       }
                       return null;
                     })()}
+                    <button
+                      onClick={() => handleLinkUser(env.id)}
+                      className="p-2 text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-colors"
+                      title="Vincular meu usuário (Admin Master) a este ambiente"
+                    >
+                      <UserPlus size={18} />
+                    </button>
                     <button
                       onClick={() => startEdit(env)}
                       className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"

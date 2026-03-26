@@ -33,7 +33,7 @@ export const useAuth = () => {
         const { data: userWithEstablishments } = await supabase
           .from('users')
           .select('estabelecimentos_permitidos, foto_perfil_url')
-          .eq('email', email)
+          .eq('id', dbUser.id)
           .maybeSingle();
 
         const estabelecimentosPermitidos = userWithEstablishments?.estabelecimentos_permitidos || [];
@@ -93,8 +93,8 @@ export const useAuth = () => {
 
               // CRÍTICO: Restaurar org_id e env_id no localStorage
               if (userData.organization_id && userData.environment_id) {
-                localStorage.setItem('tms-selected-org-id', userData.organization_id);
-                localStorage.setItem('tms-selected-env-id', userData.environment_id);
+                localStorage.setItem('tms-selected-organization', userData.organization_id);
+                localStorage.setItem('tms-selected-environment', userData.environment_id);
 
               }
 
@@ -111,6 +111,8 @@ export const useAuth = () => {
                     .from('users')
                     .select('organization_id, environment_id')
                     .eq('email', userData.email)
+                    .order('created_at', { ascending: true })
+                    .limit(1)
                     .maybeSingle();
 
                   if (!dbUser) {
@@ -418,8 +420,8 @@ export const useAuth = () => {
         }
 
         // Salvar também no localStorage para uso do wrapper
-        localStorage.setItem('tms-selected-org-id', userData.organization_id);
-        localStorage.setItem('tms-selected-env-id', userData.environment_id);
+        localStorage.setItem('tms-selected-organization', userData.organization_id);
+        localStorage.setItem('tms-selected-environment', userData.environment_id);
         if (userData.establishment_id) {
           localStorage.setItem('tms-selected-estab-id', userData.establishment_id);
         }
@@ -615,8 +617,8 @@ export const useAuth = () => {
         }
 
         // Salvar também no localStorage para uso do wrapper
-        localStorage.setItem('tms-selected-org-id', userData.organization_id);
-        localStorage.setItem('tms-selected-env-id', userData.environment_id);
+        localStorage.setItem('tms-selected-organization', userData.organization_id);
+        localStorage.setItem('tms-selected-environment', userData.environment_id);
         if (userData.establishment_id) {
           localStorage.setItem('tms-selected-estab-id', userData.establishment_id);
         }
@@ -725,8 +727,8 @@ export const useAuth = () => {
       // Armazenar org/env selecionados
       setSelectedOrgId(orgId);
       setSelectedEnvId(envId);
-      localStorage.setItem('tms-selected-org-id', orgId);
-      localStorage.setItem('tms-selected-env-id', envId);
+      localStorage.setItem('tms-selected-organization', orgId);
+      localStorage.setItem('tms-selected-environment', envId);
 
       // Fechar seletor de org/env
       setShowOrgEnvSelector(false);

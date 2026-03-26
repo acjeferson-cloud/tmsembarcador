@@ -197,11 +197,14 @@ export const usersService = {
 
   async getByCodigo(codigo: string): Promise<User | null> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('codigo', codigo)
-        .maybeSingle();
+      const { envId } = await this.getCurrentContext();
+      let query = supabase.from('users').select('*').eq('codigo', codigo);
+      
+      if (envId) {
+        query = query.eq('environment_id', envId);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
 
       if (error) {
         throw error;
@@ -215,11 +218,14 @@ export const usersService = {
 
   async getByEmail(email: string): Promise<User | null> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
+      const { envId } = await this.getCurrentContext();
+      let query = supabase.from('users').select('*').eq('email', email);
+      
+      if (envId) {
+        query = query.eq('environment_id', envId);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
 
       if (error) {
         throw error;
@@ -233,11 +239,14 @@ export const usersService = {
 
   async getByCPF(cpf: string): Promise<User | null> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('cpf', cpf)
-        .maybeSingle();
+      const { envId } = await this.getCurrentContext();
+      let query = supabase.from('users').select('*').eq('cpf', cpf);
+      
+      if (envId) {
+        query = query.eq('environment_id', envId);
+      }
+
+      const { data, error } = await query.limit(1).maybeSingle();
 
       if (error) {
         throw error;
