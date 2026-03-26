@@ -4,7 +4,6 @@ import {
   Search,
   Edit2,
   Trash2,
-  Eye,
   CheckCircle,
   XCircle,
   Clock,
@@ -346,7 +345,7 @@ export function SaasTenantsManagement() {
                   {!editingTenant && (
                     <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
-                        O código será gerado automaticamente no formato: <strong>00000005</strong>
+                        O código será gerado automaticamente (Próximo estimado: <strong>{String(tenants.length > 0 ? Math.max(...tenants.map(t => parseInt(t.tenant_code || '0', 10))) + 1 : 1).padStart(8, '0')}</strong>)
                       </p>
                     </div>
                   )}
