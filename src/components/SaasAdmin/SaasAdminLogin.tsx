@@ -18,7 +18,9 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   const [loginStep, setLoginStep] = useState<'LOGIN' | 'MFA_SETUP' | 'MFA_CHALLENGE'>('LOGIN');
   
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const rawSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  // If the injected key is literally the dummy text, treat it as null to prevent breaking the UI
+  const recaptchaSiteKey = rawSiteKey && !rawSiteKey.includes('sua_site_key') ? rawSiteKey : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,10 +208,13 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center flex flex-col items-center gap-1">
           <p className="text-gray-400 text-sm">
             © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
+          <span className="inline-block px-2 py-1 bg-gray-800 text-gray-500 text-xs rounded border border-gray-700 shadow-sm font-medium tracking-wide">
+            v1.22.0
+          </span>
         </div>
       </div>
     </div>
