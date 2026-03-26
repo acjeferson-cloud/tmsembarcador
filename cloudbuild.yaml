@@ -13,7 +13,7 @@ steps:
         gcloud secrets versions access latest --secret=supabase-url > /workspace/.supabase-url
         gcloud secrets versions access latest --secret=supabase-anon-key > /workspace/.supabase-anon-key
         gcloud secrets versions access latest --secret=google-maps-api-key > /workspace/.google-maps-api-key
-        gcloud secrets versions access latest --secret=recaptcha-site-key > /workspace/.recaptcha-site-key
+        gcloud secrets versions access latest --secret=turnstile-site-key > /workspace/.turnstile-site-key
         echo "✅ Secrets carregados com sucesso"
     id: 'fetch-secrets'
 
@@ -28,7 +28,7 @@ steps:
           --build-arg VITE_SUPABASE_URL="$(cat /workspace/.supabase-url)" \
           --build-arg VITE_SUPABASE_ANON_KEY="$(cat /workspace/.supabase-anon-key)" \
           --build-arg VITE_GOOGLE_MAPS_API_KEY="$(cat /workspace/.google-maps-api-key)" \
-          --build-arg VITE_RECAPTCHA_SITE_KEY="$(cat /workspace/.recaptcha-site-key)" \
+          --build-arg VITE_TURNSTILE_SITE_KEY="$(cat /workspace/.turnstile-site-key)" \
           -t gcr.io/$PROJECT_ID/tms-embarcador:${_SHORT_SHA} \
           -t gcr.io/$PROJECT_ID/tms-embarcador:latest \
           .
