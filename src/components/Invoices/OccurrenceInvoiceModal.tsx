@@ -8,7 +8,6 @@ interface OccurrenceInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (occurrenceData: any) => Promise<void>;
-  invoiceNumber: string;
   invoiceId?: string;
   carrierName?: string;
   userId?: number;
@@ -80,7 +79,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
         criado_em: new Date().toISOString()
       };
 
-      if (occurrenceDef && ['001', '002'].includes(occurrenceDef.codigo) && invoiceId && userId) {
+      if (occurrenceDef && ['001', '002'].includes(occurrenceDef.codigo) && invoiceId && userId !== undefined) {
         setPendingOccurrence(payload);
         setShowDeliveryProof(true);
       } else {
