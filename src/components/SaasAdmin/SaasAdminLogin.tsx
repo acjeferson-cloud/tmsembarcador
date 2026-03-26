@@ -18,14 +18,17 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   const [loginStep, setLoginStep] = useState<'LOGIN' | 'MFA_SETUP' | 'MFA_CHALLENGE'>('LOGIN');
   
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const rawSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   
-  // Real ReCAPTCHA keys are 40 characters long. Any dummy text like 'SEU_RECAPTCHA_SITE_KEY_AQUI' will fail.
-  // We use Google's official 100% pass test key as a fallback to prevent production crashes if the user misconfigured Secrets.
-  const OFFICIAL_TEST_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
-  const recaptchaSiteKey = (rawSiteKey && rawSiteKey.length > 30 && !rawSiteKey.includes('AQUI')) 
-    ? rawSiteKey 
-    : OFFICIAL_TEST_KEY;
+  // Limpeza de sujeiras de injeção (aspas e quebras de linha que o Secret Manager pode ter colocado)
+  let rawSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
+  if (rawSiteKey) {
+    rawSiteKey = rawSiteKey.replace(/['"\n\r]/g, '').trim();
+  }
+
+  // Chave real do cliente (visível na print). Chaves de site front-end SÃO públicas, não há problema em hardcodar.
+  const REAL_SITE_KEY = '6LcOSZgsAAAAAPA_JnpJPYOp0H7IMwP3VjMB9kbA';
+  
+  const recaptchaSiteKey = (rawSiteKey && rawSiteKey.length === 40) ? rawSiteKey : REAL_SITE_KEY;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,7 +221,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
             © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
           <span className="inline-block px-2 py-1 bg-gray-800 text-gray-500 text-xs rounded border border-gray-700 shadow-sm font-medium tracking-wide">
-            v1.23.0
+            v1.24.0
           </span>
         </div>
       </div>
