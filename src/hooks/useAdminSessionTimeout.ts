@@ -14,6 +14,7 @@ const TIMEOUT_MS = sessionTimeoutMinutes * 60 * 1000;
  */
 export function useAdminSessionTimeout() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef<number>(0);
 
   const handleLogout = async (reason: string) => {
     logger.warn(`Admin Session ended due to: ${reason}`, 'SessionTimeout');
@@ -23,11 +24,17 @@ export function useAdminSessionTimeout() {
   };
 
   const resetTimer = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => handleLogout('Inactivity Timeout'), TIMEOUT_MS);
+    const now = Date.now();
+    if (now - lastActivityRef.current > 1000) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => handleLogout('Inactivity Timeout'), TIMEOUT_MS);
+      lastActivityRef.current = now;
+    }
   };
 
   useEffect(() => {
+    if (!supabase) return;
+    
     // Passive auth listener for when password changes globally or JWT is revoked natively by Supabase
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT' || event === 'USER_UPDATED' || (!session && event === 'INITIAL_SESSION')) {
@@ -45,7 +52,7 @@ export function useAdminSessionTimeout() {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       domEvents.forEach(event => document.removeEventListener(event, resetTimer));
-      authListener.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 }
