@@ -194,8 +194,8 @@ const PublicTracking: React.FC = () => {
               value={trackingCode}
               onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
               onKeyPress={handleKeyPress}
-              placeholder="Exemplo: 0000-0-00-0000-0"
-              className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-lg font-mono uppercase"
+              placeholder="Ex: 0000-0-00-0000-0"
+              className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-lg font-mono uppercase placeholder:text-sm placeholder:font-sans placeholder:normal-case"
               autoComplete="off"
             />
             <input
