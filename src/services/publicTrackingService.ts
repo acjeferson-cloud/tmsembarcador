@@ -115,8 +115,26 @@ export const publicTrackingService = {
       }
       
       const order = trackingData.order || {};
-      const invoice = trackingData.invoice || {};
+      let invoice = trackingData.invoice || {};
       const cte = trackingData.cte || {};
+
+      // HOTFIX: Se a Edge function não encontrou a NFe (retornou vazia devido ao erro de coluna no backend), buscamos via browser.
+      if ((!trackingData.invoice || Object.keys(trackingData.invoice).length === 0) && order.order_number) {
+        const { data: localInvoice } = await (supabase as any)
+          .from('invoices_nfe')
+          .select('*')
+          .or(`order_number.eq.${order.order_number},numero_pedido.eq.${order.order_number}`)
+          .limit(1)
+          .maybeSingle();
+
+        if (localInvoice) {
+          invoice = localInvoice;
+          trackingData.invoice = localInvoice;
+          if (localInvoice.metadata?.occurrences) {
+            trackingData.occurrences = [...(trackingData.occurrences || []), ...localInvoice.metadata.occurrences];
+          }
+        }
+      }
 
       // Fallback local caso a Edge Function não esteja atualizada no servidor em nuvem
       if (!trackingData.occurrences || trackingData.occurrences.length === 0) {
