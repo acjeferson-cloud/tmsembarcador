@@ -4,7 +4,10 @@ import { publicTrackingService, PublicTrackingInfo } from '../../services/public
 import { loadRecaptcha, executeRecaptcha } from '../../utils/recaptchaLoader';
 
 const PublicTracking: React.FC = () => {
-  const [trackingCode, setTrackingCode] = useState('');
+  const [trackingCode, setTrackingCode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('codigo') || '';
+  });
   const [trackingInfo, setTrackingInfo] = useState<PublicTrackingInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,6 +15,10 @@ const PublicTracking: React.FC = () => {
   const [recaptchaReady, setRecaptchaReady] = useState(false);
   const [honeypot, setHoneypot] = useState('');
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [autoSearchPending, setAutoSearchPending] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return !!(params.get('codigo') || params.get('q'));
+  });
 
   useEffect(() => {
     loadRecaptcha().then(() => {
@@ -20,6 +27,13 @@ const PublicTracking: React.FC = () => {
       console.error('Erro ao carregar reCAPTCHA:', err);
     });
   }, []);
+
+  useEffect(() => {
+    if (recaptchaReady && autoSearchPending && trackingCode) {
+      setAutoSearchPending(false);
+      handleSearch();
+    }
+  }, [recaptchaReady, autoSearchPending, trackingCode]);
 
   const handleSearch = async () => {
     if (!trackingCode.trim()) {
@@ -180,7 +194,7 @@ const PublicTracking: React.FC = () => {
               value={trackingCode}
               onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
               onKeyPress={handleKeyPress}
-              placeholder="Ex: ABC123XYZ"
+              placeholder="Exemplo: 0000-0-00-0000-0"
               className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-lg font-mono uppercase"
               autoComplete="off"
             />

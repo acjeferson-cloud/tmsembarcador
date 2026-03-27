@@ -190,15 +190,22 @@ export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
       </div>
 
       {zoomedImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[90] p-4" onClick={() => setZoomedImage(null)}>
-          <div className="relative max-w-4xl max-h-full">
-            <button
-              onClick={() => setZoomedImage(null)}
-              className="absolute top-4 right-4 p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-gray-100 dark:bg-gray-700"
-            >
-              <X size={24} />
-            </button>
-            <img src={zoomedImage} alt="Zoomed" className="max-w-full max-h-[90vh] object-contain" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setZoomedImage(null)}>
+          <div className="relative max-w-4xl w-full flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl shadow-2xl p-4 w-full flex items-center justify-center overflow-hidden">
+              <button
+                onClick={() => setZoomedImage(null)}
+                className="absolute -top-12 right-0 p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors backdrop-blur-md"
+              >
+                <X size={24} />
+              </button>
+              <img 
+                src={zoomedImage} 
+                alt="Comprovante" 
+                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-sm"
+                style={{ backgroundColor: 'white' }} 
+              />
+            </div>
           </div>
         </div>
       )}

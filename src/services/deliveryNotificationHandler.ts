@@ -20,6 +20,8 @@ export const deliveryNotificationHandler = {
         .select(`
           id,
           numero,
+          order_number,
+          numero_pedido,
           establishment_id,
           customer:invoices_nfe_customers(cnpj_cpf)
         `)
@@ -27,6 +29,25 @@ export const deliveryNotificationHandler = {
         .single();
         
       if (invoiceError || !invoice) throw new Error('Invoice not found');
+
+      // 1.5. Determine Tracking Code
+      let trackingCode = invoiceNumber; // fallback
+      const ordNum = invoice.order_number || invoice.numero_pedido;
+      if (ordNum) {
+        const { data: orderDataList, error: orderDataError } = await (supabase as any)
+          .from('orders')
+          .select('codigo_rastreio')
+          .eq('numero_pedido', ordNum)
+          .limit(1);
+        
+        if (orderDataError) {
+          console.error('[deliveryNotificationHandler] Erro ao buscar pedido:', orderDataError);
+        }
+        
+        if (orderDataList && orderDataList.length > 0 && orderDataList[0].codigo_rastreio) {
+          trackingCode = orderDataList[0].codigo_rastreio;
+        }
+      }
 
       const customerCnpjRaw = invoice.customer?.[0]?.cnpj_cpf;
       if (!customerCnpjRaw) return;
@@ -57,6 +78,24 @@ export const deliveryNotificationHandler = {
 
       if (contactsError || !contacts || contacts.length === 0) return;
 
+      // 3.5. Fetch establishment metadata for the logo
+      const { data: estabData } = await (supabase as any)
+        .from('establishments')
+        .select('metadata')
+        .eq('id', invoice.establishment_id)
+        .single();
+        
+      let logoUrl = null;
+      if (estabData?.metadata) {
+        logoUrl = estabData.metadata.logo_light_url || estabData.metadata.logo_light_base64;
+      }
+
+      const logoHtml = logoUrl 
+        ? `<div style="text-align: center; margin-bottom: 30px;">
+             <img src="${logoUrl}" alt="Logo" style="max-width: 200px; max-height: 80px; object-fit: contain;" />
+           </div>`
+        : '';
+
       const eventType = occurrenceCode === '001' ? 'Entrega Realizada Normalmente' : 'Entrega Fora da Data Programada';
 
       // 4. Process each contact
@@ -83,7 +122,60 @@ export const deliveryNotificationHandler = {
                 from: { email: smtpConfigData.from_email, name: smtpConfigData.from_name },
                 to: contact.email,
                 subject: `Atualização de Entrega - NFe ${invoiceNumber}`,
-                html: `<p>Olá ${contact.nome || contact.name || 'Cliente'},</p><p>A sua entrega referente à Nota Fiscal <strong>${invoiceNumber}</strong> foi registrada com o status: <strong>${eventType}</strong>.</p>`
+                html: `
+                  <div style="background-color: #f3f4f6; padding: 40px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                      
+                      <!-- Header / Logo -->
+                      <div style="padding: 30px; text-align: center; border-bottom: 1px solid #f3f4f6;">
+                        ${logoUrl 
+                          ? `<img src="${logoUrl}" alt="Logo" style="max-width: 200px; max-height: 80px; object-fit: contain;" />`
+                          : `<h1 style="color: #374151; font-size: 24px; margin: 0;">Logística</h1>`
+                        }
+                      </div>
+
+                      <!-- Main Content -->
+                      <div style="padding: 30px 40px;">
+                        <h2 style="color: #2563eb; font-size: 24px; font-weight: 600; margin-top: 0; margin-bottom: 20px; text-align: center;">
+                          Atualização de Entrega
+                        </h2>
+                        
+                        <p style="font-size: 16px; color: #374151; margin-bottom: 15px;">
+                          Olá <strong>${contact.nome || contact.name || 'Cliente'}</strong>,
+                        </p>
+                        
+                        <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 25px;">
+                          A sua entrega referente à Nota Fiscal <strong>${invoiceNumber}</strong> foi registrada com o status:
+                        </p>
+
+                        <div style="background-color: ${occurrenceCode === '001' ? '#dcfce7' : '#fee2e2'}; border-left: 4px solid ${occurrenceCode === '001' ? '#22c55e' : '#ef4444'}; padding: 15px 20px; border-radius: 4px; text-align: center; margin-bottom: 30px;">
+                          <span style="font-size: 18px; font-weight: 700; color: ${occurrenceCode === '001' ? '#166534' : '#991b1b'};">
+                            ${eventType}
+                          </span>
+                        </div>
+
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 4px; margin-bottom: 30px; text-align: center;">
+                          <p style="font-size: 14px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; font-weight: 600;">Código de Rastreio</p>
+                          <p style="font-size: 18px; color: #0f172a; font-weight: 700; margin: 0; font-family: monospace;">${trackingCode}</p>
+                        </div>
+
+                        <div style="text-align: center; margin-bottom: 10px;">
+                          <a href="https://embarcador.logaxis.com.br/rastrear?codigo=${trackingCode}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 6px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
+                            Mais Informações
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <!-- Footer -->
+                      <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6;">
+                        <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                          Esta é uma mensagem automática, por favor não responda a este e-mail.
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+                `
               },
               smtp_config: {
                 host: smtpConfigData.smtp_host,
@@ -191,5 +283,6 @@ export const deliveryNotificationHandler = {
     } catch (err) {
       console.error('Error processing occurrence notifications:', err);
     }
+    console.log('[deliveryNotificationHandler] Notificação processada com o novo layout!');
   }
 };
