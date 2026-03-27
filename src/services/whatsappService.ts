@@ -545,6 +545,10 @@ class WhatsAppService {
         .eq('is_active', true)
         .eq('approval_status', 'APPROVED')
         .eq('organization_id', ctx.organizationId);
+        
+      if (ctx.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      }
 
       const { data, error } = await query.order('template_name');
 
@@ -581,6 +585,10 @@ class WhatsAppService {
         .from('whatsapp_templates')
         .select('*')
         .eq('organization_id', ctx.organizationId);
+        
+      if (ctx.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -648,7 +656,8 @@ class WhatsAppService {
             description: template.description,
             created_by: template.created_by,
             organization_id: ctx.organizationId,
-            environment_id: ctx.environmentId
+            environment_id: ctx.environmentId,
+            establishment_id: ctx.establishmentId || null
           });
 
         if (error) throw error;
