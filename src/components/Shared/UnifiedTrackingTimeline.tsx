@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Package, FileText, Clock, Box, Truck, CheckCircle, Loader, AlertTriangle } from 'lucide-react';
+import { Package, FileText, Clock, Box, Truck, CheckCircle, Loader, AlertTriangle, ClipboardCheck } from 'lucide-react';
 import { trackingService, OrderTrackingData } from '../../services/trackingService';
 import { nfeService } from '../../services/nfeService';
 import { ctesCompleteService } from '../../services/ctesCompleteService';
+import { ViewOccurrencesModal } from '../Invoices/ViewOccurrencesModal';
 
 interface UnifiedTrackingTimelineProps {
   trackingData?: OrderTrackingData | null;
@@ -33,6 +34,7 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
   const [data, setData] = useState<OrderTrackingData | null>(initialData || null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
+  const [showOccurrencesModal, setShowOccurrencesModal] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -364,12 +366,31 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
                       <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{step.details}</p>
                     </div>
                   )}
+                  {step.id === 'step_7' && isCompleted && data?.invoice && (
+                    <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5">
+                      <button
+                        onClick={() => setShowOccurrencesModal(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
+                      >
+                        <ClipboardCheck size={16} />
+                        <span>Ver Comprovantes</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {showOccurrencesModal && data?.invoice && (
+        <ViewOccurrencesModal
+          isOpen={showOccurrencesModal}
+          onClose={() => setShowOccurrencesModal(false)}
+          invoice={data.invoice}
+        />
+      )}
     </div>
   );
 };
