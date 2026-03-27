@@ -199,7 +199,10 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
 
     // 7. Entrega realizada
     const deliveryOcc = data.occurrences?.find(o => o.codigo === '001' || o.codigo === '002');
-    const isDelivered = !!deliveryOcc || data.invoice?.status === 'entregue' || data.order?.status === 'entregue';
+    const isDelivered = !!deliveryOcc || 
+      data.invoice?.status?.toLowerCase().includes('entregue') || 
+      data.order?.status?.toLowerCase().includes('entregue') ||
+      data.cte?.status?.toLowerCase().includes('entregue');
     fixedSteps.push({
       id: 'step_7',
       isFixed: true,
@@ -295,10 +298,10 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
     );
   }
 
-  const timeline = buildTimeline();
+  const timeline = buildTimeline().reverse();
 
-  // Active step é o ÚLTIMO passo concluído na lista (pois a ordem é crescente de 1 a 7 de cima p/ baixo)
-  const activeIndex = timeline.map(s => s.status).lastIndexOf('completed');
+  // Active step é o PRIMEIRO 'completed' de cima para baixo na lista invertida
+  const activeIndex = timeline.findIndex(s => s.status === 'completed');
 
   return (
     <div className="relative">
@@ -366,14 +369,14 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
                       <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{step.details}</p>
                     </div>
                   )}
-                  {step.id === 'step_7' && isCompleted && data?.invoice && (
+                  {step.id === 'step_7' && isCompleted && (data?.invoice || data?.order || data?.cte) && (
                     <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5">
                       <button
                         onClick={() => setShowOccurrencesModal(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center space-x-2 transition-colors text-sm font-medium shadow-sm active:scale-95"
                       >
                         <ClipboardCheck size={16} />
-                        <span>Ver Comprovantes</span>
+                        <span>Ver Comprovante</span>
                       </button>
                     </div>
                   )}
@@ -384,11 +387,12 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
         })}
       </div>
 
-      {showOccurrencesModal && data?.invoice && (
+      {showOccurrencesModal && (data?.invoice || data?.order || data?.cte) && (
         <ViewOccurrencesModal
           isOpen={showOccurrencesModal}
           onClose={() => setShowOccurrencesModal(false)}
-          invoice={data.invoice}
+          invoice={data.invoice || data.order || data.cte}
+          trackingData={data}
         />
       )}
     </div>

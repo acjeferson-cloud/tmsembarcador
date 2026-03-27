@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, MapPin, Calendar, Truck, DollarSign, CheckCircle, Clock, XCircle, AlertCircle, ChevronDown, ChevronUp, ShoppingCart, X, Shield } from 'lucide-react';
+import { Package, Search, MapPin, Calendar, Truck, DollarSign, CheckCircle, Clock, XCircle, AlertCircle, ChevronDown, ChevronUp, ShoppingCart, X, Shield, FileText, Box } from 'lucide-react';
 import { publicTrackingService, PublicTrackingInfo } from '../../services/publicTrackingService';
-import { loadRecaptcha, executeRecaptcha } from '../../utils/recaptchaLoader';
+import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
+import { UnifiedTrackingTimeline } from '../Shared/UnifiedTrackingTimeline';
+import { ViewOccurrencesModal } from '../Invoices/ViewOccurrencesModal';
 
 const PublicTracking: React.FC = () => {
   const [trackingCode, setTrackingCode] = useState(() => {
@@ -12,28 +14,24 @@ const PublicTracking: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [recaptchaReady, setRecaptchaReady] = useState(false);
+  const [showOccurrencesModal, setShowOccurrencesModal] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>();
+  const turnstileRef = React.useRef<TurnstileInstance>(null);
+  
+  const turnstileSiteKey = '0x4AAAAAACwBQZiSuRibNl-J';
+
   const [honeypot, setHoneypot] = useState('');
-  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [autoSearchPending, setAutoSearchPending] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return !!(params.get('codigo') || params.get('q'));
   });
 
   useEffect(() => {
-    loadRecaptcha().then(() => {
-      setRecaptchaReady(true);
-    }).catch((err) => {
-      console.error('Erro ao carregar reCAPTCHA:', err);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (recaptchaReady && autoSearchPending && trackingCode) {
+    if (turnstileToken && autoSearchPending && trackingCode) {
       setAutoSearchPending(false);
       handleSearch();
     }
-  }, [recaptchaReady, autoSearchPending, trackingCode]);
+  }, [turnstileToken, autoSearchPending, trackingCode]);
 
   const handleSearch = async () => {
     if (!trackingCode.trim()) {
@@ -47,32 +45,29 @@ const PublicTracking: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      setError('Por favor, aguarde a verificação de segurança (Cloudflare).');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setTrackingInfo(null);
 
     try {
-      let recaptchaToken = '';
-      if (recaptchaReady) {
-        try {
-          recaptchaToken = await executeRecaptcha('tracking_search');
-        } catch (err) {
-          console.error('Erro ao executar reCAPTCHA:', err);
-        }
-      }
-
       const result = await publicTrackingService.getByTrackingCodeSecure(
         trackingCode,
-        recaptchaToken,
-        sessionId
+        turnstileToken
       );
 
       if (result.success && result.data) {
         setTrackingInfo(result.data);
       } else if (result.blocked) {
-        setError(result.message || 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.');
+        setError(result.message || 'Validação falhou. Tente atualizar a página.');
+        turnstileRef.current?.reset();
       } else {
         setError(result.message || 'Código de rastreamento não encontrado');
+        turnstileRef.current?.reset();
       }
     } catch (err: any) {
       if (err.message?.includes('bloqueado') || err.message?.includes('limite')) {
@@ -80,6 +75,7 @@ const PublicTracking: React.FC = () => {
       } else {
         setError('Erro ao consultar pedido. Tente novamente.');
       }
+      turnstileRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -91,40 +87,46 @@ const PublicTracking: React.FC = () => {
     }
   };
 
-  const getStatusInfo = (status: string) => {
-    const statusMap: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-      pending: {
-        label: 'Pendente',
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-        icon: <Clock className="w-4 h-4" />
-      },
-      confirmed: {
-        label: 'Confirmado',
-        color: 'bg-blue-100 text-blue-800 border-blue-200',
-        icon: <CheckCircle className="w-4 h-4" />
-      },
-      in_transit: {
-        label: 'Em Trânsito',
-        color: 'bg-purple-100 text-purple-800 border-purple-200',
-        icon: <Truck className="w-4 h-4" />
-      },
-      delivered: {
-        label: 'Entregue',
-        color: 'bg-green-100 text-green-800 border-green-200',
-        icon: <CheckCircle className="w-4 h-4" />
-      },
-      cancelled: {
-        label: 'Cancelado',
-        color: 'bg-red-100 text-red-800 border-red-200',
-        icon: <XCircle className="w-4 h-4" />
-      }
+  const getStatusInfo = (rawStatus: string) => {
+    const status = (rawStatus || '').toLowerCase();
+    
+    // Padrão de cores baseado na tela de PEDIDOS
+    const result = {
+      label: rawStatus || 'Pendente',
+      color: 'bg-gray-100 text-gray-800 border-gray-200',
+      icon: <Clock className="w-4 h-4" />
     };
 
-    return statusMap[status] || {
-      label: status,
-      color: 'bg-gray-100 text-gray-800 border-gray-200',
-      icon: <AlertCircle className="w-4 h-4" />
-    };
+    if (status.includes('emitid')) {
+      result.label = 'Emitido';
+      result.color = 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800';
+      result.icon = <FileText className="w-4 h-4" />;
+    } else if (status.includes('coletad') || status.includes('coleta_realizada')) {
+      result.label = 'Coletado';
+      result.color = 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800';
+      result.icon = <Box className="w-4 h-4" />;
+    } else if (status.includes('trânsito') || status.includes('transito') || status.includes('em viagem')) {
+      result.label = 'Em Trânsito';
+      result.color = 'bg-blue-600 text-white border-blue-700 dark:bg-blue-700 dark:border-blue-600';
+      result.icon = <Truck className="w-4 h-4" />;
+    } else if (status.includes('saiu') || status.includes('rota')) {
+      result.label = 'Saiu para Entrega';
+      result.color = 'bg-orange-500 text-white border-orange-600 dark:bg-orange-600 dark:border-orange-500';
+      result.icon = <Truck className="w-4 h-4" />;
+    } else if (status.includes('entregue') || status.includes('finalizad')) {
+      result.label = 'Entregue';
+      result.color = 'bg-green-600 text-white border-green-700 dark:bg-green-700 dark:border-green-600';
+      result.icon = <CheckCircle className="w-4 h-4" />;
+    } else if (status.includes('cancelad')) {
+      result.label = 'Cancelado';
+      result.color = 'bg-red-600 text-white border-red-700 dark:bg-red-700 dark:border-red-600';
+      result.icon = <XCircle className="w-4 h-4" />;
+    } else if (status === 'pendente') {
+      result.label = 'Pendente';
+      result.color = 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800';
+    }
+
+    return result;
   };
 
   const formatDate = (dateString?: string) => {
@@ -133,17 +135,6 @@ const PublicTracking: React.FC = () => {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString?: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -210,7 +201,7 @@ const PublicTracking: React.FC = () => {
             />
             <button
               onClick={handleSearch}
-              disabled={loading}
+              disabled={loading || !turnstileToken}
               className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl"
             >
               <Search className="w-5 h-5" />
@@ -218,12 +209,25 @@ const PublicTracking: React.FC = () => {
             </button>
           </div>
 
-          {recaptchaReady && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <Shield className="w-3 h-3" />
-              <span>Protegido por reCAPTCHA v3</span>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex justify-start">
+              <Turnstile 
+                ref={turnstileRef}
+                siteKey={turnstileSiteKey} 
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => setError('A validação anti-bot falhou. Tente atualizar a página.')}
+                options={{
+                  theme: 'light',
+                  size: 'normal',
+                }}
+              />
             </div>
-          )}
+            
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <Shield className="w-3 h-3" />
+              <span>Protegido por Cloudflare Turnstile</span>
+            </div>
+          </div>
 
           {error && (
             <div className="mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl flex items-start gap-3">
@@ -238,11 +242,25 @@ const PublicTracking: React.FC = () => {
           <div className="space-y-6 animate-fadeIn">
             {/* Status Card */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-gray-100 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Status Atual</h2>
-                <div className={`px-4 py-2 rounded-xl border-2 flex items-center gap-2 font-semibold ${getStatusInfo(trackingInfo.status).color}`}>
-                  {getStatusInfo(trackingInfo.status).icon}
-                  {getStatusInfo(trackingInfo.status).label}
+                <div className="flex items-center gap-3">
+                  {/* Comprovante Button */}
+                  {(trackingInfo.status?.toLowerCase().includes('entregue') || trackingInfo.status?.toLowerCase().includes('finalizad')) && trackingInfo.raw_tracking_data && (
+                    <button
+                      onClick={() => setShowOccurrencesModal(true)}
+                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-all font-semibold shadow-md active:scale-95 text-sm"
+                      title="Clique para ver quem assinou a entrega e as comprovações"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Ver Comprovante
+                    </button>
+                  )}
+                  
+                  <div className={`px-4 py-2 rounded-xl border-2 flex items-center gap-2 font-semibold shadow-sm ${getStatusInfo(trackingInfo.status).color}`}>
+                    {getStatusInfo(trackingInfo.status).icon}
+                    {getStatusInfo(trackingInfo.status).label}
+                  </div>
                 </div>
               </div>
 
@@ -397,46 +415,25 @@ const PublicTracking: React.FC = () => {
               </div>
             )}
 
-            {/* Timeline */}
-            {trackingInfo.delivery_status && trackingInfo.delivery_status.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-gray-100 dark:border-gray-700">
+            {/* Timeline Integrada Padrão */}
+            {trackingInfo.raw_tracking_data && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-gray-100 dark:border-gray-700 overflow-hidden animate-fadeIn">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Histórico de Rastreamento</h2>
-
-                <div className="space-y-4">
-                  {trackingInfo.delivery_status
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .map((status, index) => (
-                      <div key={status.id || index} className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={`w-3 h-3 rounded-full ${index === 0 ? 'bg-blue-600' : 'bg-gray-300'}`} />
-                          {index < trackingInfo.delivery_status.length - 1 && (
-                            <div className="w-0.5 h-full bg-gray-200 my-1" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 pb-6">
-                          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                            <div className="flex items-start justify-between mb-2">
-                              <p className="font-bold text-gray-900 dark:text-white">{status.status}</p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{formatDateTime(status.date)}</p>
-                            </div>
-
-                            {status.location && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                                <MapPin className="w-4 h-4 inline mr-1" />
-                                {status.location}
-                              </p>
-                            )}
-
-                            {status.observation && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{status.observation}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="pl-2">
+                  <UnifiedTrackingTimeline 
+                    trackingData={trackingInfo.raw_tracking_data} 
+                  />
                 </div>
               </div>
+            )}
+            {/* Modals Extras */}
+            {showOccurrencesModal && trackingInfo.raw_tracking_data && (
+              <ViewOccurrencesModal
+                isOpen={showOccurrencesModal}
+                onClose={() => setShowOccurrencesModal(false)}
+                invoice={trackingInfo.raw_tracking_data.invoice || trackingInfo.raw_tracking_data.order || trackingInfo.raw_tracking_data.cte}
+                trackingData={trackingInfo.raw_tracking_data}
+              />
             )}
           </div>
         )}

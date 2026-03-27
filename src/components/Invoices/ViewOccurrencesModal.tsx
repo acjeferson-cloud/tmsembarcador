@@ -5,22 +5,31 @@ interface ViewOccurrencesModalProps {
   isOpen: boolean;
   onClose: () => void;
   invoice: any;
+  trackingData?: any;
 }
 
 export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
   isOpen,
   onClose,
-  invoice
+  invoice,
+  trackingData
 }) => {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const occurrences = invoice?.metadata?.occurrences || [];
-  const deliveryProof = invoice?.metadata?.delivery_proof || null;
+  const occurrences = trackingData?.occurrences?.length > 0
+    ? trackingData.occurrences 
+    : (invoice?.metadata?.occurrences || []);
+    
+  const deliveryProof = 
+    trackingData?.invoice?.metadata?.delivery_proof ||
+    trackingData?.order?.metadata?.delivery_proof ||
+    trackingData?.cte?.metadata?.delivery_proof ||
+    invoice?.metadata?.delivery_proof || null;
 
   const sortedOccurrences = [...occurrences].sort((a, b) => 
-    new Date(b.data_ocorrencia).getTime() - new Date(a.data_ocorrencia).getTime()
+    new Date(b.data_ocorrencia || b.created_at || b.date).getTime() - new Date(a.data_ocorrencia || a.created_at || a.date).getTime()
   );
 
   const formatDate = (isoString?: string) => {
@@ -44,7 +53,7 @@ export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Ocorrências da Nota</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">NF-e: {invoice?.numero}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Documento: {invoice?.numero || invoice?.number || invoice?.cte_number || invoice?.order_number || invoice?.numero_pedido}</p>
               </div>
             </div>
             <button
@@ -145,18 +154,18 @@ export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <span className="inline-block px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 text-xs font-bold rounded-full mb-2">
-                          CÓD: {occ.codigo}
+                          CÓD: {occ.codigo || occ.id || '-'}
                         </span>
-                        <h4 className="font-bold text-gray-900 dark:text-white text-base">{occ.descricao}</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white text-base">{occ.descricao || occ.status || 'Atualização'}</h4>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm gap-1">
                           <Calendar size={14} />
-                          {formatDate(occ.data_ocorrencia)}
+                          {formatDate(occ.data_ocorrencia || occ.created_at || occ.date)}
                         </div>
                         <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm gap-1 justify-end">
                           <Clock size={14} />
-                          {formatTime(occ.data_ocorrencia)}
+                          {formatTime(occ.data_ocorrencia || occ.created_at || occ.date)}
                         </div>
                       </div>
                     </div>
