@@ -8,6 +8,32 @@ interface ViewOccurrencesModalProps {
   trackingData?: any;
 }
 
+// Helpers for LGPD Masking directly in the UI
+const maskName = (name: string | null | undefined): string => {
+  if (!name) return '';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].substring(0, 3) + '***';
+  const firstName = parts[0];
+  const lastNameInitial = parts[parts.length - 1].charAt(0);
+  return `${firstName} ${lastNameInitial}***`;
+};
+
+const maskDocument = (doc: string | null | undefined): string => {
+  if (!doc) return '';
+  const cleanDoc = doc.replace(/[^\w\d]/g, '');
+  if (cleanDoc.length <= 4) return '***';
+  const last2 = cleanDoc.substring(cleanDoc.length - 2);
+  return `***.***.***-${last2}`;
+};
+
+const maskVehiclePlate = (plate: string | null | undefined): string => {
+  if (!plate) return '';
+  const clean = plate.replace(/[^a-zA-Z0-9]/g, '');
+  if (clean.length < 4) return '***';
+  const last4 = clean.substring(clean.length - 4);
+  return `***-${last4}`;
+};
+
 export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
   isOpen,
   onClose,
@@ -78,7 +104,7 @@ export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <User size={18} className="text-gray-400" />
                     <span className="text-sm">
-                      <strong className="text-gray-900 dark:text-white">Recebedor:</strong> {deliveryProof.receiver_name} {deliveryProof.receiver_document ? `(${deliveryProof.receiver_document})` : ''}
+                      <strong className="text-gray-900 dark:text-white">Recebedor:</strong> {maskName(deliveryProof.receiver_name)} {deliveryProof.receiver_document ? `(${maskDocument(deliveryProof.receiver_document)})` : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -91,7 +117,7 @@ export const ViewOccurrencesModal: React.FC<ViewOccurrencesModalProps> = ({
                     <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 md:col-span-2">
                       <Truck size={18} className="text-gray-400" />
                       <span className="text-sm">
-                        <strong className="text-gray-900 dark:text-white">Motorista/Veículo:</strong> {deliveryProof.driver_name || '-'} {deliveryProof.vehicle_plate ? `[${deliveryProof.vehicle_plate}]` : ''}
+                        <strong className="text-gray-900 dark:text-white">Motorista/Veículo:</strong> {maskName(deliveryProof.driver_name) || '-'} {deliveryProof.vehicle_plate ? `[${maskVehiclePlate(deliveryProof.vehicle_plate)}]` : ''}
                       </span>
                     </div>
                   )}
