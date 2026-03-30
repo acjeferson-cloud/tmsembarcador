@@ -4,15 +4,13 @@ import { whatsappService, WhatsAppConfig as IWhatsAppConfig, WhatsAppTemplate } 
 import { useAuth } from '../../hooks/useAuth';
 import { WhatsAppExtract } from './WhatsAppExtract';
 import { useTranslation } from 'react-i18next';
-import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 export const WhatsAppConfig: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const { isActive: whatsappActive, isLoading: whatsappLoading } = useInnovation(
-    INNOVATION_IDS.WHATSAPP,
-    user?.id
-  );
+  const { isInnovationActive, isLoading: whatsappLoading } = useInnovations();
+  const whatsappActive = isInnovationActive('whatsapp');
   const [activeTab, setActiveTab] = useState<'config' | 'templates' | 'extract'>('config');
   const [config, setConfig] = useState<IWhatsAppConfig>({
     access_token: '',

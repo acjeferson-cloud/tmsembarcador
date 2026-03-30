@@ -39,8 +39,8 @@ export interface User {
   metadata?: any;
   created_at?: string;
   updated_at?: string;
-  created_by?: number;
-  updated_by?: number;
+  created_by?: string | number;
+  updated_by?: string | number;
 }
 
 export const usersService = {
@@ -343,41 +343,45 @@ export const usersService = {
       if (!orgId || !envId) {
         throw new Error('Contexto de org/env não disponível');
       }
+      const payloadToInsert = {
+        codigo: user.codigo,
+        nome: user.nome,
+        email: user.email,
+        senha_hash: user.senha,
+        cpf: user.cpf,
+        telefone: user.telefone,
+        celular: user.celular,
+        cargo: user.cargo,
+        departamento: user.departamento,
+        data_admissao: user.data_admissao,
+        data_nascimento: user.data_nascimento,
+        endereco: user.endereco,
+        bairro: user.bairro,
+        cep: user.cep,
+        cidade: user.cidade,
+        estado: user.estado,
+        perfil: user.perfil,
+        permissoes: user.permissoes,
+        status: user.status,
+        ativo: user.status === 'ativo',
+        bloqueado: user.status === 'bloqueado',
+        estabelecimento_id: user.estabelecimento_id,
+        // estabelecimento_nome removido - campo não existe na tabela
+        estabelecimentos_permitidos: user.estabelecimentosPermitidos,
+        ultimo_login: user.ultimo_login,
+        tentativas_login: user.tentativas_login,
+        observacoes: user.observacoes,
+        preferred_language: user.preferred_language || 'pt',
+        created_by: user.created_by,
+        organization_id: orgId,
+        environment_id: envId
+      };
+
+      console.error('[DEBUG usersService.ts create] Enviando para o Supabase (insert):', JSON.stringify(payloadToInsert, null, 2));
+
       const { data, error } = await supabase
         .from('users')
-        .insert({
-          codigo: user.codigo,
-          nome: user.nome,
-          email: user.email,
-          senha_hash: user.senha,
-          cpf: user.cpf,
-          telefone: user.telefone,
-          celular: user.celular,
-          cargo: user.cargo,
-          departamento: user.departamento,
-          data_admissao: user.data_admissao,
-          data_nascimento: user.data_nascimento,
-          endereco: user.endereco,
-          bairro: user.bairro,
-          cep: user.cep,
-          cidade: user.cidade,
-          estado: user.estado,
-          perfil: user.perfil,
-          permissoes: user.permissoes,
-          status: user.status,
-          ativo: user.status === 'ativo',
-          bloqueado: user.status === 'bloqueado',
-          estabelecimento_id: user.estabelecimento_id,
-          // estabelecimento_nome removido - campo não existe na tabela
-          estabelecimentos_permitidos: user.estabelecimentosPermitidos,
-          ultimo_login: user.ultimo_login,
-          tentativas_login: user.tentativas_login,
-          observacoes: user.observacoes,
-          preferred_language: user.preferred_language || 'pt',
-          created_by: user.created_by,
-          organization_id: orgId,
-          environment_id: envId
-        })
+        .insert(payloadToInsert)
         .select()
         .single();
 

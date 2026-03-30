@@ -121,7 +121,8 @@ export const Users: React.FC = () => {
         const success = await usersService.delete(confirmDialog.userId);
         if (success) {
           if (user) {
-            await logDelete('user', confirmDialog.userId, user, 1, 'Administrador');
+            const currentUserFromStorage = JSON.parse(localStorage.getItem('tms-user') || '{}');
+            await logDelete('user', confirmDialog.userId, user, currentUserFromStorage?.id || '1', currentUserFromStorage?.nome || 'Administrador');
           }
           setToast({ message: t('users.messages.deleteSuccess'), type: 'success' });
           forceRefresh();
@@ -166,7 +167,7 @@ export const Users: React.FC = () => {
             }
           }
 
-          await logUpdate('user', editingUser.id, editingUser, updated, 1, 'Administrador');
+          await logUpdate('user', editingUser.id, editingUser, updated, currentUserFromStorage?.id || '1', currentUserFromStorage?.nome || 'Administrador');
 
           // If user edited their own profile, update localStorage with new data
           if (isEditingSelf) {
@@ -214,6 +215,7 @@ export const Users: React.FC = () => {
           return;
         }
 
+        const currentUserFromStorage = JSON.parse(localStorage.getItem('tms-user') || '{}');
         const nextCode = await usersService.getNextCode();
         const newUser: Omit<User, "id" | "created_at" | "updated_at"> = {
           nome: String(userDataWithoutPhoto.nome || ''),
@@ -221,7 +223,7 @@ export const Users: React.FC = () => {
           ...userDataWithoutPhoto,
           codigo: nextCode,
           tentativas_login: 0,
-          created_by: 1
+          created_by: currentUserFromStorage?.id && String(currentUserFromStorage.id).length > 10 ? currentUserFromStorage.id : null
         } as Omit<User, "id" | "created_at" | "updated_at">;
         const created = await usersService.create(newUser);
         if (created) {
@@ -234,7 +236,8 @@ export const Users: React.FC = () => {
             }
           }
 
-          await logCreate('user', created.id, created, 1, 'Administrador');
+          const currentUserFromStorage = JSON.parse(localStorage.getItem('tms-user') || '{}');
+          await logCreate('user', created.id, created, currentUserFromStorage?.id || '1', currentUserFromStorage?.nome || 'Administrador');
         }
         setToast({ message: t('users.messages.saveSuccess'), type: 'success' });
       }
@@ -245,6 +248,7 @@ export const Users: React.FC = () => {
       setViewingUser(null);
       forceRefresh();
     } catch (error) {
+      console.error('[DEBUG Users.tsx handleSaveUser] Erro capturado:', error);
       const errorMessage = (error as Error).message;
 
       // Check if error is related to missing context

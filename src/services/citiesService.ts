@@ -763,27 +763,10 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
       .maybeSingle();
 
     if (existingCity) {
-      // Adicionar a faixa de CEP se não existir
-      const { data: existingRange } = await supabase
-        .from('zip_code_ranges')
-        .select('*')
-        .eq('city_id', existingCity.id)
-        .lte('start_zip', cleanZip)
-        .gte('end_zip', cleanZip)
-        .limit(1)
-        .maybeSingle();
-
-      if (!existingRange) {
-        await supabase
-          .from('zip_code_ranges')
-          .insert([{
-            city_id: existingCity.id,
-            start_zip: cleanZip,
-            end_zip: cleanZip,
-            area: cepData.bairro || null,
-            neighborhood: cepData.bairro || null
-          }]);
-      }
+      // ✅ CORREÇÃO: Removida a inserção "cep-a-cep" na tabela zip_code_ranges.
+      // Inserir um CEP isolado de um Parceiro de Negócio (ex: 89219-530 até 89219-530)
+      // sujava a tabela de limites geográficos e criava milhares de registros redundantes por município.
+      // O sistema agora usará apenas as Faixas Gerais de CEP informadas.
 
       return dbRecordToCity(
         existingCity,

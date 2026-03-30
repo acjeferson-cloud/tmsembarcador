@@ -547,7 +547,7 @@ class WhatsAppService {
         .eq('organization_id', ctx.organizationId);
         
       if (ctx.establishmentId) {
-        query = query.eq('establishment_id', ctx.establishmentId);
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
       }
 
       const { data, error } = await query.order('template_name');
@@ -587,7 +587,7 @@ class WhatsAppService {
         .eq('organization_id', ctx.organizationId);
         
       if (ctx.establishmentId) {
-        query = query.eq('establishment_id', ctx.establishmentId);
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });

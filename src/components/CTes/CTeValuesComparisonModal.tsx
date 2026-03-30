@@ -206,9 +206,10 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
                     <div>
                       <p className="text-gray-600 dark:text-gray-400 mb-1">Diferença</p>
                       <p className={`font-semibold ${
-                        tax.isEqual ? 'text-green-700' : 'text-red-600'
+                        tax.isEqual && Number(Math.abs(tax.conhecimento - tax.calculado).toFixed(2)) === 0 ? 'text-green-700' : 
+                        tax.isEqual ? 'text-yellow-600' : 'text-red-600'
                       }`}>
-                        {tax.isEqual ? '0,00' : formatCurrency(Math.abs(tax.conhecimento - tax.calculado))}
+                        {formatCurrency(Math.abs(tax.conhecimento - tax.calculado))}
                       </p>
                     </div>
                   </div>
@@ -242,10 +243,12 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
                       R$ {formatCurrency(totalCalculado)}
                     </p>
                   </div>
-                  {!isTotalEqual && (
+                  {Number(Math.abs(totalConhecimento - totalCalculado).toFixed(2)) > 0 && (
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Diferença</p>
-                      <p className="text-2xl font-bold text-red-600">
+                      <p className={`text-2xl font-bold ${
+                        isTotalEqual ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
                         R$ {formatCurrency(Math.abs(totalConhecimento - totalCalculado))}
                       </p>
                     </div>

@@ -374,12 +374,10 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     const userData = {
       ...formData,
       estabelecimento_id: formData.estabelecimento_id && formData.estabelecimento_id.trim() !== '' ? formData.estabelecimento_id : undefined,
-      estabelecimentosPermitidos: formData.estabelecimentosPermitidos,
-      criadoPor: 1,
-      alteradoPor: user ? 1 : undefined
+      estabelecimentosPermitidos: formData.estabelecimentosPermitidos
     };
     // Remove password confirmation from data
-    const { confirmarSenha, ...finalData } = userData;
+    const { confirmarSenha, ...finalData } = userData as Record<string, any>;
 
     // Convert empty strings to undefined for optional fields
     if (!finalData.data_nascimento || finalData.data_nascimento === '') {
@@ -457,7 +455,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     }));
   };
 
-  const isProtectedUser = user?.id === 1;
+  const isProtectedUser = user?.codigo === '0001';
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -705,7 +703,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t('users.form.fields.namePlaceholder')}
+                  placeholder={t('users.form.fields.namePlaceholder', 'Ex: João da Silva')}
                 />
               </div>
 
@@ -724,7 +722,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
                   } ${isProtectedUser ? 'bg-gray-100' : ''}`}
-                  placeholder="usuario@tmsgestor.com"
+                  placeholder="usuário@suaempresa.com.br"
                 />
                 
                 {errors.email && (

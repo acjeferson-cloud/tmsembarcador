@@ -11,6 +11,7 @@ export interface Carrier {
   logotipo?: string;
   cnpj: string;
   inscricao_estadual?: string;
+  establishment_id?: string;
   pais_id?: string;
   estado_id?: string;
   cidade_id?: string;
@@ -133,27 +134,23 @@ export const carriersService = {
       if (!ctx || !ctx.organizationId || !ctx.environmentId) {
         throw new Error('Sessão inválida ou contexto não selecionado.');
       }
-      const userData = {
-        organization_id: ctx.organizationId,
-        environment_id: ctx.environmentId,
-        establishment_id: ctx.establishmentId || null
-      };
-      const { organization_id, environment_id, email, codigo } = userData;
-      if (!organization_id || !environment_id) {
-        return [];
-      }
-      // Buscar transportadores diretamente com filtros (RLS vai proteger)
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('carriers')
         .select('*')
-        .eq('organization_id', organization_id)
-        .eq('environment_id', environment_id)
-        .order('codigo', { ascending: true });
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
+        
+      if (ctx.establishmentId) {
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+      } else {
+        query = query.is('establishment_id', null);
+      }
+      
+      const { data, error } = await query.order('codigo', { ascending: true });
 
       if (error) {
         throw error;
-      }
-      if (data && data.length > 0) {
       }
 
       const carriers = data || [];
@@ -246,11 +243,25 @@ export const carriersService = {
 
   async getByCode(codigo: string): Promise<Carrier | null> {
     try {
-      const { data, error } = await supabase
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        return null;
+      }
+
+      let query = supabase
         .from('carriers')
         .select('*')
-        .eq('codigo', codigo)
-        .maybeSingle();
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId)
+        .eq('codigo', codigo);
+
+      if (ctx.establishmentId) {
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+      } else {
+        query = query.is('establishment_id', null);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
         throw error;
@@ -323,6 +334,7 @@ export const carriersService = {
       const insertData = {
         organization_id: userData.organization_id,
         environment_id: userData.environment_id,
+        establishment_id: userData.establishment_id,
         codigo: carrier.codigo,
         nome_fantasia: carrier.fantasia || carrier.razao_social,
         razao_social: carrier.razao_social,
@@ -505,11 +517,25 @@ export const carriersService = {
 
   async search(searchTerm: string): Promise<Carrier[]> {
     try {
-      const { data, error } = await supabase
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        return [];
+      }
+
+      let query = supabase
         .from('carriers')
         .select('*')
-        .or(`razao_social.ilike.%${searchTerm}%,fantasia.ilike.%${searchTerm}%,codigo.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
-        .order('razao_social', { ascending: true });
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId)
+        .or(`razao_social.ilike.%${searchTerm}%,fantasia.ilike.%${searchTerm}%,codigo.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+
+      if (ctx.establishmentId) {
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+      } else {
+        query = query.is('establishment_id', null);
+      }
+
+      const { data, error } = await query.order('razao_social', { ascending: true });
 
       if (error) {
         throw error;
@@ -523,9 +549,24 @@ export const carriersService = {
 
   async getNextCode(): Promise<string> {
     try {
-      const { data, error } = await supabase
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        throw new Error('Sessão inválida ou contexto não selecionado.');
+      }
+      
+      let query = supabase
         .from('carriers')
         .select('codigo')
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId);
+        
+      if (ctx.establishmentId) {
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+      } else {
+        query = query.is('establishment_id', null);
+      }
+      
+      const { data, error } = await query
         .order('codigo', { ascending: false })
         .limit(1)
         .maybeSingle();

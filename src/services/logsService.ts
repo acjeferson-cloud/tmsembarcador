@@ -6,7 +6,7 @@ export interface ChangeLog {
   entity_type: string;
   entity_id: string;
   action_type: 'CREATE' | 'UPDATE' | 'DELETE';
-  user_id?: number;
+  user_id?: string | number;
   user_name: string;
   field_name?: string;
   old_value?: string;
@@ -19,7 +19,7 @@ export interface ChangeLog {
 export interface LogFilters {
   entityType?: string;
   actionType?: string;
-  userId?: number;
+  userId?: string | number;
   startDate?: string;
   endDate?: string;
 }
@@ -49,7 +49,7 @@ export async function logCreate(
   entityType: string,
   entityId: string,
   newData: any,
-  userId: number,
+  userId: string | number,
   userName: string
 ): Promise<void> {
   try {
@@ -101,7 +101,7 @@ export async function logUpdate(
   entityId: string,
   oldData: any,
   newData: any,
-  userId: number,
+  userId: string | number,
   userName: string
 ): Promise<void> {
   try {
@@ -155,7 +155,7 @@ export async function logDelete(
   entityType: string,
   entityId: string,
   oldData: any,
-  userId: number,
+  userId: string | number,
   userName: string
 ): Promise<void> {
   try {

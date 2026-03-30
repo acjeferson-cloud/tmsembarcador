@@ -6,7 +6,7 @@ interface ChangeLog {
   entity_type: string;
   entity_id: string;
   action_type: 'CREATE' | 'UPDATE' | 'DELETE';
-  user_id?: number;
+  user_id?: string | number;
   user_name: string;
   field_name?: string;
   old_value?: string;
@@ -140,7 +140,7 @@ export const changeLogsService = {
     entityType: string;
     entityId: string;
     entityName: string;
-    userId?: number;
+    userId?: string | number;
     userName: string;
   }): Promise<void> {
     try {
@@ -163,7 +163,7 @@ export const changeLogsService = {
     fieldName: string;
     oldValue: any;
     newValue: any;
-    userId?: number;
+    userId?: string | number;
     userName: string;
   }): Promise<void> {
     try {
@@ -194,7 +194,7 @@ export const changeLogsService = {
     entityType: string;
     entityId: string;
     entityName: string;
-    userId?: number;
+    userId?: string | number;
     userName: string;
   }): Promise<void> {
     try {
@@ -216,7 +216,7 @@ export const changeLogsService = {
     entityId: string;
     oldData: any;
     newData: any;
-    userId?: number;
+    userId?: string | number;
     userName: string;
     fieldsToLog?: string[];
   }): Promise<void> {

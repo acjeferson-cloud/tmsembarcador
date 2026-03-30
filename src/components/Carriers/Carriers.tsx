@@ -527,7 +527,7 @@ export const Carriers: React.FC = () => {
                 disabled={currentPage === 1}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('carriers.form.pagination.previous')}
+                {t('carriers.pagination.previous', 'Anterior')}
               </button>
 
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -554,7 +554,7 @@ export const Carriers: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('carriers.form.pagination.next')}
+                {t('carriers.pagination.next', 'Próximo')}
               </button>
             </div>
           </div>
