@@ -14,13 +14,15 @@ export const occurrencesService = {
     try {
       const { data, error } = await supabase
         .from('occurrences')
-        .select('*')
-        .order('codigo', { ascending: true });
+        .select('*');
 
       if (error) {
         throw error;
       }
-      return data || [];
+      
+      return ((data as Occurrence[]) || []).sort((a, b) => 
+        a.codigo.localeCompare(b.codigo, undefined, { numeric: true })
+      );
     } catch (error) {
       return [];
     }
@@ -129,14 +131,15 @@ export const occurrencesService = {
       const { data, error } = await supabase
         .from('occurrences')
         .select('*')
-        .or(`codigo.ilike.%${searchTerm}%,descricao.ilike.%${searchTerm}%`)
-        .order('codigo', { ascending: true });
+        .or(`codigo.ilike.%${searchTerm}%,descricao.ilike.%${searchTerm}%`);
 
       if (error) {
         throw error;
       }
 
-      return data || [];
+      return ((data as Occurrence[]) || []).sort((a, b) => 
+        a.codigo.localeCompare(b.codigo, undefined, { numeric: true })
+      );
     } catch (error) {
       return [];
     }
@@ -155,12 +158,12 @@ export const occurrencesService = {
       if (data && data.length > 0) {
         const lastCode = parseInt(data[0].codigo);
         const nextCode = lastCode + 1;
-        return nextCode.toString().padStart(3, '0');
+        return nextCode.toString().padStart(2, '0');
       }
 
-      return '001';
+      return '01';
     } catch (error) {
-      return '001';
+      return '01';
     }
   },
 

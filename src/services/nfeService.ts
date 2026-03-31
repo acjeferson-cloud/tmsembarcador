@@ -410,7 +410,7 @@ export const nfeService = {
         }))
       }));
     } catch (error) {
-      console.error('Error fetching NFes by Access Keys:', error);
+// console.error('Error fetching NFes by Access Keys:', error);
       return [];
     }
   },
@@ -479,7 +479,7 @@ export const nfeService = {
         }))
       }));
     } catch (error) {
-      console.error('Error fetching NFes by IDs:', error);
+// console.error('Error fetching NFes by IDs:', error);
       return [];
     }
   },
@@ -532,7 +532,7 @@ export const nfeService = {
              const orderOccurrences = orderMetadata.occurrences || [];
              orderOccurrences.push(newOccurrence);
              
-             const isDelivered = occurrenceData.codigo === '001' || occurrenceData.codigo === '002';
+             const isDelivered = ['001', '002', '01', '02'].includes(occurrenceData.codigo);
              const dataEntrega = isDelivered ? { data_entrega_realizada: occurrenceData.data_ocorrencia } : {};
              
              await (supabase as any).from('orders').update({
@@ -542,7 +542,7 @@ export const nfeService = {
              }).eq('id', orderData.id);
            }
           } catch (e) {
-             console.error('Erro ao atualizar metadata do pedido relacionado', e);
+// console.error('Erro ao atualizar metadata do pedido relacionado', e);
           }
       }
 
@@ -550,7 +550,7 @@ export const nfeService = {
       try {
         await trackingService.syncDocumentTrackingStatus('nfe', invoiceId, invoice.numero);
       } catch (err) {
-        console.error('Erro ao sincronizar status global na NFe', err);
+// console.error('Erro ao sincronizar status global na NFe', err);
       }
 
       // Disparar notificação automatizada "fire-and-forget"
@@ -563,7 +563,7 @@ export const nfeService = {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao adicionar ocorrência:', error);
+// console.error('Erro ao adicionar ocorrência:', error);
       return { success: false, error: error.message };
     }
   },

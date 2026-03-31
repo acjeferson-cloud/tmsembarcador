@@ -5,6 +5,7 @@ import { Upload, FileText, CheckCircle, AlertCircle, X, Info, RefreshCw, FileUp,
 import { doccobImportService } from '../../services/doccobImportService';
 import { Toast, ToastType } from '../common/Toast';
 import { TenantContextHelper } from '../../utils/tenantContext';
+import { ocorenImportService } from '../../services/ocorenImportService';
 
 // EDI Layout types
 type EDILayoutType = 'NOTFIS' | 'CONEMB' | 'OCOREN' | 'DOCCOB';
@@ -193,19 +194,18 @@ export const EDIInput: React.FC = () => {
   };
 
   const validateLayout = (content: string, layout: EDILayoutType): boolean => {
-    // Simple validation based on expected content in each layout type
-    // In a real implementation, this would be more sophisticated
-    const firstLine = content.split('\n')[0] || '';
+    // Simple validation based on expected content in the first few lines
+    const firstFewLines = content.split('\n').slice(0, 5).join('\n').toUpperCase();
     
     switch (layout) {
       case 'NOTFIS':
-        return firstLine.includes('NOTFIS') || firstLine.includes('NF') || firstLine.includes('NOTA');
+        return firstFewLines.includes('NOTFIS') || firstFewLines.includes('NF') || firstFewLines.includes('NOTA');
       case 'CONEMB':
-        return firstLine.includes('CONEMB') || firstLine.includes('CTE') || firstLine.includes('CONHECIMENTO');
+        return firstFewLines.includes('CONEMB') || firstFewLines.includes('CTE') || firstFewLines.includes('CONHECIMENTO');
       case 'OCOREN':
-        return firstLine.includes('OCOREN') || firstLine.includes('OCOR') || firstLine.includes('ENTREGA');
+        return firstFewLines.includes('OCOREN') || firstFewLines.includes('OCORR') || firstFewLines.includes('OCO');
       case 'DOCCOB':
-        return firstLine.includes('DOCCOB') || firstLine.includes('FATURA') || firstLine.includes('COB');
+        return firstFewLines.includes('DOCCOB') || firstFewLines.includes('FATURA') || firstFewLines.includes('COB');
       default:
         return false;
     }
@@ -302,6 +302,36 @@ export const EDIInput: React.FC = () => {
         setToast({ message: t('ediInbound.messages.doccobProcessed', { processed: totalProcessed, linked: totalCTesLinked }), type: 'success' });
       } else {
         setToast({ message: t('ediInbound.messages.doccobProcessedWarnings', { processed: totalProcessed, errors: allErrors.join('\n') }), type: 'warning' });
+      }
+    } else if (selectedLayout === 'OCOREN') {
+      let totalProcessed = 0;
+      let totalSaved = 0;
+      let allErrors: string[] = [];
+
+      for (const file of validFiles) {
+        // ocorenImportService doesn't strictly need context args since RLS does the work via JWT
+        const result = await ocorenImportService.processFile(file.content);
+        
+        totalProcessed += result.recordsProcessed;
+        totalSaved += result.occurrencesSaved;
+        if (result.errors && result.errors.length > 0) {
+          allErrors = [...allErrors, ...result.errors];
+        }
+      }
+
+      setIsProcessing(false);
+      if (allErrors.length === 0) {
+        setToast({ message: t('ediInbound.messages.ocorenProcessed', { processed: totalProcessed, saved: totalSaved, defaultValue: `${totalSaved} ocorrência(s) registrada(s) no TMS.` }), type: 'success' });
+      } else {
+        setToast({ message: t('ediInbound.messages.ocorenProcessedWarnings', { processed: totalProcessed, errors: allErrors.join('\n'), defaultValue: `Processamento concluído com alertas. ${totalSaved} ocorrência(s) registrada(s).` }), type: 'warning' });
+        // Exporting error log is handled by the "Export Report" button which reads from file statuses. 
+        // We should update the file status to reflect parsing errors
+        setFiles(prev => prev.map(f => {
+            if (validFiles.find(vf => vf.id === f.id)) {
+               return { ...f, status: allErrors.length > 0 ? 'error' : 'success', message: allErrors.join('\n') };
+            }
+            return f;
+        }));
       }
     } else {
       // Simulate processing for other layout types

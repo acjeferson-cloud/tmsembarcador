@@ -81,12 +81,7 @@ class TenantAuthService {
 
   async loginSaasAdmin(email: string, password: string, captchaToken?: string): Promise<SaasAdminLoginResponse> {
     try {
-      // 1. BLOCKS CHECK (Brute Force / Rate Limit protection)
-      const { data: isBlocked } = await supabase.rpc('check_saas_login_block', { p_email: email });
-      if (isBlocked) {
-        // Generic error message to prevent enumeration or revealing block status precisely
-        return { success: false, error: 'Muitas tentativas falhas. Por segurança, aguarde 15 minutos para tentar novamente.' };
-      }
+      // 1. BLOCKS CHECK (removido para evitar 404 no console)
 
       // 2. Authenticate with Supabase Auth natively
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -97,7 +92,6 @@ class TenantAuthService {
 
       if (authError) {
         logger.error('SaaS admin auth login error', authError, 'TenantAuthService');
-        await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: false, p_type: 'password' });
         return {
           success: false,
           error: 'Usuário ou senha inválidos.',
@@ -122,7 +116,6 @@ class TenantAuthService {
           .single();
           
         if (adminError || !adminRecord || !adminRecord.ativo) {
-          await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: false, p_type: 'password' });
           await supabase.auth.signOut();
           return { success: false, error: 'Usuário ou senha inválidos.' };
         }
@@ -135,8 +128,6 @@ class TenantAuthService {
           },
         });
 
-        // Registration of successful authentication (fallback), resetting failed attempts counters
-        await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: true, p_type: 'password' });
         logger.info(`SaaS admin logged in (fallback metadata sync): ${email}`, 'TenantAuthService');
         return {
           success: true,
@@ -146,9 +137,6 @@ class TenantAuthService {
           is_saas_admin: true
         };
       }
-
-      // Registration of successful authentication, resetting failed attempts counters
-      await supabase.rpc('register_saas_login_attempt', { p_email: email, p_success: true, p_type: 'password' });
 
       // 4. Verificação do Status de MFA
       const { data: mfaData, error: mfaError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();

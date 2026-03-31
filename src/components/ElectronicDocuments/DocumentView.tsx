@@ -18,7 +18,14 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
   if (document.xmlContent) {
     try {
       const parsed = parseXML(document.xmlContent) as any;
-      richDoc = { ...document, ...parsed, emitente: { ...document.emitente, ...parsed.emitente }, destinatario: { ...document.destinatario, ...parsed.destinatario } };
+      richDoc = { 
+        ...document, 
+        ...parsed, 
+        emitente: { ...document.emitente, ...parsed.emitente }, 
+        destinatario: { ...document.destinatario, ...parsed.destinatario },
+        remetente: parsed.remetente || document.remetente,
+        tomador: parsed.tomador || document.tomador
+      };
     } catch (e) {
       console.error('Error parsing XML in view:', e);
     }

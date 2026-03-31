@@ -5,12 +5,14 @@ import { TenantContextHelper } from '../utils/tenantContext';
 export interface RestrictedItem {
   id?: string;
   freight_rate_table_id: string;
+  catalog_item_id?: string;
   item_code: string;
   item_description: string;
   ncm_code?: string;
   ean_code?: string;
   created_at?: string;
   updated_at?: string;
+  catalog_items?: any;
 }
 
 export const restrictedItemsService = {
@@ -18,7 +20,12 @@ export const restrictedItemsService = {
     try {
       const { data, error } = await supabase
         .from('freight_rate_restricted_items')
-        .select('*')
+        .select(`
+          *,
+          catalog_items (
+            id, item_code, item_description, ean_code, ncm_code
+          )
+        `)
         .eq('freight_rate_table_id', freightRateTableId)
         .order('item_code');
 
@@ -52,6 +59,7 @@ export const restrictedItemsService = {
         .from('freight_rate_restricted_items')
         .insert({
           freight_rate_table_id: item.freight_rate_table_id,
+          catalog_item_id: item.catalog_item_id || null,
           item_code: item.item_code.trim(),
           item_description: item.item_description.trim(),
           ncm_code: item.ncm_code?.trim() || null,
@@ -125,7 +133,12 @@ export const restrictedItemsService = {
     try {
       const { data, error } = await supabase
         .from('freight_rate_restricted_items')
-        .select('*')
+        .select(`
+          *,
+          catalog_items (
+            id, item_code, item_description, ean_code, ncm_code
+          )
+        `)
         .eq('freight_rate_table_id', freightRateTableId)
         .or(`item_code.ilike.%${searchTerm}%,item_description.ilike.%${searchTerm}%,ncm_code.ilike.%${searchTerm}%,ean_code.ilike.%${searchTerm}%`)
         .order('item_code');

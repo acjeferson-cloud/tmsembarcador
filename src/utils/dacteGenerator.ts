@@ -17,17 +17,18 @@ export const getDacteHtml = (document: ElectronicDocument) => `
           .row > .box:first-child { margin-left: 0; }
           
           /* Title bands */
-          .section-title { font-size: 8px; font-weight: bold; text-transform: uppercase; margin: 10px 0 2px 0; background: #eee; padding: 3px; border: 1px solid #000; text-align: center; }
+          .section-title { font-size: 8px; font-weight: bold; text-transform: uppercase; margin: 0; margin-top: -1px; background: #eee; padding: 3px; border: 1px solid #000; text-align: center; }
           
           /* Headers & Canhoto */
           .canhoto-container { margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
           
-          .header-main { display: flex; margin-bottom: 5px; }
+          .header-main { display: flex; width: 100%; margin-bottom: 0; }
+          .header-main + .header-main { margin-top: -1px; }
           .header-left { width: 40%; border: 1px solid #000; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; }
           .header-center { width: 20%; border: 1px solid #000; margin-left: -1px; text-align: center; padding: 4px; }
-          .header-right { width: 40%; border: 1px solid #000; margin-left: -1px; padding: 4px; }
+          .header-right { flex: 1; border: 1px solid #000; margin-left: -1px; padding: 4px; }
           
-          .barcode { height: 40px; border: 1px solid #ccc; margin: 5px 0; text-align: center; line-height: 40px; font-size: 10px; background: #eee; }
+          .barcode { height: 40px; margin: 5px 0; text-align: center; display: flex; justify-content: center; align-items: center; overflow: hidden; }
           
           .text-center { text-align: center; }
           .text-right { text-align: right; }
@@ -59,7 +60,7 @@ export const getDacteHtml = (document: ElectronicDocument) => `
                   </div>
                 </div>
               </div>
-              <div class="box text-center" style="width: 20%; flex: none; display: flex; flex-direction: column; justify-content: center;">
+              <div class="box text-center" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <b style="font-size: 14px;">CT-e</b><br/>
                 <span style="font-size: 11px;">Nº ${document.numeroDocumento}</span><br/>
                 <span style="font-size: 10px;">Série ${document.serie}</span>
@@ -102,7 +103,9 @@ export const getDacteHtml = (document: ElectronicDocument) => `
             
             <!-- CHAVE/BARRAS -->
             <div class="header-right">
-              <div class="barcode">|||| |||||| ||||||| |||||||| ||||| CÓDIGO DE BARRAS</div>
+              <div class="barcode">
+                <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${document.chaveAcesso}&scale=2&height=15&includetext=false" alt="Código de Barras da Chave de Acesso" style="max-width: 100%; max-height: 100%;" />
+              </div>
               <span class="lbl mt-1">CHAVE DE ACESSO</span>
               <div class="val text-center" style="font-size: 11px; margin-bottom: 5px;">
                 ${formatAccessKey(document.chaveAcesso)}
@@ -115,7 +118,7 @@ export const getDacteHtml = (document: ElectronicDocument) => `
                    <span class="lbl text-center">PROTOCOLO DE AUTORIZAÇÃO</span>
                    <span class="val text-center" style="display:block;">${document.protocoloAutorizacao || ' - '}</span>
                  </div>
-                 <div class="box" style="border:none; width:50%; flex:none;">
+                 <div class="box" style="border:none; flex: 1;">
                    <span class="lbl text-center">DATA DA AUTORIZAÇÃO</span>
                    <span class="val text-center" style="display:block;">${new Date(document.dataAutorizacao).toLocaleString('pt-BR')}</span>
                  </div>
@@ -132,7 +135,7 @@ export const getDacteHtml = (document: ElectronicDocument) => `
               <span class="lbl">MUNICÍPIO DE INÍCIO DA PRESTAÇÃO</span>
               <span class="val">${document.emitente.cidade} - ${document.emitente.uf}</span>
             </div>
-            <div class="box" style="width: 25%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">MUNICÍPIO DE TÉRMINO DA PRESTAÇÃO</span>
               <span class="val">${document.destinatario?.cidade} - ${document.destinatario?.uf}</span>
             </div>
@@ -143,65 +146,93 @@ export const getDacteHtml = (document: ElectronicDocument) => `
           <div class="row">
             <div class="box" style="width: 50%; flex: none;">
               <span class="lbl">NOME/RAZÃO SOCIAL</span>
-              <span class="val">${document.emitente.razaoSocial || document.destinatario?.razaoSocial || ''}</span>
+              <span class="val">${document.tomador?.razaoSocial || document.remetente?.razaoSocial || document.emitente.razaoSocial || ''}</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">MUNICÍPIO</span>
-              <span class="val">${document.emitente.cidade || document.destinatario?.cidade || ''}</span>
+              <span class="val">${document.tomador?.cidade || document.remetente?.cidade || document.emitente.cidade || ''}</span>
             </div>
             <div class="box" style="width: 5%; flex: none;">
               <span class="lbl">UF</span>
-              <span class="val">${document.emitente.uf || document.destinatario?.uf || ''}</span>
+              <span class="val">${document.tomador?.uf || document.remetente?.uf || document.emitente.uf || ''}</span>
             </div>
             <div class="box" style="width: 15%; flex: none;">
               <span class="lbl">CNPJ/CPF</span>
-              <span class="val">${document.emitente.cnpj || document.destinatario?.cnpjCpf || ''}</span>
+              <span class="val">${document.tomador?.cnpj || document.remetente?.cnpj || document.emitente.cnpj || ''}</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">INSCRIÇÃO ESTADUAL</span>
-              <span class="val">ISENTO</span>
+              <span class="val">${document.tomador?.inscricaoEstadual || 'ISENTO'}</span>
             </div>
           </div>
           
           <!-- REMETENTE -->
           <div class="section-title">REMETENTE</div>
           <div class="row">
-            <div class="box" style="width: 40%; flex: none;">
+            <div class="box" style="width: 50%; flex: none;">
               <span class="lbl">NOME/RAZÃO SOCIAL</span>
-              <span class="val">${document.emitente.razaoSocial || ''}</span>
+              <span class="val">${document.remetente?.razaoSocial || ''}</span>
             </div>
-            <div class="box" style="width: 30%; flex: none;">
-              <span class="lbl">ENDEREÇO</span>
-              <span class="val">${document.emitente.endereco || ''}</span>
-            </div>
-            <div class="box" style="width: 15%; flex: none;">
-              <span class="lbl">MUNICÍPIO</span>
-              <span class="val">${document.emitente.cidade || ''}</span>
-            </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="width: 25%; flex: none;">
               <span class="lbl">CNPJ/CPF</span>
-              <span class="val">${document.emitente.cnpj || ''}</span>
+              <span class="val">${document.remetente?.cnpj || ''}</span>
+            </div>
+            <div class="box" style="flex: 1;">
+              <span class="lbl">INSCRIÇÃO ESTADUAL</span>
+              <span class="val">${document.remetente?.inscricaoEstadual || 'ISENTO'}</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="box" style="width: 50%; flex: none;">
+              <span class="lbl">ENDEREÇO</span>
+              <span class="val">${document.remetente?.endereco || ''}</span>
+            </div>
+            <div class="box" style="width: 25%; flex: none;">
+              <span class="lbl">MUNICÍPIO</span>
+              <span class="val">${document.remetente?.cidade || ''}</span>
+            </div>
+            <div class="box" style="width: 10%; flex: none;">
+              <span class="lbl">UF</span>
+              <span class="val">${document.remetente?.uf || ''}</span>
+            </div>
+            <div class="box" style="flex: 1;">
+              <span class="lbl">CEP</span>
+              <span class="val">${document.remetente?.cep || ''}</span>
             </div>
           </div>
           
           <!-- DESTINATÁRIO -->
           <div class="section-title">DESTINATÁRIO</div>
           <div class="row">
-            <div class="box" style="width: 40%; flex: none;">
+            <div class="box" style="width: 50%; flex: none;">
               <span class="lbl">NOME/RAZÃO SOCIAL</span>
               <span class="val">${document.destinatario?.razaoSocial || ''}</span>
             </div>
-            <div class="box" style="width: 30%; flex: none;">
+            <div class="box" style="width: 25%; flex: none;">
+              <span class="lbl">CNPJ/CPF</span>
+              <span class="val">${document.destinatario?.cnpjCpf || ''}</span>
+            </div>
+            <div class="box" style="flex: 1;">
+              <span class="lbl">INSCRIÇÃO ESTADUAL</span>
+              <span class="val">${(document.destinatario as any)?.inscricaoEstadual || 'ISENTO'}</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="box" style="width: 50%; flex: none;">
               <span class="lbl">ENDEREÇO</span>
               <span class="val">${document.destinatario?.endereco || ''}</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="width: 25%; flex: none;">
               <span class="lbl">MUNICÍPIO</span>
               <span class="val">${document.destinatario?.cidade || ''}</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
-              <span class="lbl">CNPJ/CPF</span>
-              <span class="val">${document.destinatario?.cnpjCpf || ''}</span>
+            <div class="box" style="width: 10%; flex: none;">
+              <span class="lbl">UF</span>
+              <span class="val">${document.destinatario?.uf || ''}</span>
+            </div>
+            <div class="box" style="flex: 1;">
+              <span class="lbl">CEP</span>
+              <span class="val">${document.destinatario?.cep || ''}</span>
             </div>
           </div>
           
@@ -224,7 +255,7 @@ export const getDacteHtml = (document: ElectronicDocument) => `
               <span class="lbl">ALÍQUOTA ICMS</span>
               <span class="val">${document.valorIcms ? ((document.valorIcms / (document.valorFrete || 1)) * 100).toFixed(2) + '%' : '0,00%'}</span>
             </div>
-            <div class="box text-center" style="width: 20%; flex: none;">
+            <div class="box text-center" style="flex: 1;">
               <span class="lbl">VALOR DO ICMS</span>
               <span class="val">${formatCurrency(document.valorIcms || 0)}</span>
             </div>
@@ -245,7 +276,7 @@ export const getDacteHtml = (document: ElectronicDocument) => `
               <span class="lbl">PRODUTO PREDOMINANTE</span>
               <span class="val">MERCADORIAS DIVERSAS</span>
             </div>
-            <div class="box" style="width: 50%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">VALOR TOTAL DA CARGA</span>
               <span class="val">${formatCurrency(document.valorTotal * 1.5)}</span> <!-- Simulado base NFe -->
             </div>
@@ -259,7 +290,7 @@ export const getDacteHtml = (document: ElectronicDocument) => `
               <span class="lbl">PESO CUBADO (KG)</span>
               <span class="val text-center" style="display:block;">0,000</span>
             </div>
-            <div class="box text-center" style="width: 33.4%; flex: none;">
+            <div class="box text-center" style="flex: 1;">
               <span class="lbl">QTD. VOLUMES</span>
               <span class="val text-center" style="display:block;">1</span>
             </div>

@@ -217,7 +217,7 @@ export const trackingService = {
         const d = cte?.updated_at || invoice?.updated_at || order?.updated_at;
         occurrences = [
           { codigo: '100', descricao: 'Em rota de entrega', created_at: d },
-          { codigo: '001', descricao: 'Entrega realizada', created_at: d }
+          { codigo: '01', descricao: 'Entrega realizada', created_at: d }
         ];
       } else if (['saiu_entrega', 'saiu_para_entrega', 'saiu p/ entrega', 'out_for_delivery'].includes(cte?.status?.toLowerCase() || '') ||
                  ['saiu_entrega', 'saiu_para_entrega', 'saiu p/ entrega', 'out_for_delivery'].includes(invoice?.status?.toLowerCase() || '') ||
@@ -386,7 +386,7 @@ export const trackingService = {
         const d = cte?.updated_at || invoices?.updated_at || order?.updated_at;
         occurrences = [
           { codigo: '100', descricao: 'Em rota de entrega', created_at: d },
-          { codigo: '001', descricao: 'Entrega realizada', created_at: d }
+          { codigo: '01', descricao: 'Entrega realizada', created_at: d }
         ];
       } else if (['saiu_entrega', 'saiu_para_entrega', 'saiu p/ entrega', 'out_for_delivery'].includes(cte?.status?.toLowerCase() || '') ||
                  ['saiu_entrega', 'saiu_para_entrega', 'saiu p/ entrega', 'out_for_delivery'].includes(invoices?.status?.toLowerCase() || '') ||
@@ -461,7 +461,7 @@ export const trackingService = {
                                 deliveredStatuses.includes(trackingData.cte?.status?.toLowerCase() || '');
 
       const isDeliveredOcc = trackingData.occurrences?.find(o => 
-        ['001', '002', '003'].includes(o.codigo) || 
+        ['001', '002', '003', '01', '02', '03'].includes(o.codigo) || 
         (o.descricao && (o.descricao.toLowerCase().includes('entrega realizada') || o.descricao.toLowerCase().includes('entregue')))
       );
 

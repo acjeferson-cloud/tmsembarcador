@@ -43,6 +43,7 @@ const WhatsAppConfig = lazy(() => import('./components/WhatsApp/WhatsAppConfig')
 const GoogleMapsConfig = lazy(() => import('./components/GoogleMaps/GoogleMapsConfig').then(m => ({ default: m.GoogleMapsConfig })));
 const OpenAIConfig = lazy(() => import('./components/OpenAI/OpenAIConfig').then(m => ({ default: m.OpenAIConfig })));
 const Holidays = lazy(() => import('./components/Holidays/Holidays').then(m => ({ default: m.Holidays })));
+const CatalogItems = lazy(() => import('./components/CatalogItems/CatalogItems').then(m => ({ default: m.CatalogItems })));
 const NPSDashboard = lazy(() => import('./components/NPS/NPSDashboard').then(m => ({ default: m.NPSDashboard })));
 const NPSConfiguration = lazy(() => import('./components/NPS/NPSConfig').then(m => ({ default: m.NPSConfiguration })));
 const NPSResposta = lazy(() => import('./components/NPS/NPSResposta').then(m => ({ default: m.NPSResposta })));
@@ -397,6 +398,8 @@ function AppContent() {
         return <ApiKeysManagement key={`api-keys-${refreshKey}`} />;
       case 'holidays':
         return <Holidays key={`holidays-${refreshKey}`} />;
+      case 'catalog-items':
+        return <CatalogItems key={`catalog-items-${refreshKey}`} />;
       case 'rejection-history':
         return <RejectionHistoryReport key={`rejection-history-${refreshKey}`} />;
       case 'whatsapp-config':

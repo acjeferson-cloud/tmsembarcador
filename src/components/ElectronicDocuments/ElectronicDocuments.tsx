@@ -75,6 +75,8 @@ export const ElectronicDocuments: React.FC = () => {
             endereco: doc.recipient_address,
             ...parsedData.destinatario
           } : (parsedData.destinatario || null),
+          remetente: parsedData.remetente || null,
+          tomador: parsedData.tomador || null,
           valorTotal: doc.total_value,
           valorIcms: doc.icms_value,
           valorFrete: doc.freight_value,

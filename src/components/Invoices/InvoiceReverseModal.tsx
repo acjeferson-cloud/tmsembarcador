@@ -40,7 +40,7 @@ export const InvoiceReverseModal: React.FC<InvoiceReverseModalProps> = ({
         onSuccess(data); // data contains the new invoice UUID
       }, 1500);
     } catch (error: any) {
-      console.error('Erro ao gerar a nota de logística reversa:', error);
+// console.error('Erro ao gerar a nota de logística reversa:', error);
       setToast({ message: t("Erro ao gerar logística reversa. Verifique os logs."), type: 'error' });
     } finally {
       setIsLoading(false);

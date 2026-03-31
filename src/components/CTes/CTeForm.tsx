@@ -102,7 +102,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-      console.error('Erro ao carregar transportadores:', error);
+// console.error('Erro ao carregar transportadores:', error);
     }
   };
 
@@ -186,7 +186,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
             await freightCostCalculator.saveCostsToCTe(result.id, calculation);
           }
         } catch (calcError) {
-          console.error('⚠️ Erro ao calcular custos:', calcError);
+// console.error('⚠️ Erro ao calcular custos:', calcError);
         }
 
         setUploadStatus({
@@ -215,7 +215,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
         }
       }
     } catch (error: any) {
-      console.error('Erro ao salvar CT-e:', error);
+// console.error('Erro ao salvar CT-e:', error);
       setUploadStatus({
         type: 'error',
         message: `Erro ao salvar CT-e: ${error.message}`
@@ -443,7 +443,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
               });
               setTimeout(() => setUploadStatus({ type: null, message: '' }), 7000);
             } catch (error) {
-              console.error('Erro ao buscar NF-es:', error);
+// console.error('Erro ao buscar NF-es:', error);
               const invoicesList = parsedData.invoices.map(inv => ({
                 ...inv,
                 cte_id: cte?.id || ''
@@ -490,7 +490,7 @@ export const CTeForm: React.FC<CTeFormProps> = ({
         }
 
       } catch (error: any) {
-        console.error('Erro ao processar XML:', error);
+// console.error('Erro ao processar XML:', error);
         setUploadStatus({
           type: 'error',
           message: error.message || 'Erro ao processar XML do CT-e'

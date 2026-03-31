@@ -12,6 +12,7 @@ import { BulkCTeXmlUploadModal } from './BulkCTeXmlUploadModal';
 import { CTesRejectModal } from './CTesRejectModal';
 import { FreightRateValuesForm } from '../FreightRates/FreightRateValuesForm';
 import { DactePreview } from '../ElectronicDocuments/DactePreview';
+import { getDacteHtml } from '../../utils/dacteGenerator';
 import { AutoDownloadStatus } from '../common/AutoDownloadStatus';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import { AutoImportDebugModal } from '../common/AutoImportDebugModal';
@@ -73,6 +74,46 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
 };
 
 const convertCTeToElectronicDocument = (cte: CTeWithRelations): ElectronicDocument => {
+  let remetenteInfo: any = {};
+  let destinatarioInfo: any = {};
+
+  if (cte.xml_data && cte.xml_data.original) {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(cte.xml_data.original, 'text/xml');
+      
+      const rem = xmlDoc.querySelector('rem');
+      if (rem) {
+        const ender = rem.querySelector('enderReme');
+        remetenteInfo = {
+          nome: rem.querySelector('xNome')?.textContent || cte.sender_name,
+          cnpj: rem.querySelector('CNPJ')?.textContent || rem.querySelector('CPF')?.textContent || cte.sender_document,
+          ie: rem.querySelector('IE')?.textContent || undefined,
+          endereco: ender ? `${ender.querySelector('xLgr')?.textContent || ''}, ${ender.querySelector('nro')?.textContent || 'S/N'} ${ender.querySelector('xBairro')?.textContent ? '- ' + ender.querySelector('xBairro')?.textContent : ''}` : '',
+          cidade: ender?.querySelector('xMun')?.textContent || cte.sender_city,
+          uf: ender?.querySelector('UF')?.textContent || cte.sender_state,
+          cep: ender?.querySelector('CEP')?.textContent || ''
+        };
+      }
+
+      const dest = xmlDoc.querySelector('dest');
+      if (dest) {
+        const ender = dest.querySelector('enderDest');
+        destinatarioInfo = {
+          nome: dest.querySelector('xNome')?.textContent || cte.recipient_name,
+          cnpj: dest.querySelector('CNPJ')?.textContent || dest.querySelector('CPF')?.textContent || cte.recipient_document,
+          ie: dest.querySelector('IE')?.textContent || undefined,
+          endereco: ender ? `${ender.querySelector('xLgr')?.textContent || ''}, ${ender.querySelector('nro')?.textContent || 'S/N'} ${ender.querySelector('xBairro')?.textContent ? '- ' + ender.querySelector('xBairro')?.textContent : ''}` : (cte as any).recipient_address || '',
+          cidade: ender?.querySelector('xMun')?.textContent || cte.recipient_city,
+          uf: ender?.querySelector('UF')?.textContent || cte.recipient_state,
+          cep: ender?.querySelector('CEP')?.textContent || (cte as any).recipient_zip_code || ''
+        };
+      }
+    } catch (e) {
+// console.error('Erro extraindo dados do XML para DACTE', e);
+    }
+  }
+
   return {
     id: parseInt(cte.id),
     tipo: 'CTe',
@@ -80,27 +121,37 @@ const convertCTeToElectronicDocument = (cte: CTeWithRelations): ElectronicDocume
     numeroDocumento: cte.number,
     serie: cte.series || '001',
     chaveAcesso: cte.access_key || '',
-    protocoloAutorizacao: cte.authorization_protocol || 'N/A',
+    protocoloAutorizacao: (cte as any).authorization_protocol || 'N/A',
     dataAutorizacao: cte.issue_date || new Date().toISOString(),
     dataImportacao: cte.entry_date || new Date().toISOString(),
     status: 'autorizado',
     emitente: {
       razaoSocial: cte.carrier?.razao_social || 'Transportadora',
       cnpj: cte.carrier?.cnpj || '',
-      inscricaoEstadual: cte.carrier?.inscricao_estadual,
-      endereco: cte.carrier?.endereco || '',
-      cidade: cte.carrier?.cidade || '',
-      uf: cte.carrier?.uf || '',
-      cep: cte.carrier?.cep || ''
+      inscricaoEstadual: cte.carrier?.metadata?.inscricao_estadual || (cte.carrier as any)?.inscricao_estadual,
+      endereco: (cte.carrier as any)?.endereco || '',
+      cidade: (cte.carrier as any)?.cidade || '',
+      uf: (cte.carrier as any)?.uf || '',
+      cep: (cte.carrier as any)?.cep || ''
     },
-    destinatario: cte.recipient_name ? {
-      razaoSocial: cte.recipient_name,
-      cnpjCpf: cte.recipient_document || '',
-      endereco: cte.recipient_address || '',
-      cidade: cte.recipient_city || '',
-      uf: cte.recipient_state || '',
-      cep: cte.recipient_zip_code || ''
+    remetente: (cte.sender_name || remetenteInfo.nome) ? {
+      razaoSocial: remetenteInfo.nome || cte.sender_name || '',
+      cnpj: remetenteInfo.cnpj || cte.sender_document || '',
+      inscricaoEstadual: remetenteInfo.ie,
+      endereco: remetenteInfo.endereco || '',
+      cidade: remetenteInfo.cidade || cte.sender_city || '',
+      uf: remetenteInfo.uf || cte.sender_state || '',
+      cep: remetenteInfo.cep || ''
     } : undefined,
+    destinatario: (cte.recipient_name || destinatarioInfo.nome) ? {
+      razaoSocial: destinatarioInfo.nome || cte.recipient_name || '',
+      cnpjCpf: destinatarioInfo.cnpj || cte.recipient_document || '',
+      inscricaoEstadual: destinatarioInfo.ie,
+      endereco: destinatarioInfo.endereco || (cte as any).recipient_address || '',
+      cidade: destinatarioInfo.cidade || cte.recipient_city || '',
+      uf: destinatarioInfo.uf || cte.recipient_state || '',
+      cep: destinatarioInfo.cep || (cte as any).recipient_zip_code || ''
+    } as Destinatario : undefined,
     valorTotal: parseFloat(cte.total_value.toString()),
     valorIcms: cte.carrier_costs?.find(c => c.cost_type === 'icms')?.cost_value
       ? parseFloat(cte.carrier_costs.find(c => c.cost_type === 'icms')!.cost_value.toString())
@@ -178,7 +229,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           });
         }
       } catch (error) {
-        console.error('Erro ao carregar estabelecimento:', error);
+// console.error('Erro ao carregar estabelecimento:', error);
       }
     };
 
@@ -214,7 +265,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       const formattedCTes = ctesData.map(convertCTeToDisplayFormat);
       setCTes(formattedCTes);
     } catch (error) {
-      console.error('Erro ao carregar CT-es:', error);
+// console.error('Erro ao carregar CT-es:', error);
 
       // Exibir erro para o usuário
       const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar CT-es';
@@ -236,7 +287,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setToast({ message: 'Tarifa não encontrada.', type: 'error' });
       }
     } catch (error) {
-      console.error('Erro ao carregar tarifa:', error);
+// console.error('Erro ao carregar tarifa:', error);
       setToast({ message: 'Erro ao carregar dados da tarifa.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -252,7 +303,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       setSelectedTariff(null);
       setSelectedTariffId(null);
     } catch (error) {
-      console.error('Erro ao salvar tarifa:', error);
+// console.error('Erro ao salvar tarifa:', error);
       setToast({ message: 'Erro ao salvar tarifa.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -350,27 +401,63 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         case 'print':
           (async () => {
             try {
-              // Pegar o primeiro CT-e selecionado para impressão
-              const firstCTeId = selectedCTes[0];
-              const fullCTe = await ctesCompleteService.getById(firstCTeId.toString());
+              if (selectedCTes.length === 1) {
+                const firstCTeId = selectedCTes[0];
+                const fullCTe = await ctesCompleteService.getById(firstCTeId.toString());
 
-              if (fullCTe) {
-                const electronicDoc = convertCTeToElectronicDocument(fullCTe);
-                setSelectedCTeForDacte(electronicDoc);
-                setShowDacteModal(true);
-
-                if (selectedCTes.length > 1) {
-                  setToast({
-                    message: `Imprimindo DACTE do primeiro CT-e selecionado. Para imprimir múltiplos CT-es, selecione-os individualmente.`,
-                    type: 'info'
-                  });
+                if (fullCTe) {
+                  const electronicDoc = convertCTeToElectronicDocument(fullCTe);
+                  setSelectedCTeForDacte(electronicDoc);
+                  setShowDacteModal(true);
+                } else {
+                  setToast({ message: 'Erro ao carregar dados do CT-e para impressão.', type: 'error' });
                 }
+                setIsLoading(false);
               } else {
-                setToast({ message: 'Erro ao carregar dados do CT-e para impressão.', type: 'error' });
+                const ctesData = [];
+                for (const cid of selectedCTes) {
+                   const fcte = await ctesCompleteService.getById(cid.toString());
+                   if (fcte) ctesData.push(fcte);
+                }
+                
+                if (ctesData.length > 0) {
+                    const printWindow = window.open('', '_blank');
+                    if (printWindow) {
+                      const firstDocHtml = getDacteHtml(convertCTeToElectronicDocument(ctesData[0]));
+                      let originalStyles = '';
+                      const styleStart = firstDocHtml.indexOf('<style>');
+                      const styleEnd = firstDocHtml.indexOf('</style>');
+                      if (styleStart !== -1 && styleEnd !== -1) {
+                        originalStyles = firstDocHtml.substring(styleStart + 7, styleEnd);
+                      }
+
+                      let fullHtml = `<html><head><style>${originalStyles}\\n@page{size: A4 portrait; margin: 10mm;}</style></head><body>`;
+                      
+                      ctesData.forEach((cte, index) => {
+                        const doc = convertCTeToElectronicDocument(cte);
+                        const html = getDacteHtml(doc);
+                        let innerHtml = html;
+                        const bodyStart = html.indexOf('<body>');
+                        const bodyEnd = html.indexOf('</body>');
+                        if (bodyStart !== -1 && bodyEnd !== -1) {
+                          innerHtml = html.substring(bodyStart + 6, bodyEnd);
+                        }
+                        
+                        const pageBreakStyle = index < ctesData.length - 1 ? 'break-after: page; page-break-after: always;' : '';
+                        fullHtml += `<div style="${pageBreakStyle}">${innerHtml}</div>`;
+                      });
+                      fullHtml += '</body></html>';
+                      
+                      printWindow.document.write(fullHtml);
+                      printWindow.document.close();
+                      setTimeout(() => { printWindow.print(); }, 500);
+                      setToast({ message: `DACTE gerado para ${selectedCTes.length} CT-e(s).`, type: 'success' });
+                    }
+                }
+                setIsLoading(false);
               }
-              setIsLoading(false);
             } catch (error) {
-              console.error('Erro ao preparar DACTE:', error);
+// console.error('Erro ao preparar DACTE:', error);
               setToast({ message: 'Erro ao gerar DACTE.', type: 'error' });
               setIsLoading(false);
             }
@@ -391,7 +478,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                     successCount++;
                   }
                 } catch (error) {
-                  console.error(`Erro ao recalcular CT-e ${cteId}:`, error);
+// console.error(`Erro ao recalcular CT-e ${cteId}:`, error);
                   errorCount++;
                 }
               }
@@ -404,7 +491,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 setToast({ message: `Recálculo concluído: ${successCount} sucesso(s) e ${errorCount} erro(s).`, type: 'warning' });
               }
             } catch (error) {
-              console.error('Erro ao recalcular CT-es:', error);
+// console.error('Erro ao recalcular CT-es:', error);
               setToast({ message: 'Erro ao recalcular CT-es em lote.', type: 'error' });
             }
           })();
@@ -459,74 +546,94 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               let errorCount = 0;
               let notFoundCount = 0;
 
-              for (const cteId of selectedCTes) {
+              if (selectedCTes.length === 1) {
+                const cteId = selectedCTes[0];
                 try {
                   const fullCTe = await ctesCompleteService.getById(cteId.toString());
-
-                  if (fullCTe) {
-                    // Verificar se existe XML
-                    if (fullCTe.xml_data && fullCTe.xml_data.original) {
-                      const xmlContent = fullCTe.xml_data.original;
-                      const fileName = `CTE_${fullCTe.access_key || fullCTe.number}_${fullCTe.series || '001'}.xml`;
-
-                      // Criar blob e fazer download
-                      const blob = new Blob([xmlContent], { type: 'application/xml' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = fileName;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-
-                      successCount++;
-
-                      // Pequeno delay entre downloads para não sobrecarregar o navegador
-                      if (selectedCTes.length > 1) {
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                      }
-                    } else {
-                      notFoundCount++;
-                      console.warn(`CT-e ${fullCTe.number} não possui XML armazenado`);
-                    }
+                  if (fullCTe && fullCTe.xml_data && fullCTe.xml_data.original) {
+                    const xmlContent = fullCTe.xml_data.original;
+                    const fileName = `CTE_${fullCTe.access_key || fullCTe.number}_${fullCTe.series || '001'}.xml`;
+                    const blob = new Blob([xmlContent], { type: 'application/xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    successCount++;
+                  } else if (fullCTe) {
+                    notFoundCount++;
+// console.warn(`CT-e ${fullCTe.number} não possui XML armazenado`);
                   } else {
                     errorCount++;
                   }
                 } catch (error) {
-                  console.error(`Erro ao baixar XML do CT-e ${cteId}:`, error);
+// console.error(`Erro ao baixar XML do CT-e ${cteId}:`, error);
                   errorCount++;
                 }
-              }
 
-              if (successCount > 0 && errorCount === 0 && notFoundCount === 0) {
-                setToast({
-                  message: `${successCount} XML(s) baixado(s) com sucesso!`,
-                  type: 'success'
-                });
-              } else if (successCount > 0) {
-                const messages = [`${successCount} sucesso(s)`];
-                if (notFoundCount > 0) messages.push(`${notFoundCount} sem XML`);
-                if (errorCount > 0) messages.push(`${errorCount} erro(s)`);
-                setToast({
-                  message: `Download concluído: ${messages.join(', ')}.`,
-                  type: 'warning'
-                });
-              } else if (notFoundCount > 0) {
-                setToast({
-                  message: `Nenhum CT-e selecionado possui XML armazenado.`,
-                  type: 'warning'
-                });
+                if (successCount > 0) {
+                  setToast({ message: 'XML baixado com sucesso!', type: 'success' });
+                } else if (notFoundCount > 0) {
+                  setToast({ message: 'O CT-e selecionado não possui XML armazenado.', type: 'warning' });
+                } else {
+                  setToast({ message: 'Erro ao baixar XML. Tente novamente.', type: 'error' });
+                }
+
               } else {
-                setToast({
-                  message: 'Erro ao baixar XMLs. Tente novamente.',
-                  type: 'error'
-                });
+                const JSZip = (await import('jszip')).default;
+                const zip = new JSZip();
+
+                for (const cteId of selectedCTes) {
+                  try {
+                    const fullCTe = await ctesCompleteService.getById(cteId.toString());
+                    if (fullCTe && fullCTe.xml_data && fullCTe.xml_data.original) {
+                      const xmlContent = fullCTe.xml_data.original;
+                      const fileName = `CTE_${fullCTe.access_key || fullCTe.number}_${fullCTe.series || '001'}.xml`;
+                      zip.file(fileName, xmlContent);
+                      successCount++;
+                    } else if (fullCTe) {
+                      notFoundCount++;
+                    } else {
+                      errorCount++;
+                    }
+                  } catch (error) {
+// console.error(`Erro ao processar XML do CT-e ${cteId}:`, error);
+                    errorCount++;
+                  }
+                }
+
+                if (successCount > 0) {
+                  const content = await zip.generateAsync({ type: 'blob' });
+                  const url = URL.createObjectURL(content);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `XMLs_CTes_${new Date().getTime()}.zip`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+
+                  if (errorCount === 0 && notFoundCount === 0) {
+                    setToast({ message: `Arquivo ZIP com ${successCount} XML(s) baixado com sucesso!`, type: 'success' });
+                  } else {
+                    const messages = [`${successCount} sucesso(s)`];
+                    if (notFoundCount > 0) messages.push(`${notFoundCount} sem XML`);
+                    if (errorCount > 0) messages.push(`${errorCount} erro(s)`);
+                    setToast({ message: `Download concluído: ${messages.join(', ')} no arquivo ZIP.`, type: 'warning' });
+                  }
+                } else if (notFoundCount > 0) {
+                  setToast({ message: 'Nenhum CT-e selecionado possui XML armazenado.', type: 'warning' });
+                } else {
+                  setToast({ message: 'Erro ao processar XMLs. Tente novamente.', type: 'error' });
+                }
               }
 
               setIsLoading(false);
             } catch (error) {
-              console.error('Erro ao baixar XMLs:', error);
+// console.error('Erro ao baixar XMLs:', error);
               setToast({ message: 'Erro ao baixar XMLs.', type: 'error' });
               setIsLoading(false);
             }
@@ -645,7 +752,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               setShowReportDivergenceModal(true);
               setIsLoading(false);
             } catch (error: any) {
-              console.error('Erro ao preparar relatório de divergência:', error);
+// console.error('Erro ao preparar relatório de divergência:', error);
               const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';
               setToast({ message: errorMessage, type: 'error' });
               setIsLoading(false);
@@ -688,7 +795,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowDetailsModal(true);
         }
       } catch (error) {
-        console.error('Erro ao carregar detalhes do CT-e:', error);
+// console.error('Erro ao carregar detalhes do CT-e:', error);
         setToast({ message: 'Erro ao carregar detalhes do CT-e.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -705,7 +812,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowComparisonModal(true);
         }
       } catch (error) {
-        console.error('Erro ao carregar CT-e para comparação:', error);
+// console.error('Erro ao carregar CT-e para comparação:', error);
         setToast({ message: 'Erro ao carregar dados para comparação.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -747,7 +854,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 setToast({ message: `CT-e ${cte.numero} recalculado com sucesso! Valor Total: R$ ${calculation.valorTotal.toFixed(2)}`, type: 'success' });
               }
             } catch (error) {
-              console.error('Erro ao recalcular CT-e:', error);
+// console.error('Erro ao recalcular CT-e:', error);
               setToast({ message: `Erro ao recalcular CT-e: ${error instanceof Error ? error.message : 'Erro desconhecido'}.`, type: 'error' });
             }
           })();
@@ -830,7 +937,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               }
               setIsLoading(false);
             } catch (error) {
-              console.error('Erro ao baixar XML:', error);
+// console.error('Erro ao baixar XML:', error);
               setToast({ message: 'Erro ao baixar XML.', type: 'error' });
               setIsLoading(false);
             }
@@ -864,7 +971,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setToast({ message: `Erro ao excluir CT-e: ${result.error}`, type: 'error' });
         }
       } catch (error) {
-        console.error('Erro ao excluir CT-e:', error);
+// console.error('Erro ao excluir CT-e:', error);
         setToast({ message: 'Erro ao excluir CT-e.', type: 'error' });
       }
     }
@@ -887,7 +994,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setToast({ message: `Erro ao reprovar CT-e: ${result.error}`, type: 'error' });
       }
     } catch (error) {
-      console.error('Erro ao reprovar CT-e:', error);
+// console.error('Erro ao reprovar CT-e:', error);
       setToast({ message: 'Erro ao reprovar CT-e.', type: 'error' });
     } finally {
       setIsLoading(false);

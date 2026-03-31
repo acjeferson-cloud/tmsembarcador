@@ -834,6 +834,7 @@
     "states": "States",
     "cities": "Cities",
     "holidays": "Holidays",
+    "catalogItems": "Catalog Items",
     "occurrences": "Occurrence History",
     "rejectionReasons": "Rejection Reasons",
     "implementationCenter": "Implementation Center",

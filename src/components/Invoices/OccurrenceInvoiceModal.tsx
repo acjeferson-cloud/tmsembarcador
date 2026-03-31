@@ -45,7 +45,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
       const data = await occurrencesService.getAll();
       setOccurrencesList(data);
     } catch (err) {
-      console.error('Erro ao buscar ocorrências', err);
+// console.error('Erro ao buscar ocorrências', err);
       setError(t('invoices.modals.occurrence.errorLoad'));
     }
   };

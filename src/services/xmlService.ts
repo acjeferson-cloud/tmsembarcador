@@ -33,6 +33,39 @@ export const parseXML = (xmlContent: string): Partial<ElectronicDocument> => {
     let valorFrete: number | undefined;
     let pesoTotal: number | undefined;
     let modalTransporte: string | undefined;
+    let remetente: any = undefined;
+    let tomador: any = undefined;
+
+    // Helper to safely extract address entities
+    const extractEntityInfo = (node: Element | null): any => {
+      if (!node) return undefined;
+      const cnpjCpf = getNodeText(node, 'CNPJ') || getNodeText(node, 'cnpj') || 
+                      getNodeText(node, 'CPF') || getNodeText(node, 'cpf') || '';
+      const razaoSocial = getNodeText(node, 'xNome') || getNodeText(node, 'xnome') || '';
+      const inscricaoEstadual = getNodeText(node, 'IE') || getNodeText(node, 'ie') || '';
+      
+      const enderDestNode = node.querySelector('enderDest') || node.querySelector('enderdest') ||
+                            node.querySelector('enderReme') || node.querySelector('enderreme') ||
+                            node.querySelector('enderToma') || node.querySelector('endertoma');
+      let endereco = '';
+      let cidade = '';
+      let uf = '';
+      let cep = '';
+      if (enderDestNode) {
+        const logradouro = getNodeText(enderDestNode, 'xLgr') || getNodeText(enderDestNode, 'xlgr') || '';
+        const numero = getNodeText(enderDestNode, 'nro') || '';
+        const complemento = getNodeText(enderDestNode, 'xCpl') || getNodeText(enderDestNode, 'xcpl') || '';
+        const bairro = getNodeText(enderDestNode, 'xBairro') || getNodeText(enderDestNode, 'xbairro') || '';
+        endereco = `${logradouro}, ${numero}${complemento ? ` - ${complemento}` : ''}${bairro ? ` - ${bairro}` : ''}`;
+        cidade = getNodeText(enderDestNode, 'xMun') || getNodeText(enderDestNode, 'xmun') || '';
+        uf = getNodeText(enderDestNode, 'UF') || getNodeText(enderDestNode, 'uf') || '';
+        cep = getNodeText(enderDestNode, 'CEP') || getNodeText(enderDestNode, 'cep') || '';
+        if (cep && cep.length === 8) {
+          cep = `${cep.substring(0, 5)}-${cep.substring(5)}`;
+        }
+      }
+      return { razaoSocial, cnpjCpf, cnpj: cnpjCpf, inscricaoEstadual, endereco, cidade, uf, cep };
+    };
 
     // Verifica se é uma NFe
     const nfeNode = xmlDoc.querySelector('NFe') || xmlDoc.querySelector('nfe');
@@ -236,49 +269,31 @@ export const parseXML = (xmlContent: string): Partial<ElectronicDocument> => {
         };
       }
 
-      // Extrai dados do destinatário (tomador de serviço no caso do CTe)
-      const tomNode = xmlDoc.querySelector('toma') || xmlDoc.querySelector('TOMA') || 
-                     xmlDoc.querySelector('toma3') || xmlDoc.querySelector('TOMA3') ||
-                     xmlDoc.querySelector('dest') || xmlDoc.querySelector('DEST');
-      
-      if (tomNode) {
-        const cnpjCpf = getNodeText(tomNode, 'CNPJ') || getNodeText(tomNode, 'cnpj') || 
-                       getNodeText(tomNode, 'CPF') || getNodeText(tomNode, 'cpf') || '';
-        const razaoSocial = getNodeText(tomNode, 'xNome') || getNodeText(tomNode, 'xnome') || '';
-        
-        // Endereço do destinatário
-        const enderTomNode = tomNode.querySelector('enderToma') || tomNode.querySelector('endertoma') ||
-                            tomNode.querySelector('enderDest') || tomNode.querySelector('enderdest');
-        let endereco = '';
-        let cidade = '';
-        let uf = '';
-        let cep = '';
-        
-        if (enderTomNode) {
-          const logradouro = getNodeText(enderTomNode, 'xLgr') || getNodeText(enderTomNode, 'xlgr') || '';
-          const numero = getNodeText(enderTomNode, 'nro') || '';
-          const complemento = getNodeText(enderTomNode, 'xCpl') || getNodeText(enderTomNode, 'xcpl') || '';
-          const bairro = getNodeText(enderTomNode, 'xBairro') || getNodeText(enderTomNode, 'xbairro') || '';
-          
-          endereco = `${logradouro}, ${numero}${complemento ? ` - ${complemento}` : ''}${bairro ? ` - ${bairro}` : ''}`;
-          cidade = getNodeText(enderTomNode, 'xMun') || getNodeText(enderTomNode, 'xmun') || '';
-          uf = getNodeText(enderTomNode, 'UF') || getNodeText(enderTomNode, 'uf') || '';
-          cep = getNodeText(enderTomNode, 'CEP') || getNodeText(enderTomNode, 'cep') || '';
-          
-          // Formata o CEP
-          if (cep && cep.length === 8) {
-            cep = `${cep.substring(0, 5)}-${cep.substring(5)}`;
-          }
+      // Extrai dados do destinatário (dest)
+      const destNode = xmlDoc.querySelector('dest') || xmlDoc.querySelector('DEST');
+      if (destNode) {
+        destinatario = extractEntityInfo(destNode);
+      }
+
+      // Extrai dados do remetente (rem)
+      const remNode = xmlDoc.querySelector('rem') || xmlDoc.querySelector('REM');
+      if (remNode) {
+        remetente = extractEntityInfo(remNode);
+      }
+
+      // Extrai dados do tomador de serviço
+      const toma4Node = xmlDoc.querySelector('toma4') || xmlDoc.querySelector('TOMA4');
+      if (toma4Node) {
+        tomador = extractEntityInfo(toma4Node);
+      } else {
+        const toma3Node = xmlDoc.querySelector('toma3') || xmlDoc.querySelector('TOMA3') ||
+                          xmlDoc.querySelector('toma') || xmlDoc.querySelector('TOMA');
+        if (toma3Node) {
+          const tpTomador = getNodeText(toma3Node, 'toma');
+          if (tpTomador === '0') tomador = remetente;
+          else if (tpTomador === '3') tomador = destinatario;
+          // Note: Expedidor (1) and Recebedor (2) skipped here for brevity if they aren't fully needed
         }
-        
-        destinatario = {
-          razaoSocial,
-          cnpjCpf,
-          endereco,
-          cidade,
-          uf,
-          cep
-        };
       }
 
       // Extrai valores
@@ -346,6 +361,8 @@ export const parseXML = (xmlContent: string): Partial<ElectronicDocument> => {
       status: 'autorizado',
       emitente,
       destinatario,
+      remetente,
+      tomador,
       valorTotal,
       valorIcms,
       valorFrete,

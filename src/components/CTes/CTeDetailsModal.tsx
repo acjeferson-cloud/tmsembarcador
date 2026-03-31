@@ -74,6 +74,47 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  let remetenteInfo: any = {};
+  let destinatarioInfo: any = {};
+  
+  if (cte?.xml_data && (cte.xml_data.original || typeof cte.xml_data === 'string')) {
+    try {
+      const xmlString = typeof cte.xml_data === 'string' ? cte.xml_data : cte.xml_data.original;
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+      
+      const rem = xmlDoc.querySelector('rem');
+      if (rem) {
+        const ender = rem.querySelector('enderReme');
+        remetenteInfo = {
+          nome: rem.querySelector('xNome')?.textContent,
+          cnpj: rem.querySelector('CNPJ')?.textContent || rem.querySelector('CPF')?.textContent,
+          ie: rem.querySelector('IE')?.textContent,
+          endereco: ender ? `${ender.querySelector('xLgr')?.textContent || ''}, ${ender.querySelector('nro')?.textContent || 'S/N'} ${ender.querySelector('xBairro')?.textContent ? '- ' + ender.querySelector('xBairro')?.textContent : ''}` : '',
+          cidade: ender?.querySelector('xMun')?.textContent,
+          uf: ender?.querySelector('UF')?.textContent,
+          cep: ender?.querySelector('CEP')?.textContent
+        };
+      }
+
+      const dest = xmlDoc.querySelector('dest');
+      if (dest) {
+        const ender = dest.querySelector('enderDest');
+        destinatarioInfo = {
+          nome: dest.querySelector('xNome')?.textContent,
+          cnpj: dest.querySelector('CNPJ')?.textContent || dest.querySelector('CPF')?.textContent,
+          ie: dest.querySelector('IE')?.textContent,
+          endereco: ender ? `${ender.querySelector('xLgr')?.textContent || ''}, ${ender.querySelector('nro')?.textContent || 'S/N'} ${ender.querySelector('xBairro')?.textContent ? '- ' + ender.querySelector('xBairro')?.textContent : ''}` : '',
+          cidade: ender?.querySelector('xMun')?.textContent,
+          uf: ender?.querySelector('UF')?.textContent,
+          cep: ender?.querySelector('CEP')?.textContent
+        };
+      }
+    } catch (e) {
+// console.error('Erro extraindo dados do XML para DACTE no modal', e);
+    }
+  }
+
   const dacteDoc: any = {
     tipo: 'CTe',
     modelo: '57',
@@ -83,24 +124,36 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
     dataAutorizacao: cte?.issue_date || new Date().toISOString(),
     protocoloAutorizacao: cte?.observations?.match(/Protocolo:\s*([0-9]+)/)?.[1] || '',
     emitente: {
-      razaoSocial: cte?.carrier?.razao_social || cte?.sender_name || 'Emitente',
-      cnpj: cte?.carrier_document || cte?.sender_document || '',
-      endereco: '',
-      cidade: cte?.sender_city || '',
-      uf: cte?.sender_state || '',
-      cep: ''
+      razaoSocial: cte?.carrier?.razao_social || 'Emitente',
+      cnpj: cte?.carrier?.cnpj || cte?.carrier_document || '',
+      inscricaoEstadual: cte?.carrier?.metadata?.inscricao_estadual || cte?.carrier?.inscricao_estadual || '',
+      endereco: cte?.carrier?.endereco || '',
+      cidade: cte?.carrier?.cidade || '',
+      uf: cte?.carrier?.uf || '',
+      cep: cte?.carrier?.cep || ''
+    },
+    remetente: {
+      razaoSocial: remetenteInfo.nome || cte?.sender_name || '',
+      cnpj: remetenteInfo.cnpj || cte?.sender_document || '',
+      inscricaoEstadual: remetenteInfo.ie || '',
+      endereco: remetenteInfo.endereco || '',
+      cidade: remetenteInfo.cidade || cte?.sender_city || '',
+      uf: remetenteInfo.uf || cte?.sender_state || '',
+      cep: remetenteInfo.cep || ''
     },
     destinatario: {
-      razaoSocial: cte?.recipient_name || '',
-      cnpjCpf: cte?.recipient_document || '',
-      endereco: '',
-      cidade: cte?.recipient_city || '',
-      uf: cte?.recipient_state || '',
-      cep: ''
+      razaoSocial: destinatarioInfo.nome || cte?.recipient_name || '',
+      cnpjCpf: destinatarioInfo.cnpj || cte?.recipient_document || '',
+      inscricaoEstadual: destinatarioInfo.ie || '',
+      endereco: destinatarioInfo.endereco || cte?.recipient_address || '',
+      cidade: destinatarioInfo.cidade || cte?.recipient_city || '',
+      uf: destinatarioInfo.uf || cte?.recipient_state || '',
+      cep: destinatarioInfo.cep || cte?.recipient_zip_code || ''
     },
     valorTotal: cte?.total_value || 0,
     valorFrete: cte?.freight_weight_value || cte?.total_value || 0,
-    pesoTotal: 0
+    pesoTotal: cte?.cargo_weight || cte?.total_weight || 0,
+    valorIcms: cte?.icms_value
   };
   if (!isOpen || !cte) return null;
 

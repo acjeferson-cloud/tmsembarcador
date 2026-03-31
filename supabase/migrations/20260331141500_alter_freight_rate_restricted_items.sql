@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS public.freight_rate_restricted_items ADD COLUMN IF NOT EXISTS catalog_item_id uuid REFERENCES public.catalog_items(id) ON DELETE CASCADE; CREATE INDEX IF NOT EXISTS idx_freight_rate_restricted_items_catalog_item_id ON public.freight_rate_restricted_items(catalog_item_id); NOTIFY pgrst, 'reload schema';

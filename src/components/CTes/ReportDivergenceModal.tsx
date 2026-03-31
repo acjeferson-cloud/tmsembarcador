@@ -60,7 +60,7 @@ export const ReportDivergenceModal: React.FC<ReportDivergenceModalProps> = ({
         text: 'Relatório gerado e baixado com sucesso!'
       });
     } catch (error: any) {
-      console.error('Erro ao gerar PDF:', error);
+// console.error('Erro ao gerar PDF:', error);
       const errorMessage = error?.message || error?.toString() || 'Erro ao gerar o relatório. Tente novamente.';
       setMessage({
         type: 'error',
@@ -143,7 +143,7 @@ export const ReportDivergenceModal: React.FC<ReportDivergenceModalProps> = ({
         });
       };
     } catch (error) {
-      console.error('Erro ao enviar email:', error);
+// console.error('Erro ao enviar email:', error);
       setMessage({
         type: 'error',
         text: 'Erro ao enviar email. Verifique a configuração de email do estabelecimento.'
@@ -206,7 +206,7 @@ ${establishmentName}
         text: `Mensagem enviada com sucesso para ${cteData.carrierPhone}!`
       });
     } catch (error) {
-      console.error('Erro ao enviar WhatsApp:', error);
+// console.error('Erro ao enviar WhatsApp:', error);
       setMessage({
         type: 'error',
         text: 'Erro ao enviar WhatsApp. Verifique a configuração do WhatsApp.'

@@ -119,7 +119,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
         
         setCtes(formattedCtes);
       } catch (error) {
-        console.error('Erro ao buscar CT-es:', error);
+// console.error('Erro ao buscar CT-es:', error);
       } finally {
         setIsLoading(false);
       }

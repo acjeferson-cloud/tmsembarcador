@@ -64,7 +64,7 @@ const mapNFeToElectronicDoc = (nfe: any): any => {
       const { parseNFeXml } = require('../../services/nfeXmlService');
       xmlData = parseNFeXml(nfe.xml_data || nfe.xml_content);
     } catch (e) {
-      console.error('Failed to parse NFe XML for print', e);
+// console.error('Failed to parse NFe XML for print', e);
     }
   }
 
@@ -185,7 +185,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           });
         }
       } catch (error) {
-        console.error('Erro ao carregar estabelecimento:', error);
+// console.error('Erro ao carregar estabelecimento:', error);
       }
     };
 
@@ -368,7 +368,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
                 continue;
               }
             } catch (err) {
-              console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
+// console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
             }
           }
           
@@ -408,14 +408,14 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             await (supabase as any).from('invoices_nfe').update(updateData).eq('id', invoiceId);
             successCount++;
           } catch (innerError) {
-             console.warn(`Skipping invoice ${invoiceId} due to quote error:`, innerError);
+// console.warn(`Skipping invoice ${invoiceId} due to quote error:`, innerError);
           }
         }
         
         setToast({ message: `${successCount} nota(s) fiscal(is) recalculada(s) com sucesso!`, type: 'success' });
         refreshData();
       } catch (error) {
-        console.error('Erro ao recalcular frete:', error);
+// console.error('Erro ao recalcular frete:', error);
         setToast({ message: 'Erro ao recalcular frete. Tente novamente.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -431,7 +431,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
         if (selectedInvoicesData.length === 0) throw new Error('Nenhuma nota encontrada');
 
         if (action === 'download') {
-          selectedInvoicesData.forEach(nfe => {
+          if (selectedInvoicesData.length === 1) {
+            const nfe = selectedInvoicesData[0];
             const doc = mapNFeToElectronicDoc(nfe);
             let xmlContent = doc.xmlContent || generateNfeXml(doc);
             const blob = new Blob([xmlContent], { type: 'application/xml' });
@@ -443,8 +444,26 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             a.click();
             window.document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-          });
-          setToast({ message: `XML de ${selectedInvoices.length} nota(s) fiscal(is) baixado(s) com sucesso!`, type: 'success' });
+            setToast({ message: `XML da nota fiscal baixado com sucesso!`, type: 'success' });
+          } else {
+            const JSZip = (await import('jszip')).default;
+            const zip = new JSZip();
+            selectedInvoicesData.forEach(nfe => {
+              const doc = mapNFeToElectronicDoc(nfe);
+              let xmlContent = doc.xmlContent || generateNfeXml(doc);
+              zip.file(`NFe_${doc.chaveAcesso}.xml`, xmlContent);
+            });
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = window.URL.createObjectURL(content);
+            const a = window.document.createElement('a');
+            a.href = url;
+            a.download = `XMLs_Notas_Fiscais_${new Date().getTime()}.zip`;
+            window.document.body.appendChild(a);
+            a.click();
+            window.document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            setToast({ message: `Arquivo ZIP com ${selectedInvoicesData.length} XMLs baixado com sucesso!`, type: 'success' });
+          }
         }
 
         if (action === 'print') {
@@ -455,18 +474,20 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             const styleMatch = firstDocHtml.match(/<style>([\s\S]*?)<\/style>/i);
             const originalStyles = styleMatch ? styleMatch[1] : '';
 
-            let fullHtml = `<html><head><style>${originalStyles}\n@page{size: A4 portrait; margin: 10mm;} .page-break { page-break-after: always; }</style></head><body>`;
+            let fullHtml = `<html><head><style>${originalStyles}\n@page{size: A4 portrait; margin: 10mm;}</style></head><body>`;
             
             selectedInvoicesData.forEach((nfe, index) => {
               const doc = mapNFeToElectronicDoc(nfe);
               const html = getDanfeHtml(doc);
-              const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
-              const innerHtml = bodyMatch ? bodyMatch[1] : html;
-              
-              fullHtml += `<div>${innerHtml}</div>`;
-              if (index < selectedInvoicesData.length - 1) {
-                fullHtml += '<div class="page-break"></div>';
+              let innerHtml = html;
+              const bodyStart = html.indexOf('<body>');
+              const bodyEnd = html.indexOf('</body>');
+              if (bodyStart !== -1 && bodyEnd !== -1) {
+                innerHtml = html.substring(bodyStart + 6, bodyEnd);
               }
+              
+              const pageBreakStyle = index < selectedInvoicesData.length - 1 ? 'break-after: page; page-break-after: always;' : '';
+              fullHtml += `<div style="${pageBreakStyle}">${innerHtml}</div>`;
             });
             fullHtml += '</body></html>';
             
@@ -477,7 +498,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           }
         }
       } catch (error) {
-        console.error('Erro na ação em lote:', error);
+// console.error('Erro na ação em lote:', error);
         setToast({ message: 'Erro ao processar documentos.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -600,7 +621,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
                   break;
                 }
               } catch (err) {
-                console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
+// console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
                 // Fallback para cotação geral se falhar
               }
             }
@@ -639,7 +660,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             setToast({ message: `Nota ${invoice.numero} recalculada com sucesso via cotação!`, type: 'success' });
             refreshData();
           } catch (error) {
-            console.error('Erro ao recalcular frete individual:', error);
+// console.error('Erro ao recalcular frete individual:', error);
             setToast({ message: 'Erro ao recalcular frete.', type: 'error' });
           }
           break;
@@ -698,7 +719,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           break;
       }
     } catch (error) {
-      console.error('Action error:', error);
+// console.error('Action error:', error);
       setToast({ message: 'Ocorreu um erro ao executar a ação.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -713,7 +734,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
       const formattedInvoices = nfes.map(convertNFeToInvoiceFormat);
       setInvoices(formattedInvoices);
     } catch (error) {
-      console.error('Erro ao carregar notas fiscais:', error);
+// console.error('Erro ao carregar notas fiscais:', error);
     } finally {
       setIsLoading(false);
     }
@@ -730,7 +751,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           setToast({ message: `Erro ao excluir Nota Fiscal: ${result.error}`, type: 'error' });
         }
       } catch (error) {
-        console.error('Erro ao excluir nota fiscal:', error);
+// console.error('Erro ao excluir nota fiscal:', error);
         setToast({ message: 'Erro ao excluir nota fiscal.', type: 'error' });
       }
     }

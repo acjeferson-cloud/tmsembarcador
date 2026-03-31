@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS Enable all for authenticated users on catalog_items ON public.catalog_items; CREATE POLICY Enable all on catalog_items ON public.catalog_items FOR ALL USING (true) WITH CHECK (true);

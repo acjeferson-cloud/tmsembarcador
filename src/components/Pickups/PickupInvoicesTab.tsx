@@ -20,7 +20,7 @@ export const PickupInvoicesTab: React.FC<PickupInvoicesTabProps> = ({ pickupId }
       const data = await pickupsService.getPickupInvoices(pickupId);
       setInvoices(data);
     } catch (error) {
-      console.error('Erro ao carregar notas fiscais da coleta:', error);
+// console.error('Erro ao carregar notas fiscais da coleta:', error);
     } finally {
       setIsLoading(false);
     }

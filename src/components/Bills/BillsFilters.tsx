@@ -30,7 +30,7 @@ export const BillsFilters: React.FC<BillsFiltersProps> = ({ onFilterChange, filt
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-      console.error('Erro ao carregar transportadores:', error);
+// console.error('Erro ao carregar transportadores:', error);
     }
   };
 

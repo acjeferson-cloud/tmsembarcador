@@ -1,5 +1,5 @@
-import React from 'react';
-import { Award, TrendingDown, Truck, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { Award, TrendingDown, Truck, Calendar, ChevronDown, ChevronUp, Receipt } from 'lucide-react';
 import { QuoteResult } from '../../services/freightQuoteService';
 import { formatCurrency } from '../../utils/formatters';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
@@ -18,6 +18,15 @@ const formatDate = (dateStr: string): string => {
 export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, cargoValue }) => {
   const { isActive: isNpsActive } = useInnovation(INNOVATION_IDS.NPS);
   const { t } = useTranslation();
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
+
+  const toggleRow = (carrierId: string) => {
+    setExpandedRows(prev => 
+      prev.includes(carrierId) 
+        ? prev.filter(id => id !== carrierId) 
+        : [...prev, carrierId]
+    );
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -60,47 +69,21 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('freightQuote.results.columns.freightWeight')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.freightValue')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.gris')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.toll')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.tas')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.seccat')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.dispatch')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.itr')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.pickupDelivery')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.otherValues')}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                TEC
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t('freightQuote.results.columns.icms')}
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wider">
+                {/* Ações */}
               </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-            {results.map((result, index) => (
-              <tr
-                key={result.carrierId}
-                className={`hover:bg-gray-50 ${result.isNominated ? 'bg-green-50' : ''}`}
-              >
+            {results.map((result, index) => {
+              const isExpanded = expandedRows.includes(result.carrierId);
+              
+              return (
+                <React.Fragment key={result.carrierId}>
+                  <tr
+                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${result.isNominated ? 'bg-green-50' : ''}`}
+                    onClick={() => toggleRow(result.carrierId)}
+                  >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <Truck className={`w-5 h-5 mr-3 ${result.isNominated ? 'text-green-600' : 'text-gray-400'}`} />
@@ -207,48 +190,82 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatCurrency(result.calculationDetails.fretePeso)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.freteValor)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.gris)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.pedagio)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.tas)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.seccat)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.despacho)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.itr)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.coletaEntrega)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {formatCurrency(result.calculationDetails.outrosValores)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                  {formatCurrency(result.calculationDetails.tec || 0)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  <div>
-                    <div className="font-medium">{formatCurrency(result.calculationDetails.icmsValor)}</div>
-                    {result.calculationDetails.icmsAliquota > 0 && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {result.calculationDetails.icmsAliquota}%
-                      </div>
-                    )}
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <button 
+                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none"
+                    title="Detalhes das Taxas"
+                  >
+                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </button>
                 </td>
               </tr>
-            ))}
+              
+              {/* Expanded Row for Detailed Taxes */}
+              {isExpanded && (
+                <tr className="bg-gray-50 dark:bg-gray-900/50">
+                  <td colSpan={100} className="px-6 py-4">
+                    <div className="flex items-start">
+                      <Receipt className="w-5 h-5 text-gray-400 mr-3 mt-1" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">
+                          Detalhamento de Taxas e Impostos
+                        </h4>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.gris')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.gris)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.toll')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.pedagio)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.tas')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.tas)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.seccat')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.seccat)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.dispatch')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.despacho)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.itr')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.itr)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.pickupDelivery')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.coletaEntrega)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.otherValues')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.outrosValores)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">TEC</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.tec || 0)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.icms')}</div>
+                            <div className="font-medium text-gray-900 dark:text-white flex items-baseline gap-2 mt-1">
+                              {formatCurrency(result.calculationDetails.icmsValor)}
+                              {result.calculationDetails.icmsAliquota > 0 && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">({result.calculationDetails.icmsAliquota}%)</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+            );
+          })}
           </tbody>
         </table>
       </div>

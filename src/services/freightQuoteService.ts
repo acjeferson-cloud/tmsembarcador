@@ -17,6 +17,11 @@ export interface QuoteParams {
   establishmentId?: string;
   businessPartnerId?: string;
   selectedModals?: string[];
+  items?: Array<{
+    itemCode?: string;
+    eanCode?: string;
+    ncmCode?: string;
+  }>;
 }
 
 export interface QuoteResult {
@@ -194,19 +199,78 @@ export const freightQuoteService = {
     }
 
     if (!ratesData || ratesData.length === 0) {
-
-
-
-
       return [];
     }
 
+    // Process Restricted Items (Filter out ineligible rates completely BEFORE calculation)
+    let filteredRatesData = ratesData;
+    if (params.items && params.items.length > 0) {
+      const tableIds = ratesData.map((r: any) => r.freight_rate_table_id).filter(Boolean);
+      if (tableIds.length > 0) {
+        const { data: restrictedItemsList } = await supabase
+          .from('freight_rate_restricted_items')
+          .select(`
+            freight_rate_table_id,
+            item_code, ean_code, ncm_code,
+            catalog_items (
+              item_code, ean_code, ncm_code
+            )
+          `)
+          .in('freight_rate_table_id', tableIds);
+          
+        if (restrictedItemsList && restrictedItemsList.length > 0) {
+          filteredRatesData = ratesData.filter((rateData: any) => {
+            const tableId = rateData.freight_rate_table_id;
+            if (!tableId) return true;
+            
+            const myRestrictions = restrictedItemsList.filter(r => r.freight_rate_table_id === tableId);
+            if (myRestrictions.length === 0) return true;
+            
+            // Check if ANY item in params.items matches ANY of myRestrictions
+            for (const item of params.items!) {
+              const itemCode = item.itemCode?.trim();
+              const eanCode = (item.eanCode === 'SEM GTIN' || !item.eanCode) ? null : item.eanCode.trim();
+              const ncmCode = item.ncmCode?.replace(/\D/g, ''); // strip punctuation just in case
+              
+              for (const restriction of myRestrictions) {
+                // Determine rules exactly as user requested:
+                // 1. Match by NCM
+                const rNcm = restriction.catalog_items?.ncm_code || restriction.ncm_code;
+                if (rNcm && ncmCode) {
+                  const cleanedRNcm = rNcm.replace(/\D/g, '');
+                  if (cleanedRNcm === ncmCode) return false; // Match! Block carrier
+                }
+                
+                // 2. Specific Item Match: Exact cEAN. If empty, fallback to cProd
+                const rEan = restriction.catalog_items?.ean_code || restriction.ean_code;
+                const rCode = restriction.catalog_items?.item_code || restriction.item_code;
+                
+                let matchesEan = false;
+                let matchesCode = false;
+                
+                if (rEan && eanCode && rEan === eanCode) matchesEan = true;
+                if (!eanCode && rCode && itemCode && rCode === itemCode) matchesCode = true;
+                
+                if (matchesEan || matchesCode) {
+                  return false; // Match! Block carrier
+                }
+              }
+            }
+            
+            return true; // Safe, no restrictions matched
+          });
+        }
+      }
+    }
 
+    if (filteredRatesData.length === 0) {
+        return []; // Every possible table was blocked by restricted items!
+    }
 
     const results: QuoteResult[] = [];
 
     // Processar todas as tarifas em paralelo
-    const calculationPromises = ratesData.map(async (rateData: any) => {
+    const calculationPromises = filteredRatesData.map(async (rateData: any) => {
       try {
         const tariff = rateData.rate_data.freight_rate;
         const details = rateData.rate_data.freight_rate_details || [];
@@ -223,7 +287,7 @@ export const freightQuoteService = {
             );
           }
         } catch (err) {
-          console.error('Erro ao buscar taxas adicionais:', err);
+// console.error('Erro ao buscar taxas adicionais:', err);
         }
 
         const calculation = await freightCostCalculator.performCalculation(

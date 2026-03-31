@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calculator, MapPin, Package, DollarSign, Search, History, Users } from 'lucide-react';
+import { Calculator, MapPin, Package, DollarSign, Search, History, Users, Plus, Trash2, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import { freightQuoteService, QuoteParams, QuoteResult, FreightQuoteHistory } from '../../services/freightQuoteService';
 import { getAllStates, getCitiesByState } from '../../services/citiesService';
 import { businessPartnersService, BusinessPartner } from '../../services/businessPartnersService';
@@ -11,6 +11,8 @@ import { establishmentsService } from '../../services/establishmentsService';
 import { useTranslation } from 'react-i18next';
 import { BrazilianCity } from '../../types/cities';
 import { cepService } from '../../services/cepService';
+import { catalogItemsService, CatalogItem } from '../../services/catalogItemsService';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 
 const FreightQuote: React.FC = () => {
   const { currentEstablishment, user } = useAuth();
@@ -47,6 +49,12 @@ const FreightQuote: React.FC = () => {
   const [loadingOriginCities, setLoadingOriginCities] = useState(false);
   const [loadingDestCities, setLoadingDestCities] = useState(false);
 
+  // Quote Items States
+  const [showItemsConfig, setShowItemsConfig] = useState(false);
+  const [quoteItems, setQuoteItems] = useState<{itemCode?: string, eanCode?: string, ncmCode?: string, description?: string}[]>([]);
+  const [availableCatalogItems, setAvailableCatalogItems] = useState<CatalogItem[]>([]);
+  const [selectedCatalogItemId, setSelectedCatalogItemId] = useState<string>('');
+
   const formatZipCode = (value: string): string => {
     const digits = value.replace(/\D/g, '').substring(0, 8);
     return digits;
@@ -72,7 +80,17 @@ const FreightQuote: React.FC = () => {
     loadStates();
     loadHistory();
     loadBusinessPartners();
+    loadCatalogItems();
   }, []);
+
+  const loadCatalogItems = async () => {
+    try {
+      const response = await catalogItemsService.getItems('', 1, 9999);
+      if (response && response.data) setAvailableCatalogItems(response.data);
+    } catch (e) {
+      // Ignora erro sileciosamente na UI
+    }
+  };
 
   useEffect(() => {
     if (states.length > 0 && currentEstablishment) {
@@ -114,7 +132,7 @@ const FreightQuote: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar origem do estabelecimento:', error);
+      // Falha ao carregar origem do estabelecimento
     }
   };
 
@@ -214,7 +232,7 @@ const FreightQuote: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Erro ao buscar CEP:', error);
+        // Erro silencioso
       }
     }
   };
@@ -227,6 +245,37 @@ const FreightQuote: React.FC = () => {
         return [...prev, modal];
       }
     });
+  };
+
+  const handleAddQuoteItem = () => {
+    if (!selectedCatalogItemId) {
+      setToast({ message: 'Selecione um item do catálogo para adicioná-lo', type: 'error' });
+      return;
+    }
+    
+    // Check if the item is already added
+    const catalogItem = availableCatalogItems.find(i => i.id === selectedCatalogItemId);
+    if (!catalogItem) return;
+
+    const isAlreadyAdded = quoteItems.some(i => i.itemCode === catalogItem.item_code);
+    if (isAlreadyAdded) {
+      setToast({ message: 'Iten já inserido na cotação!', type: 'error' });
+      return;
+    }
+
+    const builtItem = {
+      itemCode: catalogItem.item_code || '',
+      eanCode: catalogItem.ean_code || '',
+      ncmCode: catalogItem.ncm_code || '',
+      description: catalogItem.item_description || ''
+    };
+    
+    setQuoteItems(prev => [...prev, builtItem]);
+    setSelectedCatalogItemId('');
+  };
+
+  const handleRemoveQuoteItem = (index: number) => {
+    setQuoteItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -267,7 +316,8 @@ const FreightQuote: React.FC = () => {
         {
           ...formData,
           establishmentId: currentEstablishment?.id?.toString(),
-          selectedModals
+          selectedModals,
+          items: quoteItems.length > 0 ? quoteItems : undefined
         },
         userId,
         userName,
@@ -681,6 +731,97 @@ const FreightQuote: React.FC = () => {
                   />
                 </div>
 
+              </div>
+
+              {/* Seção de Itens da Cotação (Accordion) */}
+              <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowItemsConfig(!showItemsConfig)}
+                  className="w-full bg-gray-50 dark:bg-gray-800/50 px-5 py-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
+                >
+                  <div className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
+                    <Tag className="w-5 h-5 mr-2 text-indigo-500" />
+                    Composição da Carga / Restrições (Opcional)
+                    {quoteItems.length > 0 && (
+                      <span className="ml-3 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 py-0.5 px-2.5 rounded-full text-xs font-semibold">
+                        {quoteItems.length} {quoteItems.length === 1 ? 'item' : 'itens'}
+                      </span>
+                    )}
+                  </div>
+                  {showItemsConfig ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                </button>
+
+                {showItemsConfig && (
+                  <div className="p-5 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      Adicione itens do catálogo para que o motor de cálculo desconsidere transportadoras que possuam restrições a eles.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="md:col-span-3">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Selecione o Item do Catálogo</label>
+                        <AutocompleteSelect
+                          options={availableCatalogItems.map(item => ({
+                            value: item.id || '',
+                            label: `[${item.item_code}] ${item.item_description} ${item.ncm_code ? `(NCM: ${item.ncm_code})` : ''}`
+                          }))}
+                          value={selectedCatalogItemId || ''}
+                          onChange={val => setSelectedCatalogItemId(val)}
+                          placeholder="Digite para buscar as restrições..."
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={handleAddQuoteItem}
+                          disabled={!selectedCatalogItemId}
+                          className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 dark:bg-indigo-900/40 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/60 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Adicionar
+                        </button>
+                      </div>
+                    </div>
+
+                    {quoteItems.length > 0 && (
+                      <div className="mt-4 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                          <thead className="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase">
+                            <tr>
+                              <th className="px-4 py-2">Item</th>
+                              <th className="px-4 py-2">EAN / NCM</th>
+                              <th className="px-4 py-2 w-16"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {quoteItems.map((item, idx) => (
+                              <tr key={idx} className="bg-white dark:bg-gray-900">
+                                <td className="px-4 py-2 text-gray-900 dark:text-gray-300">
+                                  <div className="font-medium text-indigo-600 dark:text-indigo-400">{item.itemCode || '-'}</div>
+                                  <div className="text-gray-500 text-xs">{item.description}</div>
+                                </td>
+                                <td className="px-4 py-2 text-gray-900 dark:text-gray-300 text-xs">
+                                  <div><strong className="text-gray-500">EAN:</strong> {item.eanCode || '-'}</div>
+                                  <div><strong className="text-gray-500">NCM:</strong> {item.ncmCode || '-'}</div>
+                                </td>
+                                <td className="px-4 py-2 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveQuoteItem(idx)}
+                                    className="text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Botão e Modais no Bottom do form */}

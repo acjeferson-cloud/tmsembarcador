@@ -305,23 +305,69 @@ export const importNFeToDatabase = async (
 
     // Cálculo de 'Valor Custo' na importação (Frete)
     let freightResults: any[] = [];
+    let specificCalculation: any = null;
+    let specificCarrierData: any = null;
+    let valorFreteCalculado = 0;
+
     const destZipCode = nfeData.customer.zipCode ? nfeData.customer.zipCode.replace(/\D/g, '') : undefined;
     const weight = Number(nfeData.weight) || 100;
     const value = Number(nfeData.totalValue) || 0;
 
     try {
-      if (destZipCode) {
+      if (finalCarrierId) {
+         const { invoicesCostService } = await import('./invoicesCostService');
+         specificCarrierData = await invoicesCostService.getCarrierData(finalCarrierId);
+         if (specificCarrierData) {
+            const invoiceDataReq = {
+               weight,
+               value,
+               volume: Number(nfeData.volumes) || 1,
+               m3: 0,
+               destinationCity: cidadeDestino,
+               destinationState: ufDestino,
+               issueDate: nfeData.issueDate,
+               items: nfeData.products.map(p => ({
+                 itemCode: p.productCode,
+                 eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
+                 ncmCode: p.ncm
+               }))
+            };
+            specificCalculation = await invoicesCostService.calculateInvoiceCost(invoiceDataReq, finalCarrierId, nfeData.issueDate);
+            if (specificCalculation) {
+               valorFreteCalculado = specificCalculation.valorTotal;
+               freightResults = [{
+                 carrierId: finalCarrierId,
+                 carrierName: specificCarrierData.razao_social,
+                 totalValue: specificCalculation.valorTotal,
+                 calculationDetails: specificCalculation
+               }];
+            }
+         }
+      }
+      
+      if (!freightResults.length && destZipCode) {
         freightResults = await freightQuoteService.calculateQuote({
           destinationZipCode: destZipCode,
           weight,
           volumeQty: Number(nfeData.volumes) || 1,
           cargoValue: value,
           cubicMeters: 0,
-          establishmentId: establishmentId
+          establishmentId: establishmentId,
+          items: nfeData.products.map(p => ({ // pass items so that restricted carriers are omitted
+             itemCode: p.productCode,
+             eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
+             ncmCode: p.ncm
+          }))
         });
+        if (freightResults && freightResults.length > 0 && finalCarrierId) {
+             const selectedQuote = freightResults.find(r => r.carrierId === finalCarrierId);
+             if (selectedQuote) {
+               valorFreteCalculado = selectedQuote.totalValue;
+             }
+        }
       }
     } catch (e) {
-      console.error('Error calculating freight on NFe import', e);
+// console.error('Error calculating freight on NFe import', e);
     }
 
     if (existingInvoice) {
@@ -347,6 +393,7 @@ export const importNFeToDatabase = async (
           cubagem_total: 0,
           carrier_id: finalCarrierId,
           establishment_id: establishmentId,
+          valor_frete: valorFreteCalculado,
           freight_results: freightResults
         })
         .eq('id', invoiceId);
@@ -377,6 +424,7 @@ export const importNFeToDatabase = async (
           xml_content: nfeData.rawXml || '',
           carrier_id: finalCarrierId,
           establishment_id: establishmentId,
+          valor_frete: valorFreteCalculado,
           freight_results: freightResults
         })
         .select()
@@ -389,6 +437,8 @@ export const importNFeToDatabase = async (
     // Apaga cliente e produtos (se for reprocessamento) pra recriar
     await (supabase as any).from('invoices_nfe_customers').delete().eq('invoice_nfe_id', invoiceId);
     await (supabase as any).from('invoices_nfe_products').delete().eq('invoice_nfe_id', invoiceId);
+
+
 
     const { error: customerError } = await (supabase as any)
       .from('invoices_nfe_customers')
@@ -436,6 +486,16 @@ export const importNFeToDatabase = async (
       if (productsError) throw productsError;
     }
 
+    if (specificCalculation && specificCarrierData && finalCarrierId) {
+       try {
+         const { invoicesCostService } = await import('./invoicesCostService');
+         await (supabase as any).from('invoices_nfe_carrier_costs').delete().eq('invoice_id', invoiceId);
+         await invoicesCostService.saveCostsToInvoice(invoiceId, finalCarrierId, specificCalculation, specificCarrierData);
+       } catch(e) { 
+// console.error('Error saving specific calculation', e);
+       }
+    }
+
     // XML já está salvo em invoices_nfe.xml_data
     if (!existingInvoice) {
       try {
@@ -458,7 +518,7 @@ export const importNFeToDatabase = async (
           xml_content: nfeData.rawXml || ''
         });
       } catch (e) {
-        console.error('Failed copying NFe to electronic_documents', e);
+// console.error('Failed copying NFe to electronic_documents', e);
       }
     }
 

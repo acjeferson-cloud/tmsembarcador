@@ -7,9 +7,10 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
         <title>DANFE - ${document.chaveAcesso}</title>
         <style>
           @page { size: A4 portrait; margin: 10mm; }
-          body { font-family: "Times New Roman", Times, serif; margin: 0; padding: 0; font-size: 10px; color: #000; }
-          .danfe-container { width: 100%; max-width: 800px; margin: 0 auto; }
-          .box { border: 1px solid #000; padding: 2px 4px; border-radius: 2px; position: relative; overflow: hidden; }
+          * { box-sizing: border-box; }
+          body { font-family: "Times New Roman", Times, serif; margin: 0; padding: 0; font-size: 10px; color: #000; background-color: #ffffff; }
+          .danfe-container { width: 100%; max-width: 800px; margin: 0 auto; padding: 10px 15px; background-color: #ffffff; }
+          .box { border: 1px solid #000; padding: 2px 4px; border-radius: 2px; position: relative; overflow: hidden; box-sizing: border-box; }
           .lbl { font-size: 6px; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; display: block; }
           .val { font-size: 9px; font-weight: bold; }
           .row { display: flex; width: 100%; margin-top: -1px; }
@@ -17,20 +18,20 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
           .row > .box:first-child { margin-left: 0; }
           
           /* Title bands */
-          .section-title { font-size: 7px; font-weight: bold; text-transform: uppercase; margin: 10px 0 2px 0; }
+          .section-title { font-size: 7px; font-weight: bold; text-transform: uppercase; margin: 0; margin-top: -1px; padding: 2px 4px; border: 1px solid #000; }
           
           /* Headers & Canhoto */
           .canhoto-container { margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
           
-          .header-main { display: flex; margin-bottom: 5px; }
+          .header-main { display: flex; width: 100%; margin-bottom: 0; }
           .header-left { width: 40%; border: 1px solid #000; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; }
           .header-center { width: 15%; border: 1px solid #000; margin-left: -1px; text-align: center; padding: 4px; }
-          .header-right { width: 45%; border: 1px solid #000; margin-left: -1px; padding: 4px; }
+          .header-right { flex: 1; border: 1px solid #000; margin-left: -1px; padding: 4px; }
           
-          .barcode { height: 40px; border: 1px solid #ccc; margin: 5px 0; text-align: center; line-height: 40px; font-size: 10px; background: #eee; }
+          .barcode { height: 40px; margin: 5px 0; text-align: center; display: flex; justify-content: center; align-items: center; overflow: hidden; }
           
           /* Tables */
-          table.items { width: 100%; border-collapse: collapse; margin-top: 5px; }
+          table.items { width: 100%; border-collapse: collapse; margin-top: -1px; }
           table.items th, table.items td { border: 1px solid #000; padding: 2px; font-size: 7px; text-align: center; }
           table.items th { background: #eee; font-weight: bold; }
           table.items td.desc { text-align: left; }
@@ -62,7 +63,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
                   </div>
                 </div>
               </div>
-              <div class="box text-center" style="width: 25%; flex: none; display: flex; flex-direction: column; justify-content: center;">
+              <div class="box text-center" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                 <b style="font-size: 14px;">NF-e</b><br/>
                 <span style="font-size: 12px;">Nº ${document.numeroDocumento}</span><br/>
                 <span style="font-size: 10px;">Série ${document.serie}</span>
@@ -100,7 +101,9 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
             <!-- CHAVE/BARRAS -->
             <div class="header-right">
               <span class="lbl">CONTROLE DO FISCO</span>
-              <div class="barcode">|||| |||||| ||||||| |||||||| ||||| CÓDIGO DE BARRAS</div>
+              <div class="barcode">
+                <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${document.chaveAcesso}&scale=2&height=15&includetext=false" alt="Código de Barras da Chave de Acesso" style="max-width: 100%; max-height: 100%;" />
+              </div>
               <span class="lbl mt-1">CHAVE DE ACESSO</span>
               <div class="val text-center" style="font-size: 10px; margin-bottom: 5px;">
                 ${formatAccessKey(document.chaveAcesso)}
@@ -116,7 +119,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">NATUREZA DA OPERAÇÃO</span>
               <span class="val">VENDA DE MERCADORIA</span>
             </div>
-            <div class="box" style="width: 50%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">PROTOCOLO DE AUTORIZAÇÃO DE USO</span>
               <span class="val">${document.protocoloAutorizacao || ' - '} - ${new Date(document.dataAutorizacao).toLocaleString('pt-BR')}</span>
             </div>
@@ -131,7 +134,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">INSCRIÇÃO ESTADUAL DO SUBST. TRIB.</span>
               <span class="val"></span>
             </div>
-            <div class="box" style="width: 33.4%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">CNPJ</span>
               <span class="val">${document.emitente.cnpj}</span>
             </div>
@@ -148,7 +151,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">CNPJ/CPF</span>
               <span class="val">${document.destinatario?.cnpjCpf || ''}</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">DATA DA EMISSÃO</span>
               <span class="val">${new Date(document.dataImportacao).toLocaleDateString('pt-BR')}</span>
             </div>
@@ -166,7 +169,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">CEP</span>
               <span class="val">${document.destinatario?.cep || ''}</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">DATA DE SAÍDA/ENTRADA</span>
               <span class="val">${new Date(document.dataImportacao).toLocaleDateString('pt-BR')}</span>
             </div>
@@ -188,7 +191,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">INSCRIÇÃO ESTADUAL</span>
               <span class="val">ISENTO</span>
             </div>
-            <div class="box" style="width: 15%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">HORA DE SAÍDA</span>
               <span class="val"></span>
             </div>
@@ -222,7 +225,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">VALOR DO ICMS SUBSTITUIÇÃO</span>
               <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box" style="width: 33.6%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">VALOR TOTAL DOS PRODUTOS</span>
               <span class="val text-right" style="display:block;">${formatCurrency(document.valorTotal)}</span>
             </div>
@@ -248,7 +251,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">VALOR DO IPI</span>
               <span class="val text-right" style="display:block;">0,00</span>
             </div>
-            <div class="box" style="width: 17%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">VALOR TOTAL DA NOTA</span>
               <span class="val text-right" style="display:block;">${formatCurrency(document.valorTotal + (document.valorFrete || 0))}</span>
             </div>
@@ -277,7 +280,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">UF</span>
               <span class="val"></span>
             </div>
-            <div class="box" style="width: 10%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">CNPJ/CPF</span>
               <span class="val"></span>
             </div>
@@ -295,7 +298,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">UF</span>
               <span class="val"></span>
             </div>
-            <div class="box" style="width: 20%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">INSCRIÇÃO ESTADUAL</span>
               <span class="val"></span>
             </div>
@@ -321,7 +324,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               <span class="lbl">PESO BRUTO</span>
               <span class="val">${document.pesoTotal || '0,000'}</span>
             </div>
-            <div class="box" style="width: 12.5%; flex: none;">
+            <div class="box" style="flex: 1;">
               <span class="lbl">PESO LÍQUIDO</span>
               <span class="val">${document.pesoTotal || '0,000'}</span>
             </div>
@@ -367,13 +370,13 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
               </tr>
               <!-- Espaçamento visual para simular grade preenchida -->
               <tr style="height: 100px;">
-                <td colspan="14" style="border-bottom: 0;"></td>
+                <td colspan="14"></td>
               </tr>
             </tbody>
           </table>
           
           <!-- DADOS ADICIONAIS -->
-          <div class="section-title text-center" style="margin-top: 20px;">DADOS ADICIONAIS</div>
+          <div class="section-title text-center">DADOS ADICIONAIS</div>
           <div class="row">
             <div class="box" style="width: 65%; height: 80px; flex: none;">
               <span class="lbl">INFORMAÇÕES COMPLEMENTARES</span>
@@ -383,7 +386,7 @@ export const getDanfeHtml = (document: ElectronicDocument) => `
                 DANFE Impresso pelo TMS Embarcador Log Axis.
               </span>
             </div>
-            <div class="box" style="width: 35%; height: 80px; flex: none;">
+            <div class="box" style="flex: 1; height: 80px;">
               <span class="lbl">RESERVADO AO FISCO</span>
             </div>
           </div>

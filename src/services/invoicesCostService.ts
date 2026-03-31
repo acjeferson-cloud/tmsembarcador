@@ -41,6 +41,11 @@ interface InvoiceData {
   destinationCity: string;
   destinationState: string;
   issueDate?: string;
+  items?: Array<{
+    itemCode?: string;
+    eanCode?: string;
+    ncmCode?: string;
+  }>;
 }
 
 export const invoicesCostService = {
@@ -71,10 +76,54 @@ export const invoicesCostService = {
     carrierId: string,
     issueDate?: string
   ) {
+    // 1. Encontrar tabela de frete ativa para checar restrições
+    const freightTable = await freightCostCalculator.findActiveFreightTable(carrierId, issueDate);
+    if (!freightTable) {
+        throw new Error('Nenhuma tabela de frete ativa encontrada para este transportador');
+    }
 
+    // 2. Checar itens restritos se a NF possuir itens listados
+    if (invoiceData.items && invoiceData.items.length > 0) {
+      const { data: restrictedItemsList } = await supabase
+        .from('restricted_items')
+        .select(`
+          item_code, ean_code, ncm_code,
+          catalog_items (
+            item_code, ean_code, ncm_code
+          )
+        `)
+        .eq('freight_rate_table_id', freightTable.id);
 
+      if (restrictedItemsList && restrictedItemsList.length > 0) {
+        for (const item of invoiceData.items) {
+          const itemCode = item.itemCode?.trim();
+          const eanCode = (item.eanCode === 'SEM GTIN' || !item.eanCode) ? null : item.eanCode.trim();
+          const ncmCode = item.ncmCode?.replace(/\D/g, '');
 
-
+          for (const restriction of restrictedItemsList) {
+            // NCM Match
+            const rNcm = restriction.catalog_items?.ncm_code || restriction.ncm_code;
+            if (rNcm && ncmCode) {
+              const cleanedRNcm = rNcm.replace(/\D/g, '');
+              if (cleanedRNcm === ncmCode) {
+                 throw new Error('RESTRICTED_ITEM_FOUND: Transportador possui restrição de transporte para o NCM ' + ncmCode);
+              }
+            }
+            
+            // EAN/Code Match
+            const rEan = restriction.catalog_items?.ean_code || restriction.ean_code;
+            const rCode = restriction.catalog_items?.item_code || restriction.item_code;
+            
+            if (rEan && eanCode && rEan === eanCode) {
+               throw new Error('RESTRICTED_ITEM_FOUND: Transportador possui restrição de transporte para o EAN ' + eanCode);
+            }
+            if (!eanCode && rCode && itemCode && rCode === itemCode) {
+               throw new Error('RESTRICTED_ITEM_FOUND: Transportador possui restrição de transporte para o Produto ' + itemCode);
+            }
+          }
+        }
+      }
+    }
 
     // Criar um objeto CT-e mockado para usar o motor de cálculo existente
     const mockCte = {

@@ -34,7 +34,8 @@ import {
   TrendingUp,
   Shield,
   Search,
-  Sparkles
+  Sparkles,
+  Tag
 } from 'lucide-react';
 
 interface MenuItem {
@@ -192,6 +193,7 @@ export const menuConfig: MenuItem[] = [
       { id: 'states', labelKey: 'menu.states', icon: Map, color: 'bg-stone-500', categoryKey: 'menu.categories.configuracoes' },
       { id: 'cities', labelKey: 'menu.cities', icon: MapPin, color: 'bg-neutral-500', categoryKey: 'menu.categories.configuracoes' },
       { id: 'holidays', labelKey: 'menu.holidays', icon: Calendar, color: 'bg-pink-600', categoryKey: 'menu.categories.configuracoes' },
+      { id: 'catalog-items', labelKey: 'menu.catalogItems', icon: Tag, color: 'bg-indigo-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'occurrences', labelKey: 'menu.occurrences', icon: AlertTriangle, color: 'bg-amber-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'rejection-reasons', labelKey: 'menu.rejectionReasons', icon: XCircle, color: 'bg-red-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'implementation-center', labelKey: 'menu.implementationCenter', icon: Upload, color: 'bg-blue-600', categoryKey: 'menu.categories.configuracoes' },

@@ -61,7 +61,7 @@ export const InvoiceCTesModal: React.FC<InvoiceCTesModalProps> = ({
         })));
       }
     } catch (error) {
-      console.error('Error fetching CT-es:', error);
+// console.error('Error fetching CT-es:', error);
     } finally {
       setIsLoading(false);
     }

@@ -93,7 +93,7 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
             formData.organization_id = sessionData.organization_id;
           }
         } catch (e) {
-          console.warn('Erro ao ler tms-session do localstorage', e);
+// console.warn('Erro ao ler tms-session do localstorage', e);
         }
       }
 

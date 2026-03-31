@@ -35,6 +35,8 @@ export interface ElectronicDocument {
   status: DocumentStatus;
   emitente: Emitente;
   destinatario?: Destinatario; // Optional for some CTe cases
+  remetente?: Emitente;
+  tomador?: Emitente;
   valorTotal: number;
   valorIcms?: number;
   valorFrete?: number;
@@ -104,6 +106,22 @@ const initialDocuments: ElectronicDocument[] = [
       cidade: 'Rio de Janeiro',
       uf: 'RJ',
       cep: '22021-001'
+    },
+    remetente: {
+      razaoSocial: 'ALFA TRANSPORTES EIRELI',
+      cnpj: '82.110.818/0001-21',
+      endereco: 'AV. ENG. LOURENCO FAORO, 3300 - INDUSTRIAL',
+      cidade: 'CACADOR',
+      uf: 'SC',
+      cep: '89511-340'
+    },
+    tomador: {
+      razaoSocial: 'ALFA TRANSPORTES EIRELI',
+      cnpj: '82.110.818/0001-21',
+      endereco: 'AV. ENG. LOURENCO FAORO, 3300 - INDUSTRIAL',
+      cidade: 'CACADOR',
+      uf: 'SC',
+      cep: '89511-340'
     },
     valorTotal: 850.00,
     valorFrete: 850.00,

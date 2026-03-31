@@ -9,7 +9,7 @@ export const deliveryNotificationHandler = {
     occurrenceDescription: string,
     invoiceNumber: string
   ) {
-    if (occurrenceCode !== '001' && occurrenceCode !== '002') {
+    if (occurrenceCode !== '001' && occurrenceCode !== '002' && occurrenceCode !== '01' && occurrenceCode !== '02') {
       return; // Apenas eventos de entrega
     }
 
@@ -96,7 +96,7 @@ export const deliveryNotificationHandler = {
            </div>`
         : '';
 
-      const eventType = occurrenceCode === '001' ? 'Entrega Realizada Normalmente' : 'Entrega Fora da Data Programada';
+      const eventType = ['001', '01'].includes(occurrenceCode) ? 'Entrega Realizada Normalmente' : 'Entrega Fora da Data Programada';
 
       // 4. Process each contact
       for (const contact of contacts) {
@@ -148,8 +148,8 @@ export const deliveryNotificationHandler = {
                           A sua entrega referente à Nota Fiscal <strong>${invoiceNumber}</strong> foi registrada com o status:
                         </p>
 
-                        <div style="background-color: ${occurrenceCode === '001' ? '#dcfce7' : '#fee2e2'}; border-left: 4px solid ${occurrenceCode === '001' ? '#22c55e' : '#ef4444'}; padding: 15px 20px; border-radius: 4px; text-align: center; margin-bottom: 30px;">
-                          <span style="font-size: 18px; font-weight: 700; color: ${occurrenceCode === '001' ? '#166534' : '#991b1b'};">
+                        <div style="background-color: ${['001', '01'].includes(occurrenceCode) ? '#dcfce7' : '#fee2e2'}; border-left: 4px solid ${['001', '01'].includes(occurrenceCode) ? '#22c55e' : '#ef4444'}; padding: 15px 20px; border-radius: 4px; text-align: center; margin-bottom: 30px;">
+                          <span style="font-size: 18px; font-weight: 700; color: ${['001', '01'].includes(occurrenceCode) ? '#166534' : '#991b1b'};">
                             ${eventType}
                           </span>
                         </div>
@@ -233,7 +233,7 @@ export const deliveryNotificationHandler = {
         // Handle WhatsApp Notification
         if (contact.receive_whatsapp_notifications && contact.whatsapp_notify_delivered && contact.phone) {
           try {
-            const templateName = occurrenceCode === '001' ? 'order_management_7' : undefined;
+            const templateName = ['001', '01'].includes(occurrenceCode) ? 'order_management_7' : undefined;
             const msgContent = `Olá ${contact.nome || contact.name || 'Cliente'},\nA sua entrega referente à Nota Fiscal *${invoiceNumber}* foi registrada com o status: *${eventType}*.`;
 
             const waResult = await whatsappService.sendMessage({
