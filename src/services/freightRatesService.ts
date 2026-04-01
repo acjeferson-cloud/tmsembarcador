@@ -792,47 +792,8 @@ export const freightRatesService = {
       if (insertDetailsError) throw insertDetailsError;
     }
 
-    // 5. Copiar taxas adicionais (freight_rate_additional_fees)
-    const { data: fees, error: feesError } = await supabase
-      .from('freight_rate_additional_fees')
-      .select('*')
-      .eq('freight_rate_id', rateId);
-
-    if (feesError) throw feesError;
-
-    if (fees && fees.length > 0) {
-      const newFees = fees.map(({ id, created_at, updated_at, ...fee }) => ({
-        ...fee,
-        freight_rate_id: newRate.id
-      }));
-
-      const { error: insertFeesError } = await supabase
-        .from('freight_rate_additional_fees')
-        .insert(newFees);
-
-      if (insertFeesError) throw insertFeesError;
-    }
-
-    // 6. Copiar itens restritos (freight_rate_restricted_items)
-    const { data: restrictedItems, error: restrictedError } = await supabase
-      .from('freight_rate_restricted_items')
-      .select('*')
-      .eq('freight_rate_id', rateId);
-
-    if (restrictedError) throw restrictedError;
-
-    if (restrictedItems && restrictedItems.length > 0) {
-      const newItems = restrictedItems.map(({ id, created_at, updated_at, ...item }) => ({
-        ...item,
-        freight_rate_id: newRate.id
-      }));
-
-      const { error: insertItemsError } = await supabase
-        .from('freight_rate_restricted_items')
-        .insert(newItems);
-
-      if (insertItemsError) throw insertItemsError;
-    }
+    // 5. NÃO copiar taxas adicionais (freight_rate_additional_fees) pois pertencem à Tabela
+    // 6. NÃO copiar itens restritos (freight_rate_restricted_items) pois pertencem à Tabela
 
     // 7. NÃO copiar cidades (freight_rate_cities) conforme especificado
     // A nova tarifa será criada sem cidades associadas

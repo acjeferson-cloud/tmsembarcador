@@ -14,10 +14,12 @@ import {
   Plus,
   Edit
 } from 'lucide-react';
-import { licensesService, License, UserWithLicense, LicenseLog } from '../../services/licensesService';
+import { licensesService } from '../../services/licensesService';
+import type { License, UserWithLicense, LicenseLog } from '../../services/licensesService';
 import { useAuth } from '../../hooks/useAuth';
 import { UserForm } from '../Users/UserForm';
-import { usersService, User } from '../../services/usersService';
+import { usersService } from '../../services/usersService';
+import type { User } from '../../services/usersService';
 import { useTranslation } from 'react-i18next';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -56,9 +58,17 @@ const PurchaseModal: React.FC<{
   onClose: () => void;
   onPurchase: (quantity: number) => Promise<void>;
 }> = ({ isOpen, onClose, onPurchase }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+
+  const getLocale = () => {
+    switch (i18n.language) {
+      case 'en': return 'en-US';
+      case 'es': return 'es-ES';
+      default: return 'pt-BR';
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -108,12 +118,14 @@ const PurchaseModal: React.FC<{
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-600 dark:text-gray-400">{t('licenses.purchaseModal.estimatedValue')}</span>
-              <span className="font-semibold text-gray-900 dark:text-white">R$ 49,90/mês</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {new Intl.NumberFormat(getLocale(), { style: 'currency', currency: 'BRL' }).format(49.90)}/{t('common.month', { defaultValue: 'mês' })}
+              </span>
             </div>
             <div className="flex justify-between items-center text-sm mt-2">
               <span className="text-gray-600 dark:text-gray-400">{t('licenses.purchaseModal.totalMonthly')}</span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
-                R$ {(quantity * 49.9).toFixed(2)}
+                {new Intl.NumberFormat(getLocale(), { style: 'currency', currency: 'BRL' }).format(quantity * 49.90)}
               </span>
             </div>
           </div>
@@ -223,8 +235,17 @@ const TransferModal: React.FC<{
 };
 
 export const LicenseManagement: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
+
+  const getLocale = () => {
+    switch (i18n.language) {
+      case 'en': return 'en-US';
+      case 'es': return 'es-ES';
+      default: return 'pt-BR';
+    }
+  };
+
   const [licenseConfig, setLicenseConfig] = useState<License | null>(null);
   const [users, setUsers] = useState<UserWithLicense[]>([]);
   const [logs, setLogs] = useState<LicenseLog[]>([]);
@@ -249,16 +270,37 @@ export const LicenseManagement: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const [config, usersData, logsData] = await Promise.all([
+      let usersData = await licensesService.getUsersWithLicenseStatus() || [];
+      const totalUsers = usersData.length;
+      const inUseCount = usersData.filter(u => u.has_license).length;
+      
+      let [config, logsData] = await Promise.all([
         licensesService.getLicenseConfig(),
-        licensesService.getUsersWithLicenseStatus(),
         licensesService.getLicenseLogs(100)
       ]);
+      
+      // Sincroniza o banco de dados em plano de fundo: 1 user = 1 licença
+      licensesService.reconcileLicenses(totalUsers, inUseCount).catch(console.error);
+
+      // Garante que a interface exiba a regra solicitada: 1 usuário = 1 licença, 
+      // mesmo que a reconciliação do banco sofra lentidão ou regras de RLS
+      if (config) {
+        config = { ...config, total_licenses: totalUsers, available_licenses: totalUsers - inUseCount };
+      } else {
+        config = {
+          id: 'fallback-auto',
+          total_licenses: totalUsers,
+          available_licenses: totalUsers - inUseCount,
+          company_id: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as License;
+      }
 
       setLicenseConfig(config);
       setLogs(logsData);
 
-      if (usersData && usersData.length > 0) {
+      if (usersData.length > 0) {
         const usersWithoutLicense = usersData.filter(u => !u.has_license);
 
         if (usersWithoutLicense.length > 0 && user?.id) {
@@ -371,7 +413,7 @@ export const LicenseManagement: React.FC = () => {
     u.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => a.codigo.localeCompare(b.codigo));
 
   const licensedCount = users.filter(u => u.has_license).length;
 
@@ -714,7 +756,7 @@ export const LicenseManagement: React.FC = () => {
                     {getActionText(log)} - {log.notes}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {t('licenses.historyMessages.by')}: {log.performed_by} • {new Date(log.created_at).toLocaleString('pt-BR')}
+                    {t('licenses.historyMessages.by')}: {log.performed_by} • {new Date(log.created_at).toLocaleString(getLocale())}
                   </p>
                 </div>
               </div>

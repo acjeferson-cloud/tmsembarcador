@@ -8,6 +8,7 @@ import { EstablishmentSelector } from './EstablishmentSelector';
 import { Toast, ToastType } from '../common/Toast';
 import { useTranslation } from 'react-i18next';
 import { InlineMessage } from '../common/InlineMessage';
+import zxcvbn from 'zxcvbn';
 
 interface UserFormProps {
   onBack: () => void;
@@ -201,8 +202,13 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
       case 'senha':
         if (!user && !value) {
           error = 'Senha é obrigatória para novos usuários';
-        } else if (value && value.length < 6) {
-          error = 'Senha deve ter pelo menos 6 caracteres';
+        } else if (value && value.length < 8) {
+          error = t('users.form.fields.passwordMinLength');
+        } else if (value) {
+          const result = zxcvbn(value);
+          if (result.score < 3) {
+            error = t('users.form.fields.passwordWeakFeedback');
+          }
         }
         break;
       case 'confirmarSenha':
@@ -986,6 +992,37 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                
+                {formData.senha && (
+                  <div className="mt-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('users.form.fields.passwordStrength')}:</span>
+                      <span className={`text-xs font-medium ${
+                        zxcvbn(formData.senha).score < 3 ? 'text-red-500' : 'text-green-600'
+                      }`}>
+                        {zxcvbn(formData.senha).score === 0 && t('users.form.fields.passwordVeryWeak')}
+                        {zxcvbn(formData.senha).score === 1 && t('users.form.fields.passwordWeak')}
+                        {zxcvbn(formData.senha).score === 2 && t('users.form.fields.passwordFair')}
+                        {zxcvbn(formData.senha).score >= 3 && t('users.form.fields.passwordStrong')}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-1">
+                      <div 
+                        className={`h-full transition-all duration-300 ${
+                          zxcvbn(formData.senha).score === 0 ? 'bg-red-500 w-1/4' : 
+                          zxcvbn(formData.senha).score === 1 ? 'bg-orange-500 w-2/4' : 
+                          zxcvbn(formData.senha).score === 2 ? 'bg-yellow-500 w-3/4' : 
+                          'bg-green-500 w-full'
+                        }`} 
+                      ></div>
+                    </div>
+                    {zxcvbn(formData.senha).score < 3 && zxcvbn(formData.senha).feedback.warning && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {t('users.form.fields.passwordWeakFeedback')}
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 {errors.senha && (
                   <div className="mt-2">

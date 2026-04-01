@@ -4152,7 +4152,15 @@
         "admissionDate": "Data de Admissão",
         "mainEstablishment": "Estabelecimento Principal",
         "observations": "Observações Gerais",
-        "preferredLanguage": "Idioma Preferido"
+        "observationsPlaceholder": "Digite de forma sucinta observações gerais sobre este indivíduo nas operações",
+        "preferredLanguage": "Idioma Preferido",
+        "passwordStrength": "Força da senha",
+        "passwordVeryWeak": "Muito Fraca",
+        "passwordWeak": "Fraca",
+        "passwordFair": "Razoável",
+        "passwordStrong": "Forte",
+        "passwordWeakFeedback": "Senha muito fraca ou comum. Escolha uma senha mais forte.",
+        "passwordMinLength": "Senha deve ter pelo menos 8 caracteres"
       },
       "roles": {
         "admin": "Administrador",
@@ -4599,300 +4607,273 @@
     }
   },
   "implementationCenter": {
-    "title": "Centro de Implementação",
-    "description": "Importe dados e gerencie configurações em massa para acelerar a implementação",
-    "tabs": {
-      "deployAgent": "Deploy Agent IA",
-      "erpIntegration": "Integração ao ERP",
-      "carriers": "Transportadoras",
-      "freightTables": "Tabelas de Frete",
-      "cities": "Cidades",
-      "tableFees": "Taxas da Tabela",
-      "restrictedCeps": "CEPs Restritos",
-      "adjustTables": "Reajustar Tabelas"
+    "dashboard": {
+      "backToProjects": "Voltar para Projetos",
+      "sendFilesBtn": "Enviar Arquivos",
+      "stats": {
+        "progress": "Progresso",
+        "of": "de",
+        "steps": "etapas",
+        "errors": "Erros",
+        "requireAttention": "Requer atenção",
+        "warnings": "Avisos",
+        "forReview": "Para revisão",
+        "suggestions": "Sugestões",
+        "possibleImprovements": "Melhorias possíveis"
+      },
+      "overallProgress": "Progresso Geral",
+      "implementation": "Implantação",
+      "steps": {
+        "collect": "Coleta",
+        "interpretation": "Interpretação",
+        "execution": "Execução",
+        "completed": "Concluído"
+      },
+      "sentFiles": {
+        "title": "Arquivos Enviados",
+        "empty": "Nenhum arquivo enviado"
+      },
+      "validations": {
+        "title": "Validações e Alertas",
+        "empty": "Todos os dados parecem corretos localmente.",
+        "field": "Campo"
+      },
+      "suggestions": {
+        "title": "Sugestões de IA",
+        "empty": "Nenhuma sugestão de IA encontrada",
+        "approveBtn": "Aprovar Sugestão"
+      }
+    },
+    "uploader": {
+      "title": "Subida em Massa",
+      "subtitle": "Atribua valores de negócio e injete os insumos no painel digital.",
+      "dataType": "Tipo Foco",
+      "categories": {
+        "erpIntegration": "Mapeamento/Setup ERP",
+        "carriers": "Transportadoras Integradas",
+        "freightTables": "Planilha Principal - Tabela de Fretes",
+        "cities": "Cidades/Regiões de Atuação",
+        "fees": "Generalidades e Taxas",
+        "restrictedZips": "Gerenciamento de CEP / Bloqueios",
+        "tableAdjustments": "Tarifário Reajustado Manual"
+      },
+      "file": "Arquivo Destino (.XLSX)",
+      "clickOrDrag": "Arraste e anexe o arquivo .XLSX",
+      "formats": "Excel Standardizado (Máx 25MB)",
+      "infoBox": {
+        "title": "Orientações Fundamentais",
+        "item1": "Use SEMPRE os modelos .xlsx padrão do Embarcador.",
+        "item2": "Qualquer divergência sistêmica sofrerá apontamento da IA.",
+        "item3": "Acompanhamento dinâmico estará na sua tela.",
+        "item4": "Dê preferência a envios unitários para menos estresse de rede.",
+        "item5": "A primeira e última linhas e colunas devem refletir base estrita.",
+        "devMode": "Modo Programador:",
+        "devModeDesc": "Log forçado para depuração de console ativado."
+      },
+      "cancelBtn": "Desfazer Operação",
+      "submitBtn": "Disparar Implantação e Subir Arquivo",
+      "processingBtn": "Executando Validações Cruzadas...",
+      "sendingBtn": "Aguarde. Injetando no servidor...",
+      "messages": {
+        "selectCategoryAndFile": "Preenchimento do form é essencial para começar.",
+        "sendingFile": "Sincronizando...",
+        "fileSentSuccess": "Aquisição Finalizada pelo Agente.",
+        "processingAI": "Interpretador semântico disparado...",
+        "processingComplete": "Dados carregados na implantação!",
+        "processingError": "Rejeitado internamente. Verifique CSV/Estrutura."
+      }
+    },
+    "messages": {
+      "approveSuggestionError": "Erro ao aprovar a sugestão.",
+      "executeUploadSuccess": "Enviado com êxito!",
+      "executeUploadError": "Houve problemas ao enviar upload.",
+      "adjustError": "Falha no disparo do Reajuste de Tabela",
+      "importErrorAlert": "Erro genérico mapeado {{error}}",
+      "importSuccessAlert": "{{count}} linhas integradas com perfeição.",
+      "processError": "Engenharia de processamento falhou",
+      "saveError": "As configurações não foram salvas",
+      "saveSuccess": "Dados atualizados e salvos!",
+      "templateError": "Inconsistência lendo o template de base.",
+      "unsupportedImport": "Formato de arquivo não coberto",
+      "unsupportedTemplate": "Tentou usar um arquivo de estrutura estranha ao padrão."
+    },
+    "deployAgent": {
+      "clientPrefix": "Operação/Cliente",
+      "completedAt": "Concluído em:",
+      "createFirstProjectBtn": "Criar Projeto",
+      "deleteDialog": {
+        "projectPrefix": "Excluir",
+        "title": "Deletar Projeto",
+        "warning": "Atenção: Ações irreversíveis ao deletar o projeto."
+      },
+      "deleteProjectTitle": "Deleção de Projeto",
+      "description": "Gerencie todas as etapas do processo de implantação logística utilizando o motor de inteligência e validação automatizada.",
+      "features": {
+        "aiDesc": "IA dedicada para interpretar e mapear dados estruturados e tabelas.",
+        "aiTitle": "Inteligência Artificial",
+        "executeDesc": "Rode testes e assista a aplicação refletida no ambiente em tempo real.",
+        "executeTitle": "Poder de Execução",
+        "monitorDesc": "Painel completo de log e auditoria para garantir integridade e qualidade.",
+        "monitorTitle": "Monitoramento e Logs",
+        "uploadDesc": "Importe modelos do Excel e dados diretamente para a validação sistêmica.",
+        "uploadTitle": "Importação em Massa"
+      },
+      "loading": "Carregando ambiente...",
+      "messages": {
+        "createError": "Falha ao criar implantação",
+        "createSuccess": "Novo projeto criado com sucesso!",
+        "deleteError": "Falha ao excluir o projeto",
+        "deleteSuccess": "Projeto apagado",
+        "loadError": "Erro ao carregar dados",
+        "requiredFields": "Campos obrigatórios faltando"
+      },
+      "newProjectBtn": "Novo Projeto de Implantação",
+      "newProjectModal": {
+        "autoExecute": "Execução Automática",
+        "cancelBtn": "Cancelar",
+        "clientNamePlaceholder": "Nome da Transportadora ou Cliente",
+        "createBtn": "Desenvolver Projeto",
+        "projectNamePlaceholder": "Ex: Implantação Básico V1",
+        "requireApproval": "Necessita Aprovação Manual",
+        "title": "Iniciando Implantação"
+      },
+      "noProjects": "Nenhuma implantação pendente.",
+      "progressPrefix": "Progresso Global",
+      "projectsTitle": "Projetos de Implantação Ativos",
+      "startedAt": "Iniciado em:",
+      "statuses": {
+        "": "Pendente",
+        "pending": "Aguardando",
+        "in_progress": "Progredindo",
+        "completed": "Concluído",
+        "failed": "Falhou"
+      },
+      "subDescription": "Inicie um projeto de implantação para estruturar o fluxo dessa organização.",
+      "title": "Agente de Implantação Inteligente",
+      "uploader": {
+        "howItWorks": {
+          "item1": "Abra um novo projeto listado acima.",
+          "item2": "Extraia dados do ERP em planilhas ou XML.",
+          "item3": "Acesse a Implantação e valide no Dashboard Mestre.",
+          "item4": "Faça Upload dos insumos no botão Enviar Arquivos.",
+          "item5": "Aguarde o processamento em Backgroud terminar.",
+          "title": "A Jornada de Implantação"
+        }
+      },
+      "viewDetails": "Painel do Projeto"
+    },
+    "adjustment": {
+      "configTitle": "Configuração de Reajuste",
+      "infoDesc": "Ajuste os valores das tabelas de frete em massa baseando-se em um percentual ou importe uma nova tabela.",
+      "infoTitle": "Informações",
+      "instructions": {
+        "manual1": "Baixe o template manual",
+        "manual2": "Preencha os novos valores",
+        "manual3": "Salve o arquivo XLSX",
+        "manual4": "Anexe no campo acima",
+        "manualTitle": "Instruções Manuais",
+        "percentage1": "Defina o percentual",
+        "percentage2": "Selecione as transportadoras",
+        "percentage3": "Revise o impacto",
+        "percentage4": "Aplique o reajuste",
+        "percentageTitle": "Via Percentual",
+        "title": "Como Funciona?"
+      },
+      "submitBtn": "Aplicar Reajustes",
+      "submitting": "Aplicando...",
+      "type": "Tipo de Reajuste",
+      "typeManual": "Manual (Planilha)",
+      "typePercentage": "Percentual Fixo"
     },
     "erpIntegration": {
-      "configTitle": "Configuração de Integração ERP",
-      "template": {
-        "title": "Template de Configuração",
-        "description": "Baixe o template ou importe configurações existentes",
-        "downloadBtn": "Template",
-        "importBtn": "Importar",
-        "processing": "Processando arquivo...",
-        "success": "Arquivo importado com sucesso!",
-        "successDesc": "{{count}} registro(s) processado(s). Os campos foram preenchidos automaticamente com os dados do primeiro registro."
-      },
-      "selectErp": "Selecione o ERP",
-      "selectErpPlaceholder": "Selecione um ERP...",
-      "connection": {
-        "title": "Configurações de Conexão",
-        "serviceLayerAddress": "Endereço do Service Layer",
-        "port": "Porta",
-        "username": "Usuário",
-        "password": "Senha",
-        "database": "Database"
-      },
-      "cte": {
-        "title": "Configurações de CT-e",
-        "integrationType": "Tipo de integração de CT-e",
-        "typeDraft": "Esboço",
-        "typeEntry": "Nota de Entrada",
-        "cteModel": "Modelo de CT-e",
-        "invoiceModel": "Modelo de Fatura"
+      "additional": {
+        "nfeXmlAddress": "Estrutura XML",
+        "title": "Parâmetros Adicionais"
       },
       "billing": {
-        "title": "Configurações de Faturamento",
-        "nfeItem": "Item da NF-e de Faturamento",
-        "usage": "Utilização de Faturamento",
-        "controlAccount": "Conta Controle de Faturamento"
+        "controlAccount": "Conta Controle",
+        "nfeItem": "Item Base NFE Faturamento",
+        "title": "Parâmetros Fiscais (CT-e)",
+        "usage": "Utilização Padrão"
+      },
+      "configTitle": "Integração do ERP",
+      "connection": {
+        "database": "Banco de Dados/Instância",
+        "password": "Password Segura",
+        "port": "Porta TCP/IP",
+        "serviceLayerAddress": "Endpoint System",
+        "username": "Credencial / Username"
+      },
+      "cte": {
+        "cteModel": "Modelo CTe Padrão",
+        "integrationType": "Topologia da Via",
+        "invoiceModel": "Referência Físico/Fatura",
+        "title": "Regras Essenciais",
+        "typeDraft": "Prévia / Draft",
+        "typeEntry": "Entrada Sistêmica"
+      },
+      "importConfig": {
+        "clickToUpload": "Anexar Carga Planilha (.XLS)",
+        "title": "Motor via IA/Planilha"
       },
       "invoice": {
-        "title": "Configurações de Notas Fiscais",
-        "outboundItem": "Item da Nota Fiscal de Saída gerada a partir de CT-e",
-        "cteWithoutNfItem": "Item para CT-e sem Nota Fiscal",
-        "cteUsage": "Utilização de CT-e",
-        "inboundControlAccount": "Conta Controle para emissão de Nota Fiscal de Entrada",
-        "transitoryAccount": "Conta Transitória para fechamento de Invoice"
+        "cteUsage": "CFOP Geral",
+        "cteWithoutNfItem": "Cadastro CTe",
+        "inboundControlAccount": "Mapeamento Inbound",
+        "outboundItem": "Mapeamento Outbound",
+        "title": "Fiscal",
+        "transitoryAccount": "Conta Ponte Segura"
       },
-      "additional": {
-        "title": "Configurações Adicionais",
-        "nfeXmlAddress": "Endereço de rede dos XMLs da NF-e",
-        "fiscalModule": "Módulo Fiscal"
-      },
-      "saveBtn": "Salvar Configurações",
-      "saving": "Salvando...",
-      "importConfig": {
-        "title": "Importação de Configurações",
-        "clickUpload": "Clique para fazer upload",
-        "dragDrop": "ou arraste e solte",
-        "fileType": "Arquivo Excel (.xlsx)"
+      "saveBtn": "Submeter ao ERP",
+      "saveBtnLoading": "Comutando...",
+      "selectErp": "Selecione a Tecnologia Fonte",
+      "selectErpPlaceholder": "SAP Business One / Cloud...",
+      "template": {
+        "description": "Assistente rápido.",
+        "downloadBtn": "Gabarito em Branco",
+        "importBtn": "Processar Parametrização ERP",
+        "processing": "Digerindo as informações...",
+        "success": "Gabarito reconhecido!",
+        "successDesc": "{{count}} Mapeamentos Lidos pelo Agente.",
+        "title": "Importação Base"
       }
     },
     "imports": {
-      "templateExcel": "Template Excel",
-      "downloadTemplate": "Baixar Template",
-      "dragDrop": "Arraste o arquivo Excel aqui ou clique para selecionar",
-      "acceptedFormats": "Formatos aceitos: .xlsx, .xls",
-      "selectFile": "Selecionar Arquivo",
-      "processing": "Processando importação...",
-      "recordsProcessed": "Registros processados: {{count}}",
-      "errorsFound": "Erros encontrados:",
+      "acceptedFormats": "Formatos Aceitos",
       "carriers": {
-        "title": "Importar Transportadoras",
-        "description": "Importe cadastros de transportadoras em massa através de arquivo Excel",
-        "templateName": "template_transportadoras.xlsx"
-      },
-      "freight": {
-        "title": "Importar Tabelas de Frete",
-        "description": "Importe tabelas de frete com faixas de valores por transportadora",
-        "templateName": "template_tabelas_frete.xlsx"
+        "description": "Transportadoras em Massa",
+        "title": "Transportadoras"
       },
       "cities": {
-        "title": "Importar Cidades da Tabela",
-        "description": "Importe cadastro de cidades vinculadas às tabelas de frete",
-        "templateName": "template_cidades.xlsx"
+        "description": "Cidades IBGE Adicionais",
+        "title": "Regiões de Atendimento Base"
       },
+      "downloadTemplate": "Download Planilha Base",
+      "dragDrop": "Arraste e solte...",
       "fees": {
-        "title": "Importar Taxas da Tabela",
-        "description": "Faça upload do arquivo Excel com as taxas (pedágio, coleta/entrega, etc.) das tabelas de frete.",
-        "templateName": "template_taxas_tabela.xlsx"
+        "title": "Taxas (GRIS, Pedágio)"
+      },
+      "freight": {
+        "title": "Carga de Frete"
+      },
+      "freightTables": {
+        "description": "Tabelas e Tarifários Excel",
+        "title": "Tabelas de Frete (Valores Core)"
       },
       "restrictedCeps": {
-        "title": "Importar CEPs Restritos",
-        "description": "Faça upload do arquivo Excel com a listagem de CEPs restritos por transportadora.",
-        "templateName": "template_ceps_restritos.xlsx"
-      }
+        "description": "Faixa de CEPS não entregues",
+        "title": "Ceps Restritos"
+      },
+      "tableFees": {
+        "description": "Taxas adicionais padrão",
+        "title": "Taxas da Tabela"
+      },
+      "templateExcel": "Formatação Excel"
     },
-    "adjustment": {
-      "infoTitle": "Reajuste de Tabelas de Frete",
-      "infoDesc": "Aplique reajustes em massa nas tabelas de frete ativas. Escolha entre aplicação de percentual ou inserção manual de valores.",
-      "configTitle": "Configuração do Reajuste",
-      "type": "Tipo de Reajuste",
-      "typePercentage": "Aplicar Percentual",
-      "typeManual": "Inserção Manual de Valores",
-      "percentageLabel": "Percentual de Reajuste (%)",
-      "percentagePlaceholder": "Ex: 5.5 (aumento) ou -3.2 (redução)",
-      "percentageHint": "Use valores positivos para aumento e negativos para redução",
-      "manualLabel": "Arquivo Excel com Novos Valores",
-      "manualUploadDesc": "Clique para fazer upload ou arraste o arquivo aqui",
-      "manualUploadHint": "Apenas arquivos Excel (.xlsx, .xls)",
-      "downloadManualTemplate": "Baixar Template para Novos Valores",
-      "tablesToAdjust": "Tabelas a Reajustar",
-      "allTables": "Todas as Tabelas Ativas",
-      "submitBtn": "Aplicar Reajuste",
-      "submitting": "Processando Reajuste...",
-      "instructions": {
-        "title": "Instruções",
-        "percentageTitle": "Reajuste por Percentual:",
-        "percentage1": "Digite o percentual desejado (ex: 5.5 para aumento de 5,5%)",
-        "percentage2": "Use valores negativos para redução (ex: -3.2 para redução de 3,2%)",
-        "percentage3": "O reajuste será aplicado a todos os valores da tabela",
-        "percentage4": "Valores serão arredondados para 2 casas decimais",
-        "manualTitle": "Inserção Manual:",
-        "manual1": "Baixe o template com a estrutura atual",
-        "manual2": "Preencha os novos valores desejados",
-        "manual3": "Faça upload do arquivo preenchido",
-        "manual4": "Valores em branco manterão o valor atual"
-      }
+    "tabs": {
+      "erpIntegration": "Engrenagem ERP"
     },
-    "instructions": {
-      "title": "Instruções de Uso",
-      "step1": "1. Baixe o template Excel correspondente ao tipo de dados que deseja importar",
-      "step2": "2. Preencha o arquivo seguindo exatamente o layout fornecido",
-      "step3": "3. Faça o upload do arquivo preenchido",
-      "step4": "4. Aguarde o processamento e verifique os resultados",
-      "step5": "5. Corrija eventuais erros e reimporte se necessário"
-    },
-    "messages": {
-      "templateError": "Erro ao gerar template: {{error}}. Verifique se todos os dados estão corretos.",
-      "unsupportedTemplate": "Tipo de template não suportado",
-      "unsupportedImport": "Tipo de importação não suportado",
-      "processError": "Erro ao processar arquivo",
-      "adjustError": "Erro ao aplicar reajuste",
-      "saveSuccess": "Configurações de ERP salvas com sucesso!",
-      "saveError": "Erro ao salvar configurações de ERP",
-      "importSuccessAlert": "Template importado com sucesso! {{count}} registro(s) processado(s).",
-      "importErrorAlert": "Erro ao processar arquivo: {{error}}"
-    },
-    "deployAgent": {
-      "title": "Deploy Agent",
-      "description": "Implantação automatizada com Inteligência Artificial",
-      "subDescription": "Envie seus dados e deixe a IA configurar automaticamente todo o sistema",
-      "newProjectBtn": "Novo Projeto",
-      "features": {
-        "uploadTitle": "Upload Inteligente",
-        "uploadDesc": "Envie planilhas e arquivos, a IA identifica automaticamente o tipo de dados",
-        "aiTitle": "Interpretação IA",
-        "aiDesc": "OpenAI analisa, valida e mapeia os campos automaticamente",
-        "executeTitle": "Auto-Execução",
-        "executeDesc": "Parametrização automática de cadastros, tabelas e integrações",
-        "monitorTitle": "Monitoramento",
-        "monitorDesc": "Dashboard com status, erros e sugestões de melhoria em tempo real"
-      },
-      "projectsTitle": "Projetos de Implantação",
-      "loadingProjects": "Carregando projetos...",
-      "noProjects": "Nenhum projeto criado ainda",
-      "createFirstProjectBtn": "Criar Primeiro Projeto",
-      "clientPrefix": "Cliente: ",
-      "startedAt": "Iniciado: ",
-      "progressPrefix": "Progresso: ",
-      "completedAt": "Concluído: ",
-      "viewDetails": "Ver detalhes",
-      "deleteProjectTitle": "Excluir projeto",
-      "statuses": {
-        "pending": "Pendente",
-        "collecting": "Coletando",
-        "interpreting": "Interpretando",
-        "executing": "Executando",
-        "completed": "Concluído",
-        "failed": "Falha"
-      },
-      "newProjectModal": {
-        "title": "Novo Projeto de Implantação",
-        "projectName": "Nome do Projeto *",
-        "projectNamePlaceholder": "Ex: Implantação Cliente ABC",
-        "clientName": "Nome do Cliente *",
-        "clientNamePlaceholder": "Ex: Empresa XYZ Ltda",
-        "autoExecute": "Executar automaticamente após interpretação",
-        "requireApproval": "Requerer aprovação antes de executar",
-        "cancelBtn": "Cancelar",
-        "createBtn": "Criar Projeto"
-      },
-      "deleteConfirm": {
-        "title": "Tem certeza que deseja excluir o projeto?",
-        "message": "Projeto: \"{{name}}\"\n\nEsta ação não pode ser desfeita.",
-        "confirmBtn": "OK",
-        "cancelBtn": "Cancelar"
-      },
-      "dashboard": {
-        "backBtn": "Voltar para Projetos",
-        "uploadBtn": "Enviar Arquivos",
-        "stats": {
-          "progress": "Progresso",
-          "steps": "{{completed}} de {{total}} etapas",
-          "errors": "Erros",
-          "errorsDesc": "Requerem atenção",
-          "warnings": "Avisos",
-          "warningsDesc": "Para revisão",
-          "suggestions": "Sugestões",
-          "suggestionsDesc": "Melhorias possíveis"
-        },
-        "generalProgress": "Progresso Geral",
-        "implementation": "Implantação",
-        "steps": {
-          "collection": "Coleta",
-          "interpretation": "Interpretação",
-          "execution": "Execução",
-          "completed": "Concluído"
-        },
-        "uploads": {
-          "title": "Arquivos Enviados",
-          "noUploads": "Nenhum arquivo enviado ainda",
-          "executeBtn": "Efetivar Importação",
-          "statuses": {
-            "executed": "Importado (100%)",
-            "validated": "Aguardando Importação"
-          }
-        },
-        "validations": {
-          "title": "Validações",
-          "noValidations": "Nenhuma validação registrada",
-          "fieldPrefix": "Campo: "
-        },
-        "suggestions": {
-          "title": "Sugestões de Melhoria",
-          "noSuggestions": "Nenhuma sugestão disponível",
-          "approveBtn": "Aprovar"
-        }
-      },
-      "uploader": {
-        "title": "Enviar Arquivo",
-        "description": "A IA irá interpretar e configurar automaticamente",
-        "dataType": "Tipo de Dados *",
-        "categories": {
-          "erpIntegration": "Integração ao ERP",
-          "carriers": "Transportadoras",
-          "freightTables": "Tabelas de Fretes",
-          "cities": "Cidades",
-          "fees": "Taxas da Tabela",
-          "restrictedZips": "CEPs Restritos",
-          "tableAdjustments": "Reajustar Tabela"
-        },
-        "fileLabel": "Arquivo *",
-        "dropzoneClick": "Clique para selecionar ou arraste o arquivo",
-        "dropzoneFormats": "Formatos: XLSX, XLS, CSV, TXT",
-        "statusMessages": {
-          "idle": "Enviando arquivo...",
-          "success": "Arquivo enviado com sucesso!",
-          "processing": "Processando com IA...",
-          "completed": "Processamento concluído!"
-        },
-        "howItWorks": {
-          "title": "Como funciona?",
-          "item1": "A IA identifica a estrutura dos dados automaticamente",
-          "item2": "Valida campos obrigatórios e formatos",
-          "item3": "Mapeia os campos para o banco de dados",
-          "item4": "Detecta erros e sugere melhorias",
-          "item5": "Configura os cadastros automaticamente",
-          "devMode": "Modo Desenvolvimento:",
-          "devModeDesc": "Se OpenAI não estiver configurada, usa interpretação mock para demonstração."
-        },
-        "cancelBtn": "Cancelar",
-        "sendBtn": "Enviar e Processar",
-        "sendingBtn": "Enviando...",
-        "processingBtn": "Processando..."
-      },
-      "messages": {
-        "loadError": "Erro ao carregar projetos",
-        "fillRequired": "Preencha todos os campos obrigatórios",
-        "createSuccess": "Projeto criado com sucesso!",
-        "deleteSuccess": "Projeto excluído com sucesso!",
-        "approveSuggestionError": "Erro ao aprovar sugestão",
-        "executeUploadSuccess": "Arquivo processado e importado com sucesso!",
-        "executeUploadError": "Erro ao executar importação",
-        "uploadValidationMissing": "Selecione uma categoria e um arquivo"
-      }
-    }
+    "title": "Centro de Implementação"
   },
   "changeLog": {
     "title": "Log de Modificações",
@@ -5817,5 +5798,76 @@
         "step4": "O link expirará em {{hours}} horas"
       }
     }
+  },
+  "catalogItems": {
+    "title": "Catálogo de Itens",
+    "subtitle": "Gerencie manualmente o catálogo de itens específicos para aplicação de restrições de operação.",
+    "newItem": "Novo Item",
+    "totalItems": "Total de Itens Cadastrados",
+    "itemsWithNcm": "Itens com NCM",
+    "itemsWithEan": "Itens com EAN",
+    "searchPlaceholder": "Buscar por descrição, código ou EAN...",
+    "search": "Buscar",
+    "export": "Exportar",
+    "noResultsTitle": "Sem resultados encontrados",
+    "noResultsDesc": "Nenhum item de catálogo pôde ser listado com os atuais filtros. O cadastro de itens é estritamente manual e voltado apenas para mercadorias que sofrem restrições operacionais ou logísticas na cadeia do TMS.",
+    "infoDynamicTitle": "Gestão Dinâmica de Restrições",
+    "infoDynamicDesc": "O Catálogo é projetado para operar interconectado ao Motor de Cálculo. Identificadores Master (NCM, Produto ou GTIN) controlam filtros em tempo real contra Tabelas de Frete, bloqueando instantaneamente a escalada de Transportadores não autorizados antes que o custo \"0,00\" seja cogitado, protegendo o Ranking Operacional.",
+    "deleteTitle": "Excluir do Catálogo",
+    "deleteMsg": "Deseja remover este Item? Transportadores que foram restritos usando este produto exigirão limpeza nas Tabelas de Frete, no entanto XMLs anteriores continuam com os logs nativos intocados.",
+    "errorLoad": "Erro ao carregar itens.",
+    "successDelete": "Item excluído com sucesso.",
+    "errorDelete": "Erro ao excluir item.",
+    "successUpdate": "Item atualizado com sucesso.",
+    "successSave": "Item salvo com sucesso.",
+    "showing": "Mostrando",
+    "to": "a",
+    "of": "de",
+    "records": "registros",
+    "page": "Página",
+    "previous": "Anterior",
+    "next": "Próxima",
+    "breadcrumbConfig": "Configurações",
+    "editItem": "Editar Item",
+    "viewItem": "Visualizar Item",
+    "codeLabel": "Cód: ",
+    "view": "Visualizar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "ncmCode": "NCM:",
+    "eanCode": "EAN/GTIN:",
+    "notInformed": "Não informado",
+    "backToList": "Voltar para lista",
+    "fiscalInfo": "Informações Fiscais",
+    "ncmLabel": "NCM",
+    "eanLabel": "EAN / GTIN",
+    "systemInfo": "Sistema",
+    "createdAt": "Criado em",
+    "updatedAt": "Última atualização",
+    "internalId": "ID Interno",
+    "backToCatalog": "Voltar para Catálogo de Itens",
+    "fillData": "Preencha os dados do item",
+    "itemInfo": "Informações do Item",
+    "internalCodeLabel": "Código Interno do Produto (cProd) *",
+    "internalCodePlaceholder": "EX: 12345",
+    "codeRequired": "Código é obrigatório",
+    "descRequired": "Descrição é obrigatória",
+    "productCodeTitle": "Código do Produto",
+    "productCodeDesc": "Código de SKU ou Identificador único usado na empresa para rastrear a restrição.",
+    "descLabel": "Descrição da Mercadoria *",
+    "descPlaceholder": "Digite a descrição da mercadoria",
+    "maxChars": "Máximo de 100 caracteres. Restantes: ",
+    "ncmFormLabel": "Código NCM",
+    "ncmPlaceholder": "Ex: 85171231",
+    "eanPlaceholder": "Ex: 7891234567890",
+    "aboutRestrictionsTitle": "Sobre Restrições de Itens",
+    "aboutRestrictionsDesc": "O preenchimento do código do item afeta diretamente como o Motor de Cálculo processa fretes restritos para NFe baseadas nestes itens.",
+    "ncmEanTitle": "NCM e EAN",
+    "ncmEanDesc": "Restrições logísticas podem ser aplicadas genericamente a famílias inteiras de NCM se preenchidas aqui.",
+    "bindingTitle": "Vinculação",
+    "bindingDesc": "Após salvar, vincule este item ao Transportador/Tabela na aba Tabela de Fretes.",
+    "cancel": "Cancelar",
+    "updateBtn": "Atualizar Item",
+    "saveBtn": "Salvar Item"
   }
 }

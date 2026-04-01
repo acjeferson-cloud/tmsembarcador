@@ -54,7 +54,7 @@ const LogisticsSimulator: React.FC = () => {
           businessPartnersService.getAll()
         ]);
         setCarriers(fetchedCarriers.filter(c => c.status === 'ativo'));
-        setBusinessPartners(fetchedBps.filter((bp: any) => bp.status === 'ativo' || bp.ativo));
+        setBusinessPartners(fetchedBps.filter((bp: any) => bp.status === 'ativo' || bp.status === 'active' || bp.ativo));
       } catch (err) {
         console.error('Failed to load initial data', err);
       }
@@ -273,7 +273,7 @@ const LogisticsSimulator: React.FC = () => {
                     { value: '', label: typeof t === 'function' ? t('logisticsSimulator.filters.allPartners', 'Todos os Clientes') as string : 'Todos os Clientes' },
                     ...businessPartners.map(bp => ({
                       value: bp.id,
-                      label: `${bp.codigo ? `${bp.codigo} - ` : ''}${bp.razao_social || bp.fantasia || bp.nome}`
+                      label: `${bp.document ? `${bp.document} - ` : ''}${bp.name || bp.razao_social || bp.fantasia || bp.nome || 'Sem Nome'}`
                     }))
                   ]}
                   value={businessPartnerId}

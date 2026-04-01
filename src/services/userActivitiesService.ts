@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface UserActivity {
   id: string;
@@ -23,6 +22,8 @@ export const userActivitiesService = {
     description: string
   ): Promise<void> {
     try {
+      if (!supabase) return;
+      
       const savedUser = localStorage.getItem('tms-user');
       const userData = savedUser ? JSON.parse(savedUser) : null;
       if (!userData) return;
@@ -43,7 +44,23 @@ export const userActivitiesService = {
          } catch(e){}
       }
 
-      if (!supabase) return;
+      const normalizedAction = String(action_type).toLowerCase();
+
+      // Apaga o registro anterior de acesso no mesmo módulo para evitar flood na tela de Atividades Recentes
+      if (normalizedAction === 'acesso') {
+        try {
+          await supabase.from('user_activities')
+            .delete()
+            .match({
+              organization_id: orgId,
+              environment_id: envId,
+              user_id: user_id,
+              module_name: module_name
+            })
+            .in('action_type', ['acesso', 'Acesso', 'ACESSO']);
+        } catch (e) {}
+      }
+
       // @ts-ignore
       await supabase.from('user_activities').insert([{
         organization_id: orgId,
@@ -98,7 +115,21 @@ export const userActivitiesService = {
          return [];
       }
 
-      return data as UserActivity[];
+      // Filtra o histórico para mostrar apenas o último 'acesso' de cada módulo, removendo duplicatas
+      const uniqueActivities: UserActivity[] = [];
+      const seenAccessModules = new Set<string>();
+
+      for (const activity of (data as UserActivity[])) {
+        if (String(activity.action_type).toLowerCase() === 'acesso') {
+          if (seenAccessModules.has(activity.module_name)) {
+             continue; // ignora acessos anteriores ao mesmo módulo
+          }
+          seenAccessModules.add(activity.module_name);
+        }
+        uniqueActivities.push(activity);
+      }
+
+      return uniqueActivities;
     } catch (error) {
       console.error('Falha ao buscar atividades recentes do usuário:', error);
       return [];

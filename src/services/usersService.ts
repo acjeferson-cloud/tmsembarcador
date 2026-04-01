@@ -43,11 +43,31 @@ export interface User {
   updated_by?: string | number;
 }
 
+// Helper to hash passwords to match Supabase's validate_user_credentials RPC
+const hashPassword = async (password: string): Promise<string> => {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
 export const usersService = {
   // Helper function to get current org/env from localStorage with auto-recovery
-  async getCurrentContext(): Promise<{ orgId: string | null; envId: string | null }> {
-    let orgId = localStorage.getItem('tms-selected-org-id');
-    let envId = localStorage.getItem('tms-selected-env-id');
+  async getCurrentContext(): Promise<{ orgId: string | null; envId: string | null; estabId: string | null }> {
+    let orgId = localStorage.getItem('tms-selected-organization') || localStorage.getItem('tms-selected-org-id');
+    let envId = localStorage.getItem('tms-selected-environment') || localStorage.getItem('tms-selected-env-id');
+    let estabId = localStorage.getItem('tms-selected-estab-id');
+
+    if (!estabId) {
+      const currentEstabRaw = localStorage.getItem('tms-current-establishment');
+      if (currentEstabRaw) {
+        try {
+          const parsed = JSON.parse(currentEstabRaw);
+          estabId = parsed.estabelecimento_id || parsed.establishment_id || parsed.id;
+        } catch (e) {}
+      }
+    }
+
     // If context is missing, try to recover from logged user
     if (!orgId || !envId) {
       try {
@@ -58,6 +78,9 @@ export const usersService = {
           if (userData.organization_id && userData.environment_id) {
             orgId = userData.organization_id;
             envId = userData.environment_id;
+            if (!estabId && userData.estabelecimento_id) {
+              estabId = userData.estabelecimento_id;
+            }
 
             // Save to localStorage for future use
             localStorage.setItem('tms-selected-org-id', orgId);
@@ -82,7 +105,7 @@ export const usersService = {
       }
     }
 
-    return { orgId, envId };
+    return { orgId, envId, estabId };
   },
 
   // Helper function to map database fields to camelCase
@@ -142,7 +165,7 @@ export const usersService = {
 
   async getAll(): Promise<User[]> {
     try {
-      const { orgId, envId } = await this.getCurrentContext();
+      const { orgId, envId, estabId } = await this.getCurrentContext();
       if (!orgId || !envId) {
         // Tentar buscar todos os usuários sem filtro para debug
         const { data: allUsers, error: allError } = await supabase
@@ -154,7 +177,7 @@ export const usersService = {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select(`
           *,
@@ -164,8 +187,14 @@ export const usersService = {
           )
         `)
         .eq('organization_id', orgId)
-        .eq('environment_id', envId)
-        .order('codigo', { ascending: true });
+        .eq('environment_id', envId);
+
+      // Garante o isolamento por Estabelecimento caso esteja no contexto, mas exibe usuários sem restrição local (null) 
+      if (estabId) {
+        query = query.or(`estabelecimento_id.eq.${estabId},estabelecimento_id.is.null`);
+      }
+
+      const { data, error } = await query.order('codigo', { ascending: true });
       if (error) {
         throw error;
       }
@@ -260,19 +289,24 @@ export const usersService = {
 
   async getByStatus(status: 'ativo' | 'inativo' | 'bloqueado'): Promise<User[]> {
     try {
-      const { orgId, envId } = await this.getCurrentContext();
+      const { orgId, envId, estabId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select('*')
         .eq('organization_id', orgId)
         .eq('environment_id', envId)
-        .eq('status', status)
-        .order('codigo', { ascending: true });
+        .eq('status', status);
+
+      if (estabId) {
+        query = query.or(`estabelecimento_id.eq.${estabId},estabelecimento_id.is.null`);
+      }
+
+      const { data, error } = await query.order('codigo', { ascending: true });
 
       if (error) {
         throw error;
@@ -286,19 +320,24 @@ export const usersService = {
 
   async getByPerfil(perfil: string): Promise<User[]> {
     try {
-      const { orgId, envId } = await this.getCurrentContext();
+      const { orgId, envId, estabId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select('*')
         .eq('organization_id', orgId)
         .eq('environment_id', envId)
-        .eq('perfil', perfil)
-        .order('codigo', { ascending: true });
+        .eq('perfil', perfil);
+
+      if (estabId) {
+        query = query.or(`estabelecimento_id.eq.${estabId},estabelecimento_id.is.null`);
+      }
+
+      const { data, error } = await query.order('codigo', { ascending: true });
 
       if (error) {
         throw error;
@@ -343,11 +382,20 @@ export const usersService = {
       if (!orgId || !envId) {
         throw new Error('Contexto de org/env não disponível');
       }
+      let hashedPassword = user.senha;
+      if (user.senha) {
+        try {
+          hashedPassword = await hashPassword(user.senha);
+        } catch (e) {
+          console.error('Erro ao gerar hash da senha', e);
+        }
+      }
+
       const payloadToInsert = {
         codigo: user.codigo,
         nome: user.nome,
         email: user.email,
-        senha_hash: user.senha,
+        senha_hash: hashedPassword,
         cpf: user.cpf,
         telefone: user.telefone,
         celular: user.celular,
@@ -414,7 +462,14 @@ export const usersService = {
       if (user.codigo !== undefined) updateData.codigo = user.codigo;
       if (user.nome !== undefined) updateData.nome = user.nome;
       if (user.email !== undefined) updateData.email = user.email;
-      if (user.senha !== undefined) updateData.senha_hash = user.senha;
+      if (user.senha !== undefined) {
+        try {
+          updateData.senha_hash = user.senha ? await hashPassword(user.senha) : user.senha;
+        } catch (e) {
+          console.error('Erro ao gerar hash da senha na atualização', e);
+          updateData.senha_hash = user.senha;
+        }
+      }
       if (user.cpf !== undefined) updateData.cpf = user.cpf;
       if (user.telefone !== undefined) updateData.telefone = user.telefone;
       if (user.celular !== undefined) updateData.celular = user.celular;
@@ -587,19 +642,24 @@ export const usersService = {
 
   async search(searchTerm: string): Promise<User[]> {
     try {
-      const { orgId, envId } = await this.getCurrentContext();
+      const { orgId, envId, estabId } = await this.getCurrentContext();
 
       if (!orgId || !envId) {
         return [];
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select('*')
         .eq('organization_id', orgId)
         .eq('environment_id', envId)
-        .or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%,codigo.ilike.%${searchTerm}%,cargo.ilike.%${searchTerm}%,departamento.ilike.%${searchTerm}%`)
-        .order('codigo', { ascending: true });
+        .or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%,codigo.ilike.%${searchTerm}%,cargo.ilike.%${searchTerm}%,departamento.ilike.%${searchTerm}%`);
+
+      if (estabId) {
+        query = query.or(`estabelecimento_id.eq.${estabId},estabelecimento_id.is.null`);
+      }
+
+      const { data, error } = await query.order('codigo', { ascending: true });
 
       if (error) {
         throw error;

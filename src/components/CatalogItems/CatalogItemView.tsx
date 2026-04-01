@@ -3,6 +3,7 @@ import { Package, Hash, Tag, FileText, Calendar, Edit, ArrowLeft } from 'lucide-
 import { CatalogItem } from '../../services/catalogItemsService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 interface CatalogItemViewProps {
   item: CatalogItem;
@@ -17,6 +18,7 @@ export const CatalogItemView: React.FC<CatalogItemViewProps> = ({
   onEdit,
   isAdmin = true 
 }) => {
+  const { t } = useTranslation();
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
     try {
@@ -34,7 +36,7 @@ export const CatalogItemView: React.FC<CatalogItemViewProps> = ({
           className="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-1" />
-          Voltar para lista
+          {t('catalogItems.backToList')}
         </button>
         {isAdmin && (
           <button
@@ -42,7 +44,7 @@ export const CatalogItemView: React.FC<CatalogItemViewProps> = ({
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
             <Edit className="w-4 h-4 mr-2" />
-            Editar Item
+            {t('catalogItems.editItem')}
           </button>
         )}
       </div>
@@ -66,21 +68,21 @@ export const CatalogItemView: React.FC<CatalogItemViewProps> = ({
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                   <FileText className="w-5 h-5 mr-2 text-blue-500" />
-                  Informações Fiscais
+                  {t('catalogItems.fiscalInfo')}
                 </h3>
                 <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 space-y-4">
                   <div>
-                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">NCM</span>
+                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('catalogItems.ncmLabel')}</span>
                     <div className="flex items-center">
                       <Tag className="w-4 h-4 mr-2 text-blue-500" />
-                      <span className="text-gray-900 dark:text-white font-mono">{item.ncm_code || 'Não informado'}</span>
+                      <span className="text-gray-900 dark:text-white font-mono">{item.ncm_code || t('catalogItems.notInformed')}</span>
                     </div>
                   </div>
                   <div>
-                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">EAN / GTIN</span>
+                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('catalogItems.eanLabel')}</span>
                     <div className="flex items-center">
                       <Hash className="w-4 h-4 mr-2 text-green-500" />
-                      <span className="text-gray-900 dark:text-white font-mono">{item.ean_code || 'Não informado'}</span>
+                      <span className="text-gray-900 dark:text-white font-mono">{item.ean_code || t('catalogItems.notInformed')}</span>
                     </div>
                   </div>
                 </div>
@@ -91,19 +93,19 @@ export const CatalogItemView: React.FC<CatalogItemViewProps> = ({
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                   <Calendar className="w-5 h-5 mr-2 text-blue-500" />
-                  Sistema
+                  {t('catalogItems.systemInfo')}
                 </h3>
                 <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 space-y-4">
                   <div>
-                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Criado em</span>
+                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('catalogItems.createdAt')}</span>
                     <span className="text-gray-900 dark:text-white">{formatDate(item.created_at)}</span>
                   </div>
                   <div>
-                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Última atualização</span>
+                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('catalogItems.updatedAt')}</span>
                     <span className="text-gray-900 dark:text-white">{formatDate(item.updated_at)}</span>
                   </div>
                   <div>
-                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">ID Interno</span>
+                    <span className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('catalogItems.internalId')}</span>
                     <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">{item.id}</span>
                   </div>
                 </div>

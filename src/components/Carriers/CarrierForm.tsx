@@ -199,11 +199,20 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const formatted = formatCompanyName(value);
     setFormData(prev => ({
       ...prev,
-      [name]: formatted
+      [name]: value
     }));
+  };
+
+  const handleCompanyNameBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: formatCompanyName(value)
+      }));
+    }
   };
 
   const validateCode = async (codigo: string): Promise<boolean> => {
@@ -769,6 +778,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   name="razaoSocial"
                   value={formData.razaoSocial}
                   onChange={handleCompanyNameChange}
+                  onBlur={handleCompanyNameBlur}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder={t('carriers.form.companyNameLabel')}
@@ -849,6 +859,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   name="fantasia"
                   value={formData.fantasia}
                   onChange={handleCompanyNameChange}
+                  onBlur={handleCompanyNameBlur}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder={t('carriers.form.fantasyName')}
                 />

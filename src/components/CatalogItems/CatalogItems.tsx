@@ -7,8 +7,10 @@ import { CatalogItemCard } from './CatalogItemCard';
 import { CatalogItemForm } from './CatalogItemForm';
 import { CatalogItemView } from './CatalogItemView';
 import Breadcrumbs from '../Layout/Breadcrumbs';
+import { useTranslation } from 'react-i18next';
 
 export const CatalogItems: React.FC = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,8 +37,8 @@ export const CatalogItems: React.FC = () => {
   });
 
   const breadcrumbItems = [
-    { label: 'Configurações' },
-    { label: 'Catálogo de Itens', current: true }
+    { label: t('catalogItems.breadcrumbConfig') },
+    { label: t('catalogItems.title'), current: true }
   ];
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export const CatalogItems: React.FC = () => {
       setTotalCount(count);
       calculateStats(data, count);
     } catch (error) {
-      setToast({ message: 'Erro ao carregar itens.', type: 'error' });
+      setToast({ message: t('catalogItems.errorLoad'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -104,10 +106,10 @@ export const CatalogItems: React.FC = () => {
     if (confirmDialog.itemId) {
       const result = await catalogItemsService.deleteItem(confirmDialog.itemId);
       if (result.success) {
-        setToast({ message: 'Item excluído com sucesso.', type: 'success' });
+        setToast({ message: t('catalogItems.successDelete'), type: 'success' });
         loadItems();
       } else {
-        setToast({ message: result.error || 'Erro ao excluir item.', type: 'error' });
+        setToast({ message: result.error || t('catalogItems.errorDelete'), type: 'error' });
       }
     }
     setConfirmDialog({ isOpen: false });
@@ -120,14 +122,14 @@ export const CatalogItems: React.FC = () => {
         setToast({ message: result.error, type: 'error' });
         return;
       }
-      setToast({ message: 'Item atualizado com sucesso.', type: 'success' });
+      setToast({ message: t('catalogItems.successUpdate'), type: 'success' });
     } else {
       const result = await catalogItemsService.createItem(itemData);
       if (result.error) {
         setToast({ message: result.error, type: 'error' });
         return;
       }
-      setToast({ message: 'Item salvo com sucesso.', type: 'success' });
+      setToast({ message: t('catalogItems.successSave'), type: 'success' });
     }
     setShowForm(false);
     forceRefresh();
@@ -166,7 +168,7 @@ export const CatalogItems: React.FC = () => {
   if (showForm) {
     return (
       <div className="p-6">
-        <Breadcrumbs items={[...breadcrumbItems, { label: editingItem ? 'Editar Item' : 'Novo Item', current: true }]} />
+        <Breadcrumbs items={[...breadcrumbItems, { label: editingItem ? t('catalogItems.editItem') : t('catalogItems.newItem'), current: true }]} />
         <div className="mt-6">
           <CatalogItemForm
             onBack={handleBackToList}
@@ -181,7 +183,7 @@ export const CatalogItems: React.FC = () => {
   if (showView && viewingItem) {
     return (
       <div className="p-6">
-        <Breadcrumbs items={[...breadcrumbItems, { label: 'Visualizar Item', current: true }]} />
+        <Breadcrumbs items={[...breadcrumbItems, { label: t('catalogItems.viewItem'), current: true }]} />
         <div className="mt-6">
           <CatalogItemView
             item={viewingItem}
@@ -202,10 +204,10 @@ export const CatalogItems: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
             <Package className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" />
-            Catálogo de Itens
+            {t('catalogItems.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gerencie manualmente o catálogo de itens específicos para aplicação de restrições de operação.
+            {t('catalogItems.subtitle')}
           </p>
         </div>
         <button
@@ -213,7 +215,7 @@ export const CatalogItems: React.FC = () => {
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors shadow-sm"
         >
           <Plus size={20} />
-          <span>Novo Item</span>
+          <span>{t('catalogItems.newItem')}</span>
         </button>
       </div>
 
@@ -222,7 +224,7 @@ export const CatalogItems: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total de Itens Cadastrados</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('catalogItems.totalItems')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-white mt-2">{stats.total}</p>
             </div>
             <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/40 rounded-xl flex items-center justify-center">
@@ -234,7 +236,7 @@ export const CatalogItems: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Itens com NCM</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('catalogItems.itemsWithNcm')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-white mt-2">{stats.withNcm}</p>
             </div>
             <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/40 rounded-xl flex items-center justify-center">
@@ -246,7 +248,7 @@ export const CatalogItems: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Itens com EAN</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('catalogItems.itemsWithEan')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-white mt-2">{stats.withEan}</p>
             </div>
             <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center">
@@ -263,7 +265,7 @@ export const CatalogItems: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar por descrição, código ou EAN..."
+              placeholder={t('catalogItems.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white"
@@ -274,7 +276,7 @@ export const CatalogItems: React.FC = () => {
             type="submit"
             className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-6 py-2 rounded-lg font-medium transition-colors"
           >
-            Buscar
+            {t('catalogItems.search')}
           </button>
           
           <button 
@@ -283,13 +285,13 @@ export const CatalogItems: React.FC = () => {
             className="border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors text-gray-700 dark:text-gray-300"
           >
             <Download size={18} />
-            <span className="hidden sm:inline">Exportar</span>
+            <span className="hidden sm:inline">{t('catalogItems.export')}</span>
           </button>
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-          <span>Mostrando {totalCount === 0 ? 0 : startIndex + 1} a {Math.min(startIndex + pageSize, totalCount)} de {totalCount} registros</span>
-          <span>Página {page} de {totalPages || 1}</span>
+          <span>{t('catalogItems.showing')} {totalCount === 0 ? 0 : startIndex + 1} {t('catalogItems.to')} {Math.min(startIndex + pageSize, totalCount)} {t('catalogItems.of')} {totalCount} {t('catalogItems.records')}</span>
+          <span>{t('catalogItems.page')} {page} {t('catalogItems.of')} {totalPages || 1}</span>
         </div>
       </div>
 
@@ -303,9 +305,9 @@ export const CatalogItems: React.FC = () => {
           <div className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600 mb-4 bg-gray-50 dark:bg-gray-900/50 rounded-full flex items-center justify-center">
             <Package size={32} />
           </div>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Sem resultados encontrados</h3>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">{t('catalogItems.noResultsTitle')}</h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            Nenhum item de catálogo pôde ser listado com os atuais filtros. O cadastro de itens é estritamente manual e voltado apenas para mercadorias que sofrem restrições operacionais ou logísticas na cadeia do TMS.
+            {t('catalogItems.noResultsDesc')}
           </p>
         </div>
       ) : (
@@ -328,7 +330,7 @@ export const CatalogItems: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Página {page} de {totalPages}
+              {t('catalogItems.page')} {page} {t('catalogItems.of')} {totalPages}
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -336,7 +338,7 @@ export const CatalogItems: React.FC = () => {
                 disabled={page === 1}
                 className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white"
               >
-                Anterior
+                {t('catalogItems.previous')}
               </button>
               
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -363,7 +365,7 @@ export const CatalogItems: React.FC = () => {
                 disabled={page === totalPages}
                 className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-white"
               >
-                Próxima
+                {t('catalogItems.next')}
               </button>
             </div>
           </div>
@@ -379,10 +381,10 @@ export const CatalogItems: React.FC = () => {
           <div className="relative">
             <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center">
               <Filter className="w-5 h-5 mr-2" />
-              Gestão Dinâmica de Restrições
+              {t('catalogItems.infoDynamicTitle')}
             </h3>
             <p className="text-blue-800 dark:text-blue-200/80 mb-4 max-w-4xl text-sm leading-relaxed">
-              O Catálogo é projetado para operar interconectado ao Motor de Cálculo. Identificadores Master (NCM, Produto ou GTIN) controlam filtros em tempo real contra Tabelas de Frete, bloqueando instantaneamente a escalada de Transportadores não autorizados antes que o custo "0,00" seja cogitado, protegendo o Ranking Operacional.
+              {t('catalogItems.infoDynamicDesc')}
             </p>
           </div>
         </div>
@@ -398,8 +400,8 @@ export const CatalogItems: React.FC = () => {
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        title="Excluir do Catálogo"
-        message="Deseja remover este Item? Transportadores que foram restritos usando este produto exigirão limpeza nas Tabelas de Frete, no entanto XMLs anteriores continuam com os logs nativos intocados."
+        title={t('catalogItems.deleteTitle')}
+        message={t('catalogItems.deleteMsg')}
         type="danger"
         onConfirm={confirmDelete}
         onCancel={() => setConfirmDialog({ isOpen: false })}

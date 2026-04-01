@@ -170,7 +170,8 @@ export const freightRateCitiesService = {
   async addCityToRate(
     rateId: string,
     tableId: string,
-    cityId: string
+    cityId: string,
+    deliveryDays?: number | null
   ): Promise<FreightRateCity> {
     const availability = await this.checkCityAvailability(tableId, cityId, rateId);
     if (!availability.available) {
@@ -200,11 +201,16 @@ export const freightRateCitiesService = {
       const errorMsg = `Cidade com ID ${cityId} não encontrada`;
       throw new Error(errorMsg);
     }
-    const insertData = {
+    const insertData: any = {
       freight_rate_id: rateId,
       freight_rate_table_id: tableId,
       city_id: cityId
     };
+
+    if (deliveryDays !== undefined && deliveryDays !== null) {
+      insertData.delivery_days = deliveryDays;
+    }
+
     const { data, error } = await supabase
       .from('freight_rate_cities')
       .insert([insertData])
@@ -247,14 +253,15 @@ export const freightRateCitiesService = {
   async addMultipleCitiesToRate(
     rateId: string,
     tableId: string,
-    cityIds: string[]
+    cityIds: string[],
+    deliveryDays?: number | null
   ): Promise<{ success: FreightRateCity[]; errors: { cityId: string; error: string }[] }> {
     const success: FreightRateCity[] = [];
     const errors: { cityId: string; error: string }[] = [];
 
     for (const cityId of cityIds) {
       try {
-        const result = await this.addCityToRate(rateId, tableId, cityId);
+        const result = await this.addCityToRate(rateId, tableId, cityId, deliveryDays);
         success.push(result);
       } catch (error) {
         errors.push({

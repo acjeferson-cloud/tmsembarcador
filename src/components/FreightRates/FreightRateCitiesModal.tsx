@@ -29,6 +29,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingCityId, setEditingCityId] = useState<string | null>(null);
   const [editingDeliveryDays, setEditingDeliveryDays] = useState<number | null>(null);
+  const [bulkDeliveryDays, setBulkDeliveryDays] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -106,7 +107,8 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       const result = await freightRateCitiesService.addMultipleCitiesToRate(
         rate.id,
         tableId,
-        cityIds
+        cityIds,
+        bulkDeliveryDays
       );
 
       if (result.success.length > 0) {
@@ -121,6 +123,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       setSelectedCities(new Set());
       if (result.success.length > 0) {
         setShowAddMode(false);
+        setBulkDeliveryDays(null);
       }
 
       try {
@@ -254,6 +257,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                     setShowAddMode(false);
                     setSelectedCities(new Set());
                     setSearchTerm('');
+                    setBulkDeliveryDays(null);
                   }}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
                 >
@@ -335,11 +339,31 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between items-center mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <label htmlFor="bulkDeliveryDays" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Prazo de Entrega (opcional):
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="bulkDeliveryDays"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={bulkDeliveryDays ?? ''}
+                      onChange={(e) => setBulkDeliveryDays(e.target.value ? parseInt(e.target.value) : null)}
+                      placeholder="Padrão"
+                      className="w-28 pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                      dias
+                    </span>
+                  </div>
+                </div>
                 <button
                   onClick={handleAddMultipleCities}
                   disabled={selectedCities.size === 0 || isSaving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium shadow-sm"
                 >
                   {isSaving ? t('carriers.freightRates.cities.linking') : t('carriers.freightRates.cities.linkSelected', { count: selectedCities.size })}
                 </button>
@@ -373,9 +397,9 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                 </div>
               )}
 
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
+                  <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.city')}</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.uf')}</th>

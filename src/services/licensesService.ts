@@ -69,6 +69,38 @@ export const licensesService = {
     }
   },
 
+  async reconcileLicenses(totalUsers: number, inUseCount: number): Promise<boolean> {
+    try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId) return false;
+      
+      const config = await this.getLicenseConfig();
+      const targetTotal = totalUsers; // 1 licença contratada para cada usuário do sistema
+      const targetAvailable = targetTotal - inUseCount;
+
+      if (config) {
+        if (config.total_licenses !== targetTotal || config.available_licenses !== targetAvailable) {
+          await (supabase as any).from('licenses').update({
+            total_licenses: targetTotal,
+            available_licenses: targetAvailable
+          }).eq('id', config.id);
+        }
+      } else {
+        const { error } = await (supabase as any).from('licenses').insert({
+          organization_id: ctx.organizationId,
+          environment_id: ctx.environmentId,
+          total_licenses: targetTotal,
+          available_licenses: targetAvailable
+        });
+        if (error) console.error('Error inserting licenses record:', error);
+      }
+      return true;
+    } catch (error) {
+      console.error('reconcileLicenses error:', error);
+      return false;
+    }
+  },
+
   async getUsersWithLicenseStatus(): Promise<UserWithLicense[]> {
     try {
       const savedUser = localStorage.getItem('tms-user');
@@ -255,20 +287,29 @@ export const licensesService = {
   async purchaseNewLicenses(quantity: number, performedBy: string): Promise<boolean> {
     try {
       const config = await this.getLicenseConfig();
+      const ctx = await TenantContextHelper.getCurrentContext();
 
       if (!config) {
-        throw new Error('Configuração de licenças não encontrada');
+        if (!ctx || !ctx.organizationId) throw new Error('Contexto inválido');
+        // Insere a primeira configuração de licenças para este ambiente
+        const { error: insertError } = await (supabase as any).from('licenses').insert({
+          organization_id: ctx.organizationId,
+          environment_id: ctx.environmentId,
+          total_licenses: quantity,
+          available_licenses: quantity
+        });
+        if (insertError) throw insertError;
+      } else {
+        const { error: updateError } = await (supabase as any)
+          .from('licenses')
+          .update({
+            total_licenses: config.total_licenses + quantity,
+            available_licenses: config.available_licenses + quantity
+          })
+          .eq('id', config.id);
+
+        if (updateError) throw updateError;
       }
-
-      const { error: updateError } = await (supabase as any)
-        .from('licenses')
-        .update({
-          total_licenses: config.total_licenses + quantity,
-          available_licenses: config.available_licenses + quantity
-        })
-        .eq('id', config.id);
-
-      if (updateError) throw updateError;
 
       const { error: logError } = await (supabase as any)
         .from('license_logs')
@@ -281,23 +322,30 @@ export const licensesService = {
 
       if (logError) throw logError;
 
-      await changeLogsService.logUpdate({
-        entityType: 'license_config',
-        entityId: config.id,
-        fieldName: 'total_licenses',
-        oldValue: config.total_licenses.toString(),
-        newValue: (config.total_licenses + quantity).toString(),
-        userName: performedBy
-      });
+      let finalConfig = config;
+      if (!finalConfig) {
+        finalConfig = await this.getLicenseConfig();
+      }
 
-      await changeLogsService.logUpdate({
-        entityType: 'license_config',
-        entityId: config.id,
-        fieldName: 'available_licenses',
-        oldValue: config.available_licenses.toString(),
-        newValue: (config.available_licenses + quantity).toString(),
-        userName: performedBy
-      });
+      if (finalConfig) {
+        await changeLogsService.logUpdate({
+          entityType: 'license_config',
+          entityId: finalConfig.id,
+          fieldName: 'total_licenses',
+          oldValue: config ? config.total_licenses.toString() : '0',
+          newValue: (config ? config.total_licenses : 0 + quantity).toString(),
+          userName: performedBy
+        });
+
+        await changeLogsService.logUpdate({
+          entityType: 'license_config',
+          entityId: finalConfig.id,
+          fieldName: 'available_licenses',
+          oldValue: config ? config.available_licenses.toString() : '0',
+          newValue: (config ? config.available_licenses : 0 + quantity).toString(),
+          userName: performedBy
+        });
+      }
 
       return true;
     } catch (error) {
