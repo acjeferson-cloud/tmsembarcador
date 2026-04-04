@@ -287,7 +287,7 @@ export const freightQuoteService = {
             );
           }
         } catch (err) {
-// console.error('Erro ao buscar taxas adicionais:', err);
+// /*log_removed*/
         }
 
         const calculation = await freightCostCalculator.performCalculation(

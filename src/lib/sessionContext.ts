@@ -27,13 +27,13 @@ export async function setSessionContext(
     });
 
     if (error) {
-      console.error('❌ [sessionContext] Erro ao configurar contexto:', error);
+
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('❌ [sessionContext] Erro ao configurar contexto:', error);
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -53,7 +53,7 @@ export async function getCurrentSessionContext(): Promise<{
     const { data, error } = await supabase.rpc('get_current_session_context');
 
     if (error) {
-      console.error('❌ [sessionContext] Erro ao obter contexto:', error);
+
       return { organizationId: null, environmentId: null, hasContext: false };
     }
 
@@ -63,7 +63,7 @@ export async function getCurrentSessionContext(): Promise<{
       hasContext: data.has_context
     };
   } catch (error) {
-    console.error('❌ [sessionContext] Erro ao obter contexto:', error);
+
     return { organizationId: null, environmentId: null, hasContext: false };
   }
 }
@@ -86,12 +86,12 @@ export async function getUserOrganizationAndEnvironment(email: string): Promise<
     });
 
     if (error) {
-      console.error('❌ [sessionContext] Erro ao buscar organização:', error);
+
       return { success: false, error: error.message };
     }
 
     if (!data.success) {
-      console.error('❌ [sessionContext] Usuário não encontrado ou inativo:', data.error);
+
       return { success: false, error: data.error };
     }
 
@@ -104,7 +104,7 @@ export async function getUserOrganizationAndEnvironment(email: string): Promise<
       userName: data.user_name
     };
   } catch (error) {
-    console.error('❌ [sessionContext] Erro ao buscar organização:', error);
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -135,7 +135,7 @@ export async function setupSessionAfterLogin(email: string): Promise<{
 
     return { success: true };
   } catch (error) {
-    console.error('❌ [sessionContext] Erro ao configurar sessão após login:', error);
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'

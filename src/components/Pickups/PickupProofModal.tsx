@@ -65,7 +65,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
         setVehiclePlate(pickup.vehicle_plate || '');
       }
     } catch (err) {
-// console.error('Erro ao carregar comprovante:', err);
+// /*log_removed*/
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +107,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
         setError(result.error || t('pickups.proofModal.photos.errorUpload'));
       }
     } catch (err) {
-// console.error('❌ Erro ao fazer upload da foto:', err);
+// /*log_removed*/
       setError(t('pickups.proofModal.photos.errorUpload'));
     } finally {
       setIsLoading(false);
@@ -217,7 +217,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
         setError(result.error || t('pickups.proofModal.messages.errorSave'));
       }
     } catch (err) {
-// console.error('❌ Erro ao salvar comprovante:', err);
+// /*log_removed*/
       setError(t('pickups.proofModal.messages.errorSave'));
     } finally {
       setIsSaving(false);
@@ -233,9 +233,7 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
             src={photoUrl}
             alt={`Foto ${photoNumber}`}
             className="w-full h-48 object-cover rounded-lg"
-// onLoad={() => console.log(`🖼️ Foto ${photoNumber} carregada com sucesso`)}
-            onError={(e) => {
-// console.error(`❌ Erro ao carregar foto ${photoNumber}:`, e);
+// onLoad={() => /*log_removed*/
             }}
           />
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all rounded-lg flex items-center justify-center gap-2">

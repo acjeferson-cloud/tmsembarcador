@@ -33,7 +33,7 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-// console.error('Erro ao carregar transportadores:', error);
+// /*log_removed*/
     }
   };
 

@@ -84,7 +84,7 @@ export const logisticsSimulatorService = {
       });
 
       if (error) {
-        console.error('Erro na chamada da Edge Function:', error);
+
         throw new Error(error.message || 'Falha ao processar simulação. Verifique as configurações das tabelas.');
       }
 
@@ -96,7 +96,7 @@ export const logisticsSimulatorService = {
       // Actually, we can fetch all carriers in frontend and map the names
       return data as SimulationResponse;
     } catch (error: any) {
-      console.error('Logistics Simulator Error:', error);
+
       return {
         success: false,
         results: [],

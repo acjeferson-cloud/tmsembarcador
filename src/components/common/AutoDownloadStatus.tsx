@@ -19,7 +19,7 @@ export const AutoDownloadStatus: React.FC<AutoDownloadStatusProps> = ({ establis
       const data = await establishmentsService.getById(establishmentId);
       setEstablishment(data);
     } catch (error) {
-      console.error('Erro ao carregar estabelecimento:', error);
+
     }
   };
 

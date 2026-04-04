@@ -84,7 +84,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         i18n.changeLanguage(targetLanguage);
 
       } catch (error) {
-        console.error('Error loading language preference:', error);
+
         const fallbackLang: SupportedLanguage = 'pt';
         setLanguageState(fallbackLang);
         i18n.changeLanguage(fallbackLang);
@@ -125,7 +125,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user?.id) {
-        console.warn('Cannot change language without a logged-in user');
+
         return;
       }
 
@@ -140,7 +140,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       setUserConfiguredLanguages([lang]);
       i18n.changeLanguage(lang);
     } catch (error) {
-      console.error('Error updating language preference:', error);
+
       throw error;
     }
   };

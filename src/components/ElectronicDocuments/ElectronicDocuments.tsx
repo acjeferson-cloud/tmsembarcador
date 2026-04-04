@@ -46,10 +46,10 @@ export const ElectronicDocuments: React.FC = () => {
           try {
             parsedData = parseXML(doc.xml_content);
           } catch (e) {
-            console.error('Error parsing XML:', e);
+
           }
         } else {
-            console.warn(`No xml_content for ${doc.document_number}`);
+
         }
         
         return {
@@ -87,7 +87,7 @@ export const ElectronicDocuments: React.FC = () => {
       });
       setDocumentsList(mappedData);
     } catch (error) {
-      console.error('Erro ao carregar documentos:', error);
+
     }
   };
 

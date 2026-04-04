@@ -270,7 +270,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         }
       }
     } catch (error) {
-// console.error('Erro na ação em lote:', error);
+// /*log_removed*/
       setToast({ message: t('pickups.messages.errorProcessAction'), type: 'error' });
     } finally {
       setIsLoading(false);
@@ -353,7 +353,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
       }));
       setPickups(formattedPickups);
     } catch (error) {
-// console.error('Erro ao carregar coletas:', error);
+// /*log_removed*/
     } finally {
       setIsLoading(false);
     }
@@ -402,7 +402,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
       }
       setSelectedPickups([]); // Limpar seleção após a ação
     } catch (error) {
-// console.error(`Erro ao ${confirmDialog.action} coletas:`, error);
+// /*log_removed*/
       setToast({ message: `Erro ao processar as coletas selecionadas.`, type: 'error' });
     } finally {
       setIsLoading(false);

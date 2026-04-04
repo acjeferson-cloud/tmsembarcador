@@ -96,7 +96,7 @@ export const publicTrackingService = {
       });
 
       if (fetchError || !result?.success) {
-        console.error('Erro na Edge Function (Turnstile/Supabase):', { fetchError, result });
+
         return {
           success: false,
           blocked: result?.blocked || false,
@@ -239,7 +239,7 @@ export const publicTrackingService = {
         data: publicInfo
       };
     } catch (error) {
-      console.error('Erro getByTrackingCodeSecure:', error);
+
       return {
         success: false,
         blocked: false,

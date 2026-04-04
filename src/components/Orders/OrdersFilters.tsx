@@ -37,7 +37,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-      console.error('Erro ao carregar transportadores:', error);
+
     }
   };
 

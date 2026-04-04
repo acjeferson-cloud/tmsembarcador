@@ -39,7 +39,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-// console.error('Erro ao carregar transportadores:', error);
+// /*log_removed*/
     }
   };
 

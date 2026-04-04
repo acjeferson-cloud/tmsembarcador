@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
+import { runCronSync, supabase } from './syncWorker.js';
 
 // Permite conexões com Service Layer que possuam certificados SSL auto-assinados
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -188,6 +191,80 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       return res.status(200).json({ success: false, error: 'Nenhum Pedido de Venda foi encontrado no banco de dados SAP.' });
     }
 
+    // Fetch Business Partner to get CNPJ/Document and Addresses if missing
+    let documentStr = (latestOrder.LicTradNum || latestOrder.TaxIdNum || latestOrder.FederalTaxID || '').replace(/\D/g, '');
+    
+    if (latestOrder.CardCode && (!documentStr || !latestOrder.AddressExtension?.ShipToCity || !latestOrder.AddressExtension?.ShipToZipCode)) {
+      try {
+        const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${latestOrder.CardCode}')`;
+        console.log(`[Proxy] Buscando dados do Parceiro para capturar info/endereço em: ${bpEndpoint}`);
+        
+        const bpRes = await fetch(bpEndpoint, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'Cookie': cookieString }
+        });
+        
+        if (bpRes.ok) {
+          const bpData = await bpRes.json();
+          if (!documentStr) {
+            documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+            if (!documentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
+               const taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => t.TaxId0 || t.TaxId1 || t.TaxId4);
+               if (taxIdObj) documentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId1 || taxIdObj.TaxId4 || '').replace(/\D/g, '');
+            }
+          }
+          
+          if (!latestOrder.AddressExtension?.ShipToCity || !latestOrder.AddressExtension?.ShipToZipCode) {
+             let bestAddress = null;
+             if (bpData.BPAddresses && bpData.BPAddresses.length > 0) {
+                bestAddress = bpData.BPAddresses.find(a => a.AddressType === 'bo_ShipTo') || bpData.BPAddresses.find(a => a.AddressType === 'bo_BillTo') || bpData.BPAddresses[0];
+             }
+             if (bestAddress || bpData.City || bpData.ZipCode) {
+                if (!latestOrder.AddressExtension) latestOrder.AddressExtension = {};
+                if (!latestOrder.AddressExtension.ShipToCity) latestOrder.AddressExtension.ShipToCity = (bestAddress?.City) || bpData.City || '';
+                if (!latestOrder.AddressExtension.ShipToState) latestOrder.AddressExtension.ShipToState = (bestAddress?.State) || bpData.State1 || bpData.County || '';
+                if (!latestOrder.AddressExtension.ShipToZipCode) latestOrder.AddressExtension.ShipToZipCode = (bestAddress?.ZipCode) || bpData.ZipCode || '';
+                if (!latestOrder.AddressExtension.ShipToStreet) latestOrder.AddressExtension.ShipToStreet = (bestAddress?.Street) || bpData.Address || '';
+             }
+          }
+        }
+      } catch (e) {
+        console.error('[Proxy] Failed to fetch BP details', e);
+      }
+    }
+
+    // Fetch Carrier (Transportadora) Business Partner using TaxExtension.Carrier or Document.TransportationCode
+    let carrierDocumentStr = '';
+    const carrierCode = latestOrder.TaxExtension?.Carrier || '';
+    if (carrierCode) {
+      try {
+        const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${carrierCode}')`;
+        console.log(`[Proxy] Buscando Transportadora para capturar CNPJ em: ${bpEndpoint}`);
+        
+        const bpRes = await fetch(bpEndpoint, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'Cookie': cookieString }
+        });
+        
+        if (bpRes.ok) {
+          const bpData = await bpRes.json();
+          carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+          
+          if (!carrierDocumentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
+             let taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId0); // CNPJ is priority
+             if (!taxIdObj) taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId4); // CPF secondary
+             if (!taxIdObj) taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId1); // Insc Estadual fallback
+             
+             if (taxIdObj) {
+               carrierDocumentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId4 || taxIdObj.TaxId1 || '').replace(/\D/g, '');
+             }
+          }
+        }
+      } catch (e) {
+        console.error('[Proxy] Failed to fetch Carrier BP details', e);
+      }
+    }
+
     // Mapeamento minucioso do Item pro TMS
     const mappedOrder = {
       order_number: latestOrder.DocNum?.toString() || '',
@@ -196,8 +273,10 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       expected_delivery: latestOrder.DocDueDate || '',
       order_value: Number(latestOrder.DocTotal || 0),
       observations: latestOrder.Comments || '',
+      carrier_document: carrierDocumentStr,
+      carrier_code: carrierCode,
       customer: {
-        document: (latestOrder.LicTradNum || latestOrder.TaxIdNum || '').replace(/\D/g, ''),
+        document: documentStr,
         name: latestOrder.CardName || '',
         cardCode: latestOrder.CardCode || ''
       },
@@ -244,6 +323,330 @@ app.post('/api/fetch-sap-order', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// Endpoint 3: Fetch SAP Invoice
+app.post('/api/fetch-sap-invoice', async (req, res) => {
+  try {
+    const { endpointSystem, port, username, password, companyDb } = req.body;
+
+    if (!endpointSystem || !username || !companyDb) {
+      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
+    }
+
+    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
+    let serviceLayerUrl = cleanEndpoint;
+    
+    if (port && !cleanEndpoint.includes(`:${port}`)) {
+      try {
+        const urlParts = new URL(cleanEndpoint);
+        urlParts.port = port.toString();
+        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
+      } catch (e) {
+        serviceLayerUrl = `${cleanEndpoint}:${port}`;
+      }
+    }
+    
+    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
+    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+
+    // 1. Login
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); 
+
+    let loginResponse;
+    try {
+      console.log(`[Proxy] Login no SAP: ${serviceLayerUrl}/Login`);
+      loginResponse = await fetch(`${serviceLayerUrl}/Login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          CompanyDB: companyDb,
+          UserName: username,
+          Password: password || ''
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!loginResponse.ok) {
+        let errorData = null;
+        try { errorData = await loginResponse.json(); } catch (e) {}
+        const sapErrorMsg = errorData?.error?.message?.value || loginResponse.statusText;
+        return res.status(200).json({ success: false, error: `Falha na conexão de Login SAP (${loginResponse.status}): ${sapErrorMsg}` });
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      return res.status(200).json({ success: false, error: `Falha de Rede/SSL ao autenticar no IP do SAP: ${fetchError.message}` });
+    }
+
+    // Extrair Cookie B1Session
+    const setCookieHeader = loginResponse.headers.get('set-cookie');
+    if (!setCookieHeader) {
+      return res.status(200).json({ success: false, error: `Nenhum Cookie de sessão retornado pelo SAP.` });
+    }
+    const cookiesMatch = setCookieHeader.match(/(B1SESSION=[^;]+)|(ROUTEID=[^;]+)/g) || [];
+    const cookieString = cookiesMatch.join('; ');
+
+    // 2. Fetch Invoice
+    const invoiceController = new AbortController();
+    const invoiceTimeoutId = setTimeout(() => invoiceController.abort(), 15000);
+    
+    let invoiceResponse;
+    try {
+      const invoiceEndpoint = `${serviceLayerUrl}/Invoices?$orderby=DocEntry desc&$top=1`;
+      console.log(`[Proxy] Buscando invoices em: ${invoiceEndpoint}`);
+      
+      invoiceResponse = await fetch(invoiceEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cookie': cookieString,
+          'Prefer': 'odata.maxpagesize=1'
+        },
+        signal: invoiceController.signal
+      });
+      clearTimeout(invoiceTimeoutId);
+
+      if (!invoiceResponse.ok) {
+        let invoiceErrorData = null;
+        try { invoiceErrorData = await invoiceResponse.json(); } catch (e) {}
+        const invoiceSapErrorMsg = invoiceErrorData?.error?.message?.value || invoiceResponse.statusText;
+        return res.status(200).json({ success: false, error: `Falha ao buscar Nota (${invoiceResponse.status}): ${invoiceSapErrorMsg}` });
+      }
+    } catch (fetchError) {
+      clearTimeout(invoiceTimeoutId);
+      return res.status(200).json({ success: false, error: `Falha de Rede ao buscar Nota SAP: ${fetchError.message}` });
+    }
+
+    const invoiceData = await invoiceResponse.json();
+    const latestInvoice = invoiceData.value && invoiceData.value.length > 0 ? invoiceData.value[0] : null;
+
+    if (!latestInvoice) {
+      return res.status(200).json({ success: false, error: 'Nenhuma Nota Fiscal foi encontrado no banco de dados SAP.' });
+    }
+
+    // Fetch Business Partner to get CNPJ/Document and Addresses if missing
+    let documentStr = (latestInvoice.LicTradNum || latestInvoice.TaxIdNum || latestInvoice.FederalTaxID || '').replace(/\D/g, '');
+    
+    if (latestInvoice.CardCode && (!documentStr || !latestInvoice.AddressExtension?.ShipToCity || !latestInvoice.AddressExtension?.ShipToZipCode)) {
+      try {
+        const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${latestInvoice.CardCode}')`;
+        console.log(`[Proxy] Buscando dados do Parceiro para capturar info/endereço em: ${bpEndpoint}`);
+        
+        const bpRes = await fetch(bpEndpoint, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'Cookie': cookieString }
+        });
+        
+        if (bpRes.ok) {
+          const bpData = await bpRes.json();
+          if (!documentStr) {
+            documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+            if (!documentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
+               const taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => t.TaxId0 || t.TaxId1 || t.TaxId4);
+               if (taxIdObj) documentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId1 || taxIdObj.TaxId4 || '').replace(/\D/g, '');
+            }
+          }
+          
+          if (!latestInvoice.AddressExtension?.ShipToCity || !latestInvoice.AddressExtension?.ShipToZipCode) {
+             let bestAddress = null;
+             if (bpData.BPAddresses && bpData.BPAddresses.length > 0) {
+                bestAddress = bpData.BPAddresses.find(a => a.AddressType === 'bo_ShipTo') || bpData.BPAddresses.find(a => a.AddressType === 'bo_BillTo') || bpData.BPAddresses[0];
+             }
+             if (bestAddress || bpData.City || bpData.ZipCode) {
+                if (!latestInvoice.AddressExtension) latestInvoice.AddressExtension = {};
+                if (!latestInvoice.AddressExtension.ShipToCity) latestInvoice.AddressExtension.ShipToCity = (bestAddress?.City) || bpData.City || '';
+                if (!latestInvoice.AddressExtension.ShipToState) latestInvoice.AddressExtension.ShipToState = (bestAddress?.State) || bpData.State1 || bpData.County || '';
+                if (!latestInvoice.AddressExtension.ShipToZipCode) latestInvoice.AddressExtension.ShipToZipCode = (bestAddress?.ZipCode) || bpData.ZipCode || '';
+                if (!latestInvoice.AddressExtension.ShipToStreet) latestInvoice.AddressExtension.ShipToStreet = (bestAddress?.Street) || bpData.Address || '';
+             }
+          }
+        }
+      } catch (e) {
+        console.error('[Proxy] Failed to fetch BP details', e);
+      }
+    }
+
+    // Fetch Carrier (Transportadora) Business Partner using TaxExtension.Carrier or Document.TransportationCode
+    let carrierDocumentStr = '';
+    const carrierCode = latestInvoice.TaxExtension?.Carrier || '';
+    if (carrierCode) {
+      try {
+        const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${carrierCode}')`;
+        console.log(`[Proxy] Buscando Transportadora para capturar CNPJ em: ${bpEndpoint}`);
+        
+        const bpRes = await fetch(bpEndpoint, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'Cookie': cookieString }
+        });
+        
+        if (bpRes.ok) {
+          const bpData = await bpRes.json();
+          carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+          
+          if (!carrierDocumentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
+             let taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId0); // CNPJ is priority
+             if (!taxIdObj) taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId4); // CPF secondary
+             if (!taxIdObj) taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId1); // Insc Estadual fallback
+             
+             if (taxIdObj) {
+               carrierDocumentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId4 || taxIdObj.TaxId1 || '').replace(/\D/g, '');
+             }
+          }
+        }
+      } catch (e) {
+        console.error('[Proxy] Failed to fetch Carrier BP details', e);
+      }
+    }
+
+    // Mapeamento minucioso do Item pro TMS
+    let relatedOrderNum = '';
+    if (latestInvoice.DocumentLines && latestInvoice.DocumentLines.length > 0) {
+      const firstLine = latestInvoice.DocumentLines[0];
+      if (firstLine.BaseType === 17 && firstLine.BaseEntry) {
+        // Find the actual DocNum of the Sales Order
+        try {
+          const bpEndpoint = `${serviceLayerUrl}/Orders(${firstLine.BaseEntry})?$select=DocNum`;
+          const bpRes = await fetch(bpEndpoint, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json', 'Cookie': cookieString }
+          });
+          if (bpRes.ok) {
+            const orderData = await bpRes.json();
+            if (orderData && orderData.DocNum) {
+              relatedOrderNum = orderData.DocNum.toString();
+            }
+          } else {
+             // Fallback to BaseEntry if query fails
+             relatedOrderNum = firstLine.BaseEntry.toString();
+          }
+        } catch(e) { 
+           relatedOrderNum = firstLine.BaseEntry.toString();
+        }
+      }
+    }
+
+    const mappedInvoice = {
+      order_number: relatedOrderNum,
+      invoice_number: latestInvoice.U_SKL25NFE?.toString() || latestInvoice.SequenceSerial?.toString() || latestInvoice.Serial?.toString() || latestInvoice.FolioNumber?.toString() || latestInvoice.DocNum?.toString() || '',
+      issue_date: latestInvoice.DocDate || new Date().toISOString().split('T')[0],
+      entry_date: latestInvoice.DocDate || new Date().toISOString().split('T')[0],
+      expected_delivery: latestInvoice.DocDueDate || '',
+      invoice_value: Number(latestInvoice.DocTotal || 0),
+      observations: latestInvoice.Comments || '',
+      _debug_nfe_fields: {
+         Serial: latestInvoice.Serial,
+         SequenceSerial: latestInvoice.SequenceSerial,
+         FolioNumber: latestInvoice.FolioNumber,
+         FolioNum: latestInvoice.FolioNum,
+         U_SKL25NFE: latestInvoice.U_SKL25NFE,
+         U_NumNfe: latestInvoice.U_NumNfe,
+         DocNum: latestInvoice.DocNum,
+         DocEntry: latestInvoice.DocEntry,
+         SeriesString: latestInvoice.SeriesString,
+         SequenceCode: latestInvoice.SequenceCode
+      },
+      carrier_document: carrierDocumentStr,
+      carrier_code: carrierCode,
+      customer: {
+        document: documentStr,
+        name: latestInvoice.CardName || '',
+        cardCode: latestInvoice.CardCode || ''
+      },
+      destination: {
+        zip_code: String(latestInvoice.AddressExtension?.ShipToZipCode || ''),
+        street: String(latestInvoice.AddressExtension?.ShipToStreet || ''),
+        number: String(latestInvoice.AddressExtension?.ShipToStreetNo || ''),
+        neighborhood: String(latestInvoice.AddressExtension?.ShipToBlock || ''),
+        city: String(latestInvoice.AddressExtension?.ShipToCity || ''),
+        state: String(latestInvoice.AddressExtension?.ShipToState || ''),
+      },
+      items: (latestInvoice.DocumentLines || []).map((line) => ({
+        product_code: String(line.ItemCode || ''),
+        product_description: String(line.ItemDescription || ''),
+        quantity: Number(line.Quantity || 1),
+        unit_price: Number(line.Price || 0),
+        total_price: Number(line.LineTotal || 0),
+        weight: Number(line.Weight1 || 0), 
+        cubic_meters: Number(line.Volume || 0)
+      }))
+    };
+
+    const totalWeight = mappedInvoice.items.reduce((acc, cur) => acc + cur.weight, 0);
+    const totalVolumeQty = mappedInvoice.items.reduce((acc, cur) => acc + cur.quantity, 0);
+    const totalCubicMeters = mappedInvoice.items.reduce((acc, cur) => acc + cur.cubic_meters, 0);
+
+    const fullInvoicePayload = {
+      ...mappedInvoice,
+      weight: totalWeight,
+      volume_qty: totalVolumeQty > 0 ? totalVolumeQty : 1,
+      cubic_meters: totalCubicMeters
+    };
+
+    // Callback logout invisível
+    fetch(`${serviceLayerUrl}/Logout`, { 
+      method: 'POST', 
+      headers: { 'Cookie': cookieString, 'Accept': 'application/json' } 
+    }).catch(() => {});
+
+    return res.status(200).json({ success: true, invoice: fullInvoicePayload });
+
+  } catch (globalError) {
+    return res.status(200).json({ success: false, error: `Erro no servidor Node Proxy: ${globalError.message}` });
+  }
+});
+
+// Endpoint 4: Fetch ERP Sync Logs (bypasses RLS)
+app.post('/api/erp-sync-logs', async (req, res) => {
+  try {
+    const { orgId, envId, estId } = req.body;
+    if (!orgId || !envId) {
+      return res.status(400).json({ success: false, error: 'orgId e envId sao obrigatorios' });
+    }
+    if (!supabase) {
+      return res.status(500).json({ success: false, error: 'Database desabilitada no Worker' });
+    }
+    
+    let query = supabase.from('erp_sync_logs').select('*')
+      .eq('organization_id', orgId)
+      .eq('environment_id', envId);
+      
+    if (estId) {
+      query = query.eq('establishment_id', estId);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
+    
+    if (error) {
+      console.error('[Proxy] Erro fetch logs:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+    
+    return res.status(200).json({ success: true, logs: data || [] });
+  } catch (error) {
+     return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoint: Cron Sync Scheduler (Call this from GCP Scheduler)
+app.post('/api/cron-sync', async (req, res) => {
+  try {
+    const result = await runCronSync(PORT);
+    if (!result.success) {
+      return res.status(500).json(result);
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Fatal Cron Error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 TMS ERP Proxy Server running on port ${PORT}`);
+  
+  // Auto Cron Loop Interno
+  console.log('⏰ Iniciando Cron Loop Interno a cada 60s...');
+  setInterval(() => {
+    runCronSync(PORT).catch(err => console.error('Erro no cron automÃ¡tico:', err));
+  }, 60000);
 });

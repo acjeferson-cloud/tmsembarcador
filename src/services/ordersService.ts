@@ -78,9 +78,9 @@ const mapOrderFromDb = (dbOrder: any): Order => {
     serie: dbOrder.serie || '',
     order_number: dbOrder.numero_pedido || dbOrder.numero || '',
     customer_id: dbOrder.business_partner_id,
-    customer_name: dbOrder.business_partner_name || dbOrder.business_partners?.razao_social || 'Cliente não informado',
+    customer_name: dbOrder.business_partner_name || dbOrder.business_partners?.razao_social || dbOrder.metadata?.customer_name || 'Cliente não informado',
     issue_date: dbOrder.data_pedido || new Date().toISOString().split('T')[0],
-    entry_date: dbOrder.data_pedido || new Date().toISOString().split('T')[0],
+    entry_date: dbOrder.data_entrada || dbOrder.data_pedido || new Date().toISOString().split('T')[0],
     expected_delivery: dbOrder.data_prevista_entrega,
     carrier_id: dbOrder.carrier_id,
     carrier_name: dbOrder.carrier_name || dbOrder.carriers?.razao_social || 'Transportadora não informada',
@@ -214,6 +214,7 @@ export const ordersService = {
         numero_pedido: String(orderData.order_number || ''),
         business_partner_id: orderData.customer_id || null,
         data_pedido: orderData.issue_date || new Date().toISOString().split('T')[0],
+        data_entrada: orderData.entry_date || new Date().toISOString().split('T')[0],
         data_prevista_entrega: orderData.expected_delivery || null,
         carrier_id: orderData.carrier_id || null,
         valor_frete: Number(orderData.freight_value || 0),
@@ -233,6 +234,7 @@ export const ordersService = {
         cubic_meters: Number(orderData.cubic_meters || 0),
         freight_results: orderData.freight_results || [],
         best_carrier_id: orderData.best_carrier_id || null,
+        metadata: { customer_name: orderData.customer_name },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -315,6 +317,12 @@ export const ordersService = {
       if (orderData.order_number !== undefined) dataToUpdate.numero_pedido = String(orderData.order_number || '');
       if (orderData.customer_id !== undefined) dataToUpdate.business_partner_id = orderData.customer_id || null;
       if (orderData.issue_date !== undefined) dataToUpdate.data_pedido = orderData.issue_date || new Date().toISOString().split('T')[0];
+      if (orderData.entry_date !== undefined) dataToUpdate.data_entrada = orderData.entry_date || null;
+      if (orderData.customer_name) {
+        // Fetch current to merge metadata safely without destroying it
+        const { data: currentDbOrder } = await supabase.from('orders').select('metadata').eq('id', id).single();
+        dataToUpdate.metadata = { ...((currentDbOrder && currentDbOrder.metadata) || {}), customer_name: orderData.customer_name };
+      }
       if (orderData.expected_delivery !== undefined) dataToUpdate.data_prevista_entrega = orderData.expected_delivery || null;
       if (orderData.carrier_id !== undefined) dataToUpdate.carrier_id = orderData.carrier_id || null;
       if (orderData.freight_value !== undefined) dataToUpdate.valor_frete = Number(orderData.freight_value || 0);
@@ -388,7 +396,7 @@ export const ordersService = {
       if (error) return { success: false, error: error.message };
       return { success: true };
     } catch (error) {
-      console.error('Excessão ao deletar pedido:', error);
+
       return { success: false, error: 'Erro interno ao excluir pedido' };
     }
   },

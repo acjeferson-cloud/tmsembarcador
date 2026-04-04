@@ -95,7 +95,7 @@ export const CopyFreightTableModal: React.FC<CopyFreightTableModalProps> = ({
       if (carriersError) throw carriersError;
       setCarriers(carriersData || []);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+
       setToast({
         message: 'Erro ao carregar dados',
         type: 'error'
@@ -136,7 +136,7 @@ export const CopyFreightTableModal: React.FC<CopyFreightTableModalProps> = ({
         onClose();
       }, 1500);
     } catch (error: any) {
-      console.error('Erro ao copiar tabela:', error);
+
       setToast({
         message: error.message || 'Erro ao copiar tabela de frete',
         type: 'error'

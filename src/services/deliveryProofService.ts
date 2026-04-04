@@ -53,7 +53,7 @@ export const deliveryProofService = {
 
       return { success: true, url: data.publicUrl };
     } catch (error: any) {
-      console.error('Erro no upload da foto:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -76,7 +76,7 @@ export const deliveryProofService = {
 
       return { success: true, url: data.publicUrl };
     } catch (error: any) {
-      console.error('Erro no upload da assinatura:', error);
+
       return { success: false, error: error.message };
     }
   },
@@ -91,7 +91,7 @@ export const deliveryProofService = {
         .from('pickup-proofs')
         .remove([pathPart]);
     } catch (error) {
-      console.error('Erro ao deletar foto:', error);
+
     }
   },
 
@@ -112,7 +112,7 @@ export const deliveryProofService = {
 
       return null;
     } catch (error) {
-      console.error('Erro ao buscar delivery proof:', error);
+
       return null;
     }
   },
@@ -146,7 +146,7 @@ export const deliveryProofService = {
       
       return { success: true };
     } catch (error: any) {
-      console.error('Erro ao salvar delivery proof:', error);
+
       return { success: false, error: error.message };
     }
   }

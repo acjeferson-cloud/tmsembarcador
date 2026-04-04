@@ -161,7 +161,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                throw new Error('CEP retornado pela Receita é inválido no ViaCEP');
             }
           } catch (error) {
-            console.warn('Alerta na validação/enriquecimento de CEP do CNPJ:', error);
+
           }
         }
       }
@@ -429,7 +429,7 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         });
       }, 3000);
     } catch (error) {
-      console.error('❌ [BusinessPartnerForm] Erro ao buscar CEP:', error);
+
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar CEP. Tente novamente.';
       setCepMessages({ ...cepMessages, [index]: { type: 'error', text: errorMessage } });
     } finally {

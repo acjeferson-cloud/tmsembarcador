@@ -67,7 +67,7 @@ export const FreightRates: React.FC = () => {
             window.history.replaceState(null, '', '#/freight-rates');
           }
         } catch (error) {
-          console.error('Erro ao abrir tarifa:', error);
+
         }
       }
     };
@@ -82,9 +82,9 @@ export const FreightRates: React.FC = () => {
       const data = await freightRatesService.getAllTables();
       setTables(data);
     } catch (err: any) {
-      console.error('❌ [FREIGHT RATES] Erro ao carregar tabelas:', err);
-      console.error('❌ [FREIGHT RATES] Error message:', err.message);
-      console.error('❌ [FREIGHT RATES] Error stack:', err.stack);
+
+
+
       setError('Erro ao carregar tabelas de frete');
     } finally {
       setIsLoading(false);
@@ -96,7 +96,7 @@ export const FreightRates: React.FC = () => {
       const data = await carriersService.getAllCarriers();
       setCarriersList(data);
     } catch (err: any) {
-      console.error('Erro ao carregar transportadoras:', err);
+
     }
   };
 
@@ -139,7 +139,7 @@ export const FreightRates: React.FC = () => {
         alert('Tabela de frete excluída com sucesso!');
         forceRefresh();
       } catch (err) {
-        console.error('Erro ao excluir tabela:', err);
+
         alert('Erro ao excluir tabela de frete.');
       }
     }

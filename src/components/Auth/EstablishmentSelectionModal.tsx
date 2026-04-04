@@ -66,7 +66,7 @@ export const EstablishmentSelectionModal: React.FC<EstablishmentSelectionModalPr
         // Call onSelect prop which handles everything
         await onSelect(selectedEstablishment);
       } catch (error) {
-        console.error('Error selecting establishment:', error);
+
         setError(t('establishmentSelection.errorSelecting'));
       }
     } else {

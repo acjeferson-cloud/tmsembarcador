@@ -389,7 +389,7 @@ export const usersService = {
         try {
           hashedPassword = await hashPassword(user.senha);
         } catch (e) {
-          console.error('Erro ao gerar hash da senha', e);
+
         }
       }
 
@@ -428,7 +428,7 @@ export const usersService = {
         environment_id: envId
       };
 
-      console.error('[DEBUG usersService.ts create] Enviando para o Supabase (insert):', JSON.stringify(payloadToInsert, null, 2));
+
 
       const { data, error } = await supabase
         .from('users')
@@ -469,7 +469,7 @@ export const usersService = {
         try {
           updateData.senha_hash = user.senha ? await hashPassword(user.senha) : user.senha;
         } catch (e) {
-          console.error('Erro ao gerar hash da senha na atualização', e);
+
           updateData.senha_hash = user.senha;
         }
       }

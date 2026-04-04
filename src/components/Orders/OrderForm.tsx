@@ -178,7 +178,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
       setStates(statesData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+
       setError('Erro ao carregar dados do formulário');
     }
   };
@@ -426,7 +426,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             }
           }
         } catch (calcError) {
-          console.error('Erro ao calcular frete no pedido. Isso não impede de salvar o pedido.', calcError);
+
         }
       }
 
@@ -481,7 +481,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
           const itemsResult = await ordersService.updateItems(order.id, products);
 
           if (!itemsResult.success) {
-            console.error('Erro ao atualizar itens:', itemsResult.error);
+
             setError('Pedido atualizado, mas houve erro ao atualizar os itens.');
             return;
           }
@@ -491,7 +491,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             const notificationResult = await orderNotificationService.sendOrderCreatedNotifications(order.id);
             if (notificationResult.success) {
             } else {
-              console.error('Erro ao enviar notificações:', notificationResult.error);
+
             }
           }
 
@@ -512,7 +512,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             const itemsResult = await ordersService.addItems(result.id, products);
 
             if (!itemsResult.success) {
-              console.error('Erro ao adicionar itens:', itemsResult.error);
+
             }
           }
 
@@ -521,7 +521,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             const notificationResult = await orderNotificationService.sendOrderCreatedNotifications(result.id);
             if (notificationResult.success) {
             } else {
-              console.error('Erro ao enviar notificações:', notificationResult.error);
+
             }
           }
 
@@ -530,13 +530,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             onSave();
           }, 1500);
         } else {
-          console.error('Erro no resultado:', result);
+
           setError(result.error || 'Erro ao criar pedido.');
         }
       }
     } catch (err: any) {
-      console.error('Erro capturado no catch:', err);
-      console.error('Stack trace:', err.stack);
+
+
       setError(err.message || 'Erro ao ' + (order ? 'atualizar' : 'criar') + ' pedido.');
     } finally {
       setIsSubmitting(false);

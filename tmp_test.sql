@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION test_count_logs() RETURNS integer AS  DECLARE c integer; BEGIN SELECT count(*) INTO c FROM public.erp_sync_logs; RETURN c; END;  LANGUAGE plpgsql SECURITY DEFINER;

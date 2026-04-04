@@ -339,7 +339,7 @@ export const ctesCompleteService = {
             xml_content: cte.xml_data.original
           });
         } catch (e) {
-          console.error('Failed copying CTe to electronic_documents', e);
+
         }
       }
 

@@ -259,11 +259,11 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
       } else {
         setAiInsight(response.insight);
         if (response.cached) {
-          console.log('Insight carregado do cache (últimas 24h)');
+
         }
       }
     } catch (error: any) {
-      console.error('Erro ao gerar insight:', error);
+
       setAiInsight('');
       setToast({ message: error.message || 'Erro ao gerar análise com IA', type: 'error' });
     } finally {

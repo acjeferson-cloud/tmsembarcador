@@ -34,7 +34,7 @@ export const aiInsightService = {
         cached: data.cached || false
       };
     } catch (error: any) {
-      console.error('Error generating AI insight:', error);
+
       return {
         insight: '',
         cached: false,

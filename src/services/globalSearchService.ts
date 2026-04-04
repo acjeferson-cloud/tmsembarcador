@@ -163,15 +163,15 @@ export const globalSearchService = {
         });
       }
 
-      if (ordersRes.error) console.error('Erro na query Orders:', ordersRes.error);
-      if (invoicesRes.error) console.error('Erro na query Invoices:', invoicesRes.error);
-      if (ctesRes.error) console.error('Erro na query CTes:', ctesRes.error);
-      if (billsRes.error) console.error('Erro na query Bills:', billsRes.error);
-      if (pickupsRes.error) console.error('Erro na query Pickups:', pickupsRes.error);
+      if (ordersRes.error) /*log_removed*/
+      if (invoicesRes.error) /*log_removed*/
+      if (ctesRes.error) /*log_removed*/
+      if (billsRes.error) /*log_removed*/
+      if (pickupsRes.error) /*log_removed*/
 
       return results;
     } catch (error) {
-      console.error('Erro na pesquisa global', error);
+
       return [];
     }
   }

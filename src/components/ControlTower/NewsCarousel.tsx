@@ -50,7 +50,7 @@ export const NewsCarousel: React.FC = () => {
       setNews(latestNews);
       setLastUpdate(newsService.getLastUpdateTime());
     } catch (error) {
-      console.error('Erro ao carregar notícias:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +64,7 @@ export const NewsCarousel: React.FC = () => {
       setNews(latestNews);
       setLastUpdate(newsService.getLastUpdateTime());
     } catch (error) {
-      console.error('Erro ao atualizar notícias:', error);
+
     } finally {
       setIsLoading(false);
     }

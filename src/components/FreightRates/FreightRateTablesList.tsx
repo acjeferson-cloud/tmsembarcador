@@ -35,7 +35,7 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
         : await freightRatesService.getAllTables();
       setTables(data);
     } catch (error) {
-      console.error('❌ Erro ao carregar tabelas:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +70,7 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
         alert(t('carriers.freightRates.deleteSuccess'));
         loadTables();
       } catch (error) {
-        console.error('Erro ao excluir tabela:', error);
+
         alert(t('carriers.freightRates.deleteError'));
       }
     }

@@ -105,7 +105,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       const data = await carriersService.getAll();
       setCarriersList(data);
     } catch (error) {
-      console.error('Erro ao carregar transportadores:', error);
+
     }
   };
 
@@ -252,7 +252,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           }
         }
       } catch (error) {
-        console.error('Erro ao duplicar tarifa:', error);
+
         setToast({ message: t('carriers.freightRates.form.duplicateError'), type: 'error' });
       }
     }
@@ -288,9 +288,9 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
       setToast({ message: 'Valores da tarifa salvos com sucesso!', type: 'success' });
     } catch (error) {
-      console.error('❌ [FreightRateTableForm] Erro ao salvar valores:', error);
+
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      console.error('❌ [FreightRateTableForm] Mensagem de erro:', errorMessage);
+
       setToast({
         message: `Erro ao salvar valores: ${errorMessage}`,
         type: 'error'
@@ -413,7 +413,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
             });
 
           } catch (error) {
-            console.error(`❌ Erro ao atualizar tarifa ${tarifa.id}:`, error);
+
             throw new Error(`Erro ao atualizar tarifa ${tarifa.descricao}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
           }
         }
@@ -429,7 +429,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       }, 1500);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      console.error('❌ Erro ao salvar tabela de frete:', error);
+
       const errorMessage = error?.message || 'Erro desconhecido';
       setToast({ message: `Erro ao salvar tabela de frete: ${errorMessage}`, type: 'error' });
     }

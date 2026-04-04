@@ -126,7 +126,7 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
       setSelectedRate(null);
       setRefreshKey(prev => prev + 1);
     } catch (error) {
-      console.error('Error saving rate:', error);
+
       alert(t('carriers.freightRates.view.saveError'));
     }
   };
@@ -169,7 +169,7 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
         setRates(updatedRates as any);
         setRefreshKey(prev => prev + 1);
       } catch (error) {
-        console.error('Erro ao duplicar tarifa:', error);
+
         setToast({ message: t('carriers.freightRates.view.duplicateError'), type: 'error' });
       }
     }

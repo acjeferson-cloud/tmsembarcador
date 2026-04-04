@@ -250,7 +250,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
         establishmentId = establishments[0].id;
       }
     } catch (e) {
-      console.error("Erro ao carregar estabelecimento:", e);
+
     }
 
     if (!establishmentId) {
@@ -276,7 +276,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
             }
           }
         } catch (e: any) {
-          console.error("Erro ao importar documento para o sistema fiscal", e);
+
         }
       }
     }

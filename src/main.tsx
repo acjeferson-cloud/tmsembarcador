@@ -27,7 +27,7 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch((error) => {
-        console.error('❌ Erro ao registrar Service Worker:', error);
+
       });
   });
 

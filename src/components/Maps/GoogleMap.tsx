@@ -41,7 +41,7 @@ export default function GoogleMap({
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      console.error('Geolocalização não é suportada pelo seu navegador');
+
       return;
     }
 
@@ -79,7 +79,7 @@ export default function GoogleMap({
         }
       },
       (error) => {
-        console.error('Não foi possível obter sua localização', error);
+
       }
     );
   };
@@ -91,7 +91,7 @@ export default function GoogleMap({
       await loadGoogleMapsAPI();
 
       if (!isGoogleMapsLoaded()) {
-        console.error('Google Maps API não foi carregada');
+
         return;
       }
 
@@ -191,7 +191,7 @@ export default function GoogleMap({
         setTimeout(() => searchLocation(), 1000);
       }
     } catch (err) {
-      console.error('Erro ao inicializar mapa:', err);
+
     }
   };
 
@@ -261,7 +261,7 @@ export default function GoogleMap({
           });
         }
       } else {
-        console.error('Endereço não encontrado');
+
       }
     });
   };

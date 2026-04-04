@@ -26,7 +26,7 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
 
 
       if (!result.success) {
-        console.error('[LoginWithEnvironmentFlow] Validation failed:', result.error);
+
         throw new Error(result.error || 'Credenciais inválidas');
       }
 
@@ -37,7 +37,7 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
       setRememberMe(remember);
       setStep('select-environment');
     } catch (error) {
-      console.error('[LoginWithEnvironmentFlow] Login error:', error);
+
       throw error;
     }
   };
@@ -60,7 +60,7 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
         rememberMe,
       });
     } catch (error) {
-      console.error('Environment selection error:', error);
+
       throw error;
     }
   };

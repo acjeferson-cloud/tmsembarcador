@@ -28,7 +28,7 @@ export function SaasEnvironmentsView() {
         .order('codigo', { ascending: false });
 
       if (error) {
-        console.error('[SAAS_ENVIRONMENTS_VIEW] Erro ao carregar organizações:', error);
+
         throw error;
       }
 
@@ -42,7 +42,7 @@ export function SaasEnvironmentsView() {
 
       setOrganizations(mapped);
     } catch (err) {
-      console.error('[SAAS_ENVIRONMENTS_VIEW] Error loading organizations:', err);
+
     } finally {
       setLoading(false);
     }

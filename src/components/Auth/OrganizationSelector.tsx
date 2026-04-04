@@ -55,7 +55,7 @@ export const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
       const data = await TenantContextHelper.getAllOrganizations();
       setOrganizations(data);
     } catch (error) {
-      console.error('Erro ao carregar organizações:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +73,7 @@ export const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
         setSelectedEnvironment(data[0].id);
       }
     } catch (error) {
-      console.error('Erro ao carregar ambientes:', error);
+
     }
   };
 

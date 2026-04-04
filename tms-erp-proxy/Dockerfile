@@ -11,7 +11,7 @@ COPY package*.json ./
 RUN npm install --production
 
 # Copiar todo o código fonte
-COPY index.js ./
+COPY . ./
 
 # O Google Cloud Run, por padrão, ouve na porta 8080
 ENV PORT=8080

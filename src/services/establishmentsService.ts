@@ -74,24 +74,24 @@ async function getUserOrganization(): Promise<{ organizationId: string; environm
 export const establishmentsService = {
   async getAll(): Promise<Establishment[]> {
     try {
-// console.log('🔗 [establishmentsService.getAll] Iniciando busca...');
+// /*log_removed*/
       
       const userOrg = await getUserOrganization();
-// console.log('🏢 [establishmentsService.getAll] Contexto recuperado:', userOrg);
+// /*log_removed*/
       
       if (!userOrg) {
-// console.warn('⚠️ [establishmentsService.getAll] Abortando: sem userOrg');
+// /*log_removed*/
         return [];
       }
       
       const { organizationId: organization_id, environmentId: environment_id } = userOrg;
 
-// console.log(`🔧 [establishmentsService.getAll] Configurando contexto da sessão org=${organization_id}, env=${environment_id}`);
+// /*log_removed*/
       const sessionRes = await setSessionContext(organization_id, environment_id);
-// console.log('🔧 [establishmentsService.getAll] Resultado do setSessionContext:', sessionRes);
+// /*log_removed*/
 
       // Buscar estabelecimentos diretamente com filtros (RLS vai proteger)
-// console.log(`📡 [establishmentsService.getAll] Executando query supabase.from('establishments').select('*').eq('organization_id', ${organization_id}).eq('environment_id', ${environment_id})`);
+// /*log_removed*/
       
       const { data, error } = await supabase
         .from('establishments')
@@ -100,10 +100,10 @@ export const establishmentsService = {
         .eq('environment_id', environment_id)
         .order('codigo', { ascending: true });
 
-// console.log('✅ [establishmentsService.getAll] Resposta do Supabase:', { data, error });
+// /*log_removed*/
 
       if (error) {
-// console.error('❌ [establishmentsService.getAll] Erro do Supabase:', error);
+// /*log_removed*/
         throw error;
       }
 

@@ -43,7 +43,7 @@ export const notificationService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+
       return [];
     }
   },
@@ -106,7 +106,7 @@ export const notificationService = {
         if (error) throw error;
         return true;
     } catch (error) {
-        console.error('Error creating notification:', error);
+
         return false;
     }
   }

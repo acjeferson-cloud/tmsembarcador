@@ -88,7 +88,7 @@ export default function Calculator() {
         }
       }
     } catch (error) {
-      console.error('Erro ao buscar CEP:', error);
+
     } finally {
       setLoading(false);
     }

@@ -15,7 +15,7 @@ export class TenantContextHelper {
     const data = rawData as any;
 
     if (error || !data || !data.success) {
-      console.error('Falha ao buscar perfil do usuário via RPC', error || data?.error);
+
       return null;
     }
 
@@ -48,20 +48,20 @@ export class TenantContextHelper {
             const userData = JSON.parse(savedUser);
             if (userData?.email) userEmail = userData.email;
           } catch (e) {
-            console.warn('Erro ao ler tms-user do localStorage', e);
+
           }
         }
       }
 
       if (!userEmail) {
-        console.warn('TenantContext: Usuário não autenticado ou sem e-mail.');
+
         return null;
       }
 
       const userProfile = await this.getUserProfile(userEmail);
 
       if (!userProfile) {
-        console.warn(`TenantContext: Perfil não encontrado para o e-mail ${userEmail}`);
+
         return null;
       }
 
@@ -73,7 +73,7 @@ export class TenantContextHelper {
       }
 
       if (!organizationId || !this.isValidUUID(organizationId)) {
-        console.warn(`TenantContext: Perfil sem organization_id para o e-mail ${userEmail}`);
+
         return null;
       }
 

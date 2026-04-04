@@ -179,7 +179,7 @@ export const DeliveryTracking: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('Erro ao buscar:', err);
+
       setError(t('deliveryTracking.errors.genericError'));
     } finally {
       setIsLoading(false);

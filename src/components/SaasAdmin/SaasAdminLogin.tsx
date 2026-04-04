@@ -50,12 +50,12 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
           onLoginSuccess();
         }
       } else {
-        console.error('Login failed:', result.error);
+
         setError(result.error || 'Falha no login');
         turnstileRef.current?.reset(); // reset token on Auth fail
       }
     } catch (err: any) {
-      console.error('Login exception:', err);
+
       logger.error('Login error', err, 'SaasAdminLogin');
       setError(err.message || 'Erro ao fazer login. Tente novamente.');
       turnstileRef.current?.reset();
@@ -224,7 +224,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
             © 2026 TMS Embarcador Log Axis. Todos os direitos reservados.
           </p>
           <span className="inline-block px-2 py-1 bg-gray-800 text-gray-500 text-xs rounded border border-gray-700 shadow-sm font-medium tracking-wide">
-            v1.23
+            V1.29
           </span>
         </div>
       </div>

@@ -473,7 +473,7 @@ export const npsService = {
 
       return data;
     } catch (error: any) {
-      console.warn('⚠️ [npsService] Erro ao disparar email de NPS:', error);
+
       throw error;
     }
   },

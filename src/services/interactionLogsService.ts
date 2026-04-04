@@ -33,7 +33,7 @@ export const interactionLogsService = {
       }
       return data as InteractionLog[];
     } catch (error) {
-      console.error('Error fetching interaction logs:', error);
+
       return [];
     }
   },
@@ -60,7 +60,7 @@ export const interactionLogsService = {
 
       return data as InteractionLog;
     } catch (error) {
-      console.error('Error inserting interaction log:', error);
+
       return null;
     }
   }

@@ -41,7 +41,7 @@ export const deliveryNotificationHandler = {
           .limit(1);
         
         if (orderDataError) {
-          console.error('[deliveryNotificationHandler] Erro ao buscar pedido:', orderDataError);
+
         }
         
         if (orderDataList && orderDataList.length > 0 && orderDataList[0].codigo_rastreio) {
@@ -281,8 +281,8 @@ export const deliveryNotificationHandler = {
         }
       }
     } catch (err) {
-      console.error('Error processing occurrence notifications:', err);
+
     }
-    console.log('[deliveryNotificationHandler] Notificação processada com o novo layout!');
+
   }
 };

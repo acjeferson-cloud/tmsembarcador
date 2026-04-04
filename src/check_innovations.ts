@@ -21,7 +21,7 @@ async function check() {
     .limit(20);
 
   if (error) {
-    console.error(error);
+
   } else {
     console.dir(data, { depth: null });
   }

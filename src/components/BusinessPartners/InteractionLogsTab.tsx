@@ -22,7 +22,7 @@ export function InteractionLogsTab({ businessPartnerId }: InteractionLogsTabProp
         const data = await interactionLogsService.getByBusinessPartner(businessPartnerId);
         setLogs(data);
       } catch (error) {
-        console.error('Error fetching interaction logs:', error);
+
       } finally {
         setLoading(false);
       }

@@ -195,11 +195,11 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
         // Forçar reload completo dos ambientes
         await loadEnvironments();
       } else {
-        console.error('Erro no upload do logo:', result.error);
+
         alert(result.error || 'Erro ao enviar logotipo');
       }
     } catch (err) {
-      console.error('Exceção no upload do logo:', err);
+
       alert(err instanceof Error ? err.message : 'Erro ao enviar logotipo');
     } finally {
       setUploadingLogo(null);
@@ -408,7 +408,7 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
                               onLoad={() => {
                               }}
                               onError={(e) => {
-                                console.error('Erro ao carregar logo:', finalUrl);
+
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                               }}
@@ -472,10 +472,7 @@ export function SaasEnvironmentsManager({ organizationId, organizationName }: Sa
                                 src={finalUrl}
                                 alt="Preview do logo"
                                 className="h-16 w-16 object-contain rounded bg-white/10 p-2"
-                                onLoad={() => console.log('Preview carregado:', env.nome)}
-                                onError={(e) => {
-                                  console.error('Erro no preview:', finalUrl);
-                                  (e.target as HTMLImageElement).style.display = 'none';
+                                onLoad={() => /*log_removed*/.style.display = 'none';
                                 }}
                               />
                             </div>

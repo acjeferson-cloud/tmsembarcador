@@ -295,7 +295,7 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
                             decoding="async"
                             className="h-16 w-16 object-contain drop-shadow-lg"
                             onError={(e) => {
-                              console.error('Erro ao carregar logo do ambiente:', env.environment_logo_url);
+
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
                               const parent = target.parentElement;

@@ -27,7 +27,7 @@ export const DocumentView: React.FC<DocumentViewProps> = ({ onBack, document, on
         tomador: parsed.tomador || document.tomador
       };
     } catch (e) {
-      console.error('Error parsing XML in view:', e);
+
     }
   }
 

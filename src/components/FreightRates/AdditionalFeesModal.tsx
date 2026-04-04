@@ -50,7 +50,7 @@ const CityName: React.FC<{ cityId: string | null; stateId: string | null }> = ({
           setCityName('N/A');
         }
       } catch (error) {
-        console.error('Error loading city:', error);
+
         setCityName('N/A');
       }
     };
@@ -110,10 +110,10 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       setStates(statesData || []);
 
     } catch (error) {
-      console.error('=== ERROR LOADING DATA ===');
-      console.error('Error details:', error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+
+
+
+
       setFees([]);
       setBusinessPartners([]);
       setStates([]);
@@ -139,7 +139,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         setCities(result.cities.map(c => ({ id: c.ibgeCode, name: c.name })));
       }
     } catch (error) {
-      console.error('Error loading cities:', error);
+
       setCities([]);
     }
   };
@@ -172,9 +172,9 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       await loadData();
       resetForm();
     } catch (error) {
-      console.error('=== ERROR SAVING FEE ===');
-      console.error('Error details:', error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+
+
+
       setToast({ message: `${t('carriers.freightRates.additionalFees.saveError')}: ${error instanceof Error ? error.message : 'Tente novamente'}`, type: 'error' });
     }
   };
@@ -206,7 +206,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       setToast({ message: t('carriers.freightRates.additionalFees.deleteSuccess'), type: 'success' });
       await loadData();
     } catch (error) {
-      console.error('Error deleting fee:', error);
+
       setToast({ message: t('carriers.freightRates.additionalFees.deleteError'), type: 'error' });
     } finally {
       setConfirmDialog({ isOpen: false });

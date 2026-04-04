@@ -28,14 +28,6 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
           ) : (
             <span 
               className="hover:text-blue-600 cursor-pointer"
-              onClick={() => item.href && console.log(`Navigate to: ${item.href}`)}
-            >
-              {item.label}
-            </span>
-          )}
-        </React.Fragment>
-      ))}
-    </nav>
-  );
+              onClick={() => item.href && /*log_removed*/
 };
 export default Breadcrumbs;

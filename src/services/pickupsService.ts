@@ -113,11 +113,11 @@ export const pickupsService = {
             usuarioResponsavel: (p.created_by ? userMap.get(p.created_by) : null) || p.contact_name || 'Usuário Sistema'
         }));
       } catch (err) {
-// console.warn('Could not map users, falling back to contact_name', err);
+// /*log_removed*/
         return mappedPickups;
       }
     } catch (error) {
-// console.error('Error fetching pickups:', error);
+// /*log_removed*/
       return [];
     }
   },
@@ -176,7 +176,7 @@ export const pickupsService = {
 
       return pickupData;
     } catch (error) {
-// console.error('Error in getById:', error);
+// /*log_removed*/
       return null;
     }
   },
@@ -352,7 +352,7 @@ export const pickupsService = {
           .single();
 
         if (pickupError || !pickup) {
-// console.error('Error creating pickup:', pickupError);
+// /*log_removed*/
           continue;
         }
 
@@ -393,7 +393,7 @@ export const pickupsService = {
       };
 
     } catch (error) {
-// console.error('Error in createFromNfes:', error);
+// /*log_removed*/
       return { success: false, error: 'Erro ao criar coletas a partir das NFes' };
     }
   },
@@ -485,7 +485,7 @@ export const pickupsService = {
           .single();
 
         if (pickupError || !pickup) {
-// console.error('Error creating pickup:', pickupError);
+// /*log_removed*/
           continue;
         }
 

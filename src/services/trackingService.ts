@@ -88,16 +88,16 @@ export const trackingService = {
 
         if (invoice.order_number || invoice.numero_pedido) {
            const ordNum = invoice.order_number || invoice.numero_pedido;
-           console.log('[TrackingService] Found order number on invoice:', ordNum);
+
            const { data: ord } = await (supabase as any).from('orders').select('*').eq('numero_pedido', ordNum).limit(1).maybeSingle();
            if (ord) {
-             console.log('[TrackingService] Successfully fetched linked order:', ord.numero_pedido, 'Status:', ord.status);
+
              order = ord;
            } else {
-             console.log('[TrackingService] Order not found in database for number:', ordNum);
+
            }
         } else {
-           console.log('[TrackingService] Invoice does not have order_number or numero_pedido. Invoice data:', invoice);
+
         }
 
       } else if (docType === 'cte') {
@@ -233,7 +233,7 @@ export const trackingService = {
       }
 
     } catch (err) {
-      console.error('Error fetching fallback tracking data:', err);
+
     }
 
     return {
@@ -411,7 +411,7 @@ export const trackingService = {
         occurrences
       };
     } catch (error) {
-      console.error('Erro ao buscar dados de rastreamento:', error);
+
       return null;
     }
   },
@@ -504,7 +504,7 @@ export const trackingService = {
         }).eq('id', orderId);
       }
     } catch (error) {
-       console.error('Error auto-syncing tracking status:', error);
+
     }
   }
 };

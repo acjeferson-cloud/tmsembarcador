@@ -65,7 +65,7 @@ export const DeliveryProofModal: React.FC<DeliveryProofModalProps> = ({
         setLegalTermsAccepted(proof.legal_terms_accepted || false);
       }
     } catch (err) {
-// console.error('Erro ao carregar comprovante:', err);
+// /*log_removed*/
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +99,7 @@ export const DeliveryProofModal: React.FC<DeliveryProofModalProps> = ({
         setError(result.error || 'Erro ao subir a foto.');
       }
     } catch (err) {
-// console.error('Erro ao fazer upload da foto:', err);
+// /*log_removed*/
       setError('Erro no upload.');
     } finally {
       setIsLoading(false);
@@ -195,7 +195,7 @@ export const DeliveryProofModal: React.FC<DeliveryProofModalProps> = ({
         setError(result.error || 'Erro ao salvar o comprovante.');
       }
     } catch (err) {
-// console.error('Erro ao salvar comprovante:', err);
+// /*log_removed*/
       setError('Falha ao salvar o documento de entrega.');
     } finally {
       setIsSaving(false);

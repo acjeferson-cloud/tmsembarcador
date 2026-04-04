@@ -88,7 +88,7 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
             <button
               onClick={() => {
                 if (!partner.id) {
-                  console.error('❌ [BusinessPartnerCard] ID do parceiro está undefined!');
+
                   alert(t('businessPartners.card.errors.idNotFound', 'Erro: ID do parceiro não encontrado'));
                   return;
                 }

@@ -59,7 +59,7 @@ export const NPSConfiguration = () => {
       }
       setDispatches(dispatchesData);
     } catch (error) {
-      console.error('Erro ao carregar dados NPS CX:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +74,7 @@ export const NPSConfiguration = () => {
       });
       setDispatches(data);
     } catch (error) {
-      console.error('Erro ao pesquisar:', error);
+
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +90,7 @@ export const NPSConfiguration = () => {
       setToast({ message: 'Regras de automação salvas com sucesso!', type: 'success' });
       setTimeout(() => setConfigSuccess(false), 3000);
     } catch (error: any) {
-      console.error('Erro ao salvar settings:', error);
+
       let errMsg = error.message || 'Erro desconhecido ao salvar configurações Automáticas de NPS.';
       // Dica para cenário de tabela não existente:
       if (errMsg.includes('relation "public.nps_settings" does not exist')) {
@@ -125,7 +125,7 @@ export const NPSConfiguration = () => {
       setToast({ message: 'Disparo agendado para reenvio com sucesso na próxima janela do robô.', type: 'info' });
       loadData(); // refresh grid
     } catch (error: any) {
-      console.error('Erro ao reenviar NPS:', error);
+
       setToast({ message: 'Erro ao agendar reenvio: ' + (error.message || 'Desconhecido'), type: 'error' });
     } finally {
       setProcessingId(null);
@@ -142,7 +142,7 @@ export const NPSConfiguration = () => {
       setToast({ message: 'NPS cancelado com sucesso.', type: 'info' });
       loadData(); // refresh grid
     } catch (error: any) {
-      console.error('Erro ao cancelar NPS:', error);
+
       setToast({ message: 'Erro ao cancelar disparo: ' + (error.message || 'Desconhecido'), type: 'error' });
     } finally {
       setProcessingId(null);
@@ -159,7 +159,7 @@ export const NPSConfiguration = () => {
        });
        loadData();
     } catch (error: any) {
-       console.error('Falha no Teste do Schedule:', error);
+
        setToast({ 
          message: 'Erro no teste. Verifique se a Edge Function nps-scheduler foi instanciada no Supabase. Detalhes: ' + error.message, 
          type: 'error' 

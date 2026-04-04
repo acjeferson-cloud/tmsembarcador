@@ -35,7 +35,7 @@ export function SaasAdminDashboard() {
       setAlerts(alertsData.filter(a => a.status === 'new'));
       setHealthStatus(healthData);
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
+
     } finally {
       setLoading(false);
     }

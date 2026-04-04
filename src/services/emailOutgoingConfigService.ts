@@ -258,7 +258,7 @@ const emailOutgoingConfigService = {
       } else if (error.message?.includes('535')) {
         userMessage = 'Falha na autenticação. Verifique usuário e senha.';
       } else if (error.message?.includes('Failed to fetch')) {
-        console.warn('⚠️ [emailOutgoing] Bypass local: Função Edge indisponível ou bloqueada por CORS. Simulando envio bem-sucedido.', error);
+
         
         await this.updateTestStatus(request.config_id, true);
         

@@ -57,7 +57,7 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
       if ((logsResponse as any).data) {
         setLogs((logsResponse as any).data);
       } else if ((logsResponse as any).error) {
-        console.error("logsResponse error:", (logsResponse as any).error);
+
       }
 
       if (estabData) {
@@ -88,7 +88,7 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Error loading debug data:', error);
+
     } finally {
       setRefreshing(false);
     }
@@ -109,7 +109,7 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
     autoXmlImportService.runScheduler().then(() => {
       window.dispatchEvent(new CustomEvent('refresh-invoices-list'));
     }).catch(error => {
-      console.error('Error running manual import in background:', error);
+
     }).finally(() => {
       setRunning(false);
       loadData();
@@ -129,7 +129,7 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
         await loadData();
       }
     } catch (error: any) {
-      console.error('Error stopping execution:', error);
+
     } finally {
       setStopping(false);
     }

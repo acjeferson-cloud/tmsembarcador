@@ -16,7 +16,7 @@ export function SaasAdminApp() {
       const isSaasAdmin = await tenantAuthService.isSaasAdmin();
       setIsAuthenticated(isSaasAdmin);
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
+
       setIsAuthenticated(false);
     } finally {
       setIsCheckingAuth(false);

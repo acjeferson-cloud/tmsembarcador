@@ -85,13 +85,13 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-        console.error('Error fetching Executive KPIs:', error);
+
         return null;
       }
 
       return data as DashboardExecutiveKPIs;
     } catch (e) {
-      console.error('Unexpected error fetching Executive KPIs:', e);
+
       return null;
     }
   },
@@ -111,13 +111,13 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-        console.error('Error fetching Cost Evolution:', error);
+
         return [];
       }
 
       return (data || []) as DashboardEvolucaoCusto[];
     } catch (e) {
-      console.error('Unexpected error fetching Cost Evolution:', e);
+
       return [];
     }
   },
@@ -136,13 +136,13 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-        console.error('Error fetching Top Carriers:', error);
+
         return [];
       }
 
       return (data || []) as DashboardTopTransportadora[];
     } catch (e) {
-      console.error('Unexpected error fetching Top Carriers:', e);
+
       return [];
     }
   },
@@ -162,13 +162,13 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-        console.error('Error fetching Operational Funnel:', error);
+
         return [];
       }
 
       return (data || []) as DashboardFunilStatus[];
     } catch (e) {
-      console.error('Unexpected error fetching Operational Funnel:', e);
+
       return [];
     }
   },
@@ -188,13 +188,13 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-        console.error('Error fetching Advanced Operational Metrics:', error);
+
         return null;
       }
 
       return data as DashboardMetricasOperacionais;
     } catch (e) {
-      console.error('Unexpected error fetching Advanced Operational Metrics:', e);
+
       return null;
     }
   },
@@ -213,13 +213,13 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-        console.error('Error fetching Map Costs:', error);
+
         return [];
       }
 
       return (data || []) as DashboardMapaCusto[];
     } catch (e) {
-      console.error('Unexpected error fetching Map Costs:', e);
+
       return [];
     }
   }

@@ -72,7 +72,7 @@ export const userActivitiesService = {
         description
       }]);
     } catch (error) {
-      console.error('Falha ao registrar atividade do usuário:', error);
+
     }
   },
 
@@ -111,7 +111,7 @@ export const userActivitiesService = {
       const { data, error } = await query;
       
       if (error) {
-         console.error('Erro na query getRecentActivities', error);
+
          return [];
       }
 
@@ -131,7 +131,7 @@ export const userActivitiesService = {
 
       return uniqueActivities;
     } catch (error) {
-      console.error('Falha ao buscar atividades recentes do usuário:', error);
+
       return [];
     }
   }

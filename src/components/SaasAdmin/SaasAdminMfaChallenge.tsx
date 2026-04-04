@@ -97,14 +97,14 @@ export const SaasAdminMfaChallenge: React.FC<SaasAdminMfaChallengeProps> = ({ on
 
       onChallengeSuccess();
     } catch (err: any) {
-      console.error('MFA error', err);
+
       
       saasAdminLogsService.logAction(
         'MFA_VERIFY_FAILED',
         'MFA_TOTP',
         'Falha na validação do código MFA.',
         { changes: { error: err.message, isBackupMode } }
-      ).catch(e => console.error('Failed to log mfa error', e));
+      ).catch(e => /*log_removed*/
 
       setError(err.message === 'Usuário ou senha inválidos.' ? err.message : 'Código inválido. Tente novamente.');
     } finally {

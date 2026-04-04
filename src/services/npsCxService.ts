@@ -50,7 +50,7 @@ export const npsCxService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Erro ao buscar configurações do NPS CX:', error);
+
       throw error;
     }
   },
@@ -80,7 +80,7 @@ export const npsCxService = {
       
       return data;
     } catch (error) {
-      console.error('Erro ao salvar configurações do NPS CX:', error);
+
       throw error;
     }
   },
@@ -139,7 +139,7 @@ export const npsCxService = {
 
       return result;
     } catch (error) {
-      console.error('Erro ao buscar históricos do NPS:', error);
+
       throw error;
     }
   },
@@ -167,7 +167,7 @@ export const npsCxService = {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('Erro ao reenviar NPS:', error);
+
       throw error;
     }
   },
@@ -188,7 +188,7 @@ export const npsCxService = {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('Erro ao cancelar NPS:', error);
+
       throw error;
     }
   },
@@ -224,7 +224,7 @@ export const npsCxService = {
       
       return data || { sent: 0, errors: 0 };
     } catch (error) {
-       console.error('Erro no test_scheduler:', error);
+
        throw error;
     }
   }

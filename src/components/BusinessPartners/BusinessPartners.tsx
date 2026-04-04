@@ -122,15 +122,15 @@ const BusinessPartners: React.FC = () => {
           await loadPartners();
           setToast({ message: t('businessPartners.messages.deleteSuccess', 'Parceiro de negócios excluído com sucesso!'), type: 'success' });
         } else {
-          console.error('❌ [BusinessPartners] Erro na exclusão:', result.error);
+
           setToast({ message: result.error || t('businessPartners.messages.deleteError', 'Erro ao excluir parceiro'), type: 'error' });
         }
       } catch (error) {
-        console.error('❌ [BusinessPartners] Exceção ao excluir:', error);
+
         setToast({ message: t('businessPartners.messages.deleteError', 'Erro inesperado ao excluir parceiro'), type: 'error' });
       }
     } else {
-      console.error('❌ [BusinessPartners] partnerId não encontrado no confirmDialog');
+
     }
     setConfirmDialog({ isOpen: false });
   };
@@ -220,7 +220,7 @@ const BusinessPartners: React.FC = () => {
           setToast({ message: t('businessPartners.messages.createSuccess', 'Parceiro de negócios criado com sucesso!'), type: 'success' });
         } else {
           const errorMsg = result.error || t('businessPartners.messages.createError', 'Erro ao criar parceiro');
-          console.error('❌ [BusinessPartners] Erro ao criar parceiro:', errorMsg);
+
           setToast({ message: errorMsg, type: 'error' });
           return;
         }
@@ -228,7 +228,7 @@ const BusinessPartners: React.FC = () => {
       setShowForm(false);
       setEditingPartner(null);
     } catch (error: any) {
-      console.error('❌ [BusinessPartners] Exceção ao salvar parceiro:', error);
+
       const errorMessage = error?.message || t('businessPartners.messages.updateError', 'Erro inesperado ao salvar parceiro de negócios');
       setToast({ message: errorMessage, type: 'error' });
     }

@@ -64,7 +64,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
 
       if (!data) {
-        console.error('❌ Pesquisa não encontrada');
+
         setToast({
           message: t('nps.resposta.evaluationNotFound'),
           type: 'error',
@@ -83,7 +83,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
       setPesquisa(data);
     } catch (error) {
-      console.error('❌ Erro ao carregar pesquisa:', error);
+
       setToast({
         message: t('nps.resposta.errorSending'), // Fallback error message
         type: 'error',
@@ -125,7 +125,7 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
         type: 'success',
       });
     } catch (error) {
-      console.error('Erro ao enviar resposta:', error);
+
       setToast({
         message: t('nps.resposta.errorSending'),
         type: 'error',

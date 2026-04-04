@@ -65,7 +65,7 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
         .eq('is_active', true);
 
       if (error) {
-        console.error('Error fetching active innovations:', error);
+
         return;
       }
 
@@ -82,7 +82,7 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
         setActiveInnovationKeys(keys);
       }
     } catch (error) {
-      console.error('Failed to load innovations', error);
+
     } finally {
       setIsLoading(false);
     }

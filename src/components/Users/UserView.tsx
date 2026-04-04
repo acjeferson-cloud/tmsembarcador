@@ -83,7 +83,7 @@ export const UserView: React.FC<UserViewProps> = ({ onBack, onEdit, user }) => {
         const data = await establishmentsService.getAll();
         setEstablishments(data);
       } catch (e) {
-        console.error('Failed to load establishments in UserView', e);
+
       }
     };
     loadEstablishments();

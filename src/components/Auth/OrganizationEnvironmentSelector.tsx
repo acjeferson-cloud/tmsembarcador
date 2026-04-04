@@ -64,7 +64,7 @@ export const OrganizationEnvironmentSelector: React.FC<Props> = ({
         });
 
       if (error) {
-        console.error('Erro ao buscar organizations/environments:', error);
+
         return;
       }
 
@@ -91,7 +91,7 @@ export const OrganizationEnvironmentSelector: React.FC<Props> = ({
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar organizations/environments:', error);
+
     } finally {
       setLoading(false);
     }

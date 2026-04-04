@@ -79,7 +79,7 @@ export const catalogItemsService = {
        if (error) throw error;
        return data || [];
      } catch (error) {
-       console.error('Error searching catalog items:', error);
+
        return [];
      }
   },
@@ -147,7 +147,7 @@ export const catalogItemsService = {
       if (error) throw error;
       return { success: true };
     } catch (error: any) {
-      console.error('Error deleting catalog item:', error);
+
       return { success: false, error: 'Este item não pode ser excluído pois PODE estar vinculado a transportadoras/XMLs.' };
     }
   }

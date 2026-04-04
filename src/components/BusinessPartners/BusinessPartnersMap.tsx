@@ -40,7 +40,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
 
         initializeMap();
       } catch (err: any) {
-        console.error('Erro ao carregar Google Maps:', err);
+
         setError(err.message || t('businessPartners.map.errors.loadError', 'Erro ao carregar o Google Maps. Configure a chave de API nas configurações.'));
         setIsLoading(false);
       }
@@ -48,12 +48,12 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
 
     const initializeMap = () => {
       if (!mapRef.current) {
-        console.error('mapRef.current não está disponível');
+
         return;
       }
 
       if (!window.google || !window.google.maps) {
-        console.error('Google Maps API não está disponível');
+
         setError(t('businessPartners.map.errors.apiNotAvailable', 'Google Maps API não está disponível'));
         setIsLoading(false);
         return;
@@ -73,7 +73,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         setMap(mapInstance);
         setIsLoading(false);
       } catch (err) {
-        console.error('Erro ao inicializar mapa:', err);
+
         setError(t('businessPartners.map.errors.initError', 'Erro ao inicializar o mapa'));
         setIsLoading(false);
       }
@@ -197,7 +197,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
         newMarkers.push(marker);
         bounds.extend(location);
       } catch (error) {
-        console.error(`Erro ao geocodificar parceiro ${partner.name}:`, error);
+
       }
     };
 

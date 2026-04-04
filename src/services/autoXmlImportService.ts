@@ -8,12 +8,12 @@ export const autoXmlImportService = {
       });
 
       if (invokeError) {
-        console.error('Invoke error:', invokeError);
+
         throw new Error(`Erro na execução: ${invokeError.message || 'Erro desconhecido'}`);
       }
 
       if (!result || !result.success) {
-        console.error('Função retornou erro:', result);
+
         throw new Error(`Erro na função: ${result?.error || 'Erro desconhecido'}`);
       }
 
@@ -31,7 +31,7 @@ export const autoXmlImportService = {
       }
 
     } catch (error) {
-      console.error('Erro geral na auto-importação:', error);
+
       throw error;
     }
   }

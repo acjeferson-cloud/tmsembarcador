@@ -33,7 +33,7 @@ export const RecentActivitiesModal: React.FC<RecentActivitiesModalProps> = ({
       const data = await userActivitiesService.getRecentActivities(20);
       setActivities(data);
     } catch (error) {
-      console.error('Failed to load activities', error);
+
     } finally {
       setLoading(false);
     }

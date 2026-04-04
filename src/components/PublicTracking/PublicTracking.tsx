@@ -40,7 +40,7 @@ const PublicTracking: React.FC = () => {
     }
 
     if (honeypot) {
-      console.warn('Honeypot triggered - bot detected');
+
       setError('Erro ao processar solicitação. Tente novamente mais tarde.');
       return;
     }

@@ -26,7 +26,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({ reportId, filters,
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-      console.error('Erro ao carregar transportadores:', error);
+
     }
   };
   
