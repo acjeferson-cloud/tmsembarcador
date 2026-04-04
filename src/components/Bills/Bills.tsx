@@ -76,7 +76,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
           });
         }
       } catch (error) {
-// /*log_removed*/
+// console.error('Erro ao carregar estabelecimento:', error);
       }
     };
 
@@ -117,7 +117,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
       setBills(formattedBills);
     } catch (error) {
-// /*log_removed*/
+// console.error('Erro ao carregar faturas:', error);
     } finally {
       setIsLoading(false);
     }
@@ -329,7 +329,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setToast({ message: `Erro ao excluir Fatura: ${error}`, type: 'error' });
         }
       } catch (error: any) {
-// /*log_removed*/
+// console.error('Erro ao excluir fatura:', error);
         setToast({ message: 'Erro ao excluir fatura.', type: 'error' });
       } finally {
         setIsLoading(false);

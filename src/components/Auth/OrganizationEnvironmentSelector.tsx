@@ -64,7 +64,6 @@ export const OrganizationEnvironmentSelector: React.FC<Props> = ({
         });
 
       if (error) {
-
         return;
       }
 
@@ -91,7 +90,6 @@ export const OrganizationEnvironmentSelector: React.FC<Props> = ({
         }
       }
     } catch (error) {
-
     } finally {
       setLoading(false);
     }

@@ -43,7 +43,6 @@ export const notificationService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-
       return [];
     }
   },
@@ -106,7 +105,6 @@ export const notificationService = {
         if (error) throw error;
         return true;
     } catch (error) {
-
         return false;
     }
   }

@@ -37,7 +37,6 @@ export function SaasAdminConsole() {
       await tenantAuthService.logout();
       window.location.reload();
     } catch (error) {
-
       // Fallback reload just in case
       window.location.reload();
     }

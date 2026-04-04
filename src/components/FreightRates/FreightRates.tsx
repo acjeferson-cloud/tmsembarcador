@@ -67,7 +67,6 @@ export const FreightRates: React.FC = () => {
             window.history.replaceState(null, '', '#/freight-rates');
           }
         } catch (error) {
-
         }
       }
     };
@@ -82,9 +81,6 @@ export const FreightRates: React.FC = () => {
       const data = await freightRatesService.getAllTables();
       setTables(data);
     } catch (err: any) {
-
-
-
       setError('Erro ao carregar tabelas de frete');
     } finally {
       setIsLoading(false);
@@ -96,7 +92,6 @@ export const FreightRates: React.FC = () => {
       const data = await carriersService.getAllCarriers();
       setCarriersList(data);
     } catch (err: any) {
-
     }
   };
 
@@ -139,7 +134,6 @@ export const FreightRates: React.FC = () => {
         alert('Tabela de frete excluída com sucesso!');
         forceRefresh();
       } catch (err) {
-
         alert('Erro ao excluir tabela de frete.');
       }
     }

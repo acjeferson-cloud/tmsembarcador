@@ -32,7 +32,6 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
         handleClose();
       }, 3000);
     } catch (err) {
-
       setError(t('login.forgotPasswordError'));
     } finally {
       setLoading(false);

@@ -178,7 +178,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
 
       setStates(statesData);
     } catch (error) {
-
       setError('Erro ao carregar dados do formulário');
     }
   };
@@ -426,7 +425,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             }
           }
         } catch (calcError) {
-
         }
       }
 
@@ -481,7 +479,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
           const itemsResult = await ordersService.updateItems(order.id, products);
 
           if (!itemsResult.success) {
-
             setError('Pedido atualizado, mas houve erro ao atualizar os itens.');
             return;
           }
@@ -491,7 +488,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             const notificationResult = await orderNotificationService.sendOrderCreatedNotifications(order.id);
             if (notificationResult.success) {
             } else {
-
             }
           }
 
@@ -512,7 +508,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             const itemsResult = await ordersService.addItems(result.id, products);
 
             if (!itemsResult.success) {
-
             }
           }
 
@@ -521,7 +516,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             const notificationResult = await orderNotificationService.sendOrderCreatedNotifications(result.id);
             if (notificationResult.success) {
             } else {
-
             }
           }
 
@@ -530,13 +524,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             onSave();
           }, 1500);
         } else {
-
           setError(result.error || 'Erro ao criar pedido.');
         }
       }
     } catch (err: any) {
-
-
       setError(err.message || 'Erro ao ' + (order ? 'atualizar' : 'criar') + ' pedido.');
     } finally {
       setIsSubmitting(false);

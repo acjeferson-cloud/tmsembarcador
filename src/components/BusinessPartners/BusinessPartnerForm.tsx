@@ -161,7 +161,6 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
                throw new Error('CEP retornado pela Receita é inválido no ViaCEP');
             }
           } catch (error) {
-
           }
         }
       }
@@ -429,7 +428,6 @@ const BusinessPartnerForm: React.FC<BusinessPartnerFormProps> = ({
         });
       }, 3000);
     } catch (error) {
-
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar CEP. Tente novamente.';
       setCepMessages({ ...cepMessages, [index]: { type: 'error', text: errorMessage } });
     } finally {

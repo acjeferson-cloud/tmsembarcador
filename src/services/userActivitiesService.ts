@@ -72,7 +72,6 @@ export const userActivitiesService = {
         description
       }]);
     } catch (error) {
-
     }
   },
 
@@ -111,7 +110,6 @@ export const userActivitiesService = {
       const { data, error } = await query;
       
       if (error) {
-
          return [];
       }
 
@@ -131,7 +129,6 @@ export const userActivitiesService = {
 
       return uniqueActivities;
     } catch (error) {
-
       return [];
     }
   }

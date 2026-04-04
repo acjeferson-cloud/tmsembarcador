@@ -9,6 +9,26 @@ let supabase: ReturnType<typeof createClient> | null = null
 
 try {
   if (!supabaseUrl || !supabaseAnonKey) {
+  } else {
+
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    })
+
+  }
+} catch (error) {
+}
+
+if (!supabase) {
+  supabase = createClient('https://placeholder.supabase.co', 'placeholder-key', {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    }
+  })
 }
 
 // Cache do contexto de sessão
@@ -32,7 +52,6 @@ async function verifySessionContext(): Promise<boolean> {
     const { data, error } = await supabase.rpc('verify_session_context');
 
     if (error) {
-
       return false;
     }
 
@@ -46,7 +65,6 @@ async function verifySessionContext(): Promise<boolean> {
 
     return isValid;
   } catch (error) {
-
     return false;
   }
 }
@@ -102,8 +120,6 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
     }
 
     if (!contextData || !contextData.success) {
-
-
       isConfiguringContext = false;
       return;
     }
@@ -128,7 +144,6 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
     const estabId = (selectedEstabId && selectedEstabId !== 'null') ? selectedEstabId : null;
 
     if (!dbUser.organization_id || !dbUser.environment_id) {
-
       isConfiguringContext = false;
       return;
     }
@@ -163,8 +178,6 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
 
 
   } catch (error) {
-
-
     // Tentar novamente até 3 vezes com delay exponencial
     if (retryCount < 3) {
       const delay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
@@ -173,8 +186,6 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
       isConfiguringContext = false;
       return configureSessionContext(retryCount + 1);
     }
-
-
   } finally {
     isConfiguringContext = false;
   }
@@ -214,7 +225,6 @@ function startHeartbeat() {
     try {
       await ensureSessionContext();
     } catch (error) {
-
     }
   }, 30000); // 30 segundos
 }
@@ -232,7 +242,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('focus', () => {
     // Sempre verificar contexto quando usuário volta para a aba
     ensureSessionContext().catch(err => {
-
     });
   });
 
@@ -241,7 +250,6 @@ if (typeof window !== 'undefined') {
     sessionContextCache = null; // Limpar cache
     startHeartbeat();
     ensureSessionContext().catch(err => {
-
     });
   });
 

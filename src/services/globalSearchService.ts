@@ -163,15 +163,14 @@ export const globalSearchService = {
         });
       }
 
-      if (ordersRes.error) /*log_removed*/
-      if (invoicesRes.error) /*log_removed*/
-      if (ctesRes.error) /*log_removed*/
-      if (billsRes.error) /*log_removed*/
-      if (pickupsRes.error) /*log_removed*/
+      if (ordersRes.error) null;
+      if (invoicesRes.error) null;
+      if (ctesRes.error) null;
+      if (billsRes.error) null;
+      if (pickupsRes.error) null;
 
       return results;
     } catch (error) {
-
       return [];
     }
   }

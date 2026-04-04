@@ -1133,7 +1133,6 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
         setNodes(newNodes);
         setEdges(newEdges);
       } catch (error) {
-
       } finally {
         setIsLoading(false);
       }

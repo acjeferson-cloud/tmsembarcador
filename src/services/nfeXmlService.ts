@@ -367,7 +367,7 @@ export const importNFeToDatabase = async (
         }
       }
     } catch (e) {
-// /*log_removed*/
+// console.error('Error calculating freight on NFe import', e);
     }
 
     if (existingInvoice) {
@@ -492,7 +492,7 @@ export const importNFeToDatabase = async (
          await (supabase as any).from('invoices_nfe_carrier_costs').delete().eq('invoice_id', invoiceId);
          await invoicesCostService.saveCostsToInvoice(invoiceId, finalCarrierId, specificCalculation, specificCarrierData);
        } catch(e) { 
-// /*log_removed*/
+// console.error('Error saving specific calculation', e);
        }
     }
 
@@ -518,7 +518,7 @@ export const importNFeToDatabase = async (
           xml_content: nfeData.rawXml || ''
         });
       } catch (e) {
-// /*log_removed*/
+// console.error('Failed copying NFe to electronic_documents', e);
       }
     }
 

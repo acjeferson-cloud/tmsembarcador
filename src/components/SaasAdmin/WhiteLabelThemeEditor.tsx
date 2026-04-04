@@ -117,7 +117,6 @@ export function WhiteLabelThemeEditor({ tenantId }: { tenantId: string }) {
         alert('Erro ao salvar tema: ' + result.error);
       }
     } catch (error) {
-
       alert('Erro ao salvar tema');
     } finally {
       setLoading(false);
@@ -134,7 +133,6 @@ export function WhiteLabelThemeEditor({ tenantId }: { tenantId: string }) {
         alert('Erro ao ativar tema: ' + result.error);
       }
     } catch (error) {
-
       alert('Erro ao ativar tema');
     }
   }
@@ -154,7 +152,6 @@ export function WhiteLabelThemeEditor({ tenantId }: { tenantId: string }) {
         alert('Erro ao excluir tema: ' + result.error);
       }
     } catch (error) {
-
       alert('Erro ao excluir tema');
     }
   }

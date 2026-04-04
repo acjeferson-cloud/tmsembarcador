@@ -46,10 +46,8 @@ export const ElectronicDocuments: React.FC = () => {
           try {
             parsedData = parseXML(doc.xml_content);
           } catch (e) {
-
           }
         } else {
-
         }
         
         return {
@@ -87,7 +85,6 @@ export const ElectronicDocuments: React.FC = () => {
       });
       setDocumentsList(mappedData);
     } catch (error) {
-
     }
   };
 

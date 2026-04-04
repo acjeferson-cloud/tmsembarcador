@@ -21,7 +21,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-
   }
 
   private handleReload = () => {

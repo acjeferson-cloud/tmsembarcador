@@ -51,7 +51,7 @@ export const EstablishmentView: React.FC<EstablishmentViewProps> = ({ onBack, on
 
       setEmailOutgoingConfig(data);
     } catch (err) {
-// /*log_removed*/
+// console.error('Failed to load outgoing email config:', err);
     } finally {
       setLoadingOutgoingConfig(false);
     }

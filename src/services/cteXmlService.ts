@@ -518,7 +518,6 @@ export const cteXmlService = {
           );
 
         if (invoicesError) {
-
         } else {
            // Promove o status de rastreamento das notas vinculadas (ex: Em transporte)
            for (const inv of parsedData.invoices) {
@@ -535,7 +534,6 @@ export const cteXmlService = {
                    await trackingService.syncDocumentTrackingStatus('nfe', foundInvoice.id, foundInvoice.numero);
                 }
               } catch (err) {
-
               }
            }
         }
@@ -564,7 +562,6 @@ export const cteXmlService = {
           xml_content: parsedData.xml_data?.original || ''
         });
       } catch (e) {
-
       }
 
       return { success: true, cteId: cteData.id };

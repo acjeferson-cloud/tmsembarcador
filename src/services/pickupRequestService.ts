@@ -280,7 +280,6 @@ export const pickupRequestService = {
         .single();
 
       if (requestError || !request) {
-
         return { success: false, error: `Erro ao criar solicitação na base: ${requestError?.message || 'Motivo desconhecido'}` };
       }
 
@@ -378,15 +377,12 @@ export const pickupRequestService = {
             if (!edgeError && edgeData?.success) {
               emailSent = true;
             } else {
-
               return { success: false, error: `Falha ao enviar e-mail via Edge Function: ${(edgeError?.message || edgeData?.error || 'Erro desconhecido')}` };
             }
           } else {
-
             return { success: false, error: 'A filial de embarque ("Meus Dados") não possui um E-mail de Saída configurado e ativo. Vá em Configurações > E-mail de Saída.' };
           }
         } catch (emailErr: any) {
-
           return { success: false, error: `Erro na comunicação com servidor de e-mail: ${emailErr.message}` };
         }
       }
@@ -414,7 +410,6 @@ export const pickupRequestService = {
 
       return { success: true, requestId: request.id };
     } catch (error) {
-
       return { success: false, error: 'Erro ao solicitar coleta' };
     }
   },

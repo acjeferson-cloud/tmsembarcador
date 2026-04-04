@@ -41,7 +41,6 @@ export default function GoogleMap({
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-
       return;
     }
 
@@ -79,7 +78,6 @@ export default function GoogleMap({
         }
       },
       (error) => {
-
       }
     );
   };
@@ -91,7 +89,6 @@ export default function GoogleMap({
       await loadGoogleMapsAPI();
 
       if (!isGoogleMapsLoaded()) {
-
         return;
       }
 
@@ -191,7 +188,6 @@ export default function GoogleMap({
         setTimeout(() => searchLocation(), 1000);
       }
     } catch (err) {
-
     }
   };
 
@@ -261,7 +257,6 @@ export default function GoogleMap({
           });
         }
       } else {
-
       }
     });
   };

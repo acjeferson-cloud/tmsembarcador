@@ -15,7 +15,6 @@ interface ERPIntegrationConfig {
   cte_integration_type: string;
   cte_model: string;
   invoice_model: string;
-  invoice_default_item: string;
   billing_nfe_item: string;
   billing_usage: string;
   billing_control_account: string;
@@ -25,14 +24,8 @@ interface ERPIntegrationConfig {
   inbound_nf_control_account: string;
   invoice_transitory_account: string;
   nfe_xml_network_address: string;
-  cte_xml_network_address: string;
   fiscal_module: string;
-  auto_sync_enabled?: boolean;
-  sync_interval_minutes?: number;
   is_active: boolean;
-  auto_sync_enabled?: boolean;
-  sync_interval_minutes?: number;
-  last_sync_time?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: number;
@@ -117,7 +110,6 @@ export const implementationService = {
 
       return { success: true };
     } catch (error) {
-
       return { success: false, error: 'Erro ao salvar configuração' };
     }
   },
@@ -146,7 +138,6 @@ export const implementationService = {
 
       return { success: true };
     } catch (error) {
-
       return { success: false, error: 'Erro ao atualizar configuração' };
     }
   },
@@ -186,7 +177,6 @@ export const implementationService = {
       return { success: true, message: data.message || 'Conexão estabelecida com sucesso com o SAP Business One!' };
 
     } catch (error: any) {
-
       return { success: false, error: 'Falha grave de comunicação com o Cloud Run Proxy. Verifique a URL ou conectividade.' };
     }
   },
@@ -808,7 +798,6 @@ export const implementationService = {
           .eq('freight_rate_table_id', tableId);
 
         if (ratesError) {
-
           continue;
         }
 
@@ -834,7 +823,7 @@ export const implementationService = {
         for (let i = 0; i < updatedRates.length; i += 100) {
           const batch = updatedRates.slice(i, i + 100);
           const { error: upsertError } = await supabase.from('freight_rates').upsert(batch);
-          if (upsertError) /*log_removed*/
+          if (upsertError) console.error('Upsert rates error:', upsertError);
         }
 
         totalRoutesAffected += rates.length;
@@ -864,7 +853,7 @@ export const implementationService = {
             for (let j = 0; j < updatedDetails.length; j += 100) {
               const detailBatch = updatedDetails.slice(j, j + 100);
               const { error: upsertDetailError } = await supabase.from('freight_rate_details').upsert(detailBatch);
-              if (upsertDetailError) /*log_removed*/
+              if (upsertDetailError) console.error('Upsert details error:', upsertDetailError);
             }
           }
         }
@@ -887,7 +876,6 @@ export const implementationService = {
         message: `Reajuste aplicado com sucesso a ${tableIds.length} tabelas e ${totalRoutesAffected} tarifas vinculadas.`
       };
     } catch (error) {
-
       return {
         success: false,
         affectedTables: 0,
@@ -936,46 +924,6 @@ export const implementationService = {
     } catch (error) {
 
       return { success: false, message: 'Erro ao processar arquivo' };
-    }
-  },
-
-  async getSyncLogs(orgId?: string, envId?: string, estId?: string): Promise<any[]> {
-    if (!orgId || !envId) return [];
-    
-    try {
-
-      
-      // Attempt 1: Call the RPC function that bypasses RLS (if deployed)
-      let { data: rpcData, error: rpcError } = await (supabase as any).rpc('get_erp_sync_logs', {
-         p_organization_id: orgId,
-         p_environment_id: envId,
-         p_establishment_id: estId,
-         p_limit: 50
-      });
-
-      if (!rpcError && rpcData) {
-
-         return rpcData;
-      }
-
-      // Attempt 2: Direct fallback to table if RPC is not deployed yet or failed
-
-      
-      let query = (supabase as any).from('erp_sync_logs').select('*');
-      query = query.eq('organization_id', orgId).eq('environment_id', envId);
-      if (estId) query = query.eq('establishment_id', estId);
-      
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
-      
-      if (error) {
-
-         return [];
-      }
-      return data || [];
-      
-    } catch (e) {
-
-      return [];
     }
   }
 };

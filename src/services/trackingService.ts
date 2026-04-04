@@ -88,16 +88,12 @@ export const trackingService = {
 
         if (invoice.order_number || invoice.numero_pedido) {
            const ordNum = invoice.order_number || invoice.numero_pedido;
-
            const { data: ord } = await (supabase as any).from('orders').select('*').eq('numero_pedido', ordNum).limit(1).maybeSingle();
            if (ord) {
-
              order = ord;
            } else {
-
            }
         } else {
-
         }
 
       } else if (docType === 'cte') {
@@ -233,7 +229,6 @@ export const trackingService = {
       }
 
     } catch (err) {
-
     }
 
     return {
@@ -411,7 +406,6 @@ export const trackingService = {
         occurrences
       };
     } catch (error) {
-
       return null;
     }
   },
@@ -504,7 +498,6 @@ export const trackingService = {
         }).eq('id', orderId);
       }
     } catch (error) {
-
     }
   }
 };

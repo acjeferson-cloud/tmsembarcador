@@ -45,7 +45,6 @@ export const SaasAdminMfaSetup: React.FC<SaasAdminMfaSetupProps> = ({ onSetupCom
       setFactorId(data.id);
       setQrCodeUrl(data.totp.qr_code);
     } catch (err: any) {
-
       setError(`Erro na API do Supabase: ${err.message || JSON.stringify(err)}`);
     }
   };
@@ -76,7 +75,6 @@ export const SaasAdminMfaSetup: React.FC<SaasAdminMfaSetupProps> = ({ onSetupCom
         p_hashed_codes: hashedCodes
       });
       if (error) {
-
       }
     }
   };
@@ -119,14 +117,12 @@ export const SaasAdminMfaSetup: React.FC<SaasAdminMfaSetupProps> = ({ onSetupCom
       setStep('backup_codes');
       
     } catch (err: any) {
-
-      
       saasAdminLogsService.logAction(
         'MFA_SETUP_FAILED',
         'MFA_TOTP',
         'Falha na configuração inicial do MFA.',
         { changes: { error: err.message } }
-      ).catch(e => /*log_removed*/
+      ).catch(e => null);
 
       setError('Código inválido. Tente novamente.');
     } finally {

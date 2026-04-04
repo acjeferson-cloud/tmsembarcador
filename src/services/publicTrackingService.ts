@@ -96,7 +96,6 @@ export const publicTrackingService = {
       });
 
       if (fetchError || !result?.success) {
-
         return {
           success: false,
           blocked: result?.blocked || false,
@@ -239,7 +238,6 @@ export const publicTrackingService = {
         data: publicInfo
       };
     } catch (error) {
-
       return {
         success: false,
         blocked: false,

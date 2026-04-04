@@ -11,7 +11,6 @@ import { OrderDetailsModal } from './OrderDetailsModal';
 import { OrderForm } from './OrderForm';
 import { orderPdfService } from '../../services/orderPdfService';
 import { ordersService } from '../../services/ordersService';
-import { implementationService } from '../../services/implementationService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
@@ -63,7 +62,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
   }>({ isOpen: false, orderId: null, orderNumber: null });
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [editingOrder, setEditingOrder] = useState<any>(null);
-  const [isSapActive, setIsSapActive] = useState<boolean>(false);
   const [filters, setFilters] = useState({
     transportador: '',
     cliente: '',
@@ -75,25 +73,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
     status: [] as string[],
     numeroPedido: ''
   });
-
-  useEffect(() => {
-    const checkSapConfig = async () => {
-      try {
-        if (!user) return;
-        const config = await implementationService.getERPConfig(
-          user.organization_id || undefined,
-          user.environment_id || undefined,
-          user.establishment_id || undefined
-        );
-        if (config && config.erp_name === 'sap-business-one') {
-          setIsSapActive(true);
-        }
-      } catch (e) {
-
-      }
-    };
-    checkSapConfig();
-  }, [user]);
 
   // Load orders from database
   useEffect(() => {
@@ -152,7 +131,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
       setOrders(mappedData as any);
       setFilteredOrders(mappedData as any);
     } catch (error) {
-
       setError('Erro ao carregar pedidos');
     } finally {
       setLoading(false);
@@ -272,7 +250,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setShowOrderForm(true);
       }
     } catch (error) {
-
       setError('Erro ao carregar dados do pedido');
     }
   };
@@ -335,7 +312,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
                      successCount++;
                  }
                } catch (innerError) {
-
                }
            }
            if (successCount > 0) {
@@ -345,7 +321,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
                setToast({ message: 'Não foi possível recalcular. Verifique pesos e CEPs de destino.', type: 'error' });
            }
         } catch (error) {
-
             setToast({ message: 'Erro ao recalcular custos de frete.', type: 'error' });
         }
         setIsLoading(false);
@@ -387,7 +362,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 }
             }
         } catch (error) {
-
             setToast({ message: 'Erro ao processar impressão/download dos pedidos.', type: 'error' });
         }
         
@@ -451,7 +425,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
                setToast({ message: 'Nenhuma transportadora atende a esta cotação ou CEP não coberto.', type: 'warning' });
            }
        } catch (error: any) {
-
            setToast({ message: error.message || 'Erro ao recalcular frete.', type: 'error' });
        }
        setIsLoading(false);
@@ -486,7 +459,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowDetailsModal(true);
         }
       } catch (err) {
-
         setToast({ message: 'Erro ao carregar detalhes do pedido.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -531,7 +503,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
           break;
       }
     } catch (err: any) {
-
       setToast({ message: `Erro ao processar: ${err.message || 'Erro desconhecido.'}`, type: 'error' });
     } finally {
       setIsLoading(false);
@@ -551,7 +522,6 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setToast({ message: result.error || 'Erro ao excluir pedido.', type: 'error' });
       }
     } catch (error) {
-
       setToast({ message: 'Erro ao processar exclusão do pedido.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -595,17 +565,15 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
           <p className="text-gray-600 dark:text-gray-400">{t('orders.pageDescription')}</p>
         </div>
         <div className="flex items-center space-x-3">
-          {isSapActive && (
-            <button
-              onClick={handleImportLatestSAPOrder}
-              disabled={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
-              title="Conecta no ERP e traz automaticamente os últimos Pedidos"
-            >
-              <ShoppingCart size={20} className={isLoading ? 'animate-bounce' : ''} />
-              <span>Baixar Pedidos SAP</span>
-            </button>
-          )}
+          <button
+            onClick={handleImportLatestSAPOrder}
+            disabled={isLoading}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+            title="Conecta no ERP e traz automaticamente o último Pedido"
+          >
+            <ShoppingCart size={20} className={isLoading ? 'animate-bounce' : ''} />
+            <span>Último Pedido SAP</span>
+          </button>
           
           <button
             onClick={() => setShowOrderForm(true)}

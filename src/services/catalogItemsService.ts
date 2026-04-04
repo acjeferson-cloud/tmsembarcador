@@ -79,7 +79,6 @@ export const catalogItemsService = {
        if (error) throw error;
        return data || [];
      } catch (error) {
-
        return [];
      }
   },
@@ -147,7 +146,6 @@ export const catalogItemsService = {
       if (error) throw error;
       return { success: true };
     } catch (error: any) {
-
       return { success: false, error: 'Este item não pode ser excluído pois PODE estar vinculado a transportadoras/XMLs.' };
     }
   }

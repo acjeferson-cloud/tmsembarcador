@@ -109,7 +109,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       const data = await carriersService.getAll();
       setCarriers(data);
     } catch (error) {
-// /*log_removed*/
+// console.error('Erro ao carregar transportadores:', error);
     }
   };
 
@@ -360,10 +360,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       freight_results: finalFreightResults
                     })
                     .eq('id', invoice.id);
-// if (fError) /*log_removed*/
+// if (fError) console.error('Error updating freight:', fError);
                 }
               } catch (err: any) {
-// /*log_removed*/
+// console.error('Erro no cálculo específico da NFe no save:', err);
                 const { TenantContextHelper } = await import('../../utils/tenantContext');
                 const context = await TenantContextHelper.getCurrentContext();
                 setError(`Aviso de Cálculo: Falha ao associar tabela do transportador. Motivo: ${err.message || JSON.stringify(err)} | Org: ${context?.organizationId} | Env: ${context?.environmentId}`);
@@ -410,11 +410,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   })
                   .eq('id', invoice.id);
                   
-// if (fError) /*log_removed*/
+// if (fError) console.error('Error updating freight:', fError);
               }
             }
           } catch (freightError) {
-// /*log_removed*/
+// console.error('Freight calc error:', freightError);
           }
         }
 

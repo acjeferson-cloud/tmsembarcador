@@ -8,12 +8,10 @@ export const autoXmlImportService = {
       });
 
       if (invokeError) {
-
         throw new Error(`Erro na execução: ${invokeError.message || 'Erro desconhecido'}`);
       }
 
       if (!result || !result.success) {
-
         throw new Error(`Erro na função: ${result?.error || 'Erro desconhecido'}`);
       }
 
@@ -31,7 +29,6 @@ export const autoXmlImportService = {
       }
 
     } catch (error) {
-
       throw error;
     }
   }

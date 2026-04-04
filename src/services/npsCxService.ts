@@ -50,7 +50,6 @@ export const npsCxService = {
       if (error) throw error;
       return data;
     } catch (error) {
-
       throw error;
     }
   },
@@ -80,7 +79,6 @@ export const npsCxService = {
       
       return data;
     } catch (error) {
-
       throw error;
     }
   },
@@ -139,7 +137,6 @@ export const npsCxService = {
 
       return result;
     } catch (error) {
-
       throw error;
     }
   },
@@ -167,7 +164,6 @@ export const npsCxService = {
       if (error) throw error;
       return true;
     } catch (error) {
-
       throw error;
     }
   },
@@ -188,7 +184,6 @@ export const npsCxService = {
       if (error) throw error;
       return true;
     } catch (error) {
-
       throw error;
     }
   },
@@ -224,7 +219,6 @@ export const npsCxService = {
       
       return data || { sent: 0, errors: 0 };
     } catch (error) {
-
        throw error;
     }
   }

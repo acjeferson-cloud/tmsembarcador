@@ -473,7 +473,6 @@ export const npsService = {
 
       return data;
     } catch (error: any) {
-
       throw error;
     }
   },

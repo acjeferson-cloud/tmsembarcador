@@ -55,7 +55,6 @@ export const NPSDashboard: React.FC = () => {
       );
       setRanking(data);
     } catch (error) {
-
       setError('Erro ao carregar dados. Tente novamente');
     } finally {
       setIsLoading(false);
@@ -74,7 +73,6 @@ export const NPSDashboard: React.FC = () => {
           finalId = context.environmentId;
         }
       } catch (e) {
-
       }
 
       // 1. Fallback: Tentar buscar a UUID real do estabelecimento baseada no Código presente na Sessão Ativa do React
@@ -90,7 +88,6 @@ export const NPSDashboard: React.FC = () => {
             finalId = (data as any).id;
           }
         } catch (e) {
-
         }
       }
 
@@ -149,7 +146,6 @@ export const NPSDashboard: React.FC = () => {
       setAvaliacoes(data);
       setShowAvaliacoesModal(true);
     } catch (error) {
-
       setError('Erro ao carregar avaliações. Tente novamente');
     } finally {
       setLoadingAvaliacoes(false);

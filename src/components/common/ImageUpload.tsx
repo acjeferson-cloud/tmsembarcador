@@ -100,7 +100,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     } catch (err) {
       setError('Erro ao processar imagem');
       setIsLoading(false);
-
     }
 
     if (fileInputRef.current) {

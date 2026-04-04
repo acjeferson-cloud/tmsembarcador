@@ -33,7 +33,7 @@ const ReverseLogistics: React.FC = () => {
       setReverseOrders(data);
       setFilteredOrders(data);
     } catch (error) {
-// /*log_removed*/
+// console.error('Erro ao carregar solicitações:', error);
     } finally {
       setLoading(false);
     }

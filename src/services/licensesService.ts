@@ -92,11 +92,10 @@ export const licensesService = {
           total_licenses: targetTotal,
           available_licenses: targetAvailable
         });
-        if (error) /*log_removed*/
+        if (error) console.error('Error inserting licenses record:', error);
       }
       return true;
     } catch (error) {
-
       return false;
     }
   },

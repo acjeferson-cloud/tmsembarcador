@@ -152,7 +152,7 @@ export const BulkCTeXmlUploadModal: React.FC<BulkCTeXmlUploadModalProps> = ({
             );
 
           if (invoicesError) {
-// /*log_removed*/
+// console.error('Erro ao inserir notas fiscais do CT-e:', invoicesError);
           }
         }
 

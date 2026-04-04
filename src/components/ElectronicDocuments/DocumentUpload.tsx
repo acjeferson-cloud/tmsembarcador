@@ -250,7 +250,6 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
         establishmentId = establishments[0].id;
       }
     } catch (e) {
-
     }
 
     if (!establishmentId) {
@@ -276,7 +275,6 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onBack, onUpload
             }
           }
         } catch (e: any) {
-
         }
       }
     }

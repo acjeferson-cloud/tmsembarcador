@@ -50,12 +50,10 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
           onLoginSuccess();
         }
       } else {
-
         setError(result.error || 'Falha no login');
         turnstileRef.current?.reset(); // reset token on Auth fail
       }
     } catch (err: any) {
-
       logger.error('Login error', err, 'SaasAdminLogin');
       setError(err.message || 'Erro ao fazer login. Tente novamente.');
       turnstileRef.current?.reset();

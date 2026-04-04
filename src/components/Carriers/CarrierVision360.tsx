@@ -213,7 +213,6 @@ export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, c
       } else {
         setAiInsight(response.insight);
         if (response.cached) {
-
         }
       }
     } catch (error: any) {

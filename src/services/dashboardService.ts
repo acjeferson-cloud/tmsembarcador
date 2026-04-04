@@ -85,13 +85,11 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-
         return null;
       }
 
       return data as DashboardExecutiveKPIs;
     } catch (e) {
-
       return null;
     }
   },
@@ -111,13 +109,11 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-
         return [];
       }
 
       return (data || []) as DashboardEvolucaoCusto[];
     } catch (e) {
-
       return [];
     }
   },
@@ -136,13 +132,11 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-
         return [];
       }
 
       return (data || []) as DashboardTopTransportadora[];
     } catch (e) {
-
       return [];
     }
   },
@@ -162,13 +156,11 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-
         return [];
       }
 
       return (data || []) as DashboardFunilStatus[];
     } catch (e) {
-
       return [];
     }
   },
@@ -188,13 +180,11 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-
         return null;
       }
 
       return data as DashboardMetricasOperacionais;
     } catch (e) {
-
       return null;
     }
   },
@@ -213,13 +203,11 @@ export const dashboardService = {
       } as any);
 
       if (error) {
-
         return [];
       }
 
       return (data || []) as DashboardMapaCusto[];
     } catch (e) {
-
       return [];
     }
   }

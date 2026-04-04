@@ -35,7 +35,6 @@ export function SaasAdminDashboard() {
       setAlerts(alertsData.filter(a => a.status === 'new'));
       setHealthStatus(healthData);
     } catch (error) {
-
     } finally {
       setLoading(false);
     }

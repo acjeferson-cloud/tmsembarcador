@@ -40,7 +40,6 @@ const PublicTracking: React.FC = () => {
     }
 
     if (honeypot) {
-
       setError('Erro ao processar solicitação. Tente novamente mais tarde.');
       return;
     }

@@ -26,7 +26,6 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
 
 
       if (!result.success) {
-
         throw new Error(result.error || 'Credenciais inválidas');
       }
 
@@ -37,7 +36,6 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
       setRememberMe(remember);
       setStep('select-environment');
     } catch (error) {
-
       throw error;
     }
   };
@@ -60,7 +58,6 @@ export const LoginWithEnvironmentFlow: React.FC<LoginWithEnvironmentFlowProps> =
         rememberMe,
       });
     } catch (error) {
-
       throw error;
     }
   };

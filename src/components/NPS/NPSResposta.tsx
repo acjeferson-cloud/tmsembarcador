@@ -64,7 +64,6 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
 
       if (!data) {
-
         setToast({
           message: t('nps.resposta.evaluationNotFound'),
           type: 'error',
@@ -83,7 +82,6 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
 
       setPesquisa(data);
     } catch (error) {
-
       setToast({
         message: t('nps.resposta.errorSending'), // Fallback error message
         type: 'error',
@@ -125,7 +123,6 @@ export const NPSResposta: React.FC<NPSRespostaProps> = ({ token }) => {
         type: 'success',
       });
     } catch (error) {
-
       setToast({
         message: t('nps.resposta.errorSending'),
         type: 'error',

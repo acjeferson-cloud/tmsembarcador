@@ -15,7 +15,6 @@ export class TenantContextHelper {
     const data = rawData as any;
 
     if (error || !data || !data.success) {
-
       return null;
     }
 
@@ -48,20 +47,17 @@ export class TenantContextHelper {
             const userData = JSON.parse(savedUser);
             if (userData?.email) userEmail = userData.email;
           } catch (e) {
-
           }
         }
       }
 
       if (!userEmail) {
-
         return null;
       }
 
       const userProfile = await this.getUserProfile(userEmail);
 
       if (!userProfile) {
-
         return null;
       }
 
@@ -73,7 +69,6 @@ export class TenantContextHelper {
       }
 
       if (!organizationId || !this.isValidUUID(organizationId)) {
-
         return null;
       }
 

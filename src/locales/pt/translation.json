@@ -4787,15 +4787,14 @@
     },
     "erpIntegration": {
       "additional": {
-        "nfeXmlAddress": "Diretório de XMLs de NF-e",
-        "cteXmlAddress": "Diretório de XMLs de CT-e",
+        "nfeXmlAddress": "Estrutura XML",
         "title": "Parâmetros Adicionais"
       },
       "billing": {
-        "controlAccount": "Conta Controle de CT-e",
-        "nfeItem": "Item padrão para CT-e",
+        "controlAccount": "Conta Controle",
+        "nfeItem": "Item Base NFE Faturamento",
         "title": "Parâmetros Fiscais (CT-e)",
-        "usage": "Código de Utilização de CT-e"
+        "usage": "Utilização Padrão"
       },
       "configTitle": "Integração do ERP",
       "connection": {
@@ -4806,9 +4805,9 @@
         "username": "Credencial / Username"
       },
       "cte": {
-        "cteModel": "Modelo de CT-e",
-        "integrationType": "Tipo de integração",
-        "invoiceModel": "Modelo de Fatura",
+        "cteModel": "Modelo CTe Padrão",
+        "integrationType": "Topologia da Via",
+        "invoiceModel": "Referência Físico/Fatura",
         "title": "Regras Essenciais",
         "typeDraft": "Prévia / Draft",
         "typeEntry": "Entrada Sistêmica"
@@ -4820,11 +4819,10 @@
       "invoice": {
         "cteUsage": "CFOP Geral",
         "cteWithoutNfItem": "Cadastro CTe",
-        "inboundControlAccount": "Conta Controle de Fatura",
+        "inboundControlAccount": "Mapeamento Inbound",
         "outboundItem": "Mapeamento Outbound",
-        "title": "Parâmetros Fiscais (Fatura)",
-        "transitoryAccount": "Código de Utilização Fatura",
-        "defaultItem": "Item padrão para Fatura"
+        "title": "Fiscal",
+        "transitoryAccount": "Conta Ponte Segura"
       },
       "saveBtn": "Atualizar Dados",
       "saveBtnLoading": "Comutando...",

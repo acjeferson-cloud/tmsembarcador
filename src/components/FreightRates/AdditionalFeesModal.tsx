@@ -50,7 +50,6 @@ const CityName: React.FC<{ cityId: string | null; stateId: string | null }> = ({
           setCityName('N/A');
         }
       } catch (error) {
-
         setCityName('N/A');
       }
     };
@@ -110,10 +109,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       setStates(statesData || []);
 
     } catch (error) {
-
-
-
-
       setFees([]);
       setBusinessPartners([]);
       setStates([]);
@@ -139,7 +134,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         setCities(result.cities.map(c => ({ id: c.ibgeCode, name: c.name })));
       }
     } catch (error) {
-
       setCities([]);
     }
   };
@@ -172,9 +166,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       await loadData();
       resetForm();
     } catch (error) {
-
-
-
       setToast({ message: `${t('carriers.freightRates.additionalFees.saveError')}: ${error instanceof Error ? error.message : 'Tente novamente'}`, type: 'error' });
     }
   };
@@ -206,7 +197,6 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       setToast({ message: t('carriers.freightRates.additionalFees.deleteSuccess'), type: 'success' });
       await loadData();
     } catch (error) {
-
       setToast({ message: t('carriers.freightRates.additionalFees.deleteError'), type: 'error' });
     } finally {
       setConfirmDialog({ isOpen: false });

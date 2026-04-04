@@ -389,7 +389,6 @@ export const usersService = {
         try {
           hashedPassword = await hashPassword(user.senha);
         } catch (e) {
-
         }
       }
 
@@ -427,9 +426,6 @@ export const usersService = {
         organization_id: orgId,
         environment_id: envId
       };
-
-
-
       const { data, error } = await supabase
         .from('users')
         .insert(payloadToInsert)
@@ -469,7 +465,6 @@ export const usersService = {
         try {
           updateData.senha_hash = user.senha ? await hashPassword(user.senha) : user.senha;
         } catch (e) {
-
           updateData.senha_hash = user.senha;
         }
       }

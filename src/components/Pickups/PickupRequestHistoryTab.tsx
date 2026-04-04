@@ -20,7 +20,7 @@ export const PickupRequestHistoryTab: React.FC<PickupRequestHistoryTabProps> = (
       const data = await pickupRequestService.getPickupRequests(pickupId);
       setRequests(data);
     } catch (error) {
-// /*log_removed*/
+// console.error('Erro ao carregar histórico de solicitações:', error);
     } finally {
       setIsLoading(false);
     }

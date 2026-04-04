@@ -50,7 +50,6 @@ export const NewsCarousel: React.FC = () => {
       setNews(latestNews);
       setLastUpdate(newsService.getLastUpdateTime());
     } catch (error) {
-
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +63,6 @@ export const NewsCarousel: React.FC = () => {
       setNews(latestNews);
       setLastUpdate(newsService.getLastUpdateTime());
     } catch (error) {
-
     } finally {
       setIsLoading(false);
     }

@@ -84,7 +84,6 @@ export const logisticsSimulatorService = {
       });
 
       if (error) {
-
         throw new Error(error.message || 'Falha ao processar simulação. Verifique as configurações das tabelas.');
       }
 
@@ -96,7 +95,6 @@ export const logisticsSimulatorService = {
       // Actually, we can fetch all carriers in frontend and map the names
       return data as SimulationResponse;
     } catch (error: any) {
-
       return {
         success: false,
         results: [],
