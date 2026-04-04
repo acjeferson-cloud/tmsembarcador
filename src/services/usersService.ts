@@ -41,6 +41,7 @@ export interface User {
   updated_at?: string;
   created_by?: string | number;
   updated_by?: string | number;
+  force_password_reset?: boolean;
 }
 
 // Helper to hash passwords to match Supabase's validate_user_credentials RPC
@@ -159,7 +160,8 @@ export const usersService = {
       created_at: dbUser.created_at,
       updated_at: dbUser.updated_at,
       created_by: dbUser.created_by,
-      updated_by: dbUser.updated_by
+      updated_by: dbUser.updated_by,
+      force_password_reset: dbUser.force_password_reset === true
     };
   },
 
@@ -420,6 +422,7 @@ export const usersService = {
         tentativas_login: user.tentativas_login,
         observacoes: user.observacoes,
         preferred_language: user.preferred_language || 'pt',
+        force_password_reset: user.force_password_reset,
         created_by: user.created_by,
         organization_id: orgId,
         environment_id: envId
@@ -497,6 +500,7 @@ export const usersService = {
       if (user.tentativas_login !== undefined) updateData.tentativas_login = user.tentativas_login;
       if (user.observacoes !== undefined) updateData.observacoes = user.observacoes;
       if (user.preferred_language !== undefined) updateData.preferred_language = user.preferred_language;
+      if (user.force_password_reset !== undefined) updateData.force_password_reset = user.force_password_reset;
 
       // If password is being updated, update it in Supabase Auth too
       if (user.senha) {
@@ -722,6 +726,10 @@ export const usersService = {
       ultimo_login: new Date().toISOString(),
       tentativas_login: 0
     });
+  },
+
+  async clearForcePasswordReset(userId: string): Promise<void> {
+    await this.update(userId, { force_password_reset: false });
   },
 
   // Validation functions

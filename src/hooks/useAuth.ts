@@ -50,6 +50,7 @@ export const useAuth = () => {
           perfil: dbUser.perfil,
           permissoes: dbUser.permissoes || ['all'],
           estabelecimentosPermitidos: estabelecimentosPermitidos,
+          force_password_reset: dbUser.force_password_reset || false,
           supabaseUser
         };
       } else {
@@ -66,6 +67,7 @@ export const useAuth = () => {
       perfil: 'administrador',
       permissoes: ['all'],
       estabelecimentosPermitidos: [],
+      force_password_reset: false,
       supabaseUser
     };
   };
@@ -373,6 +375,13 @@ export const useAuth = () => {
 
 
 
+      // Buscar a tag diretamente do banco pois a RPC de login não a retorna atualmente
+      const { data: userRecord } = await supabase
+        .from('users')
+        .select('force_password_reset')
+        .eq('email', loginData.email)
+        .maybeSingle();
+
       // Criar objeto do usuário com TODOS os dados
       const userData: User & { supabaseUser?: SupabaseUser } = {
         id: parseInt(loginData.codigo) || 1,
@@ -394,6 +403,7 @@ export const useAuth = () => {
         establishment_code: loginData.establishment_code,
         establishment_name: loginData.establishment_name,
         user_id: loginData.user_id,
+        force_password_reset: userRecord?.force_password_reset || false,
         supabaseUser: undefined
       };
 

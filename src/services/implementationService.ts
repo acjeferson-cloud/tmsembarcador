@@ -3,6 +3,9 @@ import { normalizarCNPJ } from '../utils/cnpj';
 
 interface ERPIntegrationConfig {
   id?: string;
+  organization_id?: string;
+  environment_id?: string;
+  establishment_id?: string;
   erp_name: string;
   service_layer_address: string;
   port: string;
@@ -59,66 +62,74 @@ interface FreightAdjustment {
 export const implementationService = {
   // ===== ERP Integration Config =====
 
-  async getERPConfig(): Promise<ERPIntegrationConfig | null> {
+  async getERPConfig(orgId?: string, envId?: string, estId?: string): Promise<ERPIntegrationConfig | null> {
     try {
-      const { data, error } = await supabase
-        .from('erp_integration_config')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      if (!orgId || !envId) return null;
+
+      const { data, error } = await supabase.rpc('get_erp_integration_config', {
+        p_organization_id: orgId,
+        p_environment_id: envId,
+        p_establishment_id: estId || null
+      });
 
       if (error) {
-
         return null;
       }
 
-      return data;
+      return data as ERPIntegrationConfig;
     } catch (error) {
-
       return null;
     }
   },
 
   async saveERPConfig(config: ERPIntegrationConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      // Desativar todas as configurações existentes
-      await supabase
-        .from('erp_integration_config')
-        .update({ is_active: false })
-        .eq('is_active', true);
+      // Remover colunas para evitar conflitos na serialização, mas mantemos as de RLS
+      const payloadToSave = {
+        ...config,
+        is_active: true
+      };
+      
+      delete payloadToSave.created_by;
+      delete payloadToSave.updated_by;
 
-      // Inserir nova configuração
-      const { error } = await supabase
-        .from('erp_integration_config')
-        .insert({
-          ...config,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+      // Usar The Security Definer RPC para salvar atomicamente, contornando a dropagem do JWT 
+      // nos pools sem estado nativos do PostgREST.
+      const { data, error } = await supabase.rpc('save_erp_integration_config', {
+        p_payload: payloadToSave
+      });
 
       if (error) {
-
         return { success: false, error: error.message };
+      }
+      
+      const resData = data as any;
+      if (resData && resData.success === false) {
+          return { success: false, error: resData.error || 'Erro interno na transação' };
       }
 
       return { success: true };
     } catch (error) {
-
+      console.error('[implementationService.saveERPConfig] Exceção na chamada:', error);
       return { success: false, error: 'Erro ao salvar configuração' };
     }
   },
 
   async updateERPConfig(id: string, config: Partial<ERPIntegrationConfig>): Promise<{ success: boolean; error?: string }> {
     try {
+      const payloadToUpdate = {
+        ...config,
+        updated_at: new Date().toISOString()
+      };
+
+      // Remover colunas para evitar crash por cache no db
+      delete payloadToUpdate.created_by;
+      delete payloadToUpdate.updated_by;
+      delete (payloadToUpdate as any).establishment_id;
+
       const { error } = await supabase
         .from('erp_integration_config')
-        .update({
-          ...config,
-          updated_at: new Date().toISOString()
-        })
+        .update(payloadToUpdate)
         .eq('id', id);
 
       if (error) {
@@ -128,8 +139,48 @@ export const implementationService = {
 
       return { success: true };
     } catch (error) {
-
+      console.error('[implementationService.updateERPConfig] Exceção na chamada:', error);
       return { success: false, error: 'Erro ao atualizar configuração' };
+    }
+  },
+
+  async testERPConnection(payload: {
+    endpointSystem: string;
+    port: string | number;
+    username: string;
+    password?: string;
+    companyDb: string;
+  }): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL;
+      
+      // Se não houver proxy configurado, falha graciosamente avisando
+      if (!proxyUrl) {
+         return { success: false, error: 'A URL do Cloud Run Proxy (VITE_ERP_PROXY_URL) não está configurada no ambiente.' };
+      }
+
+      const response = await fetch(`${proxyUrl}/api/test-connection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      let data = null;
+      try { data = await response.json(); } catch(e) {}
+
+      if (!response.ok || !data) {
+        return { success: false, error: data?.error || `Falha do Proxy Cloud Run (${response.status})` };
+      }
+
+      if (!data.success) {
+        return { success: false, error: data.error || 'Erro reportado pelo SAP.' };
+      }
+
+      return { success: true, message: data.message || 'Conexão estabelecida com sucesso com o SAP Business One!' };
+
+    } catch (error: any) {
+      console.error('Test ERP Connection Throwable:', error);
+      return { success: false, error: 'Falha grave de comunicação com o Cloud Run Proxy. Verifique a URL ou conectividade.' };
     }
   },
 

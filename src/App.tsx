@@ -1,6 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Package, Truck, DollarSign, TrendingUp } from 'lucide-react';
 import { LoginWithEnvironmentFlow } from './components/Auth/LoginWithEnvironmentFlow';
+import { ForcePasswordResetScreen } from './components/Auth/ForcePasswordResetScreen';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Header } from './components/Layout/Header';
 import { FioriMenu } from './components/Layout/FioriMenu';
@@ -197,7 +198,8 @@ function AppContent() {
     availableEstablishments,
     isLoading,
     showOrgEnvSelector,
-    selectOrganizationEnvironment
+    selectOrganizationEnvironment,
+    logout
   } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -466,6 +468,20 @@ function AppContent() {
   // Show login screen if user is not authenticated
   if (!user) {
     return <LoginWithEnvironmentFlow onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // CRÍTICO: Usuário autenticado mas com exigência de reset de senha
+  if (user.force_password_reset) {
+    return (
+      <ForcePasswordResetScreen 
+        user={user as any} 
+        onComplete={async () => {
+          // Após alterar a senha, força logout pro usuário testar a nova senha
+          await logout();
+          window.location.href = '/';
+        }} 
+      />
+    );
   }
 
   // CRÍTICO: SEMPRE verificar se há estabelecimento selecionado

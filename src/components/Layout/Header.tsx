@@ -60,7 +60,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
               <span className="text-gray-600 dark:text-gray-400">{t('header.currentVersion')}</span>
-              <span className="font-semibold text-gray-900 dark:text-white">v2.1.0</span>
+              <span className="font-semibold text-gray-900 dark:text-white">V1.28</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">

@@ -14,6 +14,7 @@ import { ordersService } from '../../services/ordersService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
+import { sapIntegrationService } from '../../services/sapService';
 
 interface Order {
   id: number;
@@ -77,6 +78,24 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  const handleImportLatestSAPOrder = async () => {
+    setIsLoading(true);
+    setToast(null);
+    try {
+      const response = await sapIntegrationService.importLatestSAPOrder();
+      if (!response.success) {
+        setToast({ message: response.error || 'Falha na comunicação com SAP Service Layer', type: 'error' });
+      } else {
+        setToast({ message: response.message || 'Pedido SAP Importado e Integrado!', type: 'success' });
+        await loadOrders();
+      }
+    } catch (err: any) {
+      setToast({ message: err.message || 'Erro inesperado ao reciclar API do SAP.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle initial order navigation from Spotlight
   const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
@@ -555,6 +574,16 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
           <p className="text-gray-600 dark:text-gray-400">{t('orders.pageDescription')}</p>
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={handleImportLatestSAPOrder}
+            disabled={isLoading}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+            title="Conecta no ERP e traz automaticamente o último Pedido"
+          >
+            <ShoppingCart size={20} className={isLoading ? 'animate-bounce' : ''} />
+            <span>Último Pedido SAP</span>
+          </button>
+          
           <button
             onClick={() => setShowOrderForm(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug } from 'lucide-react';
 import { DeployAgent } from '../DeployAgent/DeployAgent';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
 import { implementationService } from '../../services/implementationService';
@@ -18,7 +18,7 @@ interface ImportResult {
 }
 
 const ImplementationCenter: React.FC = () => {
-  const { user } = useAuth();
+  const { user, currentEstablishment } = useAuth();
   const { t } = useTranslation();
   
   const breadcrumbItems = [
@@ -63,12 +63,15 @@ const ImplementationCenter: React.FC = () => {
   const [carrierTables, setCarrierTables] = useState<FreightRateTable[]>([]);
   const [selectedTablesToAdjust, setSelectedTablesToAdjust] = useState<string[]>([]);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
 
   // Carregar configuração ERP do banco ao montar componente
   useEffect(() => {
-    loadERPConfig();
-    loadCarriers();
-  }, []);
+    if (user) {
+      loadERPConfig();
+      loadCarriers();
+    }
+  }, [user?.id, currentEstablishment?.establishment_id]);
 
   const loadCarriers = async () => {
     try {
@@ -103,9 +106,17 @@ const ImplementationCenter: React.FC = () => {
   };
 
   const loadERPConfig = async () => {
-    const config = await implementationService.getERPConfig();
+    if (!user || !user.organization_id || !user.environment_id) return;
+    
+    const estId = currentEstablishment?.establishment_id || user.establishment_id || undefined;
+    const config = await implementationService.getERPConfig(
+      user.organization_id,
+      user.environment_id,
+      estId
+    );
+    
     if (config) {
-      setSelectedERP(config.erp_name);
+      setSelectedERP(config.erp_name || config.erp_system || '');
       setErpConfig({
         serviceLayerAddress: config.service_layer_address || '',
         port: config.port || '',
@@ -571,12 +582,23 @@ const ImplementationCenter: React.FC = () => {
     }));
   };
 
-  const handleSaveErpConfig = async () => {
-    if (!user) return;
+  const handleTestConnection = async () => {
+    if (!erpConfig.serviceLayerAddress || !erpConfig.username || !erpConfig.password || !erpConfig.database) {
+      setToast({ type: 'error', message: 'Preencha Endpoint, Credencial, Password e Banco de Dados antes de testar.' });
+      return;
+    }
 
-    setIsLoading(true);
+    setIsTestingConnection(true);
     try {
-      const result = await implementationService.saveERPConfig({
+      if (!user) {
+        setToast({ type: 'error', message: 'Usuário não autenticado.' });
+        return;
+      }
+
+      const saveResult = await implementationService.saveERPConfig({
+        organization_id: user.organization_id || undefined,
+        environment_id: user.environment_id || undefined,
+        establishment_id: currentEstablishment?.establishment_id || user.establishment_id || undefined,
         erp_name: selectedERP,
         service_layer_address: erpConfig.serviceLayerAddress,
         port: erpConfig.port,
@@ -600,16 +622,79 @@ const ImplementationCenter: React.FC = () => {
         created_by: user.id
       });
 
-      setImportResults(prev => [...prev, {
-        success: result.success,
-        message: result.success ? t('implementationCenter.messages.saveSuccess') : result.error || t('implementationCenter.messages.saveError')
-      }]);
+      if (!saveResult.success) {
+        setToast({ type: 'error', message: 'Falha ao salvar as configurações no banco. Teste abortado. Verifique os logs.' });
+        return;
+      }
+
+      // Chamada real para a Edge Function de validação do SAP
+      const testResult = await implementationService.testERPConnection({
+        endpointSystem: erpConfig.serviceLayerAddress,
+        port: erpConfig.port,
+        username: erpConfig.username,
+        password: erpConfig.password,
+        companyDb: erpConfig.database
+      });
+
+      if (!testResult.success) {
+        setToast({ 
+          type: 'error', 
+          message: testResult.error || 'Falha ao validar credenciais com o servidor SAP.'
+        });
+        return;
+      }
+      
+      setToast({ 
+        type: 'success',
+        message: testResult.message || 'Configurações salvas no banco! Conexão estabelecida com sucesso pelo SAP Business One.' 
+      });
+    } catch (error) {
+      setToast({ type: 'error', message: 'Timeout: Não foi possível alcançar a Service Layer do SAP.' });
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
+  const handleSaveErpConfig = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const result = await implementationService.saveERPConfig({
+        organization_id: user.organization_id || undefined,
+        environment_id: user.environment_id || undefined,
+        establishment_id: currentEstablishment?.establishment_id || user.establishment_id || undefined,
+        erp_name: selectedERP,
+        service_layer_address: erpConfig.serviceLayerAddress,
+        port: erpConfig.port,
+        username: erpConfig.username,
+        password: erpConfig.password,
+        database: erpConfig.database,
+        cte_integration_type: erpConfig.cteIntegrationType,
+        cte_model: erpConfig.cteModel,
+        invoice_model: erpConfig.invoiceModel,
+        billing_nfe_item: erpConfig.billingNFeItem,
+        billing_usage: erpConfig.billingUsage,
+        billing_control_account: erpConfig.billingControlAccount,
+        outbound_nf_item: erpConfig.outboundNFItem,
+        cte_without_nf_item: erpConfig.cteWithoutNFItem,
+        cte_usage: erpConfig.cteUsage,
+        inbound_nf_control_account: erpConfig.inboundNFControlAccount,
+        invoice_transitory_account: erpConfig.invoiceTransitoryAccount,
+        nfe_xml_network_address: erpConfig.nfeXmlNetworkAddress,
+        fiscal_module: erpConfig.fiscalModule,
+        is_active: true,
+        created_by: user.id
+      });
+
+      if (result.success) {
+        setToast({ type: 'success', message: t('implementationCenter.messages.saveSuccess') });
+      } else {
+        setToast({ type: 'error', message: result.error || t('implementationCenter.messages.saveError') });
+      }
     } catch (error) {
       console.error('Erro ao salvar configuração ERP:', error);
-      setImportResults(prev => [...prev, {
-        success: false,
-        message: t('implementationCenter.messages.saveError')
-      }]);
+      setToast({ type: 'error', message: t('implementationCenter.messages.saveError') });
     } finally {
       setIsLoading(false);
     }
@@ -831,7 +916,7 @@ const ImplementationCenter: React.FC = () => {
                           type="text"
                           value={erpConfig.serviceLayerAddress}
                           onChange={(e) => handleErpConfigChange('serviceLayerAddress', e.target.value)}
-                          placeholder="https://servidor:porta/b1s/v1"
+                          placeholder="https://sap-erp.empresa.com.br:50000/b1s/v1"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -855,7 +940,7 @@ const ImplementationCenter: React.FC = () => {
                           type="text"
                           value={erpConfig.username}
                           onChange={(e) => handleErpConfigChange('username', e.target.value)}
-                          placeholder="manager"
+                          placeholder="usuario_integracao"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -879,7 +964,7 @@ const ImplementationCenter: React.FC = () => {
                           type="text"
                           value={erpConfig.database}
                           onChange={(e) => handleErpConfigChange('database', e.target.value)}
-                          placeholder="SBODEMOBR"
+                          placeholder="SBO_NOME_EMPRESA_PRD"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -1088,8 +1173,25 @@ const ImplementationCenter: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Save Button */}
-                  <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                  {/* Save and Test Buttons */}
+                  <div className="flex justify-end pt-4 gap-3 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={handleTestConnection}
+                      disabled={isTestingConnection || isLoading}
+                      className="flex items-center gap-2 px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isTestingConnection ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Testando...
+                        </>
+                      ) : (
+                        <>
+                          <Plug className="w-4 h-4" />
+                          Testar Conexão
+                        </>
+                      )}
+                    </button>
                     <button
                       onClick={handleSaveErpConfig}
                       disabled={isLoading}

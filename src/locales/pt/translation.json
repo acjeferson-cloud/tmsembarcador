@@ -768,7 +768,7 @@
     "currentVersion": "Versão Atual:",
     "releaseDate": "Data de Liberação:",
     "lastUpdate": "Última Atualização:",
-    "versionHighlights": "Novidades da versão 2.1.0:",
+    "versionHighlights": "Novidades da versão 1.28:",
     "close": "Fechar"
   },
   "globalSearch": {
@@ -4824,7 +4824,7 @@
         "title": "Fiscal",
         "transitoryAccount": "Conta Ponte Segura"
       },
-      "saveBtn": "Submeter ao ERP",
+      "saveBtn": "Atualizar Dados",
       "saveBtnLoading": "Comutando...",
       "selectErp": "Selecione a Tecnologia Fonte",
       "selectErpPlaceholder": "SAP Business One / Cloud...",
@@ -5869,5 +5869,19 @@
     "cancel": "Cancelar",
     "updateBtn": "Atualizar Item",
     "saveBtn": "Salvar Item"
+  },
+  "forcePasswordReset": {
+    "title": "Segurança em Primeiro Lugar",
+    "description": "Sua conta foi sinalizada para uma redefinição obrigatória de credenciais pelos administradores de segurança do Log Axis.",
+    "secureEnv": "Ambiente Protegido Log Axis",
+    "logout": "Sair (Logout)",
+    "hello": "Olá, {{name}}",
+    "subtitle": "Por medida de segurança, o Administrador determinou que você deve atualizar sua senha de acesso agora mesmo.",
+    "button": "Atualizar Senha & Acessar",
+    "errors": {
+      "userNotFound": "Usuário não encontrado no banco de dados.",
+      "samePassword": "A nova senha não pode ser igual à senha atual que você está usando.",
+      "generic": "Falha grave ao redefinir a senha."
+    }
   }
 }

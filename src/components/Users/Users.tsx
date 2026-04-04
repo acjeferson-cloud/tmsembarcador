@@ -260,6 +260,11 @@ export const Users: React.FC = () => {
           message: 'Sessão expirada. Por favor, faça logout e login novamente para continuar.',
           type: 'error'
         });
+      } else if (errorMessage.includes('duplicate key value') || errorMessage.includes('users_email_environment_key')) {
+        setToast({
+          message: 'Falha: Este e-mail já está sendo utilizado por outro usuário no sistema.',
+          type: 'error'
+        });
       } else {
         setToast({ message: 'Erro ao salvar usuário: ' + errorMessage, type: 'error' });
       }

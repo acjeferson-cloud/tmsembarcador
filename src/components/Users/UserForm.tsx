@@ -9,6 +9,7 @@ import { Toast, ToastType } from '../common/Toast';
 import { useTranslation } from 'react-i18next';
 import { InlineMessage } from '../common/InlineMessage';
 import zxcvbn from 'zxcvbn';
+import { useAuth } from '../../hooks/useAuth';
 
 interface UserFormProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ interface UserFormProps {
 
 export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
   const { t } = useTranslation();
+  const { user: currentUser } = useAuth();
   const [formData, setFormData] = useState({
     codigo: user?.codigo || '',
     nome: user?.nome || '',
@@ -29,7 +31,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     celular: user?.celular || '',
     cargo: user?.cargo || '',
     departamento: user?.departamento || '',
-    data_admissao: user?.data_admissao || new Date().toISOString().split('T')[0],
+    data_admissao: user?.data_admissao || '',
     data_nascimento: user?.data_nascimento || '',
     endereco: user?.endereco || '',
     bairro: user?.bairro || '',
@@ -42,7 +44,8 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     estabelecimentosPermitidos: user?.estabelecimentosPermitidos || [],
     observacoes: user?.observacoes || '',
     status: user?.status || 'ativo',
-    preferred_language: user?.preferred_language || 'pt'
+    preferred_language: user?.preferred_language || 'pt',
+    force_password_reset: user?.force_password_reset || false
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -178,9 +181,11 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
         }
         break;
       case 'cpf':
-        if (!value) {
+        // CONFIG_CPF_OBRIGATORIO: Para tornar o CPF obrigatório novamente, mude isCpfRequired para true.
+        const isCpfRequired = false;
+        if (isCpfRequired && !value) {
           error = 'CPF é obrigatório';
-        } else if (!usersService.isValidCPF(value)) {
+        } else if (value && !usersService.isValidCPF(value)) {
           error = 'CPF deve ter um formato válido';
         }
         break;
@@ -346,7 +351,8 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validate all required fields
-    const requiredFields = ['codigo', 'nome', 'email', 'cpf', 'cargo', 'departamento', 'perfil'];
+    // CONFIG_CPF_OBRIGATORIO: Adicione 'cpf' de volta na lista abaixo para torná-lo bloqueante no submit.
+    const requiredFields = ['codigo', 'nome', 'email', 'cargo', 'departamento', 'perfil'];
     if (!user) requiredFields.push('senha', 'confirmarSenha');
 
     let hasErrors = false;
@@ -360,6 +366,22 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
       setToast({ message: 'Por favor, corrija os erros antes de continuar.', type: 'warning' });
       return;
     }
+
+    // Validação de unicidade do E-mail
+    if (formData.email) {
+      const isUniqueEmail = await usersService.isEmailUnique(formData.email, user?.id);
+      if (!isUniqueEmail) {
+        setErrors(prev => ({ ...prev, email: 'Este e-mail já está em uso.' }));
+        setToast({ message: 'Falha: Este e-mail já está cadastrado para outro usuário.', type: 'error' });
+        const emailInput = document.querySelector('input[name="email"]') as HTMLInputElement;
+        if (emailInput) {
+          emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          emailInput.focus();
+        }
+        return;
+      }
+    }
+
     // Validate permissions for personalizado profile
     if (formData.perfil === 'personalizado' && (!formData.permissoes || formData.permissoes.length === 0)) {
       setToast({ message: 'Por favor, selecione pelo menos uma permissão para o perfil personalizado.', type: 'warning' });
@@ -389,6 +411,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     if (!finalData.data_nascimento || finalData.data_nascimento === '') {
       finalData.data_nascimento = undefined;
     }
+    if (!finalData.data_admissao || finalData.data_admissao === '') {
+      finalData.data_admissao = undefined;
+    }
     if (!finalData.telefone || finalData.telefone === '') {
       finalData.telefone = undefined;
     }
@@ -412,6 +437,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     }
     if (!finalData.observacoes || finalData.observacoes === '') {
       finalData.observacoes = undefined;
+    }
+    if (!finalData.cpf || finalData.cpf === '') {
+      finalData.cpf = undefined;
     }
 
     // Only include password if it was filled
@@ -722,7 +750,15 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  onBlur={(e) => validateField('email', e.target.value)}
+                  onBlur={async (e) => {
+                    const isValid = validateField('email', e.target.value);
+                    if (isValid && e.target.value) {
+                      const isUnique = await usersService.isEmailUnique(e.target.value, user?.id);
+                      if (!isUnique) {
+                        setErrors(prev => ({ ...prev, email: 'Este e-mail já está em uso.' }));
+                      }
+                    }
+                  }}
                   required
                   disabled={isProtectedUser}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -739,14 +775,17 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.cpf')} * </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> 
+                  {t('users.form.fields.cpf')} {/* CONFIG_CPF_OBRIGATORIO: Adicione ' *' após a tag de instrução */}
+                </label>
                 <input
                   type="text"
                   name="cpf"
                   value={formData.cpf}
                   onChange={handleCPFChange}
                   onBlur={(e) => validateField('cpf', e.target.value)}
-                  required
+                  // CONFIG_CPF_OBRIGATORIO: Descomente a tag 'required' abaixo
+                  // required
                   maxLength={14}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.cpf ? 'border-red-300' : 'border-gray-300'
@@ -851,13 +890,12 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.admissionDate')} * </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {t('users.form.fields.admissionDate')} </label>
                 <input
                   type="date"
                   name="data_admissao"
                   value={formData.data_admissao}
                   onChange={handleInputChange}
-                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -963,11 +1001,41 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                 </select>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {user ?
-                    t('users.form.hints.languageSaveHint') :
-                    t('users.form.hints.languageUserHint')
+                    t('users.form.hints.languageSaveHint', 'Suas alterações entrarão em vigor no próximo login.') :
+                    t('users.form.hints.languageUserHint', 'A linguagem escolhida será aplicada quando o usuário fizer login.')
                   }
                 </p>
               </div>
+
+              {/* Force Password Reset Toggle (iOS Style) - Apenas para administradores */}
+              {currentUser?.perfil?.toLowerCase() === 'administrador' && (
+                <div className="md:col-span-2 mt-2 mb-2 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-200 dark:border-gray-600 flex items-center justify-between">
+                  <div className="flex items-start space-x-3">
+                    <Shield size={20} className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        Exigir alteração de senha no próximo login
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mr-4">
+                        Ao ativar esta opção, o usuário será obrigado a redefinir sua senha imediatamente após fazer o próximo login, interceptando o acesso ao painel.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* iOS Style Toggle */}
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      name="force_password_reset"
+                      className="sr-only peer"
+                      checked={formData.force_password_reset}
+                      onChange={(e) => setFormData(prev => ({ ...prev, force_password_reset: e.target.checked }))}
+                      disabled={isProtectedUser}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"> {user ? t('users.form.fields.newPassword') : t('users.form.fields.password') + ' *'} </label>

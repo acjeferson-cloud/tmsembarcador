@@ -7,7 +7,7 @@
 */
 
 -- Passo 1: Limpar as faixas de CEP existentes para reiniciar corretamente
-TRUNCATE TABLE zip_code_ranges RESTART IDENTITY CASCADE;
+-- TRUNCATE TABLE zip_code_ranges RESTART IDENTITY CASCADE; -- DESATIVADO PARA PREVENIR APAGAMENTO ACIDENTAL
 
 -- Passo 2: Função para importar as faixas de SC target a partir dos Códigos IBGE confirmados
 DO $$

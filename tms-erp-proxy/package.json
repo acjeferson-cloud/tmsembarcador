@@ -1,0 +1,14 @@
+{
+  "name": "tms-erp-proxy",
+  "version": "1.0.0",
+  "description": "Micro-Backend for routing specific TMS requests through a VPC with static IP",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

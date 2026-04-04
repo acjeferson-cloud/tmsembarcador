@@ -62,6 +62,7 @@ export interface User {
   establishment_code?: string;
   establishment_name?: string;
   user_id?: string;
+  force_password_reset?: boolean;
 }
 
 export interface Order {
