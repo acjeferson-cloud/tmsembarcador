@@ -159,7 +159,7 @@ export const implementationService = {
     companyDb: string;
   }): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL;
+      const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
       
       // Se não houver proxy configurado, falha graciosamente avisando
       if (!proxyUrl) {
