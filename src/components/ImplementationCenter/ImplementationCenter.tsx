@@ -1003,8 +1003,10 @@ const ImplementationCenter: React.FC = () => {
                           onChange={(e) => handleErpConfigChange('cteIntegrationType', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="draft">{t('implementationCenter.erpIntegration.cte.typeDraft')}</option>
-                          <option value="entry">{t('implementationCenter.erpIntegration.cte.typeEntry')}</option>
+                          <option value="draft">Prévia / Draft (Esboço)</option>
+                          <option value="entry">Entrada Sistêmica</option>
+                          <option value="invoice">Faturamento Direto</option>
+                          <option value="none">Somente Conferência / Sem Lançamento</option>
                         </select>
                       </div>
                       <div>
@@ -1093,12 +1095,12 @@ const ImplementationCenter: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.invoice.outboundItem')}
+                          Item padrão para Fatura
                         </label>
                         <input
                           type="text"
-                          value={erpConfig.outboundNFItem}
-                          onChange={(e) => handleErpConfigChange('outboundNFItem', e.target.value)}
+                          value={erpConfig.invoiceDefaultItem}
+                          onChange={(e) => handleErpConfigChange('invoiceDefaultItem', e.target.value)}
                           placeholder="SERVICO"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -1163,7 +1165,7 @@ const ImplementationCenter: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.additional.nfeXmlAddress')}
+                          Diretório de XMLs de NF-e
                         </label>
                         <input
                           type="text"
@@ -1174,6 +1176,18 @@ const ImplementationCenter: React.FC = () => {
                         />
                       </div>
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Diretório de XMLs de CT-e
+                        </label>
+                        <input
+                          type="text"
+                          value={erpConfig.cteXmlNetworkAddress}
+                          onChange={(e) => handleErpConfigChange('cteXmlNetworkAddress', e.target.value)}
+                          placeholder="\\servidor\xmls\cte"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Módulo Fiscal
                         </label>
