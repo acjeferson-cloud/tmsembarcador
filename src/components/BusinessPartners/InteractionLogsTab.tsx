@@ -22,6 +22,7 @@ export function InteractionLogsTab({ businessPartnerId }: InteractionLogsTabProp
         const data = await interactionLogsService.getByBusinessPartner(businessPartnerId);
         setLogs(data);
       } catch (error) {
+
       } finally {
         setLoading(false);
       }

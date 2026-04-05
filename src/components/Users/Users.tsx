@@ -248,6 +248,7 @@ export const Users: React.FC = () => {
       setViewingUser(null);
       forceRefresh();
     } catch (error) {
+
       const errorMessage = (error as Error).message;
 
       // Check if error is related to missing context

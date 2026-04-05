@@ -179,6 +179,7 @@ export const DeliveryTracking: React.FC = () => {
         }
       }
     } catch (err) {
+
       setError(t('deliveryTracking.errors.genericError'));
     } finally {
       setIsLoading(false);

@@ -27,6 +27,7 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch((error) => {
+
       });
   });
 

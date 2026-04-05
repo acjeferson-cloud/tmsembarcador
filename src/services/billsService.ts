@@ -101,7 +101,7 @@ export const billsService = {
         };
       });
     } catch (error) {
-// console.error('Erro ao buscar faturas:', error);
+// null
       return [];
     }
   },
@@ -122,7 +122,7 @@ export const billsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-// console.error('Erro ao buscar fatura:', error);
+// null
       return null;
     }
   },
@@ -158,7 +158,7 @@ export const billsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-// console.error('Erro ao buscar CT-es vinculados:', error);
+// null
       return [];
     }
   },

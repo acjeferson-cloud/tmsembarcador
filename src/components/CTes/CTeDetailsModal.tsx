@@ -111,7 +111,7 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
         };
       }
     } catch (e) {
-// console.error('Erro extraindo dados do XML para DACTE no modal', e);
+// null
     }
   }
 

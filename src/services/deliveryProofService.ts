@@ -53,6 +53,7 @@ export const deliveryProofService = {
 
       return { success: true, url: data.publicUrl };
     } catch (error: any) {
+
       return { success: false, error: error.message };
     }
   },
@@ -75,6 +76,7 @@ export const deliveryProofService = {
 
       return { success: true, url: data.publicUrl };
     } catch (error: any) {
+
       return { success: false, error: error.message };
     }
   },
@@ -89,6 +91,7 @@ export const deliveryProofService = {
         .from('pickup-proofs')
         .remove([pathPart]);
     } catch (error) {
+
     }
   },
 
@@ -109,6 +112,7 @@ export const deliveryProofService = {
 
       return null;
     } catch (error) {
+
       return null;
     }
   },
@@ -142,6 +146,7 @@ export const deliveryProofService = {
       
       return { success: true };
     } catch (error: any) {
+
       return { success: false, error: error.message };
     }
   }

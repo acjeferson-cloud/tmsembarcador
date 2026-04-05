@@ -339,6 +339,7 @@ export const ctesCompleteService = {
             xml_content: cte.xml_data.original
           });
         } catch (e) {
+
         }
       }
 

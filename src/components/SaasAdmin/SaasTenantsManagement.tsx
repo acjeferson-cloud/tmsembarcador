@@ -44,6 +44,7 @@ export function SaasTenantsManagement() {
       setTenants(tenantsData);
       setPlans(plansData);
     } catch (error) {
+
     } finally {
       setLoading(false);
     }
@@ -116,6 +117,7 @@ export function SaasTenantsManagement() {
         alert('Erro: ' + result.error);
       }
     } catch (error) {
+
       alert('Erro ao salvar cliente');
     }
   }
@@ -141,6 +143,7 @@ export function SaasTenantsManagement() {
         alert('Erro ao excluir cliente: ' + result.error);
       }
     } catch (error) {
+
       alert('Erro ao excluir cliente');
     }
   }

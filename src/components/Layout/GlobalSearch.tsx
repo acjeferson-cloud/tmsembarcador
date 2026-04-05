@@ -33,6 +33,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onNavigate }) => {
         const data = await globalSearchService.search(searchTerm);
         setResults(data);
       } catch (error) {
+
         setResults([]);
       } finally {
         setIsLoading(false);

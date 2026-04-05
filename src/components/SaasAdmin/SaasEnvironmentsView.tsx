@@ -28,6 +28,7 @@ export function SaasEnvironmentsView() {
         .order('codigo', { ascending: false });
 
       if (error) {
+
         throw error;
       }
 
@@ -41,6 +42,7 @@ export function SaasEnvironmentsView() {
 
       setOrganizations(mapped);
     } catch (err) {
+
     } finally {
       setLoading(false);
     }

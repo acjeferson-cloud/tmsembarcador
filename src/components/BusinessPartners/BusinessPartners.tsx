@@ -122,12 +122,15 @@ const BusinessPartners: React.FC = () => {
           await loadPartners();
           setToast({ message: t('businessPartners.messages.deleteSuccess', 'Parceiro de negócios excluído com sucesso!'), type: 'success' });
         } else {
+
           setToast({ message: result.error || t('businessPartners.messages.deleteError', 'Erro ao excluir parceiro'), type: 'error' });
         }
       } catch (error) {
+
         setToast({ message: t('businessPartners.messages.deleteError', 'Erro inesperado ao excluir parceiro'), type: 'error' });
       }
     } else {
+
     }
     setConfirmDialog({ isOpen: false });
   };
@@ -217,6 +220,7 @@ const BusinessPartners: React.FC = () => {
           setToast({ message: t('businessPartners.messages.createSuccess', 'Parceiro de negócios criado com sucesso!'), type: 'success' });
         } else {
           const errorMsg = result.error || t('businessPartners.messages.createError', 'Erro ao criar parceiro');
+
           setToast({ message: errorMsg, type: 'error' });
           return;
         }
@@ -224,6 +228,7 @@ const BusinessPartners: React.FC = () => {
       setShowForm(false);
       setEditingPartner(null);
     } catch (error: any) {
+
       const errorMessage = error?.message || t('businessPartners.messages.updateError', 'Erro inesperado ao salvar parceiro de negócios');
       setToast({ message: errorMessage, type: 'error' });
     }

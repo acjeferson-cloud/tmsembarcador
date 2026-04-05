@@ -110,7 +110,7 @@ const convertCTeToElectronicDocument = (cte: CTeWithRelations): ElectronicDocume
         };
       }
     } catch (e) {
-// console.error('Erro extraindo dados do XML para DACTE', e);
+// null
     }
   }
 
@@ -229,7 +229,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           });
         }
       } catch (error) {
-// console.error('Erro ao carregar estabelecimento:', error);
+// null
       }
     };
 
@@ -265,7 +265,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       const formattedCTes = ctesData.map(convertCTeToDisplayFormat);
       setCTes(formattedCTes);
     } catch (error) {
-// console.error('Erro ao carregar CT-es:', error);
+// null
 
       // Exibir erro para o usuário
       const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar CT-es';
@@ -287,7 +287,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setToast({ message: 'Tarifa não encontrada.', type: 'error' });
       }
     } catch (error) {
-// console.error('Erro ao carregar tarifa:', error);
+// null
       setToast({ message: 'Erro ao carregar dados da tarifa.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -303,7 +303,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       setSelectedTariff(null);
       setSelectedTariffId(null);
     } catch (error) {
-// console.error('Erro ao salvar tarifa:', error);
+// null
       setToast({ message: 'Erro ao salvar tarifa.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -457,7 +457,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 setIsLoading(false);
               }
             } catch (error) {
-// console.error('Erro ao preparar DACTE:', error);
+// null
               setToast({ message: 'Erro ao gerar DACTE.', type: 'error' });
               setIsLoading(false);
             }
@@ -478,7 +478,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                     successCount++;
                   }
                 } catch (error) {
-// console.error(`Erro ao recalcular CT-e ${cteId}:`, error);
+// null
                   errorCount++;
                 }
               }
@@ -491,7 +491,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 setToast({ message: `Recálculo concluído: ${successCount} sucesso(s) e ${errorCount} erro(s).`, type: 'warning' });
               }
             } catch (error) {
-// console.error('Erro ao recalcular CT-es:', error);
+// null
               setToast({ message: 'Erro ao recalcular CT-es em lote.', type: 'error' });
             }
           })();
@@ -565,12 +565,12 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                     successCount++;
                   } else if (fullCTe) {
                     notFoundCount++;
-// console.warn(`CT-e ${fullCTe.number} não possui XML armazenado`);
+// null
                   } else {
                     errorCount++;
                   }
                 } catch (error) {
-// console.error(`Erro ao baixar XML do CT-e ${cteId}:`, error);
+// null
                   errorCount++;
                 }
 
@@ -600,7 +600,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                       errorCount++;
                     }
                   } catch (error) {
-// console.error(`Erro ao processar XML do CT-e ${cteId}:`, error);
+// null
                     errorCount++;
                   }
                 }
@@ -633,7 +633,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
               setIsLoading(false);
             } catch (error) {
-// console.error('Erro ao baixar XMLs:', error);
+// null
               setToast({ message: 'Erro ao baixar XMLs.', type: 'error' });
               setIsLoading(false);
             }
@@ -752,7 +752,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               setShowReportDivergenceModal(true);
               setIsLoading(false);
             } catch (error: any) {
-// console.error('Erro ao preparar relatório de divergência:', error);
+// null
               const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';
               setToast({ message: errorMessage, type: 'error' });
               setIsLoading(false);
@@ -795,7 +795,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowDetailsModal(true);
         }
       } catch (error) {
-// console.error('Erro ao carregar detalhes do CT-e:', error);
+// null
         setToast({ message: 'Erro ao carregar detalhes do CT-e.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -812,7 +812,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowComparisonModal(true);
         }
       } catch (error) {
-// console.error('Erro ao carregar CT-e para comparação:', error);
+// null
         setToast({ message: 'Erro ao carregar dados para comparação.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -854,7 +854,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 setToast({ message: `CT-e ${cte.numero} recalculado com sucesso! Valor Total: R$ ${calculation.valorTotal.toFixed(2)}`, type: 'success' });
               }
             } catch (error) {
-// console.error('Erro ao recalcular CT-e:', error);
+// null
               setToast({ message: `Erro ao recalcular CT-e: ${error instanceof Error ? error.message : 'Erro desconhecido'}.`, type: 'error' });
             }
           })();
@@ -937,7 +937,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               }
               setIsLoading(false);
             } catch (error) {
-// console.error('Erro ao baixar XML:', error);
+// null
               setToast({ message: 'Erro ao baixar XML.', type: 'error' });
               setIsLoading(false);
             }
@@ -971,7 +971,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setToast({ message: `Erro ao excluir CT-e: ${result.error}`, type: 'error' });
         }
       } catch (error) {
-// console.error('Erro ao excluir CT-e:', error);
+// null
         setToast({ message: 'Erro ao excluir CT-e.', type: 'error' });
       }
     }
@@ -994,7 +994,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setToast({ message: `Erro ao reprovar CT-e: ${result.error}`, type: 'error' });
       }
     } catch (error) {
-// console.error('Erro ao reprovar CT-e:', error);
+// null
       setToast({ message: 'Erro ao reprovar CT-e.', type: 'error' });
     } finally {
       setIsLoading(false);

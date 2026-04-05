@@ -41,6 +41,7 @@ export const deliveryNotificationHandler = {
           .limit(1);
         
         if (orderDataError) {
+
         }
         
         if (orderDataList && orderDataList.length > 0 && orderDataList[0].codigo_rastreio) {
@@ -280,6 +281,8 @@ export const deliveryNotificationHandler = {
         }
       }
     } catch (err) {
+
     }
+
   }
 };

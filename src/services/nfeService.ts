@@ -410,7 +410,7 @@ export const nfeService = {
         }))
       }));
     } catch (error) {
-// console.error('Error fetching NFes by Access Keys:', error);
+// null
       return [];
     }
   },
@@ -479,7 +479,7 @@ export const nfeService = {
         }))
       }));
     } catch (error) {
-// console.error('Error fetching NFes by IDs:', error);
+// null
       return [];
     }
   },
@@ -542,7 +542,7 @@ export const nfeService = {
              }).eq('id', orderData.id);
            }
           } catch (e) {
-// console.error('Erro ao atualizar metadata do pedido relacionado', e);
+// null
           }
       }
 
@@ -550,7 +550,7 @@ export const nfeService = {
       try {
         await trackingService.syncDocumentTrackingStatus('nfe', invoiceId, invoice.numero);
       } catch (err) {
-// console.error('Erro ao sincronizar status global na NFe', err);
+// null
       }
 
       // Disparar notificação automatizada "fire-and-forget"
@@ -563,7 +563,7 @@ export const nfeService = {
 
       return { success: true };
     } catch (error: any) {
-// console.error('Erro ao adicionar ocorrência:', error);
+// null
       return { success: false, error: error.message };
     }
   },

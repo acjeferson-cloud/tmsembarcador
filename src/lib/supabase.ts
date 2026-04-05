@@ -9,6 +9,7 @@ let supabase: ReturnType<typeof createClient> | null = null
 
 try {
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('⚠️ Supabase environment variables not found. Running in offline mode.')
   } else {
 
     supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -20,6 +21,7 @@ try {
 
   }
 } catch (error) {
+  console.error('❌ Failed to initialize Supabase client:', error)
 }
 
 if (!supabase) {
@@ -52,6 +54,7 @@ async function verifySessionContext(): Promise<boolean> {
     const { data, error } = await supabase.rpc('verify_session_context');
 
     if (error) {
+      console.warn('⚠️ Erro ao verificar contexto:', error);
       return false;
     }
 
@@ -65,6 +68,7 @@ async function verifySessionContext(): Promise<boolean> {
 
     return isValid;
   } catch (error) {
+    console.error('❌ Falha ao verificar contexto:', error);
     return false;
   }
 }
@@ -120,6 +124,8 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
     }
 
     if (!contextData || !contextData.success) {
+      console.warn('⚠️ Não foi possível obter contexto do usuário:', contextData?.error || 'dados incompletos');
+      console.warn('⚠️ Dados retornados:', contextData);
       isConfiguringContext = false;
       return;
     }
@@ -144,6 +150,7 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
     const estabId = (selectedEstabId && selectedEstabId !== 'null') ? selectedEstabId : null;
 
     if (!dbUser.organization_id || !dbUser.environment_id) {
+      console.warn('⚠️ Contexto retornado sem organization_id ou environment_id');
       isConfiguringContext = false;
       return;
     }
@@ -178,6 +185,8 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
 
 
   } catch (error) {
+    console.error('❌ Erro ao configurar contexto:', error);
+
     // Tentar novamente até 3 vezes com delay exponencial
     if (retryCount < 3) {
       const delay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
@@ -186,6 +195,8 @@ async function configureSessionContext(retryCount: number = 0): Promise<void> {
       isConfiguringContext = false;
       return configureSessionContext(retryCount + 1);
     }
+
+    console.error('❌ Falha ao configurar contexto após 4 tentativas');
   } finally {
     isConfiguringContext = false;
   }
@@ -225,6 +236,7 @@ function startHeartbeat() {
     try {
       await ensureSessionContext();
     } catch (error) {
+      console.error('❌ Erro no heartbeat:', error);
     }
   }, 30000); // 30 segundos
 }
@@ -242,6 +254,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('focus', () => {
     // Sempre verificar contexto quando usuário volta para a aba
     ensureSessionContext().catch(err => {
+      console.error('❌ Erro ao reconfigurar contexto no focus:', err);
     });
   });
 
@@ -250,6 +263,7 @@ if (typeof window !== 'undefined') {
     sessionContextCache = null; // Limpar cache
     startHeartbeat();
     ensureSessionContext().catch(err => {
+      console.error('❌ Erro ao configurar contexto após login:', err);
     });
   });
 

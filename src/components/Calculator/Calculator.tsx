@@ -88,6 +88,7 @@ export default function Calculator() {
         }
       }
     } catch (error) {
+
     } finally {
       setLoading(false);
     }

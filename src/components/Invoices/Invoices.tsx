@@ -21,6 +21,8 @@ import { nfeService, NFeWithCustomer } from '../../services/nfeService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
 import { invoicesCostService } from '../../services/invoicesCostService';
+import { sapIntegrationService } from '../../services/sapService';
+import { implementationService } from '../../services/implementationService';
 import { supabase } from '../../lib/supabase';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -64,7 +66,7 @@ const mapNFeToElectronicDoc = (nfe: any): any => {
       const { parseNFeXml } = require('../../services/nfeXmlService');
       xmlData = parseNFeXml(nfe.xml_data || nfe.xml_content);
     } catch (e) {
-// console.error('Failed to parse NFe XML for print', e);
+// null
     }
   }
 
@@ -137,6 +139,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
   const [filteredInvoices, setFilteredInvoices] = useState<any[]>([]);
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImportingSAP, setIsImportingSAP] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showCTesModal, setShowCTesModal] = useState(false);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
@@ -145,6 +148,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [showCreatePickupModal, setShowCreatePickupModal] = useState(false);
   const [showOccurrenceModal, setShowOccurrenceModal] = useState(false);
+  const [isSapActive, setIsSapActive] = useState<boolean>(false);
   const [selectedInvoiceForOccurrence, setSelectedInvoiceForOccurrence] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
@@ -174,6 +178,25 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
   ];
 
   useEffect(() => {
+    const checkSapConfig = async () => {
+      try {
+        if (!user) return;
+        const config = await implementationService.getERPConfig(
+          user.organization_id || undefined,
+          user.environment_id || undefined,
+          user.establishment_id || undefined
+        );
+        if (config && config.erp_name === 'sap-business-one') {
+          setIsSapActive(true);
+        }
+      } catch (e) {
+
+      }
+    };
+    checkSapConfig();
+  }, [user]);
+
+  useEffect(() => {
     const loadData = async () => {
       try {
         const establishments = await establishmentsService.getAll();
@@ -185,7 +208,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           });
         }
       } catch (error) {
-// console.error('Erro ao carregar estabelecimento:', error);
+// null
       }
     };
 
@@ -206,6 +229,24 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
       handleSingleAction(initialId, 'view-details');
     }
   }, [initialId, invoices, lastOpenedInitialId]);
+
+  const handleImportLatestSAPInvoice = async () => {
+    setIsImportingSAP(true);
+    setToast(null);
+    try {
+      const response = await sapIntegrationService.importLatestSAPInvoice();
+      if (!response.success) {
+        setToast({ message: response.error || 'Falha na comunicação com SAP Service Layer', type: 'error' });
+      } else {
+        setToast({ message: response.message || 'Nota Fiscal SAP Importada e Integrada!', type: 'success' });
+        await refreshData();
+      }
+    } catch (err: any) {
+      setToast({ message: err.message || 'Erro inesperado ao invocar integração SAP.', type: 'error' });
+    } finally {
+      setIsImportingSAP(false);
+    }
+  };
 
   // Apply filters to invoices
   useEffect(() => {
@@ -368,7 +409,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
                 continue;
               }
             } catch (err) {
-// console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
+// null
             }
           }
           
@@ -408,14 +449,14 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             await (supabase as any).from('invoices_nfe').update(updateData).eq('id', invoiceId);
             successCount++;
           } catch (innerError) {
-// console.warn(`Skipping invoice ${invoiceId} due to quote error:`, innerError);
+// null
           }
         }
         
         setToast({ message: `${successCount} nota(s) fiscal(is) recalculada(s) com sucesso!`, type: 'success' });
         refreshData();
       } catch (error) {
-// console.error('Erro ao recalcular frete:', error);
+// null
         setToast({ message: 'Erro ao recalcular frete. Tente novamente.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -498,7 +539,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           }
         }
       } catch (error) {
-// console.error('Erro na ação em lote:', error);
+// null
         setToast({ message: 'Erro ao processar documentos.', type: 'error' });
       } finally {
         setIsLoading(false);
@@ -621,7 +662,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
                   break;
                 }
               } catch (err) {
-// console.error('Erro no cálculo específico da NFe usando motor do CTe:', err);
+// null
                 // Fallback para cotação geral se falhar
               }
             }
@@ -660,7 +701,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             setToast({ message: `Nota ${invoice.numero} recalculada com sucesso via cotação!`, type: 'success' });
             refreshData();
           } catch (error) {
-// console.error('Erro ao recalcular frete individual:', error);
+// null
             setToast({ message: 'Erro ao recalcular frete.', type: 'error' });
           }
           break;
@@ -719,7 +760,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           break;
       }
     } catch (error) {
-// console.error('Action error:', error);
+// null
       setToast({ message: 'Ocorreu um erro ao executar a ação.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -734,7 +775,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
       const formattedInvoices = nfes.map(convertNFeToInvoiceFormat);
       setInvoices(formattedInvoices);
     } catch (error) {
-// console.error('Erro ao carregar notas fiscais:', error);
+// null
     } finally {
       setIsLoading(false);
     }
@@ -751,7 +792,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           setToast({ message: `Erro ao excluir Nota Fiscal: ${result.error}`, type: 'error' });
         }
       } catch (error) {
-// console.error('Erro ao excluir nota fiscal:', error);
+// null
         setToast({ message: 'Erro ao excluir nota fiscal.', type: 'error' });
       }
     }
@@ -813,6 +854,18 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
           <p className="text-gray-600 dark:text-gray-400">{t('invoices.pageDescription')}</p>
         </div>
         <div className="flex items-center space-x-3">
+          {isSapActive && (
+            <button
+              onClick={handleImportLatestSAPInvoice}
+              disabled={isImportingSAP}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+              title="Conecta no ERP e traz as Notas Fiscais mais recentes"
+            >
+              <FileText size={20} className={isImportingSAP ? 'animate-bounce' : ''} />
+              <span>Baixar Notas Fiscais SAP</span>
+            </button>
+          )}
+          
           <button
             onClick={() => { setEditingInvoice(null); setShowInvoiceForm(true); }}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"

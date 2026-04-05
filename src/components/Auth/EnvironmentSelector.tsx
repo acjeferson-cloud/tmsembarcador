@@ -295,6 +295,7 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({
                             decoding="async"
                             className="h-16 w-16 object-contain drop-shadow-lg"
                             onError={(e) => {
+
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
                               const parent = target.parentElement;

@@ -178,6 +178,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
         setToast({ message: result.message, type: 'error' });
       }
     } catch (error: any) {
+
       setToast({ message: error?.message || t('innovations.errorActivating'), type: 'error' });
     } finally {
       setIsLoading(false);

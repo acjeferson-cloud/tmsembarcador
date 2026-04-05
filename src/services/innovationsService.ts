@@ -101,6 +101,7 @@ export async function activateInnovation(
         .eq('id', existing.id);
 
       if (updateError) {
+
         return { success: false, message: `Erro ao reativar recurso: ${updateError.message}` };
       }
       window.dispatchEvent(new Event('innovationsUpdated'));
@@ -118,11 +119,13 @@ export async function activateInnovation(
       } as any);
 
     if (insertError) {
+
       return { success: false, message: `Erro ao ativar recurso: ${insertError.message}` };
     }
     window.dispatchEvent(new Event('innovationsUpdated'));
     return { success: true, message: 'Recurso ativado com sucesso!' };
   } catch (error: any) {
+
     return { success: false, message: `Erro ao ativar recurso: ${error?.message || 'Erro Desconhecido'}` };
   }
 }

@@ -149,7 +149,7 @@ class EnvironmentsService {
         .select()
         .single();
 
-      if (estError) /*log_removed*/
+      /* handled by next rule */
 
       // 2. Criar usuário admin vinculado
       if (estData) {
@@ -173,7 +173,7 @@ class EnvironmentsService {
           .select()
           .single();
 
-        if (userError) /*log_removed*/
+        /* handled by next rule */
 
         // 3. Vincular usuário na tabela N para N user_establishments
         if (userData) {

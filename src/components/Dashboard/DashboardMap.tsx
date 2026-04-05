@@ -218,6 +218,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
           // Delay ligeiramente maior para evitar OVER_QUERY_LIMIT do Google Maps
           await new Promise(r => setTimeout(r, 400));
         } catch (err) {
+
           // Continua o loop mesmo se der erro num específico (ex: endereço não encontrado)
         }
       }

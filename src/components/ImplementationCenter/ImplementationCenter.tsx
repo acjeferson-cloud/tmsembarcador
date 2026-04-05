@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug } from 'lucide-react';
 import { DeployAgent } from '../DeployAgent/DeployAgent';
+import { SyncLogsViewer } from './SyncLogsViewer';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
 import { implementationService } from '../../services/implementationService';
 import { carriersService, Carrier } from '../../services/carriersService';
@@ -45,6 +46,7 @@ const ImplementationCenter: React.FC = () => {
     cteIntegrationType: 'draft',
     cteModel: '',
     invoiceModel: '',
+    invoiceDefaultItem: '',
     billingNFeItem: '',
     billingUsage: '',
     billingControlAccount: '',
@@ -54,7 +56,10 @@ const ImplementationCenter: React.FC = () => {
     inboundNFControlAccount: '',
     invoiceTransitoryAccount: '',
     nfeXmlNetworkAddress: '',
-    fiscalModule: 'skill'
+    cteXmlNetworkAddress: '',
+    fiscalModule: 'skill',
+    autoSyncEnabled: false,
+    syncIntervalMinutes: 5
   });
   
   // Freight Adjustment state
@@ -78,6 +83,7 @@ const ImplementationCenter: React.FC = () => {
       const data = await carriersService.getAll();
       setCarriers(data.filter(c => c.status === 'ativo'));
     } catch (err) {
+
     }
   };
 
@@ -98,6 +104,7 @@ const ImplementationCenter: React.FC = () => {
       setCarrierTables(data);
       setSelectedTablesToAdjust(['all']);
     } catch (err) {
+
     } finally {
       setIsLoadingTables(false);
     }
@@ -124,6 +131,7 @@ const ImplementationCenter: React.FC = () => {
         cteIntegrationType: config.cte_integration_type || 'draft',
         cteModel: config.cte_model || '',
         invoiceModel: config.invoice_model || '',
+        invoiceDefaultItem: config.invoice_default_item || '',
         billingNFeItem: config.billing_nfe_item || '',
         billingUsage: config.billing_usage || '',
         billingControlAccount: config.billing_control_account || '',
@@ -133,7 +141,10 @@ const ImplementationCenter: React.FC = () => {
         inboundNFControlAccount: config.inbound_nf_control_account || '',
         invoiceTransitoryAccount: config.invoice_transitory_account || '',
         nfeXmlNetworkAddress: config.nfe_xml_network_address || '',
-        fiscalModule: config.fiscal_module || 'skill'
+        cteXmlNetworkAddress: config.cte_xml_network_address || '',
+        fiscalModule: config.fiscal_module || 'skill',
+        autoSyncEnabled: config.auto_sync_enabled || false,
+        syncIntervalMinutes: config.sync_interval_minutes || 5
       });
     }
   };
@@ -173,6 +184,7 @@ const ImplementationCenter: React.FC = () => {
 
       setImportResults([importResult]);
     } catch (error) {
+
       setImportResults([{
         success: false,
         message: t('implementationCenter.messages.processError')
@@ -205,6 +217,7 @@ const ImplementationCenter: React.FC = () => {
           setToast({ type: 'error', message: t('implementationCenter.messages.unsupportedTemplate') });
       }
     } catch (error) {
+
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       setToast({
         type: 'error',
@@ -248,6 +261,7 @@ const ImplementationCenter: React.FC = () => {
         setToast({ type: 'error', message: result.message });
       }
     } catch (error) {
+
       setToast({ type: 'error', message: t('implementationCenter.messages.adjustError') });
     } finally {
       setIsUploading(false);
@@ -613,6 +627,9 @@ const ImplementationCenter: React.FC = () => {
         invoice_transitory_account: erpConfig.invoiceTransitoryAccount,
         nfe_xml_network_address: erpConfig.nfeXmlNetworkAddress,
         fiscal_module: erpConfig.fiscalModule,
+        auto_sync_enabled: erpConfig.autoSyncEnabled,
+        sync_interval_minutes: erpConfig.syncIntervalMinutes,
+        cte_xml_network_address: erpConfig.cteXmlNetworkAddress,
         is_active: true,
         created_by: user.id
       });
@@ -668,6 +685,7 @@ const ImplementationCenter: React.FC = () => {
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         invoice_model: erpConfig.invoiceModel,
+        invoice_default_item: erpConfig.invoiceDefaultItem,
         billing_nfe_item: erpConfig.billingNFeItem,
         billing_usage: erpConfig.billingUsage,
         billing_control_account: erpConfig.billingControlAccount,
@@ -677,7 +695,10 @@ const ImplementationCenter: React.FC = () => {
         inbound_nf_control_account: erpConfig.inboundNFControlAccount,
         invoice_transitory_account: erpConfig.invoiceTransitoryAccount,
         nfe_xml_network_address: erpConfig.nfeXmlNetworkAddress,
+        cte_xml_network_address: erpConfig.cteXmlNetworkAddress,
         fiscal_module: erpConfig.fiscalModule,
+        auto_sync_enabled: erpConfig.autoSyncEnabled,
+        sync_interval_minutes: erpConfig.syncIntervalMinutes,
         is_active: true,
         created_by: user.id
       });
@@ -688,6 +709,7 @@ const ImplementationCenter: React.FC = () => {
         setToast({ type: 'error', message: result.error || t('implementationCenter.messages.saveError') });
       }
     } catch (error) {
+
       setToast({ type: 'error', message: t('implementationCenter.messages.saveError') });
     } finally {
       setIsLoading(false);
@@ -698,6 +720,7 @@ const ImplementationCenter: React.FC = () => {
     try {
       generateERPIntegrationTemplate();
     } catch (error) {
+
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       setToast({
         type: 'error',
@@ -744,6 +767,7 @@ const ImplementationCenter: React.FC = () => {
       
       setToast({ type: 'success', message: t('implementationCenter.messages.importSuccessAlert', { count: data.length }) });
     } catch (error) {
+
       setToast({ type: 'error', message: t('implementationCenter.messages.importErrorAlert', { error: (error as Error).message }) });
     } finally {
       setIsLoading(false);
@@ -1165,6 +1189,45 @@ const ImplementationCenter: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Auto Background Sync Section */}
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Bot size={18} className="text-orange-500" />
+                      Sincronização em Background (Robô Cloud)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-orange-200 bg-orange-50 dark:bg-gray-800 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={erpConfig.autoSyncEnabled}
+                            onChange={(e) => handleErpConfigChange('autoSyncEnabled', e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-600"></div>
+                          <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                            Habilitar Varredura Automática
+                          </span>
+                        </label>
+                      </div>
+                      
+                      {erpConfig.autoSyncEnabled && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Tempo de Varredura (em minutos)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={erpConfig.syncIntervalMinutes}
+                            onChange={(e) => handleErpConfigChange('syncIntervalMinutes', parseInt(e.target.value) || 5)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Save and Test Buttons */}
                   <div className="flex justify-end pt-4 gap-3 border-t border-gray-200 dark:border-gray-700">
                     <button
@@ -1201,6 +1264,11 @@ const ImplementationCenter: React.FC = () => {
                         </>
                       )}
                     </button>
+                  </div>
+
+                  {/* Cron Logs */}
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <SyncLogsViewer />
                   </div>
                 </div>
               )}

@@ -28,7 +28,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
           ) : (
             <span 
               className="hover:text-blue-600 cursor-pointer"
-              onClick={() => item.href && null}
+              onClick={() => item.href && console.log(`Navigate to: ${item.href}`)}
             >
               {item.label}
             </span>

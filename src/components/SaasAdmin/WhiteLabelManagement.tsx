@@ -88,6 +88,7 @@ export function WhiteLabelManagement() {
         });
       }
     } catch (error) {
+
     } finally {
       setLoading(false);
     }
@@ -119,6 +120,7 @@ export function WhiteLabelManagement() {
         alert('Erro ao salvar: ' + result.error);
       }
     } catch (error) {
+
       alert('Erro ao salvar configuração');
     } finally {
       setLoading(false);

@@ -116,6 +116,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         }
       }
     } catch (error) {
+
       alert('Erro ao gerar documento do pedido.');
     } finally {
       setIsProcessing(false);

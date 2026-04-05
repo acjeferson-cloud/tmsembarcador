@@ -30,6 +30,7 @@ export function WhiteLabelTemplates({ tenantId }: { tenantId: string }) {
         alert('Erro ao aplicar template: ' + result.error);
       }
     } catch (error) {
+
       alert('Erro ao aplicar template');
     } finally {
       setLoading(false);

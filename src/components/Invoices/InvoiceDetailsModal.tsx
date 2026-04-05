@@ -93,7 +93,7 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
         })));
       }
     } catch (error) {
-// console.error('Erro ao carregar CT-es vinculados:', error);
+// null
     } finally {
       setIsLoadingCtes(false);
     }
@@ -115,13 +115,13 @@ export const InvoiceDetailsModal: React.FC<InvoiceDetailsModalProps> = ({
       if (error) throw error;
 
       if (data) {
-// console.log('[InvoiceDetailsModal] Full invoice loaded:', data.numero, 'order_number:', data.order_number, 'numero_pedido:', data.numero_pedido, 'status:', data.status);
+// null
         setCustomer(data.customer?.[0] || null);
         setProducts(data.products || []);
         setFullInvoice(data);
       }
     } catch (error) {
-// console.error('Erro ao carregar detalhes da nota fiscal:', error);
+// null
     } finally {
       setIsLoadingDetails(false);
     }

@@ -62,7 +62,7 @@ export const Establishments: React.FC = () => {
       }      // Buscar todos os estabelecimentos via service (o RLS e o backend governam a visibilidade)
       let data = await establishmentsService.getAll();
       
-// console.log('👀 [Establishments.tsx] setEstablishments chamado com', data.length, 'itens');
+// null
       setEstablishments(data);
     } catch (error) {
       setToast({ message: t('establishments.messages.loadError'), type: 'error' });

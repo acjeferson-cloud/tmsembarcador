@@ -369,7 +369,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
         error.message?.includes('Failed to fetch') || 
         error.message?.includes('Failed to send a request to the Edge Function')
       ) {
-// console.warn('⚠️ [emailIncoming] Bypass local: Função Edge ausente ou bloqueada por CORS. Simulando envio bem-sucedido.');
+// null
         setConnectionStatus({
           success: true,
           message: 'Ambiente Local: Função não encontrada na nuvem. Considerando teste como Ok!'

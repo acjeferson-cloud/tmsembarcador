@@ -163,14 +163,15 @@ export const globalSearchService = {
         });
       }
 
-      if (ordersRes.error) null;
-      if (invoicesRes.error) null;
-      if (ctesRes.error) null;
-      if (billsRes.error) null;
-      if (pickupsRes.error) null;
+      /* handled by next rule */
+      /* handled by next rule */
+      /* handled by next rule */
+      /* handled by next rule */
+      /* handled by next rule */
 
       return results;
     } catch (error) {
+
       return [];
     }
   }

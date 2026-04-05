@@ -56,6 +56,7 @@ const LogisticsSimulator: React.FC = () => {
         setCarriers(fetchedCarriers.filter(c => c.status === 'ativo'));
         setBusinessPartners(fetchedBps.filter((bp: any) => bp.status === 'ativo' || bp.status === 'active' || bp.ativo));
       } catch (err) {
+
       }
     };
     loadData();

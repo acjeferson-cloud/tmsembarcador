@@ -27,11 +27,13 @@ export async function setSessionContext(
     });
 
     if (error) {
+
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -51,6 +53,7 @@ export async function getCurrentSessionContext(): Promise<{
     const { data, error } = await supabase.rpc('get_current_session_context');
 
     if (error) {
+
       return { organizationId: null, environmentId: null, hasContext: false };
     }
 
@@ -60,6 +63,7 @@ export async function getCurrentSessionContext(): Promise<{
       hasContext: data.has_context
     };
   } catch (error) {
+
     return { organizationId: null, environmentId: null, hasContext: false };
   }
 }
@@ -82,10 +86,12 @@ export async function getUserOrganizationAndEnvironment(email: string): Promise<
     });
 
     if (error) {
+
       return { success: false, error: error.message };
     }
 
     if (!data.success) {
+
       return { success: false, error: data.error };
     }
 
@@ -98,6 +104,7 @@ export async function getUserOrganizationAndEnvironment(email: string): Promise<
       userName: data.user_name
     };
   } catch (error) {
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -128,6 +135,7 @@ export async function setupSessionAfterLogin(email: string): Promise<{
 
     return { success: true };
   } catch (error) {
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'

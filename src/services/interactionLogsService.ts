@@ -33,6 +33,7 @@ export const interactionLogsService = {
       }
       return data as InteractionLog[];
     } catch (error) {
+
       return [];
     }
   },
@@ -59,6 +60,7 @@ export const interactionLogsService = {
 
       return data as InteractionLog;
     } catch (error) {
+
       return null;
     }
   }

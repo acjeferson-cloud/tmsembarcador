@@ -99,7 +99,7 @@ export const SchedulePickupModal: React.FC<SchedulePickupModalProps> = ({
         setLinkCopied(true);
         setTimeout(() => setLinkCopied(false), 3000);
       } catch (err) {
-// console.error('Erro ao copiar link:', err);
+// null
       }
     }
   };
