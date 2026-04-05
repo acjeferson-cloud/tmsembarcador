@@ -200,11 +200,11 @@ export async function runCronSync(port = 8080) {
       let logsBuffer = [];
 
       const payload = {
-        endpointSystem: config.service_layer_address,
-        port: config.port,
+        endpointSystem: config.service_layer_address || config.api_url,
+        port: config.port || config.metadata?.port,
         username: config.username,
         password: config.password,
-        companyDb: config.database
+        companyDb: config.database || config.metadata?.database
       };
 
       // == Process Orders ==
