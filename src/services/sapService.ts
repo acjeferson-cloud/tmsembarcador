@@ -591,14 +591,9 @@ export const sapIntegrationService = {
       // Update the freight results via ordersService mechanism or just let it exist.
       // Currently invoices table doesn't have freight_results natively like Orders, but we computed freight_value!
 
-      let debugNfeMsg = '';
-      if (sapInvoice._debug_nfe_fields) {
-        debugNfeMsg = ` | Campos Analisados: ${JSON.stringify(sapInvoice._debug_nfe_fields)}`;
-      }
-
       return { 
         success: true, 
-        message: `Nota Fiscal ${invNum} importada (SAP Ref: ${sapInvoice.order_number})! Transportadora: ${finalCarrierId ? 'VINCULADA' : 'NÃO VINCULADA' + (sapInvoice.carrier_document ? ' (CNPJ SAP: '+sapInvoice.carrier_document+')' : '')}. Peso: ${sapInvoice.weight}kg.${debugNfeMsg}`
+        message: `Nota Fiscal ${invNum} importada com sucesso (Ref SAP: ${sapInvoice.order_number})! Transportadora: ${finalCarrierId ? 'Vinculada' : 'Não Vinculada'}. Peso: ${sapInvoice.weight}kg.`
       };
 
     } catch (e: any) {
