@@ -572,7 +572,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
             title="Conecta no ERP e traz automaticamente o último Pedido"
           >
             <ShoppingCart size={20} className={isLoading ? 'animate-bounce' : ''} />
-            <span>Último Pedido SAP</span>
+            <span>Baixar Pedidos SAP</span>
           </button>
           
           <button
