@@ -197,6 +197,7 @@ export async function runCronSync(port = 8080) {
       processed++;
       
       let insertedCount = 0;
+      let errorCount = 0;
       let logsBuffer = [];
 
       const payload = {
@@ -204,7 +205,8 @@ export async function runCronSync(port = 8080) {
         port: config.port || config.metadata?.port,
         username: config.username,
         password: config.password,
-        companyDb: config.database || config.metadata?.database
+        companyDb: config.database || config.metadata?.database,
+        lastSyncTime: config.last_sync_time || null
       };
 
       // == Process Orders ==
@@ -215,8 +217,9 @@ export async function runCronSync(port = 8080) {
            body: JSON.stringify(payload)
         });
         const sapOrderResp = await fetchRes.json();
-        if (sapOrderResp && sapOrderResp.success && sapOrderResp.order) {
-          const sapOrder = sapOrderResp.order;
+        console.log('[SyncWorker] Pedido Fetch Response:', sapOrderResp);
+        if (sapOrderResp && sapOrderResp.success && sapOrderResp.orders) {
+          for (const sapOrder of sapOrderResp.orders) {
           
           // Check if order already exists
           const { data: existingOrd } = await supabase
@@ -310,9 +313,13 @@ export async function runCronSync(port = 8080) {
                  logsBuffer.push(`Pedido ${sapOrder.order_number} baixado`);
                  insertedCount++;
              }
-          }
-        }
-      } catch (err) { logsBuffer.push(`Erro Pedido: ${err.message}`); console.error('[SyncWorker] Order Error:', err); }
+           }
+         }
+       } else if (sapOrderResp && sapOrderResp.error) {
+           logsBuffer.push(`Erro Pedido: ${sapOrderResp.error}`);
+           errorCount++;
+       }
+      } catch (err) { logsBuffer.push(`Erro Pedido Sistêmico: ${err.message}`); console.error('[SyncWorker] Order Error:', err); }
 
       // == Process Invoices ==
       try {
@@ -322,8 +329,9 @@ export async function runCronSync(port = 8080) {
            body: JSON.stringify(payload)
         });
         const sapInvResp = await fetchResInv.json();
-        if (sapInvResp && sapInvResp.success && sapInvResp.invoice) {
-          const sapInvoice = sapInvResp.invoice;
+        console.log('[SyncWorker] Nota Fiscal Fetch Response:', sapInvResp);
+        if (sapInvResp && sapInvResp.success && sapInvResp.invoices) {
+          for (const sapInvoice of sapInvResp.invoices) {
           
           const { data: existingInv } = await supabase
             .from('invoices_nfe')
@@ -431,8 +439,12 @@ export async function runCronSync(port = 8080) {
                  logsBuffer.push(`NFe ${sapInvoice.invoice_number} custo recalculado p/ ${finalFreightValue}`);
               }
           }
+          } // close for loop
+        } else if (sapInvResp && sapInvResp.error) {
+           logsBuffer.push(`Erro NFe: ${sapInvResp.error}`);
+           errorCount++;
         }
-      } catch (err) { logsBuffer.push(`Erro Nota: ${err.message}`); console.error('[SyncWorker] Invoice Error:', err); }
+      } catch (err) { logsBuffer.push(`Erro NFe Sistêmico: ${err.message}`); console.error('[SyncWorker] Invoice Error:', err); }
 
       // Finish log and update config
       await supabase.from('erp_integration_config').update({ last_sync_time: new Date().toISOString() }).eq('id', config.id);
@@ -440,14 +452,18 @@ export async function runCronSync(port = 8080) {
       const status = logsBuffer.some(msg => msg.includes('Erro')) ? 'error' : 'success';
       const finalMessage = logsBuffer.length > 0 ? logsBuffer.join(' | ') : 'Nenhum documento novo encontrado no ERP.';
       
-      await writeLog(
-        config.organization_id, 
-        config.environment_id, 
-        config.establishment_id, 
-        status, 
-        insertedCount, 
-        finalMessage
-      );
+      if (status === 'error' || insertedCount > 0 || errorCount > 0 || logsBuffer.length > 0) {
+        await writeLog(
+          config.organization_id, 
+          config.environment_id, 
+          config.establishment_id, 
+          status, 
+          insertedCount, 
+          finalMessage
+        );
+      } else {
+        console.log(`[SyncWorker] Skipping DB log insertion for Config ID ${config.id} (0 docs, 0 errors).`);
+      }
 
     }
   }

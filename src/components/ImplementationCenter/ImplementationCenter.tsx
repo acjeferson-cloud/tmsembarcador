@@ -584,7 +584,7 @@ const ImplementationCenter: React.FC = () => {
     </div>
   );
 
-  const handleErpConfigChange = (field: string, value: string) => {
+  const handleErpConfigChange = (field: string, value: string | number | boolean) => {
     setErpConfig(prev => ({
       ...prev,
       [field]: value
@@ -617,6 +617,7 @@ const ImplementationCenter: React.FC = () => {
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         invoice_model: erpConfig.invoiceModel,
+        invoice_default_item: erpConfig.invoiceDefaultItem,
         billing_nfe_item: erpConfig.billingNFeItem,
         billing_usage: erpConfig.billingUsage,
         billing_control_account: erpConfig.billingControlAccount,
@@ -987,31 +988,41 @@ const ImplementationCenter: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* CT-e Configuration */}
+                  {/* Regras Essenciais */}
                   <div>
                     <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                      {t('implementationCenter.erpIntegration.cte.title')}
+                      <Settings className="w-5 h-5 text-blue-600" />
+                      Regras Essenciais
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.cte.integrationType')}
+                          Tipo de integração
                         </label>
                         <select
                           value={erpConfig.cteIntegrationType}
                           onChange={(e) => handleErpConfigChange('cteIntegrationType', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="draft">Prévia / Draft (Esboço)</option>
-                          <option value="entry">Entrada Sistêmica</option>
-                          <option value="invoice">Faturamento Direto</option>
-                          <option value="none">Somente Conferência / Sem Lançamento</option>
+                          <option value="manual_draft">Manual - Esboço (Draft)</option>
+                          <option value="manual_entry">Manual - Nota Fiscal de Entrada</option>
+                          <option value="auto_draft">Automático - Esboço (Draft)</option>
+                          <option value="auto_entry">Automático - Nota Fiscal de Entrada</option>
                         </select>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Parâmetros Fiscais (CT-e) */}
+                  <div>
+                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                      <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+                      Parâmetros Fiscais (CT-e)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.cte.cteModel')}
+                          Modelo de CT-e
                         </label>
                         <input
                           type="number"
@@ -1025,31 +1036,7 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.cte.invoiceModel')}
-                        </label>
-                        <input
-                          type="number"
-                          min="10"
-                          max="99"
-                          value={erpConfig.invoiceModel}
-                          onChange={(e) => handleErpConfigChange('invoiceModel', e.target.value)}
-                          placeholder="55"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Billing Configuration */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-green-600" />
-                      {t('implementationCenter.erpIntegration.billing.title')}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.billing.nfeItem')}
+                          Item padrão para CT-e
                         </label>
                         <input
                           type="text"
@@ -1061,38 +1048,52 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.billing.usage')}
+                          Código de Utilização de CT-e
                         </label>
                         <input
                           type="text"
-                          value={erpConfig.billingUsage}
-                          onChange={(e) => handleErpConfigChange('billingUsage', e.target.value)}
-                          placeholder="1"
+                          value={erpConfig.cteUsage}
+                          onChange={(e) => handleErpConfigChange('cteUsage', e.target.value)}
+                          placeholder="2"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <div className="md:col-span-2">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.billing.controlAccount')}
+                          Conta Controle de CT-e
                         </label>
                         <input
                           type="text"
-                          value={erpConfig.billingControlAccount}
-                          onChange={(e) => handleErpConfigChange('billingControlAccount', e.target.value)}
-                          placeholder="1.1.01.001"
+                          value={erpConfig.inboundNFControlAccount}
+                          onChange={(e) => handleErpConfigChange('inboundNFControlAccount', e.target.value)}
+                          placeholder="2.1.01.001"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Invoice Configuration */}
+                  {/* Parâmetros Fiscais (Fatura) */}
                   <div>
                     <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <FileSpreadsheet className="w-5 h-5 text-purple-600" />
-                      {t('implementationCenter.erpIntegration.invoice.title')}
+                      <DollarSign className="w-5 h-5 text-green-600" />
+                      Parâmetros Fiscais (Fatura)
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Modelo de Fatura
+                        </label>
+                        <input
+                          type="number"
+                          min="10"
+                          max="99"
+                          value={erpConfig.invoiceModel}
+                          onChange={(e) => handleErpConfigChange('invoiceModel', e.target.value)}
+                          placeholder="55"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Item padrão para Fatura
@@ -1107,43 +1108,31 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.invoice.cteWithoutNfItem')}
+                          Código de Utilização de Fatura
                         </label>
                         <input
                           type="text"
-                          value={erpConfig.cteWithoutNFItem}
-                          onChange={(e) => handleErpConfigChange('cteWithoutNFItem', e.target.value)}
-                          placeholder="CTE-SEM-NF"
+                          value={erpConfig.billingUsage}
+                          onChange={(e) => handleErpConfigChange('billingUsage', e.target.value)}
+                          placeholder="1"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.invoice.cteUsage')}
+                          Conta Controle de Fatura
                         </label>
                         <input
                           type="text"
-                          value={erpConfig.cteUsage}
-                          onChange={(e) => handleErpConfigChange('cteUsage', e.target.value)}
-                          placeholder="2"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.invoice.inboundControlAccount')}
-                        </label>
-                        <input
-                          type="text"
-                          value={erpConfig.inboundNFControlAccount}
-                          onChange={(e) => handleErpConfigChange('inboundNFControlAccount', e.target.value)}
-                          placeholder="2.1.01.001"
+                          value={erpConfig.billingControlAccount}
+                          onChange={(e) => handleErpConfigChange('billingControlAccount', e.target.value)}
+                          placeholder="1.1.01.001"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('implementationCenter.erpIntegration.invoice.transitoryAccount')}
+                          Conta Transitória
                         </label>
                         <input
                           type="text"

@@ -26,7 +26,7 @@ const mockNews: NewsItem[] = [
     summary: 'Dados do IBGE mostram recuperação forte do setor, impulsionada pelo e-commerce e exportações.',
     link: 'https://www.ibge.gov.br/estatisticas/economicas/comercio/9227-pesquisa-mensal-de-comercio.html',
     publishedDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 horas atrás
-    imageUrl: '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial copy.jpg',
+    imageUrl: '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg',
     source: 'IBGE'
   },
   {

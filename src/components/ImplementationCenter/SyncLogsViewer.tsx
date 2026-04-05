@@ -8,6 +8,7 @@ export const SyncLogsViewer: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [logs, setLogs] = useState<any[]>([]);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchLogs = async () => {
@@ -21,6 +22,20 @@ export const SyncLogsViewer: React.FC = () => {
       );
 
       setLogs(data || []);
+      
+      const config = await implementationService.getERPConfig(
+        user.organization_id || undefined,
+        user.environment_id || undefined,
+        user.establishment_id || undefined
+      );
+      let fetchedLastSync = null;
+      if (config && (config as any).last_sync_time) {
+        fetchedLastSync = new Date((config as any).last_sync_time).toLocaleString();
+      } else if (data && data.length > 0) {
+        fetchedLastSync = new Date(data[0].created_at).toLocaleString();
+      }
+      
+      setLastSyncTime(fetchedLastSync);
     } catch (e) {
 
     } finally {
@@ -39,14 +54,21 @@ export const SyncLogsViewer: React.FC = () => {
           <Clock size={20} className="text-gray-500" />
           Histórico do Robô (Logs)
         </h3>
-        <button
-          onClick={fetchLogs}
-          disabled={isLoading}
-          className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-          title="Atualizar Logs"
-        >
-          <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-4">
+          {lastSyncTime && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Última sincronização com ERP: <strong>{lastSyncTime}</strong>
+            </span>
+          )}
+          <button
+            onClick={fetchLogs}
+            disabled={isLoading}
+            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            title="Atualizar Logs"
+          >
+            <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg">

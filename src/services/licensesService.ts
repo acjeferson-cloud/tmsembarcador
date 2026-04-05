@@ -3,13 +3,23 @@ import { changeLogsService } from './changeLogsService';
 import { TenantContextHelper } from '../utils/tenantContext';
 
 
+// Interface estendida para a UI usar as propriedades virtuais (total_licenses e available_licenses)
+// mas refletindo o banco de dados original (max_users).
 export interface License {
   id: string;
-  total_licenses: number;
-  available_licenses: number;
-  company_id: string;
+  organization_id: string | null;
+  tipo: string;
+  data_inicio: string;
+  data_fim: string | null;
+  max_users: number;
+  max_establishments: number;
+  max_orders_month: number;
+  ativa: boolean;
   created_at: string;
-  updated_at: string;
+  
+  // Propriedades virtuais adicionadas para facilitar a UI
+  total_licenses?: number;
+  available_licenses?: number;
 }
 
 export interface LicenseLog {
@@ -52,8 +62,8 @@ export const licensesService = {
       if (!organizationId) {
         return null;
       }
-
-      const { data, error } = await supabase
+      
+      const { data, error } = await supabase!
         .from('licenses')
         .select('*')
         .eq('organization_id', organizationId)
@@ -63,36 +73,44 @@ export const licensesService = {
       if (error) {
         throw error;
       }
-      return data;
+      
+      if (data) {
+        const { count } = await supabase!.from('users').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('has_license', true);
+        const configData: any = data;
+        configData.total_licenses = configData.max_users;
+        configData.available_licenses = configData.max_users - (count || 0);
+      }
+      return data as any as License;
     } catch (error) {
       return null;
     }
   },
 
-  async reconcileLicenses(totalUsers: number, inUseCount: number): Promise<boolean> {
+  async reconcileLicenses(totalUsers: number): Promise<boolean> {
     try {
       const ctx = await TenantContextHelper.getCurrentContext();
       if (!ctx || !ctx.organizationId) return false;
+      if (!supabase) return false;
       
       const config = await this.getLicenseConfig();
       const targetTotal = totalUsers; // 1 licença contratada para cada usuário do sistema
-      const targetAvailable = targetTotal - inUseCount;
 
       if (config) {
-        if (config.total_licenses !== targetTotal || config.available_licenses !== targetAvailable) {
+        if (config.max_users !== targetTotal) {
           await (supabase as any).from('licenses').update({
-            total_licenses: targetTotal,
-            available_licenses: targetAvailable
+            max_users: targetTotal
           }).eq('id', config.id);
         }
       } else {
-        const { error } = await (supabase as any).from('licenses').insert({
+        await (supabase as any).from('licenses').insert({
           organization_id: ctx.organizationId,
-          environment_id: ctx.environmentId,
-          total_licenses: targetTotal,
-          available_licenses: targetAvailable
+          tipo: 'custom',
+          data_inicio: new Date().toISOString(),
+          max_users: targetTotal,
+          max_establishments: 10,
+          max_orders_month: 1000,
+          ativa: true
         });
-        /* handled by next rule */
       }
       return true;
     } catch (error) {
@@ -131,7 +149,7 @@ export const licensesService = {
     try {
       const config = await this.getLicenseConfig();
 
-      if (!config || config.available_licenses <= 0) {
+      if (!config || (config.available_licenses !== undefined && config.available_licenses <= 0)) {
         throw new Error('Não há licenças disponíveis');
       }
 
@@ -142,14 +160,8 @@ export const licensesService = {
 
       if (updateUserError) throw updateUserError;
 
-      const { error: updateLicensesError } = await (supabase as any)
-        .from('licenses')
-        .update({
-          available_licenses: config.available_licenses - 1
-        })
-        .eq('id', config.id);
-
-      if (updateLicensesError) throw updateLicensesError;
+      // O campo available_licenses não existe no banco, é um cálculo virtual por usuário,
+      // logo a atualização foi removida para evitar erro Http 400.
 
       const { error: logError } = await (supabase as any)
         .from('license_logs')
@@ -192,14 +204,8 @@ export const licensesService = {
 
       if (updateUserError) throw updateUserError;
 
-      const { error: updateLicensesError } = await (supabase as any)
-        .from('licenses')
-        .update({
-          available_licenses: config.available_licenses + 1
-        })
-        .eq('id', config.id);
-
-      if (updateLicensesError) throw updateLicensesError;
+      // O campo available_licenses não existe no banco (é derivado da contagem de usuários com licença).
+      // Evita o Http 400 ao tentar atualizar coluna que não existe.
 
       const { error: logError } = await (supabase as any)
         .from('license_logs')
@@ -294,17 +300,19 @@ export const licensesService = {
         // Insere a primeira configuração de licenças para este ambiente
         const { error: insertError } = await (supabase as any).from('licenses').insert({
           organization_id: ctx.organizationId,
-          environment_id: ctx.environmentId,
-          total_licenses: quantity,
-          available_licenses: quantity
+          tipo: 'custom',
+          data_inicio: new Date().toISOString(),
+          max_users: quantity,
+          max_establishments: 10,
+          max_orders_month: 1000,
+          ativa: true
         });
         if (insertError) throw insertError;
       } else {
         const { error: updateError } = await (supabase as any)
           .from('licenses')
           .update({
-            total_licenses: config.total_licenses + quantity,
-            available_licenses: config.available_licenses + quantity
+            max_users: (config.max_users || 0) + quantity
           })
           .eq('id', config.id);
 
@@ -331,18 +339,9 @@ export const licensesService = {
         await changeLogsService.logUpdate({
           entityType: 'license_config',
           entityId: finalConfig.id,
-          fieldName: 'total_licenses',
-          oldValue: config ? config.total_licenses.toString() : '0',
-          newValue: (config ? config.total_licenses : 0 + quantity).toString(),
-          userName: performedBy
-        });
-
-        await changeLogsService.logUpdate({
-          entityType: 'license_config',
-          entityId: finalConfig.id,
-          fieldName: 'available_licenses',
-          oldValue: config ? config.available_licenses.toString() : '0',
-          newValue: (config ? config.available_licenses : 0 + quantity).toString(),
+          fieldName: 'max_users',
+          oldValue: config ? (config.max_users || 0).toString() : '0',
+          newValue: ((config ? config.max_users : 0) + quantity).toString(),
           userName: performedBy
         });
       }
@@ -393,9 +392,11 @@ export const licensesService = {
     try {
       const config = await this.getLicenseConfig();
 
-      if (!config || config.available_licenses <= 0) {
+      if (!config || (config.available_licenses !== undefined && config.available_licenses <= 0)) {
         return { success: false, error: 'Não há licenças disponíveis' };
       }
+
+      if (!supabase) return { success: false, error: 'Supabase client not initialized' };
 
       // Gerar código único de licença usando a função do banco
       const { data: keyData, error: keyError } = await supabase
@@ -420,17 +421,8 @@ export const licensesService = {
         return { success: false, error: updateUserError.message };
       }
 
-      // Atualizar quantidade de licenças disponíveis
-      const { error: updateLicensesError } = await (supabase as any)
-        .from('licenses')
-        .update({
-          available_licenses: config.available_licenses - 1
-        })
-        .eq('id', config.id);
-
-      if (updateLicensesError) {
-        return { success: false, error: updateLicensesError.message };
-      }
+      // O banco não precisa subtrair fisicamente o available_licenses 
+      // pois é um cálculo virtual. Evita Bad Request.
 
       // Criar log
       const { error: logError } = await (supabase as any)
@@ -473,10 +465,11 @@ export const licensesService = {
       const errors: string[] = [];
       let assigned = 0;
 
-      // Verificar se há licenças suficientes
-      if (config.available_licenses < usersWithoutLicense.length) {
+      // Verificar se há licenças suficientes (fallback para 0 se undefined)
+      const available = config.available_licenses || 0;
+      if (available < usersWithoutLicense.length) {
         // Aumentar quantidade de licenças automaticamente
-        const additionalLicenses = usersWithoutLicense.length - config.available_licenses;
+        const additionalLicenses = usersWithoutLicense.length - available;
         const purchased = await this.purchaseNewLicenses(additionalLicenses, performedBy);
 
         if (!purchased) {

@@ -280,7 +280,7 @@ export const LicenseManagement: React.FC = () => {
       ]);
       
       // Sincroniza o banco de dados em plano de fundo: 1 user = 1 licença
-      licensesService.reconcileLicenses(totalUsers, inUseCount).catch(console.error);
+      licensesService.reconcileLicenses(totalUsers).catch(console.error);
 
       // Garante que a interface exiba a regra solicitada: 1 usuário = 1 licença, 
       // mesmo que a reconciliação do banco sofra lentidão ou regras de RLS
@@ -291,9 +291,15 @@ export const LicenseManagement: React.FC = () => {
           id: 'fallback-auto',
           total_licenses: totalUsers,
           available_licenses: totalUsers - inUseCount,
-          company_id: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          organization_id: '',
+          tipo: 'custom',
+          data_inicio: new Date().toISOString(),
+          data_fim: null,
+          max_users: totalUsers,
+          max_establishments: 10,
+          max_orders_month: 1000,
+          ativa: true,
+          created_at: new Date().toISOString()
         } as License;
       }
 
@@ -698,7 +704,7 @@ export const LicenseManagement: React.FC = () => {
                         ) : (
                           <button
                             onClick={() => handleAssignLicense(userItem.codigo)}
-                            disabled={!licenseConfig || licenseConfig.available_licenses <= 0}
+                            disabled={!licenseConfig || (licenseConfig.available_licenses ?? 0) <= 0}
                             className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             title={t('licenses.actions.assignLicense')}
                           >

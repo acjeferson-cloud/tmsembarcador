@@ -1,159 +1,22 @@
-import express from 'express';
-import cors from 'cors';
-import * as dotenv from 'dotenv';
-dotenv.config({ path: '../.env' });
-import { runCronSync, supabase } from './syncWorker.js';
+const fs = require('fs');
 
-// Permite conexões com Service Layer que possuam certificados SSL auto-assinados
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+let content = fs.readFileSync('tms-erp-proxy/index.js', 'utf8');
 
+// ==== refatorar fetch-sap-order ====
+// Primeiro alteramos a rota para suportar lastSyncTime e o LOOP
+content = content.replace(
+  `const { endpointSystem, port, username, password, companyDb } = req.body;`,
+  `const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;`
+);
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const PORT = process.env.PORT || 8080;
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'tms-erp-proxy', time: new Date() });
-});
-
-// Endpoint 1: Test Connection
-app.post('/api/test-connection', async (req, res) => {
-  try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;
-
-    if (!endpointSystem || !username || !companyDb) {
-      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
-    }
-
-    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
-    let serviceLayerUrl = cleanEndpoint;
+// Substituir o trecho do orderController ate o final da funcao
+const orderBlockStart = `    // 2. Fetch Order
+    const orderController = new AbortController();
+    const orderTimeoutId = setTimeout(() => orderController.abort(), 15000);`;
     
-    if (port && !cleanEndpoint.includes(`:${port}`)) {
-      try {
-        const urlParts = new URL(cleanEndpoint);
-        urlParts.port = port.toString();
-        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
-      } catch (e) {
-        serviceLayerUrl = `${cleanEndpoint}:${port}`;
-      }
-    }
-    
-    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
-    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+const orderBlockRegex = /\/\/ 2\. Fetch Order[\s\S]*?return res\.status\(200\)\.json\(\{ success: true, order: fullOrderPayload \}\);\n/m;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s cravado
-
-    try {
-      console.log(`Testando conexão SAP Service Layer em: ${serviceLayerUrl}/Login`);
-      const loginResponse = await fetch(`${serviceLayerUrl}/Login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          CompanyDB: companyDb,
-          UserName: username,
-          Password: password || ''
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!loginResponse.ok) {
-        let errorData = null;
-        try { errorData = await loginResponse.json(); } catch (e) {}
-        const sapErrorMsg = errorData?.error?.message?.value || '';
-
-        if (loginResponse.status === 401) {
-          return res.status(200).json({ success: false, error: 'Falha de Autenticação: O Usuário ou a Password informada estão incorretos.' });
-        }
-        if (sapErrorMsg.toLowerCase().includes('database') || sapErrorMsg.toLowerCase().includes('company')) {
-          return res.status(200).json({ success: false, error: `Banco de Dados não encontrado: A instância "${companyDb}" informada não existe no servidor.` });
-        }
-        return res.status(200).json({ success: false, error: `Falha na conexão SAP. Código: ${loginResponse.status}. Detalhe: ${sapErrorMsg || loginResponse.statusText}` });
-      }
-
-      return res.status(200).json({ success: true, message: 'Conexão estabelecida com sucesso pelo SAP Business One.' });
-
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
-        return res.status(200).json({ success: false, error: 'Timeout (10s): Não foi possível alcançar o IP/Porta do servidor SAP. Verifique Firewall / DNS.' });
-      }
-      return res.status(200).json({ success: false, error: `Falha de DNS/Rede ou SSL ao conectar no IP do SAP: ${fetchError.message} | Cause: ${fetchError.cause?.message || fetchError.cause || 'Desconhecido'}` });
-    }
-  } catch (globalError) {
-    return res.status(200).json({ success: false, error: `Erro interno no servidor Node Proxy: ${globalError.message}` });
-  }
-});
-
-
-// Endpoint 2: Fetch SAP Order
-app.post('/api/fetch-sap-order', async (req, res) => {
-  try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;
-
-    if (!endpointSystem || !username || !companyDb) {
-      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
-    }
-
-    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
-    let serviceLayerUrl = cleanEndpoint;
-    
-    if (port && !cleanEndpoint.includes(`:${port}`)) {
-      try {
-        const urlParts = new URL(cleanEndpoint);
-        urlParts.port = port.toString();
-        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
-      } catch (e) {
-        serviceLayerUrl = `${cleanEndpoint}:${port}`;
-      }
-    }
-    
-    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
-    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
-
-    // 1. Login
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); 
-
-    let loginResponse;
-    try {
-      console.log(`[Proxy] Login no SAP: ${serviceLayerUrl}/Login`);
-      loginResponse = await fetch(`${serviceLayerUrl}/Login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          CompanyDB: companyDb,
-          UserName: username,
-          Password: password || ''
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!loginResponse.ok) {
-        let errorData = null;
-        try { errorData = await loginResponse.json(); } catch (e) {}
-        const sapErrorMsg = errorData?.error?.message?.value || loginResponse.statusText;
-        return res.status(200).json({ success: false, error: `Falha na conexão de Login SAP (${loginResponse.status}): ${sapErrorMsg}` });
-      }
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      return res.status(200).json({ success: false, error: `Falha de Rede/SSL ao autenticar no IP do SAP: ${fetchError.message}` });
-    }
-
-    // Extrair Cookie B1Session
-    const setCookieHeader = loginResponse.headers.get('set-cookie');
-    if (!setCookieHeader) {
-      return res.status(200).json({ success: false, error: `Nenhum Cookie de sessão retornado pelo SAP.` });
-    }
-    const cookiesMatch = setCookieHeader.match(/(B1SESSION=[^;]+)|(ROUTEID=[^;]+)/g) || [];
-    const cookieString = cookiesMatch.join('; ');
-
-    // 2. Fetch Order
+const newOrderBlock = `    // 2. Fetch Order
     const orderController = new AbortController();
     const orderTimeoutId = setTimeout(() => orderController.abort(), 25000);
     
@@ -162,19 +25,16 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       let dateFilter = '';
       if (lastSyncTime) {
          const filterDate = new Date(lastSyncTime).toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = \`?$filter=CreateDate ge '\${filterDate}' or UpdateDate ge '\${filterDate}'\`;
       } else {
          const pastDate = new Date();
-         pastDate.setDate(pastDate.getDate() - 3);
+         pastDate.setDate(pastDate.getDate() - 3); // Fallback: ultimos 3 dias
          const filterDate = pastDate.toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = \`?$filter=CreateDate ge '\${filterDate}' or UpdateDate ge '\${filterDate}'\`;
       }
       
-      // Order ascending so the oldest changes are processed first
-      dateFilter += `&$orderby=DocEntry asc`;
-      
-      const orderEndpoint = `${serviceLayerUrl}/Orders${dateFilter}`;
-      console.log(`[Proxy] Buscando orders em: ${orderEndpoint}`);
+      const orderEndpoint = \`\${serviceLayerUrl}/Orders\${dateFilter}\`;
+      console.log(\`[Proxy] Buscando orders em: \${orderEndpoint}\`);
       
       orderResponse = await fetch(orderEndpoint, {
         method: 'GET',
@@ -191,11 +51,11 @@ app.post('/api/fetch-sap-order', async (req, res) => {
         let orderErrorData = null;
         try { orderErrorData = await orderResponse.json(); } catch (e) {}
         const orderSapErrorMsg = orderErrorData?.error?.message?.value || orderResponse.statusText;
-        return res.status(200).json({ success: false, error: `Falha ao buscar Pedido (${orderResponse.status}): ${orderSapErrorMsg}` });
+        return res.status(200).json({ success: false, error: \`Falha ao buscar Pedido (\${orderResponse.status}): \${orderSapErrorMsg}\` });
       }
     } catch (fetchError) {
       clearTimeout(orderTimeoutId);
-      return res.status(200).json({ success: false, error: `Falha de Rede ao buscar Pedido SAP: ${fetchError.message}` });
+      return res.status(200).json({ success: false, error: \`Falha de Rede ao buscar Pedido SAP: \${fetchError.message}\` });
     }
 
     const orderData = await orderResponse.json();
@@ -210,24 +70,27 @@ app.post('/api/fetch-sap-order', async (req, res) => {
     const mappedOrdersPayload = [];
 
     for (const latestOrder of ordersList) {
-      let documentStr = (latestOrder.LicTradNum || latestOrder.TaxIdNum || latestOrder.FederalTaxID || '').replace(/\D/g, '');
+      let documentStr = (latestOrder.LicTradNum || latestOrder.TaxIdNum || latestOrder.FederalTaxID || '').replace(/\\D/g, '');
       
       if (latestOrder.CardCode && (!documentStr || !latestOrder.AddressExtension?.ShipToCity || !latestOrder.AddressExtension?.ShipToZipCode)) {
         if (!bpCache[latestOrder.CardCode]) {
-           try {
-             const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${latestOrder.CardCode}')`;
-             const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
-             if (bpRes.ok) bpCache[latestOrder.CardCode] = await bpRes.json();
-           } catch (e) {}
+          try {
+            const bpEndpoint = \`\${serviceLayerUrl}/BusinessPartners('\${latestOrder.CardCode}')\`;
+            console.log(\`[Proxy] Buscando dados do Parceiro: \${latestOrder.CardCode}\`);
+            const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
+            if (bpRes.ok) bpCache[latestOrder.CardCode] = await bpRes.json();
+          } catch (e) {
+            console.error('[Proxy] Failed to fetch BP details', e);
+          }
         }
         
         const bpData = bpCache[latestOrder.CardCode];
         if (bpData) {
           if (!documentStr) {
-              documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+              documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\\D/g, '');
               if (!documentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
                  const taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => t.TaxId0 || t.TaxId1 || t.TaxId4);
-                 if (taxIdObj) documentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId1 || taxIdObj.TaxId4 || '').replace(/\D/g, '');
+                 if (taxIdObj) documentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId1 || taxIdObj.TaxId4 || '').replace(/\\D/g, '');
               }
           }
           if (!latestOrder.AddressExtension?.ShipToCity || !latestOrder.AddressExtension?.ShipToZipCode) {
@@ -251,7 +114,7 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       if (carrierCode) {
         if (!carrierBPCache[carrierCode]) {
            try {
-             const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${carrierCode}')`;
+             const bpEndpoint = \`\${serviceLayerUrl}/BusinessPartners('\${carrierCode}')\`;
              const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
              if (bpRes.ok) carrierBPCache[carrierCode] = await bpRes.json();
            } catch (e) {}
@@ -259,10 +122,10 @@ app.post('/api/fetch-sap-order', async (req, res) => {
         
         const bpData = carrierBPCache[carrierCode];
         if (bpData) {
-            carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+            carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\\D/g, '');
             if (!carrierDocumentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
                let taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId0) || bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId4) || bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId1);
-               if (taxIdObj) carrierDocumentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId4 || taxIdObj.TaxId1 || '').replace(/\D/g, '');
+               if (taxIdObj) carrierDocumentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId4 || taxIdObj.TaxId1 || '').replace(/\\D/g, '');
             }
         }
       }
@@ -315,82 +178,27 @@ app.post('/api/fetch-sap-order', async (req, res) => {
     }
 
     // Callback logout invisível
-    fetch(`${serviceLayerUrl}/Logout`, { 
+    fetch(\`\${serviceLayerUrl}/Logout\`, { 
       method: 'POST', 
       headers: { 'Cookie': cookieString, 'Accept': 'application/json' } 
     }).catch(() => {});
 
     return res.status(200).json({ success: true, orders: mappedOrdersPayload });
+`;
 
-  } catch (globalError) {
-    return res.status(200).json({ success: false, error: `Erro no servidor Node Proxy: ${globalError.message}` });
-  }
-});
+content = content.replace(orderBlockRegex, newOrderBlock);
 
-// Endpoint 3: Fetch SAP Invoice
-app.post('/api/fetch-sap-invoice', async (req, res) => {
-  try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;
 
-    if (!endpointSystem || !username || !companyDb) {
-      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
-    }
 
-    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
-    let serviceLayerUrl = cleanEndpoint;
-    
-    if (port && !cleanEndpoint.includes(`:${port}`)) {
-      try {
-        const urlParts = new URL(cleanEndpoint);
-        urlParts.port = port.toString();
-        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
-      } catch (e) {
-        serviceLayerUrl = `${cleanEndpoint}:${port}`;
-      }
-    }
-    
-    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
-    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+// ==== refatorar fetch-sap-invoice ====
+content = content.replace(
+  \`const { endpointSystem, port, username, password, companyDb } = req.body;\n\n    if (!endpointSystem || !username || !companyDb) {\`,
+  \`const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;\n\n    if (!endpointSystem || !username || !companyDb) {\`
+);
 
-    // 1. Login
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); 
+const invoiceBlockRegex = /\/\/ 2\. Fetch Invoice[\s\S]*?return res\.status\(200\)\.json\(\{ success: true, invoice: fullInvoicePayload \}\);\n/m;
 
-    let loginResponse;
-    try {
-      console.log(`[Proxy] Login no SAP: ${serviceLayerUrl}/Login`);
-      loginResponse = await fetch(`${serviceLayerUrl}/Login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          CompanyDB: companyDb,
-          UserName: username,
-          Password: password || ''
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!loginResponse.ok) {
-        let errorData = null;
-        try { errorData = await loginResponse.json(); } catch (e) {}
-        const sapErrorMsg = errorData?.error?.message?.value || loginResponse.statusText;
-        return res.status(200).json({ success: false, error: `Falha na conexão de Login SAP (${loginResponse.status}): ${sapErrorMsg}` });
-      }
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      return res.status(200).json({ success: false, error: `Falha de Rede/SSL ao autenticar no IP do SAP: ${fetchError.message}` });
-    }
-
-    // Extrair Cookie B1Session
-    const setCookieHeader = loginResponse.headers.get('set-cookie');
-    if (!setCookieHeader) {
-      return res.status(200).json({ success: false, error: `Nenhum Cookie de sessão retornado pelo SAP.` });
-    }
-    const cookiesMatch = setCookieHeader.match(/(B1SESSION=[^;]+)|(ROUTEID=[^;]+)/g) || [];
-    const cookieString = cookiesMatch.join('; ');
-
-    // 2. Fetch Invoice
+const newInvoiceBlock = `    // 2. Fetch Invoice
     const invoiceController = new AbortController();
     const invoiceTimeoutId = setTimeout(() => invoiceController.abort(), 25000);
     
@@ -399,19 +207,16 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
       let dateFilter = '';
       if (lastSyncTime) {
          const filterDate = new Date(lastSyncTime).toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = \`?$filter=CreateDate ge '\${filterDate}' or UpdateDate ge '\${filterDate}'\`;
       } else {
          const pastDate = new Date();
          pastDate.setDate(pastDate.getDate() - 3);
          const filterDate = pastDate.toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = \`?$filter=CreateDate ge '\${filterDate}' or UpdateDate ge '\${filterDate}'\`;
       }
       
-      // Invoice ascending
-      dateFilter += `&$orderby=DocEntry asc`;
-      
-      const invoiceEndpoint = `${serviceLayerUrl}/Invoices${dateFilter}`;
-      console.log(`[Proxy] Buscando invoices em: ${invoiceEndpoint}`);
+      const invoiceEndpoint = \`\${serviceLayerUrl}/Invoices\${dateFilter}\`;
+      console.log(\`[Proxy] Buscando invoices em: \${invoiceEndpoint}\`);
       
       invoiceResponse = await fetch(invoiceEndpoint, {
         method: 'GET',
@@ -428,11 +233,11 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
         let invoiceErrorData = null;
         try { invoiceErrorData = await invoiceResponse.json(); } catch (e) {}
         const invoiceSapErrorMsg = invoiceErrorData?.error?.message?.value || invoiceResponse.statusText;
-        return res.status(200).json({ success: false, error: `Falha ao buscar Nota (${invoiceResponse.status}): ${invoiceSapErrorMsg}` });
+        return res.status(200).json({ success: false, error: \`Falha ao buscar Nota (\${invoiceResponse.status}): \${invoiceSapErrorMsg}\` });
       }
     } catch (fetchError) {
       clearTimeout(invoiceTimeoutId);
-      return res.status(200).json({ success: false, error: `Falha de Rede ao buscar Nota SAP: ${fetchError.message}` });
+      return res.status(200).json({ success: false, error: \`Falha de Rede ao buscar Nota SAP: \${fetchError.message}\` });
     }
 
     const invoiceData = await invoiceResponse.json();
@@ -448,12 +253,12 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
     const mappedInvoicesPayload = [];
 
     for (const latestInvoice of invoicesList) {
-      let documentStr = (latestInvoice.LicTradNum || latestInvoice.TaxIdNum || latestInvoice.FederalTaxID || '').replace(/\D/g, '');
+      let documentStr = (latestInvoice.LicTradNum || latestInvoice.TaxIdNum || latestInvoice.FederalTaxID || '').replace(/\\D/g, '');
       
       if (latestInvoice.CardCode && (!documentStr || !latestInvoice.AddressExtension?.ShipToCity || !latestInvoice.AddressExtension?.ShipToZipCode)) {
         if (!bpCache[latestInvoice.CardCode]) {
            try {
-             const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${latestInvoice.CardCode}')`;
+             const bpEndpoint = \`\${serviceLayerUrl}/BusinessPartners('\${latestInvoice.CardCode}')\`;
              const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
              if (bpRes.ok) bpCache[latestInvoice.CardCode] = await bpRes.json();
            } catch (e) {}
@@ -462,10 +267,10 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
         const bpData = bpCache[latestInvoice.CardCode];
         if (bpData) {
           if (!documentStr) {
-              documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+              documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\\D/g, '');
               if (!documentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
                  const taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => t.TaxId0 || t.TaxId1 || t.TaxId4);
-                 if (taxIdObj) documentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId1 || taxIdObj.TaxId4 || '').replace(/\D/g, '');
+                 if (taxIdObj) documentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId1 || taxIdObj.TaxId4 || '').replace(/\\D/g, '');
               }
           }
           if (!latestInvoice.AddressExtension?.ShipToCity || !latestInvoice.AddressExtension?.ShipToZipCode) {
@@ -489,7 +294,7 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
       if (carrierCode) {
         if (!carrierBPCache[carrierCode]) {
            try {
-             const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${carrierCode}')`;
+             const bpEndpoint = \`\${serviceLayerUrl}/BusinessPartners('\${carrierCode}')\`;
              const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
              if (bpRes.ok) carrierBPCache[carrierCode] = await bpRes.json();
            } catch (e) {}
@@ -497,10 +302,10 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
         
         const bpData = carrierBPCache[carrierCode];
         if (bpData) {
-            carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+            carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\\D/g, '');
             if (!carrierDocumentStr && bpData.BPFiscalTaxIDCollection && bpData.BPFiscalTaxIDCollection.length > 0) {
                let taxIdObj = bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId0) || bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId4) || bpData.BPFiscalTaxIDCollection.find(t => !!t.TaxId1);
-               if (taxIdObj) carrierDocumentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId4 || taxIdObj.TaxId1 || '').replace(/\D/g, '');
+               if (taxIdObj) carrierDocumentStr = (taxIdObj.TaxId0 || taxIdObj.TaxId4 || taxIdObj.TaxId1 || '').replace(/\\D/g, '');
             }
         }
       }
@@ -511,7 +316,7 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
         if (firstLine.BaseType === 17 && firstLine.BaseEntry) {
           if (!baseEntryCache[firstLine.BaseEntry]) {
             try {
-              const bpEndpoint = `${serviceLayerUrl}/Orders(${firstLine.BaseEntry})?$select=DocNum`;
+              const bpEndpoint = \`\${serviceLayerUrl}/Orders(\${firstLine.BaseEntry})?$select=DocNum\`;
               const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
               if (bpRes.ok) {
                 const orderData = await bpRes.json();
@@ -592,70 +397,15 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
     }
 
     // Callback logout invisível
-    fetch(`${serviceLayerUrl}/Logout`, { 
+    fetch(\`\${serviceLayerUrl}/Logout\`, { 
       method: 'POST', 
       headers: { 'Cookie': cookieString, 'Accept': 'application/json' } 
     }).catch(() => {});
 
     return res.status(200).json({ success: true, invoices: mappedInvoicesPayload });
+`;
 
-  } catch (globalError) {
-    return res.status(200).json({ success: false, error: `Erro no servidor Node Proxy: ${globalError.message}` });
-  }
-});
+content = content.replace(invoiceBlockRegex, newInvoiceBlock);
 
-// Endpoint 4: Fetch ERP Sync Logs (bypasses RLS)
-app.post('/api/erp-sync-logs', async (req, res) => {
-  try {
-    const { orgId, envId, estId } = req.body;
-    if (!orgId || !envId) {
-      return res.status(400).json({ success: false, error: 'orgId e envId sao obrigatorios' });
-    }
-    if (!supabase) {
-      return res.status(500).json({ success: false, error: 'Database desabilitada no Worker' });
-    }
-    
-    let query = supabase.from('erp_sync_logs').select('*')
-      .eq('organization_id', orgId)
-      .eq('environment_id', envId);
-      
-    if (estId) {
-      query = query.eq('establishment_id', estId);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
-    
-    if (error) {
-      console.error('[Proxy] Erro fetch logs:', error);
-      return res.status(500).json({ success: false, error: error.message });
-    }
-    
-    return res.status(200).json({ success: true, logs: data || [] });
-  } catch (error) {
-     return res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Endpoint: Cron Sync Scheduler (Call this from GCP Scheduler)
-app.post('/api/cron-sync', async (req, res) => {
-  try {
-    const result = await runCronSync(PORT);
-    if (!result.success) {
-      return res.status(500).json(result);
-    }
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error('Fatal Cron Error:', error);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 TMS ERP Proxy Server running on port ${PORT}`);
-  
-  // Auto Cron Loop Interno
-  console.log('⏰ Iniciando Cron Loop Interno a cada 60s...');
-  setInterval(() => {
-    runCronSync(PORT).catch(err => console.error('Erro no cron automÃ¡tico:', err));
-  }, 60000);
-});
+fs.writeFileSync('tms-erp-proxy/index.js', content, 'utf8');
+console.log('Script index.js successfully refactored for array streams.');
