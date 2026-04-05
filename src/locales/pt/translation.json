@@ -4818,12 +4818,12 @@
         "title": "Motor via IA/Planilha"
       },
       "invoice": {
-        "cteUsage": "CFOP Geral",
-        "cteWithoutNfItem": "Cadastro CTe",
+        "cteUsage": "Código de Utilização Fatura",
+        "cteWithoutNfItem": "Cadastro CT-e (Sem NF)",
         "inboundControlAccount": "Conta Controle de Fatura",
-        "outboundItem": "Mapeamento Outbound",
+        "outboundItem": "Item padrão para Fatura",
         "title": "Parâmetros Fiscais (Fatura)",
-        "transitoryAccount": "Código de Utilização Fatura",
+        "transitoryAccount": "Conta Transitória",
         "defaultItem": "Item padrão para Fatura"
       },
       "saveBtn": "Atualizar Dados",
