@@ -150,7 +150,7 @@ const ImplementationCenter: React.FC = () => {
         autoSyncEnabled: config.auto_sync_enabled || false,
         syncIntervalMinutes: config.sync_interval_minutes || 5
       });
-      
+      // TEMPORARILY DISABLED: User requested to unlock BPLId to adjust establishments
       let query = supabase!.from('orders').select('id', { count: 'exact', head: true }).eq('organization_id', user.organization_id);
       if (estId) {
           query = query.eq('establishment_id', estId);
@@ -159,10 +159,11 @@ const ImplementationCenter: React.FC = () => {
       }
       const { count } = await query;
       if (count && count > 0) {
-          setIsBplIdLocked(true);
+          // setIsBplIdLocked(true); // Locked logic removed temporarily
       } else {
           setIsBplIdLocked(false);
       }
+      setIsBplIdLocked(false); // Force unlock
     }
   };
 
