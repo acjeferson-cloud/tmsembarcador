@@ -55,10 +55,15 @@ export const sapIntegrationService = {
         return { success: false, error: data?.error || 'Erro ignorado pelo SAP B1.' };
       }
 
-      const sapOrder = data.order;
-      if (!sapOrder) {
-        return { success: false, error: 'O Pedido retornado pela integração do SAP está vazio.' };
+      const sapOrders = data.orders;
+      if (!sapOrders || sapOrders.length === 0) {
+        return { success: false, error: 'Lista de Pedidos retornada pela integração do SAP está vazia ou já foram importados.' };
       }
+
+      let insertedCount = 0;
+      let lastMessage = '';
+
+      for (const sapOrder of sapOrders) {
 
 
 
@@ -276,16 +281,12 @@ export const sapIntegrationService = {
         .maybeSingle();
 
       if (existingOrder) {
-        return { 
-          success: true, 
-          message: `Pedido ${sapOrder.order_number} ${finalBusinessPartnerName ? 'do cliente ' + finalBusinessPartnerName : ''} já havia sido importado anteriormente, não foi duplicado.`
-        };
+        continue;
       }
 
-      // 7. Persist Order
       const createOrderResult = await ordersService.create(tmsOrder);
       if (!createOrderResult.success || !createOrderResult.id) {
-        return { success: false, error: createOrderResult.error || 'Erro ao persistir pedido no banco de dados.' };
+        continue;
       }
 
       // 8. Persist Items mapping from SAP Lines
@@ -298,9 +299,14 @@ export const sapIntegrationService = {
         await ordersService.addItems(createOrderResult.id, orderItemsObj);
       }
 
+      insertedCount++;
+      lastMessage = `Pedido ${sapOrder.order_number} importado!`;
+
+      }
+
       return { 
         success: true, 
-        message: `Pedido ${sapOrder.order_number} importado! Transportadora: ${finalCarrierId ? 'VINCULADA' : 'NÃO VINCULADA' + (sapOrder.carrier_document ? ' (CNPJ SAP: '+sapOrder.carrier_document+')' : ' (CNPJ Não vindo do SAP)')}. Peso: ${sapOrder.weight}kg.` 
+        message: insertedCount > 0 ? `${insertedCount} pedido(s) sincronizado(s). Último: ${lastMessage}` : 'Nenhum pedido novo foi sincronizado.'
       };
 
     } catch (error: any) {
@@ -355,10 +361,15 @@ export const sapIntegrationService = {
         return { success: false, error: data?.error || 'Erro desconhecido retornado pelo Proxy SAP.' };
       }
 
-      const sapInvoice = data.invoice;
-      if (!sapInvoice) {
-        return { success: false, error: 'O ERP processou a requisição, porém não devolveu nenhuma Nota Fiscal.' };
+      const sapInvoices = data.invoices;
+      if (!sapInvoices || sapInvoices.length === 0) {
+        return { success: false, error: 'A lista de Notas Fiscais retornada pelo SAP está vazia.' };
       }
+
+      let insertedCountInvoice = 0;
+      let lastInvoiceMessage = '';
+
+      for (const sapInvoice of sapInvoices) {
 
 
 
@@ -523,10 +534,7 @@ export const sapIntegrationService = {
         .maybeSingle();
 
       if (existingInvoice) {
-        return { 
-          success: true, 
-          message: `Nota Fiscal ${invNum} ${finalBusinessPartnerName ? 'do cliente ' + finalBusinessPartnerName : ''} já havia sido importada anteriormente.`
-        };
+        continue;
       }
 
       const tmsNfe = {
@@ -560,7 +568,7 @@ export const sapIntegrationService = {
         .single();
 
       if (insertError || !insertedNfe) {
-         return { success: false, error: insertError?.message || 'Erro ao persistir nota fiscal no banco de dados (invoices_nfe).' };
+         continue;
       }
 
       if (sapInvoice.items && sapInvoice.items.length > 0) {
@@ -591,9 +599,14 @@ export const sapIntegrationService = {
       // Update the freight results via ordersService mechanism or just let it exist.
       // Currently invoices table doesn't have freight_results natively like Orders, but we computed freight_value!
 
+      insertedCountInvoice++;
+      lastInvoiceMessage = `Nota Fiscal ${invNum} importada com sucesso!`;
+
+      }
+
       return { 
         success: true, 
-        message: `Nota Fiscal ${invNum} importada com sucesso (Ref SAP: ${sapInvoice.order_number})! Transportadora: ${finalCarrierId ? 'Vinculada' : 'Não Vinculada'}. Peso: ${sapInvoice.weight}kg.`
+        message: insertedCountInvoice > 0 ? `${insertedCountInvoice} nota(s) sincronizada(s). Último: ${lastInvoiceMessage}` : 'Nenhuma nota nova encontrada.'
       };
 
     } catch (e: any) {
