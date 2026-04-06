@@ -40,10 +40,9 @@ const normalizeCTeStatus = (status: string | undefined | null) => {
 };
 
 const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
-  // A Base ICMS sempre contém o valor total COM ICMS
-  // (independente de ser embutido ou não)
+  // O valor total calculado consolida ICMS (embutido ou não)
   const valorCustoCalculado = cte.carrier_costs && cte.carrier_costs.length > 0
-    ? parseFloat(cte.carrier_costs.find(c => c.cost_type === 'icms_base')?.cost_value.toString() || '0')
+    ? parseFloat(cte.carrier_costs.find(c => c.cost_type === 'total_value')?.cost_value.toString() || '0')
     : 0;
 
   return {
@@ -163,7 +162,7 @@ const convertCTeToElectronicDocument = (cte: CTeWithRelations): ElectronicDocume
 };
 
 export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
-  const { user } = useAuth();
+  const { user, currentEstablishment: authEstablishment } = useAuth();
   const breadcrumbItems = [
     { label: 'Documentos Operacionais' },
     { label: 'CT-es', current: true }
@@ -198,7 +197,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
   const [selectedTariffId, setSelectedTariffId] = useState<string | null>(null);
   const [selectedTariff, setSelectedTariff] = useState<FreightRate | null>(null);
-  const [currentEstablishment, setCurrentEstablishment] = useState<{id: string, name: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -217,23 +215,21 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     numeroOuChave: ''
   });
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const establishments = await establishmentsService.getAll();
-        if (establishments.length > 0) {
-          const first = establishments[0];
-          setCurrentEstablishment({
-            id: first.id,
-            name: `${first.codigo} - ${first.razao_social}`
-          });
-        }
-      } catch (error) {
-// null
-      }
+  const currentEstablishment = React.useMemo(() => {
+    if (!authEstablishment) return null;
+    const authAny = authEstablishment as any;
+    const validName = authAny.fantasia || authAny.nome_fantasia || authAny.razao_social || authAny.codigo;
+    
+    return {
+      id: authAny.establishment_id || authEstablishment.id,
+      name: `${authEstablishment.codigo} - ${validName}`,
+      cnpj: authEstablishment.cnpj,
+      email: authAny.email,
+      telefone: authAny.telefone
     };
+  }, [authEstablishment]);
 
-    loadData();
+  useEffect(() => {
     refreshData();
   }, []);
 

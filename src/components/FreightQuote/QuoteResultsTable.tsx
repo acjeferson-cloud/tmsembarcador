@@ -5,9 +5,10 @@ import { formatCurrency } from '../../utils/formatters';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useTranslation } from 'react-i18next';
 
-interface QuoteResultsTableProps {
+export interface QuoteResultsTableProps {
   results: QuoteResult[];
   cargoValue?: number;
+  onOpenRate?: (rate: any) => void;
 }
 
 const formatDate = (dateStr: string): string => {
@@ -15,7 +16,7 @@ const formatDate = (dateStr: string): string => {
   return date.toLocaleDateString('pt-BR');
 };
 
-export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, cargoValue }) => {
+export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, cargoValue, onOpenRate }) => {
   const { isActive: isNpsActive } = useInnovation(INNOVATION_IDS.NPS);
   const { t } = useTranslation();
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
@@ -190,10 +191,22 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatCurrency(result.calculationDetails.fretePeso)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
+                <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                  {onOpenRate && result.freightRate && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenRate(result.freightRate);
+                      }}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors focus:outline-none"
+                      title={t('freightQuote.results.openTariff', 'Ver Tabela de Frete')}
+                    >
+                      <Receipt className="w-5 h-5" />
+                    </button>
+                  )}
                   <button 
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none"
-                    title="Detalhes das Taxas"
+                    title={t('freightQuote.results.details', 'Detalhes das Taxas')}
                   >
                     {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </button>

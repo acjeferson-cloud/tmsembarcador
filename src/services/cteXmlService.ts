@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { trackingService } from './trackingService';
 import { TenantContextHelper } from '../utils/tenantContext';
+import { establishmentsService } from './establishmentsService';
 
 interface ParsedCTeData {
   // Dados básicos
@@ -444,9 +445,27 @@ export const cteXmlService = {
         await TenantContextHelper.setSessionContext(ctx);
       }
 
+      // Validação Estrita de Estabelecimento (Segurança)
+      await this.validateEstablishmentPermission(parsedData, ctx?.establishmentId);
+
+      // Descobrir carrier_id (transportador) baseado no emitente
+      let carrierId = null;
+      try {
+        const { carriersService } = await import('./carriersService');
+        const carriers = await carriersService.getAll();
+        const cnpjCarrier = parsedData.emitter_cnpj?.replace(/\D/g, '');
+        if (cnpjCarrier) {
+          const foundCarrier = carriers.find((c: any) => c.cnpj?.replace(/\D/g, '') === cnpjCarrier);
+          if (foundCarrier) carrierId = foundCarrier.id;
+        }
+      } catch (err) {
+        console.warn('Erro ao buscar transportador:', err);
+      }
+
       const { data: cteData, error: cteError } = await (supabase as any)
         .from('ctes_complete')
         .insert({
+          carrier_id: carrierId,
           organization_id: ctx?.organizationId,
           environment_id: ctx?.environmentId,
           establishment_id: establishmentId,
@@ -567,9 +586,75 @@ export const cteXmlService = {
 
       }
 
+      // Auto-calculate freight cost so 'Valor Custo' is immediately available on the dashboard
+      try {
+        const { ctesCompleteService } = await import('./ctesCompleteService');
+        const { freightCostCalculator } = await import('./freightCostCalculator');
+        
+        const fullCTe = await ctesCompleteService.getById(cteData.id);
+        if (fullCTe) {
+          const calculation = await freightCostCalculator.calculateCTeCost(fullCTe);
+          await freightCostCalculator.saveCostsToCTe(cteData.id, calculation);
+        }
+      } catch (calcError) {
+        console.warn('Erro ao calcular o frete durante a importação automática:', calcError);
+      }
+
       return { success: true, cteId: cteData.id };
     } catch (error: any) {
       return { success: false, error: error.message || 'Unknown error' };
+    }
+  },
+
+  async validateEstablishmentPermission(parsedData: ParsedCTeData, establishmentId?: string | null): Promise<void> {
+    if (!establishmentId) {
+      throw new Error('Acesso negado: ID da filial logada não identificado ou ausente no contexto.');
+    }
+
+    // Busca TODAS as filiais de forma segura respeitando o contexto e RLS
+    const allEstablishments = await establishmentsService.getAll();
+
+    const currentEstablishment = allEstablishments.find((e: any) => e.id === establishmentId);
+
+    if (!currentEstablishment || !currentEstablishment.cnpj) {
+      throw new Error(`Acesso negado: Filial selecionada não possui CNPJ cadastrado. Verifique o cadastro da filial.`);
+    }
+
+    const cleanSessionCnpj = currentEstablishment.cnpj.replace(/\D/g, '');
+    
+    // Lista de CNPJs envolvidos no CTE
+    const involvedCnpjs = [
+      parsedData.sender_document?.replace(/\D/g, '') || '',
+      parsedData.recipient_document?.replace(/\D/g, '') || '',
+      parsedData.shipper_document?.replace(/\D/g, '') || '',
+      parsedData.receiver_document?.replace(/\D/g, '') || '',
+      parsedData.payer_document?.replace(/\D/g, '') || ''
+    ].filter(cnpj => cnpj.length > 0);
+
+    const isValidBranch = involvedCnpjs.includes(cleanSessionCnpj);
+
+    if (!isValidBranch) {
+      // Buscar se existe ALGUMA filial que seja a dona correta
+      const correctEstablishment = allEstablishments.find((est: any) => {
+        const estCnpj = est.cnpj?.replace(/\D/g, '');
+        return estCnpj && involvedCnpjs.includes(estCnpj);
+      });
+
+      if (correctEstablishment) {
+        throw new Error(
+          `Acesso negado: Arquivo incompatível com a filial logada! ⚠️\n\n` +
+          `Você está logado em: ${currentEstablishment.codigo} - ${currentEstablishment.razao_social} (CNPJ: ${currentEstablishment.cnpj})\n` +
+          `Este arquivo pertence à filial: ${correctEstablishment.codigo} - ${correctEstablishment.razao_social} (CNPJ: ${correctEstablishment.cnpj}).\n\n` +
+          `➡️ Por favor, altere sua filial logada (menu no canto superior direito) para a ${correctEstablishment.codigo} antes de importar.`
+        );
+      } else {
+        throw new Error(
+          `Acesso negado: CNPJ não reconhecido! 🚫\n\n` +
+          `Você está na filial: ${currentEstablishment.codigo} - ${currentEstablishment.razao_social} (CNPJ: ${currentEstablishment.cnpj}).\n` +
+          `Os CNPJs envolvidos neste CT-e não correspondem a NENHUMA filial cadastrada no sistema.\n\n` +
+          `Verifique se o arquivo está correto ou se a filial responsável precisa ser cadastrada.`
+        );
+      }
     }
   }
 };

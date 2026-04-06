@@ -278,6 +278,18 @@ export const CTeForm: React.FC<CTeFormProps> = ({
         // Fazer parse do XML
         const parsedData = cteXmlService.parseXml(xmlContent);
 
+        // Validar filial para evitar importação indevida
+        try {
+          await cteXmlService.validateEstablishmentPermission(parsedData, establishmentId);
+        } catch (validationError: any) {
+          setUploadStatus({
+            type: 'error',
+            message: validationError.message || 'XML inválido para esta filial'
+          });
+          setTimeout(() => setUploadStatus({ type: null, message: '' }), 7000);
+          return;
+        }
+
         // Armazenar XML para salvamento posterior
         setXmlData({
           original: xmlContent,

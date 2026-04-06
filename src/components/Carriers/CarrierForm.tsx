@@ -53,7 +53,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     modalFerroviario: carrier?.modal_ferroviario || false,
     consideraSabadoUtil: carrier?.considera_sabado_util || false,
     consideraDomingoUtil: carrier?.considera_domingo_util || false,
-    consideraFeriados: carrier?.considera_feriados !== undefined ? carrier.considera_feriados : true
+    consideraFeriados: carrier?.considera_feriados !== undefined ? carrier.considera_feriados : true,
+    scope: carrier?.scope || 'ESTABLISHMENT'
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(carrier?.logotipo || null);
@@ -336,7 +337,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       modalFerroviario: formData.modalFerroviario,
       consideraSabadoUtil: formData.consideraSabadoUtil,
       consideraDomingoUtil: formData.consideraDomingoUtil,
-      consideraFeriados: formData.consideraFeriados
+      consideraFeriados: formData.consideraFeriados,
+      scope: formData.scope
     };
     try {
       await onSave(carrierData);
@@ -908,6 +910,44 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                   <option value="ativo">{t('carriers.form.activeText')}</option>
                   <option value="inativo">{t('carriers.form.inactiveText')}</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Configuração de Visibilidade / Escopo */}
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2">Visibilidade / Escopo da Transportadora</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Escolha se esta transportadora será exclusiva desta filial ou compartilhada com as demais do grupo.</p>
+              
+              <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-6">
+                <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${formData.scope === 'ESTABLISHMENT' ? 'bg-blue-50 border-blue-500' : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700'}`}>
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="ESTABLISHMENT"
+                    checked={formData.scope === 'ESTABLISHMENT'}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="ml-3">
+                    <span className="block text-sm font-medium text-gray-900 dark:text-white">Apenas para esta Filial</span>
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">Restrita ao estabelecimento atual.</span>
+                  </span>
+                </label>
+
+                <label className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${formData.scope === 'ENVIRONMENT' ? 'bg-blue-50 border-blue-500' : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700'}`}>
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="ENVIRONMENT"
+                    checked={formData.scope === 'ENVIRONMENT'}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="ml-3">
+                    <span className="block text-sm font-medium text-gray-900 dark:text-white">Compartilhar com meu Grupo</span>
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">Disponível para todas as filiais.</span>
+                  </span>
+                </label>
               </div>
             </div>
 

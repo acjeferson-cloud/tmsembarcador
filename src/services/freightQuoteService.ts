@@ -35,6 +35,8 @@ export interface QuoteResult {
   deliveryDeadline?: string;
   percentageAboveLowest?: number;
   npsInterno?: number;
+  freightRateTableId?: string;
+  freightRate?: any;
 }
 
 export interface FreightQuoteHistory {
@@ -188,7 +190,10 @@ export const freightQuoteService = {
 
     const { data: ratesData, error: ratesError } = await supabase.rpc('calculate_freight_quotes', {
       p_destination_city_id: cityId,
-      p_selected_modals: selectedModals
+      p_selected_modals: selectedModals,
+      p_organization_id: ctx?.organizationId || null,
+      p_environment_id: ctx?.environmentId || null,
+      p_establishment_id: ctx?.establishmentId || null
     });
 
 
@@ -321,7 +326,9 @@ export const freightQuoteService = {
           isNominated: false,
           deliveryDays: rateData.delivery_days || undefined,
           deliveryDeadline: deliveryDeadline,
-          npsInterno: rateData.carrier_nps_interno || undefined
+          npsInterno: rateData.carrier_nps_interno || undefined,
+          freightRateTableId: rateData.freight_rate_table_id,
+          freightRate: tariff
         };
       } catch (error) {
 
@@ -446,6 +453,10 @@ export const freightQuoteService = {
             .maybeSingle();
           establishmentUUID = establishment?.id;
         }
+      }
+
+      if (!establishmentUUID && userData.establishment_id) {
+        establishmentUUID = userData.establishment_id;
       }
 
       // Buscar o UUID do usuário pelo email e formatar nome do usuário

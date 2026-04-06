@@ -58,6 +58,7 @@ export const FreightRates: React.FC = () => {
       const hash = window.location.hash;
       const params = new URLSearchParams(hash.split('?')[1]);
       const tariffId = params.get('tariff');
+      const tableId = params.get('table');
 
       if (tariffId && tables.length > 0) {
         try {
@@ -68,6 +69,12 @@ export const FreightRates: React.FC = () => {
           }
         } catch (error) {
 
+        }
+      } else if (tableId && tables.length > 0) {
+        const table = tables.find(t => t.id === tableId);
+        if (table) {
+          handleEditTable(table);
+          window.history.replaceState(null, '', '#/freight-rates');
         }
       }
     };

@@ -199,6 +199,7 @@ export const Carriers: React.FC = () => {
         considera_sabado_util: carrierData.consideraSabadoUtil || false,
         considera_domingo_util: carrierData.consideraDomingoUtil || false,
         considera_feriados: carrierData.consideraFeriados || false,
+        scope: carrierData.scope || 'ESTABLISHMENT',
       };
       if (editingCarrier) {
         const updated = await carriersService.update(editingCarrier.id, {

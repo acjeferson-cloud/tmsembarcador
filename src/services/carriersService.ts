@@ -42,6 +42,7 @@ export interface Carrier {
   updated_at?: string;
   created_by?: string;
   updated_by?: string;
+  scope?: 'ESTABLISHMENT' | 'ENVIRONMENT' | 'ORGANIZATION';
 }
 
 export const carriersService = {
@@ -85,10 +86,10 @@ export const carriersService = {
       tolerancia_percentual_fatura: metadata.tolerancia_percentual_fatura || 0,
       rating: metadata.rating || 0,
       active_shipments: metadata.active_shipments || 0,
-      created_at: carrier.created_at,
       updated_at: carrier.updated_at,
       created_by: carrier.created_by,
-      updated_by: carrier.updated_by
+      updated_by: carrier.updated_by,
+      scope: carrier.scope || 'ESTABLISHMENT'
     };
   },
 
@@ -140,13 +141,11 @@ export const carriersService = {
         .select('*')
         .eq('organization_id', ctx.organizationId)
         .eq('environment_id', ctx.environmentId);
-        
       if (ctx.establishmentId) {
-        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},scope.eq.ENVIRONMENT,scope.eq.ORGANIZATION`);
       } else {
-        query = query.is('establishment_id', null);
+        query = query.filter('scope', 'in', '("ENVIRONMENT","ORGANIZATION")');
       }
-      
       const { data, error } = await query.order('codigo', { ascending: true });
 
       if (error) {
@@ -356,10 +355,10 @@ export const carriersService = {
         email: carrier.email || null,
         website: null,
         tipo_servico: 'Expresso',
-        prazo_coleta: 1,
         prazo_entrega: 3,
         nps_interno: carrier.nps_interno || null,
         ativo: carrier.status === 'ativo',
+        scope: (carrier.scope === 'ESTABLISHMENT' && !userData.establishment_id) ? 'ENVIRONMENT' : (carrier.scope || 'ESTABLISHMENT'),
         metadata: metadata
       };
       const { data, error } = await supabase
@@ -407,6 +406,10 @@ export const carriersService = {
       const updateData: any = { metadata };
 
       if (carrier.codigo !== undefined) updateData.codigo = carrier.codigo;
+      if (carrier.scope !== undefined) {
+        const ctx = await TenantContextHelper.getCurrentContext();
+        updateData.scope = (carrier.scope === 'ESTABLISHMENT' && !ctx?.establishmentId) ? 'ENVIRONMENT' : carrier.scope;
+      }
       if (carrier.razao_social !== undefined) updateData.razao_social = carrier.razao_social;
       if (carrier.fantasia !== undefined) updateData.nome_fantasia = carrier.fantasia;
       if (carrier.cnpj !== undefined) updateData.cnpj = carrier.cnpj;
@@ -449,10 +452,10 @@ export const carriersService = {
       if (carrier.complemento !== undefined) updateData.complemento = carrier.complemento;
       if (carrier.bairro !== undefined) updateData.bairro = carrier.bairro;
       if (carrier.cep !== undefined) updateData.cep = carrier.cep;
-      if (carrier.email !== undefined) updateData.email = carrier.email;
       if (carrier.phone !== undefined) updateData.telefone = carrier.phone;
       if (carrier.status !== undefined) updateData.ativo = carrier.status === 'ativo';
       if (carrier.nps_interno !== undefined) updateData.nps_interno = carrier.nps_interno;
+      if (carrier.scope !== undefined) updateData.scope = carrier.scope;
       const { data, error } = await supabase
         .from('carriers')
         .update(updateData)
@@ -530,9 +533,9 @@ export const carriersService = {
         .or(`razao_social.ilike.%${searchTerm}%,fantasia.ilike.%${searchTerm}%,codigo.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
 
       if (ctx.establishmentId) {
-        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},scope.eq.ENVIRONMENT,scope.eq.ORGANIZATION`);
       } else {
-        query = query.is('establishment_id', null);
+        query = query.filter('scope', 'in', '("ENVIRONMENT","ORGANIZATION")');
       }
 
       const { data, error } = await query.order('razao_social', { ascending: true });
@@ -561,9 +564,9 @@ export const carriersService = {
         .eq('environment_id', ctx.environmentId);
         
       if (ctx.establishmentId) {
-        query = query.or(`establishment_id.eq.${ctx.establishmentId},establishment_id.is.null`);
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},scope.eq.ENVIRONMENT,scope.eq.ORGANIZATION`);
       } else {
-        query = query.is('establishment_id', null);
+        query = query.filter('scope', 'in', '("ENVIRONMENT","ORGANIZATION")');
       }
       
       const { data, error } = await query

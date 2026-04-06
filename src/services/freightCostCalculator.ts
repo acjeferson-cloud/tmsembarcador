@@ -51,9 +51,9 @@ export const freightCostCalculator = {
       throw new Error('Transportador não identificado no CT-e');
     }
 
-    // 2. Buscar tabela de frete vigente
-    const freightTable = await this.findActiveFreightTable(carrierId, cte.issue_date);
-    if (!freightTable) {
+    // 2. Buscar tabelas de frete vigentes
+    const freightTables = await this.findActiveFreightTables(carrierId, cte.issue_date);
+    if (!freightTables || freightTables.length === 0) {
       throw new Error('Nenhuma tabela de frete ativa encontrada para este transportador');
     }
 
@@ -64,9 +64,20 @@ export const freightCostCalculator = {
       throw new Error('Cidade de destino não identificada no CT-e');
     }
 
-    // 4. Buscar tarifa vinculada à cidade
-    const tariff = await this.findTariffByCity(freightTable.id, destinationCity, destinationState);
-    if (!tariff) {
+    // 4. Buscar tarifa vinculada à cidade em todas as tabelas ativas
+    let tariff = null;
+    let matchedTableId = null;
+
+    for (const table of freightTables) {
+      const cityTariff = await this.findTariffByCity(table.id, destinationCity, destinationState);
+      if (cityTariff) {
+        tariff = cityTariff;
+        matchedTableId = table.id;
+        break;
+      }
+    }
+
+    if (!tariff || !matchedTableId) {
       throw new Error(`Nenhuma tarifa encontrada para a cidade ${destinationCity}-${destinationState}`);
     }
 
@@ -93,7 +104,7 @@ export const freightCostCalculator = {
 
       if (cityData) {
         additionalFees = await this.findAdditionalFees(
-          freightTable.id,
+          matchedTableId,
           cityData.id,
           stateData.id,
           cte.sender_id // ID do parceiro de negócios (remetente)
@@ -106,9 +117,9 @@ export const freightCostCalculator = {
   },
 
   /**
-   * Busca a tabela de frete ativa para o transportador na data especificada
+   * Busca as tabelas de frete ativas para o transportador na data especificada
    */
-  async findActiveFreightTable(carrierId: string, issueDate?: string): Promise<{ id: string } | null> {
+  async findActiveFreightTables(carrierId: string, issueDate?: string): Promise<{ id: string }[] | null> {
     const dateToCheck = issueDate ? new Date(issueDate).toISOString() : new Date().toISOString();
 
     const { data, error } = await supabase
@@ -118,9 +129,7 @@ export const freightCostCalculator = {
       .eq('status', 'ativo')
       .lte('data_inicio', dateToCheck)
       .gte('data_fim', dateToCheck)
-      .order('data_inicio', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('data_inicio', { ascending: false });
 
     if (error) throw error;
     return data;
@@ -878,7 +887,8 @@ export const freightCostCalculator = {
       { cte_id: cteId, cost_type: 'tec', cost_value: calculation.tec },
       { cte_id: cteId, cost_type: 'other_value', cost_value: calculation.outrosValores },
       { cte_id: cteId, cost_type: 'icms_base', cost_value: calculation.icmsBase },
-      { cte_id: cteId, cost_type: 'icms_value', cost_value: calculation.icmsValor }
+      { cte_id: cteId, cost_type: 'icms_value', cost_value: calculation.icmsValor },
+      { cte_id: cteId, cost_type: 'total_value', cost_value: calculation.valorTotal }
     ];
 
 

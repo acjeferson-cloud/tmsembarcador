@@ -131,7 +131,7 @@ interface InvoicesProps {
 export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
   const { t } = useTranslation();
 
-  const { user } = useAuth();
+  const { user, currentEstablishment: authEstablishment } = useAuth();
   
   useActivityLogger('Notas Fiscais', 'Acesso', 'Acessou a Gestão de Notas Fiscais');
 
@@ -197,22 +197,15 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
   }, [user]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const establishments = await establishmentsService.getAll();
-        if (establishments.length > 0) {
-          const first = establishments[0];
-          setCurrentEstablishment({
-            id: first.id,
-            name: `${first.codigo} - ${first.razao_social}`
-          });
-        }
-      } catch (error) {
-// null
-      }
-    };
+    if (authEstablishment) {
+      setCurrentEstablishment({
+        id: authEstablishment.establishment_id || authEstablishment.id.toString(),
+        name: `${authEstablishment.codigo} - ${authEstablishment.razaoSocial || authEstablishment.fantasia || ''}`
+      });
+    }
+  }, [authEstablishment]);
 
-    loadData();
+  useEffect(() => {
     refreshData();
     
     window.addEventListener('refresh-invoices-list', refreshData);
@@ -387,7 +380,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
                 m3,
                 destinationCity: nfeData.customer?.cidade || '',
                 destinationState: nfeData.customer?.estado || '',
-                issueDate: nfeData.issue_date
+                issueDate: nfeData.issue_date,
+                items: nfeData.products?.map((p: any) => ({
+                   itemCode: p.codigo_produto,
+                   eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
+                   ncmCode: p.ncm
+                })) || []
               };
               
               const carrierData = await invoicesCostService.getCarrierData(nfeData.carrier_id);
@@ -422,7 +420,12 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
               volumeQty: volume_qty,
               cargoValue: value,
               cubicMeters: m3,
-              selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+              selectedModals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'],
+              items: nfeData.products?.map((p: any) => ({
+                 itemCode: p.codigo_produto,
+                 eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
+                 ncmCode: p.ncm
+              })) || []
             });
             
             let updateData: any = { freight_results: results };

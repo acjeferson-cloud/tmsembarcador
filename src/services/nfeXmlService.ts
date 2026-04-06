@@ -154,7 +154,9 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
       }
     }
 
-    const totalWeight = parseFloat(getTextContent(vol, 'pesoB', '0'));
+    const pesoB = parseFloat(getTextContent(vol, 'pesoB', '0'));
+    const pesoL = parseFloat(getTextContent(vol, 'pesoL', '0'));
+    const totalWeight = pesoB > 0 ? pesoB : pesoL;
     const totalQtd = products.reduce((acc, p) => acc + p.quantity, 0);
 
     products.forEach(p => {
@@ -181,7 +183,7 @@ export const parseNFeXml = (xmlString: string): NFeXmlData | null => {
       deliveryForecastDate,
       operationNature: getTextContent(ide, 'natOp'),
       orderNumber,
-      weight: parseFloat(getTextContent(vol, 'pesoB', '0')),
+      weight: totalWeight,
       volumes: parseInt(getTextContent(vol, 'qVol', '0')),
       totalValue: parseFloat(getTextContent(icmsTot, 'vNF', '0')),
       pisValue: parseFloat(getTextContent(icmsTot, 'vPIS', '0')),
@@ -256,6 +258,21 @@ export const importNFeToDatabase = async (
 
     if (searchError) throw searchError;
 
+    if (nfeData.emitter?.cnpj) {
+      const cleanEmitCnpj = nfeData.emitter.cnpj.replace(/\D/g, '');
+      const { data: foundEstab } = await (supabase as any)
+        .from('establishments')
+        .select('id, codigo, nome_fantasia')
+        .eq('organization_id', organizationId)
+        .like('cnpj', `%${cleanEmitCnpj}%`)
+        .limit(1)
+        .maybeSingle();
+        
+      if (foundEstab && foundEstab.id !== establishmentId) {
+        throw new Error(`Este XML foi emitido pela filial ${foundEstab.codigo} - ${foundEstab.nome_fantasia}. Mude para esta filial antes de importar.`);
+      }
+    }
+
     let finalCarrierId = carrierId;
     if (!finalCarrierId && nfeData.carrier?.cnpj) {
       const cleanCnpj = nfeData.carrier.cnpj.replace(/\D/g, '');
@@ -315,59 +332,72 @@ export const importNFeToDatabase = async (
 
     try {
       if (finalCarrierId) {
-         const { invoicesCostService } = await import('./invoicesCostService');
-         specificCarrierData = await invoicesCostService.getCarrierData(finalCarrierId);
-         if (specificCarrierData) {
-            const invoiceDataReq = {
-               weight,
-               value,
-               volume: Number(nfeData.volumes) || 1,
-               m3: 0,
-               destinationCity: cidadeDestino,
-               destinationState: ufDestino,
-               issueDate: nfeData.issueDate,
-               items: nfeData.products.map(p => ({
-                 itemCode: p.productCode,
-                 eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
-                 ncmCode: p.ncm
-               }))
-            };
-            specificCalculation = await invoicesCostService.calculateInvoiceCost(invoiceDataReq, finalCarrierId, nfeData.issueDate);
-            if (specificCalculation) {
-               valorFreteCalculado = specificCalculation.valorTotal;
-               freightResults = [{
-                 carrierId: finalCarrierId,
-                 carrierName: specificCarrierData.razao_social,
-                 totalValue: specificCalculation.valorTotal,
-                 calculationDetails: specificCalculation
-               }];
-            }
+         try {
+           const { invoicesCostService } = await import('./invoicesCostService');
+           specificCarrierData = await invoicesCostService.getCarrierData(finalCarrierId);
+           if (specificCarrierData) {
+              const invoiceDataReq = {
+                 weight,
+                 value,
+                 volume: Number(nfeData.volumes) || 1,
+                 m3: 0,
+                 destinationCity: cidadeDestino,
+                 destinationState: ufDestino,
+                 issueDate: nfeData.issueDate,
+                 items: nfeData.products.map(p => ({
+                   itemCode: p.productCode,
+                   eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
+                   ncmCode: p.ncm
+                 }))
+              };
+              specificCalculation = await invoicesCostService.calculateInvoiceCost(invoiceDataReq, finalCarrierId, nfeData.issueDate);
+              if (specificCalculation) {
+                 valorFreteCalculado = specificCalculation.valorTotal;
+                 freightResults = [{
+                   carrierId: finalCarrierId,
+                   carrierName: specificCarrierData.razao_social,
+                   totalValue: specificCalculation.valorTotal,
+                   calculationDetails: specificCalculation
+                 }];
+              }
+           }
+         } catch (costErr) {
+           console.error('Error in invoicesCostService.calculateInvoiceCost:', costErr);
          }
       }
       
       if (!freightResults.length && destZipCode) {
-        freightResults = await freightQuoteService.calculateQuote({
-          destinationZipCode: destZipCode,
-          weight,
-          volumeQty: Number(nfeData.volumes) || 1,
-          cargoValue: value,
-          cubicMeters: 0,
-          establishmentId: establishmentId,
-          items: nfeData.products.map(p => ({ // pass items so that restricted carriers are omitted
-             itemCode: p.productCode,
-             eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
-             ncmCode: p.ncm
-          }))
-        });
-        if (freightResults && freightResults.length > 0 && finalCarrierId) {
-             const selectedQuote = freightResults.find(r => r.carrierId === finalCarrierId);
-             if (selectedQuote) {
-               valorFreteCalculado = selectedQuote.totalValue;
-             }
+        try {
+          freightResults = await freightQuoteService.calculateQuote({
+            destinationZipCode: destZipCode,
+            weight,
+            volumeQty: Number(nfeData.volumes) || 1,
+            cargoValue: value,
+            cubicMeters: 0,
+            establishmentId: establishmentId,
+            items: nfeData.products.map(p => ({
+               itemCode: p.productCode,
+               eanCode: p.ean === 'SEM GTIN' ? undefined : p.ean,
+               ncmCode: p.ncm
+            }))
+          });
+          if (freightResults && freightResults.length > 0) {
+               if (finalCarrierId) {
+                 const selectedQuote = freightResults.find(r => r.carrierId === finalCarrierId);
+                 if (selectedQuote) {
+                   valorFreteCalculado = selectedQuote.totalValue;
+                 }
+               } else {
+                 finalCarrierId = freightResults[0].carrierId;
+                 valorFreteCalculado = freightResults[0].totalValue;
+               }
+          }
+        } catch (quoteErr) {
+          console.error('Error in freightQuoteService.calculateQuote:', quoteErr);
         }
       }
     } catch (e) {
-// null
+      console.error('Unhandled err during freight init:', e);
     }
 
     if (existingInvoice) {
@@ -434,11 +464,80 @@ export const importNFeToDatabase = async (
       invoiceId = inserted.id;
     }
 
-    // Apaga cliente e produtos (se for reprocessamento) pra recriar
     await (supabase as any).from('invoices_nfe_customers').delete().eq('invoice_nfe_id', invoiceId);
     await (supabase as any).from('invoices_nfe_products').delete().eq('invoice_nfe_id', invoiceId);
 
+    // Business Partner Verification & Registration
+    try {
+      const { data: existingBp } = await (supabase as any)
+        .from('business_partners')
+        .select('id')
+        .eq('cpf_cnpj', nfeData.customer.cnpj.replace(/[^a-zA-Z0-9]/g, ''))
+        .eq('organization_id', organizationId)
+        .eq('environment_id', environmentId)
+        .maybeSingle();
 
+      if (!existingBp) {
+        const { receitaFederalService } = await import('./receitaFederalService');
+        const { businessPartnersService } = await import('./businessPartnersService');
+
+        let bpName = destinatarioNome;
+        let bpEmail = nfeData.customer.email || '';
+        let bpPhone = nfeData.customer.phone || '';
+        let bpAddress = nfeData.customer.address;
+        let bpNumber = nfeData.customer.number;
+        let bpComplement = nfeData.customer.complement || '';
+        let bpNeighborhood = nfeData.customer.neighborhood;
+        let bpCity = cidadeDestino;
+        let bpState = ufDestino;
+        let bpZipCode = nfeData.customer.zipCode;
+
+        if (nfeData.customer.cnpj && nfeData.customer.cnpj.replace(/\\D/g, '').length === 14) {
+           try {
+             const receitaData = await receitaFederalService.consultarCNPJ(nfeData.customer.cnpj);
+             if (receitaData) {
+               bpName = receitaData.razao_social || bpName;
+               bpEmail = receitaData.email || bpEmail;
+               bpPhone = receitaData.ddd_telefone_1 || bpPhone;
+               bpAddress = receitaData.logradouro || bpAddress;
+               bpNumber = receitaData.numero || bpNumber;
+               bpComplement = receitaData.complemento || bpComplement;
+               bpNeighborhood = receitaData.bairro || bpNeighborhood;
+               bpCity = receitaData.municipio || bpCity;
+               bpState = receitaData.uf || bpState;
+               bpZipCode = receitaData.cep || bpZipCode;
+             }
+           } catch (receitaErr) {
+             console.error('Falha ao consultar Receita, usando dados do XML:', receitaErr);
+           }
+        }
+
+        await businessPartnersService.create({
+          name: bpName,
+          document: nfeData.customer.cnpj.replace(/[^a-zA-Z0-9]/g, ''),
+          documentType: nfeData.customer.cnpj.length > 11 ? 'cnpj' : 'cpf',
+          email: bpEmail,
+          phone: bpPhone,
+          type: 'customer',
+          status: 'active',
+          observations: 'Parceiro importado automaticamente a partir do XML da NF-e.',
+          addresses: [{
+             type: 'delivery',
+             street: bpAddress,
+             number: bpNumber,
+             complement: bpComplement,
+             neighborhood: bpNeighborhood,
+             city: bpCity,
+             state: bpState,
+             zipCode: bpZipCode,
+             country: 'Brasil',
+             isPrimary: true
+          }]
+        } as any, 0);
+      }
+    } catch (bpErr) {
+      console.error('Erro na verificação/criação do parceiro de negócio:', bpErr);
+    }
 
     const { error: customerError } = await (supabase as any)
       .from('invoices_nfe_customers')

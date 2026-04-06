@@ -13,6 +13,8 @@ import { BrazilianCity } from '../../types/cities';
 import { cepService } from '../../services/cepService';
 import { catalogItemsService, CatalogItem } from '../../services/catalogItemsService';
 import { AutocompleteSelect } from '../common/AutocompleteSelect';
+import { FreightRateValuesForm } from '../FreightRates/FreightRateValuesForm';
+import { freightRatesService } from '../../services/freightRatesService';
 
 const FreightQuote: React.FC = () => {
   const { currentEstablishment, user } = useAuth();
@@ -48,6 +50,7 @@ const FreightQuote: React.FC = () => {
   const [selectedModals, setSelectedModals] = useState<string[]>(['rodoviario', 'aereo', 'aquaviario', 'ferroviario']);
   const [loadingOriginCities, setLoadingOriginCities] = useState(false);
   const [loadingDestCities, setLoadingDestCities] = useState(false);
+  const [editingRate, setEditingRate] = useState<any>(null);
 
   // Quote Items States
   const [showItemsConfig, setShowItemsConfig] = useState(false);
@@ -898,7 +901,11 @@ const FreightQuote: React.FC = () => {
           {/* Resultados 100% */}
           <div className="w-full">
             {results.length > 0 ? (
-              <QuoteResultsTable results={results} cargoValue={formData.cargoValue} />
+              <QuoteResultsTable 
+                results={results} 
+                cargoValue={formData.cargoValue} 
+                onOpenRate={(rate) => setEditingRate(rate)}
+              />
             ) : (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -912,6 +919,24 @@ const FreightQuote: React.FC = () => {
         </div>
       ) : (
         <QuoteHistoryTable history={history} onRefresh={loadHistory} />
+      )}
+
+      {editingRate && (
+        <FreightRateValuesForm
+          rate={editingRate}
+          onSave={async (updatedRate) => {
+            try {
+              await freightRatesService.updateRate(updatedRate.id!, updatedRate);
+              setToast({ message: t('carriers.freightRates.form.saveSuccess', 'Valores atualizados com sucesso!'), type: 'success' });
+              setEditingRate(null);
+              // Rerun calculation to fetch the newly saved prices
+              handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+            } catch (err: any) {
+              setToast({ message: t('carriers.freightRates.form.saveError', 'Erro ao salvar: ') + err.message, type: 'error' });
+            }
+          }}
+          onCancel={() => setEditingRate(null)}
+        />
       )}
 
       {toast && (
