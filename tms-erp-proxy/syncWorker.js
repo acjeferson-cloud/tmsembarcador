@@ -10,6 +10,43 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
+async function getAddressFromCnpj(cnpj, org_id) {
+    if (!cnpj) return { zipCode: '', city: '', state: '' };
+    const cleanCnpj = cnpj.replace(/\D/g, '');
+    if (!cleanCnpj || cleanCnpj.length !== 14) return { zipCode: '', city: '', state: '' };
+    
+    if (supabase) {
+      try {
+          const { data: bp } = await supabase.from('business_partners')
+            .select('id, addresses:business_partner_addresses(zip_code, city, state)')
+            .eq('cpf_cnpj', cleanCnpj)
+            .eq('organization_id', org_id)
+            .maybeSingle();
+          if (bp && bp.addresses && bp.addresses.length > 0) {
+              return {
+                  zipCode: bp.addresses[0].zip_code || '',
+                  city: bp.addresses[0].city || '',
+                  state: bp.addresses[0].state || ''
+              };
+          }
+      } catch(e) {}
+    }
+    
+    try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+        if (res.ok) {
+            const data = await res.json();
+            return {
+                zipCode: data.cep ? data.cep.replace(/\D/g, '') : '',
+                city: data.municipio || '',
+                state: data.uf || ''
+            };
+        }
+    } catch(e) {}
+    
+    return { zipCode: '', city: '', state: '' };
+}
+
 function calculateCheckDigit(input) {
   const weights = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9];
   let sum = 0;
@@ -241,9 +278,17 @@ export async function runCronSync(port = 8080) {
                 }
              }
 
-             const destStateStr = sapOrder.destination?.state || sapOrder.customer?.state || '';
-             const destCityStr = sapOrder.destination?.city || sapOrder.customer?.city || '';
-             const destZipCodeStr = sapOrder.destination?.zip_code || '';
+             let destStateStr = sapOrder.destination?.state || sapOrder.customer?.state || '';
+             let destCityStr = sapOrder.destination?.city || sapOrder.customer?.city || '';
+             let destZipCodeStr = sapOrder.destination?.zip_code || '';
+             
+             if (!destZipCodeStr && sapOrder.customer?.document) {
+                const addr = await getAddressFromCnpj(sapOrder.customer.document, config.organization_id);
+                if (addr.zipCode) destZipCodeStr = addr.zipCode;
+                if (!destCityStr && addr.city) destCityStr = addr.city;
+                if (!destStateStr && addr.state) destStateStr = addr.state;
+             }
+
              const w = parseFloat(sapOrder.weight || '0');
              const ov = parseFloat(sapOrder.order_value || '0');
              const cm = parseFloat(sapOrder.cubic_meters || '0');
@@ -356,15 +401,23 @@ export async function runCronSync(port = 8080) {
           }
             
           if (!existingInv) {
-             const destZipCodeStr = sapInvoice.destination?.zip_code || '';
+             let destZipCodeStr = sapInvoice.destination?.zip_code || '';
+             let destState = sapInvoice.destination?.state || '';
+             let destCity = sapInvoice.destination?.city || '';
+             
+             if (!destZipCodeStr && sapInvoice.customer?.document) {
+                const addr = await getAddressFromCnpj(sapInvoice.customer.document, config.organization_id);
+                if (addr.zipCode) destZipCodeStr = addr.zipCode;
+                if (!destCity && addr.city) destCity = addr.city;
+                if (!destState && addr.state) destState = addr.state;
+             }
+
              const destZipCode = destZipCodeStr.replace(/\D/g, '');
              const w = parseFloat(sapInvoice.weight || '0');
              const ov = parseFloat(sapInvoice.invoice_value || '0');
              const cm = parseFloat(sapInvoice.cubic_meters || '0');
-             const destState = sapInvoice.destination?.state;
-             const destCity = sapInvoice.destination?.city;
              
-             const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, sapInvoice.destination?.zip_code, finalCarrierId);
+             const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, finalCarrierId);
              
              const tmsNfe = {
                 organization_id: config.organization_id,
@@ -414,15 +467,23 @@ export async function runCronSync(port = 8080) {
              logsBuffer.push(`NFe ${sapInvoice.invoice_number} baixada`);
              insertedCount++;
           } else if (existingInv.valor_frete === 0 || existingInv.valor_frete === null) {
-              const destZipCodeStr = sapInvoice.destination?.zip_code || '';
+              let destZipCodeStr = sapInvoice.destination?.zip_code || '';
+              let destState = sapInvoice.destination?.state || '';
+              let destCity = sapInvoice.destination?.city || '';
+              
+              if (!destZipCodeStr && sapInvoice.customer?.document) {
+                 const addr = await getAddressFromCnpj(sapInvoice.customer.document, config.organization_id);
+                 if (addr.zipCode) destZipCodeStr = addr.zipCode;
+                 if (!destCity && addr.city) destCity = addr.city;
+                 if (!destState && addr.state) destState = addr.state;
+              }
+
               const destZipCode = destZipCodeStr.replace(/\D/g, '');
               const w = parseFloat(sapInvoice.weight || '0');
               const ov = parseFloat(sapInvoice.invoice_value || '0');
               const cm = parseFloat(sapInvoice.cubic_meters || '0');
-              const destState = sapInvoice.destination?.state;
-              const destCity = sapInvoice.destination?.city;
               
-              const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, sapInvoice.destination?.zip_code, existingInv.carrier_id || finalCarrierId);
+              const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, existingInv.carrier_id || finalCarrierId);
               
               if (finalFreightValue > 0) {
                  await supabase.from('invoices_nfe').update({
