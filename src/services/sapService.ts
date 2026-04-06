@@ -35,7 +35,9 @@ export const sapIntegrationService = {
         port: erpConfig.port,
         username: erpConfig.username,
         password: erpConfig.password,
-        companyDb: erpConfig.database
+        companyDb: erpConfig.database,
+        sap_bpl_id: erpConfig.sap_bpl_id || null,
+        lastSyncTime: null // Manual fetch pulls last 3 days
       };
 
       const response = await fetch(`${proxyUrl}/api/fetch-sap-order`, {
@@ -341,7 +343,9 @@ export const sapIntegrationService = {
         port: erpConfig.port,
         username: erpConfig.username,
         password: erpConfig.password,
-        companyDb: erpConfig.database
+        companyDb: erpConfig.database,
+        sap_bpl_id: erpConfig.sap_bpl_id || null,
+        lastSyncTime: null
       };
 
       const response = await fetch(`${proxyUrl}/api/fetch-sap-invoice`, {
