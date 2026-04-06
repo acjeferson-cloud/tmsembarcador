@@ -92,7 +92,7 @@ async function writeLog(organization_id, environment_id, establishment_id, statu
   }
 }
 
-async function calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, finalCarrierId) {
+async function calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, finalCarrierId, config) {
     let finalFreightValue = 0;
     let calculatedBestCarrier = finalCarrierId;
     let freightResults = [];
@@ -125,7 +125,10 @@ async function calculateSyncFreight(supabase, w, ov, cm, destState, destCity, de
             if (cityDataId) {
                 const { data: ratesData } = await supabase.rpc('calculate_freight_quotes', {
                    p_destination_city_id: cityDataId,
-                   p_selected_modals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
+                   p_selected_modals: ['rodoviario', 'aereo', 'aquaviario', 'ferroviario'],
+                   p_organization_id: config?.organization_id,
+                   p_environment_id: config?.environment_id,
+                   p_establishment_id: config?.establishment_id
                 });
                 if (ratesData && ratesData.length > 0) {
                     for (const rateData of ratesData) {
@@ -293,7 +296,7 @@ export async function runCronSync(port = 8080) {
              const ov = parseFloat(sapOrder.order_value || '0');
              const cm = parseFloat(sapOrder.cubic_meters || '0');
              
-             const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destStateStr, destCityStr, destZipCodeStr, finalCarrierId);
+             const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destStateStr, destCityStr, destZipCodeStr, finalCarrierId, config);
 
              let estabCode = '0001';
              let estabPrefix = 'TGL';
@@ -417,7 +420,7 @@ export async function runCronSync(port = 8080) {
              const ov = parseFloat(sapInvoice.invoice_value || '0');
              const cm = parseFloat(sapInvoice.cubic_meters || '0');
              
-             const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, finalCarrierId);
+             const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, finalCarrierId, config);
              
              const tmsNfe = {
                 organization_id: config.organization_id,
@@ -483,7 +486,7 @@ export async function runCronSync(port = 8080) {
               const ov = parseFloat(sapInvoice.invoice_value || '0');
               const cm = parseFloat(sapInvoice.cubic_meters || '0');
               
-              const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, existingInv.carrier_id || finalCarrierId);
+              const { finalFreightValue, calculatedBestCarrier, freightResults } = await calculateSyncFreight(supabase, w, ov, cm, destState, destCity, destZipCodeStr, existingInv.carrier_id || finalCarrierId, config);
               
               if (finalFreightValue > 0) {
                  await supabase.from('invoices_nfe').update({
