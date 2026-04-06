@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug, Lock } from 'lucide-react';
 import { DeployAgent } from '../DeployAgent/DeployAgent';
 import { SyncLogsViewer } from './SyncLogsViewer';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
 import { implementationService } from '../../services/implementationService';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { freightRatesService, FreightRateTable } from '../../services/freightRatesService';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast } from '../common/Toast';
 import { useTranslation } from 'react-i18next';
@@ -37,12 +38,14 @@ const ImplementationCenter: React.FC = () => {
 
   // ERP Integration state
   const [selectedERP, setSelectedERP] = useState('');
+  const [isBplIdLocked, setIsBplIdLocked] = useState(false);
   const [erpConfig, setErpConfig] = useState({
     serviceLayerAddress: '',
     port: '',
     username: '',
     password: '',
     database: '',
+    sapBplId: '',
     cteIntegrationType: 'draft',
     cteModel: '',
     invoiceModel: '',
@@ -128,6 +131,7 @@ const ImplementationCenter: React.FC = () => {
         username: config.username || '',
         password: config.password || '',
         database: config.database || '',
+        sapBplId: config.sap_bpl_id || '',
         cteIntegrationType: config.cte_integration_type || 'draft',
         cteModel: config.cte_model || '',
         invoiceModel: config.invoice_model || '',
@@ -146,6 +150,19 @@ const ImplementationCenter: React.FC = () => {
         autoSyncEnabled: config.auto_sync_enabled || false,
         syncIntervalMinutes: config.sync_interval_minutes || 5
       });
+      
+      let query = supabase!.from('orders').select('id', { count: 'exact', head: true }).eq('organization_id', user.organization_id);
+      if (estId) {
+          query = query.eq('establishment_id', estId);
+      } else {
+          query = query.is('establishment_id', null);
+      }
+      const { count } = await query;
+      if (count && count > 0) {
+          setIsBplIdLocked(true);
+      } else {
+          setIsBplIdLocked(false);
+      }
     }
   };
 
@@ -614,6 +631,7 @@ const ImplementationCenter: React.FC = () => {
         username: erpConfig.username,
         password: erpConfig.password,
         database: erpConfig.database,
+        sap_bpl_id: erpConfig.sapBplId,
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         invoice_model: erpConfig.invoiceModel,
@@ -683,6 +701,7 @@ const ImplementationCenter: React.FC = () => {
         username: erpConfig.username,
         password: erpConfig.password,
         database: erpConfig.database,
+        sap_bpl_id: erpConfig.sapBplId,
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         invoice_model: erpConfig.invoiceModel,
@@ -984,6 +1003,29 @@ const ImplementationCenter: React.FC = () => {
                           placeholder="SBO_NOME_EMPRESA_PRD"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+                          ID da Filial SAP (BPLId) <span className="text-red-500">*</span>
+                          {isBplIdLocked && <Lock className="w-3 h-3 text-orange-500" />}
+                        </label>
+                        <input
+                          type="text"
+                          value={erpConfig.sapBplId}
+                          onChange={(e) => handleErpConfigChange('sapBplId', e.target.value)}
+                          placeholder="Ex: 1, 2, 3..."
+                          disabled={isBplIdLocked}
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isBplIdLocked ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-80' : ''}`}
+                        />
+                        {isBplIdLocked ? (
+                          <p className="mt-1 text-xs text-orange-600 dark:text-orange-400 font-semibold flex items-center gap-1">
+                            Bloqueado. Você já possui documentos desta filial importados neste painel.
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs text-red-500 font-medium">
+                            ATENÇÃO: Essencial para evitar mistura de dados. Preencha com o BPLId correto desta filial (Ex: 1). Repita o processo em cada filial no TMS.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

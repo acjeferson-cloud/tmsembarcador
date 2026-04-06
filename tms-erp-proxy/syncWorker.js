@@ -206,6 +206,7 @@ export async function runCronSync(port = 8080) {
         username: config.username,
         password: config.password,
         companyDb: config.database || config.metadata?.database,
+        sap_bpl_id: config.sap_bpl_id || null,
         lastSyncTime: config.last_sync_time || null
       };
 

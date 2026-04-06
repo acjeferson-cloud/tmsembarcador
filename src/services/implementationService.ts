@@ -16,6 +16,7 @@ interface ERPIntegrationConfig {
   cte_model: string;
   invoice_model: string;
   invoice_default_item: string;
+  sap_bpl_id?: string;
   billing_nfe_item: string;
   billing_usage: string;
   billing_control_account: string;
@@ -27,9 +28,6 @@ interface ERPIntegrationConfig {
   nfe_xml_network_address: string;
   cte_xml_network_address: string;
   fiscal_module: string;
-  auto_sync_enabled?: boolean;
-  sync_interval_minutes?: number;
-  is_active: boolean;
   auto_sync_enabled?: boolean;
   sync_interval_minutes?: number;
   last_sync_time?: string;

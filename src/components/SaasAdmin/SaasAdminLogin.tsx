@@ -16,7 +16,7 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loginStep, setLoginStep] = useState<'LOGIN' | 'MFA_SETUP' | 'MFA_CHALLENGE'>('LOGIN');
-  
+
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -68,9 +68,9 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
         <div className="max-w-md w-full mx-4">
-          <SaasAdminMfaSetup 
-            onSetupComplete={() => onLoginSuccess()} 
-            onCancel={() => setLoginStep('LOGIN')} 
+          <SaasAdminMfaSetup
+            onSetupComplete={() => onLoginSuccess()}
+            onCancel={() => setLoginStep('LOGIN')}
           />
         </div>
       </div>
@@ -81,10 +81,10 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
         <div className="max-w-md w-full mx-4">
-          <SaasAdminMfaChallenge 
+          <SaasAdminMfaChallenge
             adminEmail={email}
-            onChallengeSuccess={() => onLoginSuccess()} 
-            onCancel={() => setLoginStep('LOGIN')} 
+            onChallengeSuccess={() => onLoginSuccess()}
+            onCancel={() => setLoginStep('LOGIN')}
           />
         </div>
       </div>
@@ -164,9 +164,9 @@ export const SaasAdminLogin: React.FC<SaasAdminLoginProps> = ({ onLoginSuccess }
 
             {/* Cloudflare Turnstile */}
             <div className="flex justify-center my-4">
-              <Turnstile 
+              <Turnstile
                 ref={turnstileRef}
-                siteKey={turnstileSiteKey} 
+                siteKey={turnstileSiteKey}
                 onSuccess={(token) => setCaptchaToken(token)}
                 onError={() => setError('A validação anti-bot falhou. Tente novamente.')}
                 options={{

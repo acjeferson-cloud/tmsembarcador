@@ -48,7 +48,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </svg>
           </button>
         </div>
-        
+
         <div className="space-y-4">
           <div className="text-center mb-6">
             <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">TMS Embarcador Log Axis</h3>
@@ -56,7 +56,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               Um único sistema.<br />Todos os seus embarques!
             </p>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
               <span className="text-gray-600 dark:text-gray-400">{t('header.currentVersion')}</span>
@@ -88,7 +88,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
         </div>
-        
+
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
@@ -139,15 +139,15 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
       // Se inscrever para realtime futuramente
       const channel = supabase
         .channel('public:notifications')
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'notifications' 
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications'
         }, payload => {
           setNotifications(prev => [payload.new as AppNotification, ...prev]);
         })
         .subscribe();
-        
+
       return () => {
         supabase.removeChannel(channel);
       };
@@ -211,12 +211,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
     // Mapear tipos de busca para seções do app
     const sectionMap = {
       order: 'orders',
-      invoice: 'invoices', 
+      invoice: 'invoices',
       cte: 'ctes',
       bill: 'bills',
       pickup: 'pickups'
     };
-    
+
     const section = sectionMap[type as keyof typeof sectionMap] || type;
     onNavigate(section, id);
   };
@@ -238,13 +238,13 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
               </button>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-6">
             <GlobalSearch onNavigate={handleSearchNavigate} />
-            
+
             {/* Notifications Button */}
             <div className="relative" ref={notificationsRef}>
-              <button 
+              <button
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
                 onClick={toggleNotifications}
               >
@@ -255,22 +255,22 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
                   </span>
                 )}
               </button>
-              
+
               {/* Notifications Dropdown */}
               {isNotificationsOpen && (
-                <NotificationsDropdown 
+                <NotificationsDropdown
                   notifications={notifications}
                   onMarkAllAsRead={() => {
-                    setNotifications(prev => prev.map(n => ({...n, is_read: true})));
+                    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
                   }}
                   onMarkAsRead={(id) => {
-                    setNotifications(prev => prev.map(n => n.id === id ? {...n, is_read: true} : n));
+                    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
                   }}
                   onClear={() => setNotifications([])}
                 />
               )}
             </div>
-            
+
             {/* User Menu */}
             <div className="relative" ref={userMenuRef}>
               <button
@@ -425,9 +425,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
       <AboutModal isOpen={isAboutModalOpen} onClose={() => setIsAboutModalOpen(false)} />
 
       {/* Recent Activities Modal */}
-      <RecentActivitiesModal 
-        isOpen={isActivitiesModalOpen} 
-        onClose={() => setIsActivitiesModalOpen(false)} 
+      <RecentActivitiesModal
+        isOpen={isActivitiesModalOpen}
+        onClose={() => setIsActivitiesModalOpen(false)}
       />
 
       {/* Establishment Selection Modal */}

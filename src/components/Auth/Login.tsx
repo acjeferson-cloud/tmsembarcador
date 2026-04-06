@@ -35,7 +35,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [showPWAPrompt, setShowPWAPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
-  const languages: Array<{code: SupportedLanguage, label: string}> = [
+  const languages: Array<{ code: SupportedLanguage, label: string }> = [
     { code: 'pt', label: 'Português' },
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' }
@@ -287,9 +287,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="button"
               onClick={() => handleLanguageClick('pt')}
-              className={`group relative w-8 h-6 rounded overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 ${
-                i18n.language === 'pt' ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-              }`}
+              className={`group relative w-8 h-6 rounded overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 ${i18n.language === 'pt' ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                }`}
               title="Português"
             >
               <img src="/flag-brazil.png" alt="Brasil" className="w-full h-full object-cover" />
@@ -299,9 +298,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="button"
               onClick={() => handleLanguageClick('es')}
-              className={`group relative w-8 h-6 rounded overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 ${
-                i18n.language === 'es' ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-              }`}
+              className={`group relative w-8 h-6 rounded overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 ${i18n.language === 'es' ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                }`}
               title="Español"
             >
               <img src="/flag-spain.png" alt="España" className="w-full h-full object-cover" />
@@ -311,9 +309,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="button"
               onClick={() => handleLanguageClick('en')}
-              className={`group relative w-8 h-6 rounded overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 ${
-                i18n.language === 'en' ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-              }`}
+              className={`group relative w-8 h-6 rounded overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 hover:scale-110 ${i18n.language === 'en' ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                }`}
               title="English"
             >
               <img src="/flag-usa.png" alt="United States" className="w-full h-full object-cover" />

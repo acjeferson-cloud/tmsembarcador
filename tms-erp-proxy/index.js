@@ -93,7 +93,7 @@ app.post('/api/test-connection', async (req, res) => {
 // Endpoint 2: Fetch SAP Order
 app.post('/api/fetch-sap-order', async (req, res) => {
   try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;
+    const { endpointSystem, port, username, password, companyDb, lastSyncTime, sap_bpl_id } = req.body;
 
     if (!endpointSystem || !username || !companyDb) {
       return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
@@ -162,12 +162,16 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       let dateFilter = '';
       if (lastSyncTime) {
          const filterDate = new Date(lastSyncTime).toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = `?$filter=(CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}')`;
       } else {
          const pastDate = new Date();
          pastDate.setDate(pastDate.getDate() - 3);
          const filterDate = pastDate.toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = `?$filter=(CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}')`;
+      }
+      
+      if (sap_bpl_id) {
+         dateFilter += ` and BPL_IDAssignedToInvoice eq ${sap_bpl_id}`;
       }
       
       // Order ascending so the oldest changes are processed first
@@ -330,7 +334,7 @@ app.post('/api/fetch-sap-order', async (req, res) => {
 // Endpoint 3: Fetch SAP Invoice
 app.post('/api/fetch-sap-invoice', async (req, res) => {
   try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime } = req.body;
+    const { endpointSystem, port, username, password, companyDb, lastSyncTime, sap_bpl_id } = req.body;
 
     if (!endpointSystem || !username || !companyDb) {
       return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
@@ -399,12 +403,16 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
       let dateFilter = '';
       if (lastSyncTime) {
          const filterDate = new Date(lastSyncTime).toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = `?$filter=(CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}')`;
       } else {
          const pastDate = new Date();
          pastDate.setDate(pastDate.getDate() - 3);
          const filterDate = pastDate.toISOString().split('T')[0];
-         dateFilter = `?$filter=CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}'`;
+         dateFilter = `?$filter=(CreateDate ge '${filterDate}' or UpdateDate ge '${filterDate}')`;
+      }
+      
+      if (sap_bpl_id) {
+         dateFilter += ` and BPL_IDAssignedToInvoice eq ${sap_bpl_id}`;
       }
       
       // Invoice ascending
