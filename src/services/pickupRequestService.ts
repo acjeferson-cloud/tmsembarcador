@@ -7,6 +7,9 @@ import { establishmentsService } from './establishmentsService';
 export interface PickupRequest {
   id?: string;
   pickup_id: string;
+  organization_id?: string;
+  environment_id?: string;
+  establishment_id?: string;
   request_number: string;
   requested_at: string;
   requested_by?: string | null;
@@ -285,8 +288,21 @@ export const pickupRequestService = {
 
       // Insert logic for each pickup
       for (const pId of params.pickupIds) {
+        let tenantInfo = { org: null, env: null, est: params.establishmentId };
+        try {
+           const { data: pkData } = await (supabase as any).from('pickups').select('organization_id, environment_id, establishment_id').eq('id', pId).single();
+           if (pkData) {
+              tenantInfo.org = pkData.organization_id;
+              tenantInfo.env = pkData.environment_id;
+              tenantInfo.est = pkData.establishment_id || params.establishmentId;
+           }
+        } catch(e) {}
+
         const requestData: Partial<PickupRequest> = {
           pickup_id: pId,
+          organization_id: tenantInfo.org,
+          environment_id: tenantInfo.env,
+          establishment_id: tenantInfo.est,
           request_number: requestNumber,
           requested_at: new Date().toISOString(),
           requested_by: (typeof params.userId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.userId)) ? params.userId : null,
