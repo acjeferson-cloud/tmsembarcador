@@ -473,13 +473,15 @@ export const implementationService = {
 
   async processFreightTablesImport(
     file: File,
-    performedBy: number
+    user: any,
+    currentEstablishmentId?: string
   ): Promise<{ success: boolean; logId?: string; message: string; recordsProcessed?: number; errors?: string[] }> {
     try {
-      // Importar função de processamento do template service
       const { processFreightRatesFile } = await import('./templateService');
-      const { carriersService } = await import('./carriersService');
-      const { freightRatesService } = await import('./freightRatesService');
+      const { parseBulkFreightRates } = await import('./freightRateParser');
+      const { supabase } = await import('../lib/supabase');
+
+      const performedBy = Number(user.id) || 0;
 
       const logResult = await this.createImportLog({
         import_type: 'freight_tables',
@@ -495,223 +497,122 @@ export const implementationService = {
         return { success: false, message: 'Erro ao criar log de importação' };
       }
 
-      // Processar arquivo Excel
-      const { tabelas, tarifas, faixas } = await processFreightRatesFile(file);
+      const flatData = await processFreightRatesFile(file);
 
+      const tenantContext = {
+        organization_id: user.organization_id,
+        environment_id: user.environment_id,
+        establishment_id: currentEstablishmentId || user.establishment_id,
+        created_by: String(user.id)
+      };
+
+      const parseInfo = await parseBulkFreightRates(flatData, tenantContext);
+
+      if (!parseInfo.success || parseInfo.errors.length > 0) {
+        await this.updateImportLog(logResult.id, {
+          records_processed: flatData.length,
+          records_error: flatData.length,
+          status: 'failed',
+          errors: parseInfo.errors
+        });
+        return { success: false, message: 'Erro estrutural na planilha', errors: parseInfo.errors, recordsProcessed: flatData.length };
+      }
+
+      // Tudo certo com o parsing, hora do Bulk Insert via Transaction ou individual bulk insert
       let recordsSuccess = 0;
-      let recordsError = 0;
-      const errors: string[] = [];
+      let tablesCount = 0;
+      let ratesCount = 0;
+      let detailsCount = 0;
+      const errors = [];
 
-      // Mapear transportadores por código
-      const transportadoresMap = new Map<string, string>();
+      try {
+        if (parseInfo.tables && parseInfo.tables.length > 0) {
+          const { error: tablesError, data: createdTables } = await supabase.from('freight_rate_tables').insert(parseInfo.tables).select();
+          if (tablesError) throw tablesError;
+          tablesCount = createdTables?.length || 0;
+          
+          // Re-mapear rate._tableKey pro novo ID
+          if (parseInfo.rates && parseInfo.rates.length > 0 && createdTables) {
+            parseInfo.rates.forEach(rate => {
+              // _tableKey was table_name + carrier_id
+              const tableMatch = createdTables.find(t => t.nome === (rate as any)._tableKey.split('_')[0] && t.transportador_id === (rate as any)._tableKey.split('_')[1]);
+              if (tableMatch) rate.freight_rate_table_id = tableMatch.id;
+              delete (rate as any)._tableKey;
+            });
+            
+            // Clean up missing foreign keys just in case
+            const validRates = parseInfo.rates.filter(r => r.freight_rate_table_id);
+            const { error: ratesError, data: createdRates } = await supabase.from('freight_rates').insert(validRates).select();
+            if (ratesError) throw ratesError;
+            ratesCount = createdRates?.length || 0;
 
-      // Mapear tabelas criadas por nome e transportador
-      const tabelasMap = new Map<string, string>();
-
-      // Mapear tarifas criadas por código, tabela e transportador
-      const tarifasMap = new Map<string, string>();
-
-      // ETAPA 1: Processar Tabelas
-
-      for (let i = 0; i < tabelas.length; i++) {
-        const row = tabelas[i];
-        const lineNumber = i + 2;
-
-        try {
-          if (!row.transportador_codigo || !row.tabela_nome || !row.data_inicio || !row.data_fim || !row.status) {
-            throw new Error('Campos obrigatórios não preenchidos');
-          }
-
-          // Buscar transportador
-          let transportadorId = transportadoresMap.get(row.transportador_codigo);
-          if (!transportadorId) {
-            const carrier = await carriersService.getByCode(row.transportador_codigo);
-            if (!carrier) {
-              throw new Error(`Transportadora ${row.transportador_codigo} não encontrada`);
+            if (parseInfo.details && parseInfo.details.length > 0 && createdRates) {
+               parseInfo.details.forEach(detail => {
+                  const rateMatch = createdRates.find(r => (detail as any)._rateKey.includes(r.codigo) && (detail as any)._rateKey.includes((r as any)._origem || ''));
+                  if (rateMatch) detail.freight_rate_id = rateMatch.id;
+                  delete (detail as any)._rateKey;
+               });
+               const validDetails = parseInfo.details.filter(d => d.freight_rate_id);
+               const { error: detailsError } = await supabase.from('freight_rate_details').insert(validDetails);
+               if (detailsError) throw detailsError;
+               detailsCount = validDetails.length;
             }
-            transportadorId = carrier.id;
-            transportadoresMap.set(row.transportador_codigo, transportadorId);
+
+            // We must insert freight_rate_cities!
+            if (createdRates) {
+               const rateCities = [];
+               for (const r of createdRates) {
+                  if ((r as any)._destino_cidade) {
+                     // Busca a cidade no banco
+                     const { data: dbCity } = await supabase.from('cities').select('id').ilike('nome', (r as any)._destino_cidade).limit(1).single();
+                     if (dbCity) {
+                       rateCities.push({
+                         freight_rate_id: r.id,
+                         freight_rate_table_id: r.freight_rate_table_id,
+                         city_id: dbCity.id,
+                         delivery_days: r.prazo_entrega
+                       });
+                     }
+                  }
+               }
+               if (rateCities.length > 0) {
+                 await supabase.from('freight_rate_cities').insert(rateCities);
+               }
+            }
           }
-
-          // Criar tabela
-          const tabelaToCreate = {
-            nome: row.tabela_nome,
-            transportador_id: transportadorId,
-            data_inicio: row.data_inicio,
-            data_fim: row.data_fim,
-            status: row.status.toLowerCase() === 'ativo' ? 'ativo' : 'inativo',
-            created_by: performedBy.toString(),
-            updated_by: performedBy.toString()
-          };
-
-          const tabelaResult = await freightRatesService.createTable(tabelaToCreate as any);
-          const tabelaKey = `${row.transportador_codigo}|${row.tabela_nome}`;
-          tabelasMap.set(tabelaKey, tabelaResult.id);
-
-          recordsSuccess++;
-
-
-        } catch (error) {
-          recordsError++;
-          const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-          errors.push(`Tabela linha ${lineNumber}: ${errorMessage}`);
-
         }
+        
+        recordsSuccess = flatData.length;
+
+        // Cleanup injected proxy properties
+        // The ones with _ will be ignored by supabase if they aren't part of schema, but we deleted them anyway.
+
+      } catch (insertError: any) {
+        errors.push("Falha de persistência no Banco: " + insertError.message);
       }
-
-      // ETAPA 2: Processar Tarifas
-
-      for (let i = 0; i < tarifas.length; i++) {
-        const row = tarifas[i];
-        const lineNumber = i + 2;
-
-        try {
-          if (!row.transportador_codigo || !row.tabela_nome || !row.codigo || !row.descricao || !row.tipo_aplicacao) {
-            throw new Error('Campos obrigatórios não preenchidos');
-          }
-
-          // Buscar tabela
-          const tabelaKey = `${row.transportador_codigo}|${row.tabela_nome}`;
-          const tabelaId = tabelasMap.get(tabelaKey);
-          if (!tabelaId) {
-            throw new Error(`Tabela ${row.tabela_nome} não encontrada para transportadora ${row.transportador_codigo}`);
-          }
-
-          // Criar tarifa
-          const tarifaToCreate = {
-            freight_rate_table_id: tabelaId,
-            codigo: row.codigo,
-            descricao: row.descricao,
-            tipo_aplicacao: row.tipo_aplicacao,
-            prazo_entrega: row.prazo_entrega || 0,
-            valor: 0,
-            pedagio_minimo: row.pedagio_minimo || 0,
-            pedagio_por_kg: row.pedagio_por_kg || 0,
-            pedagio_a_cada_kg: row.pedagio_a_cada_kg || 0,
-            pedagio_tipo_kg: row.pedagio_tipo_kg || null,
-            icms_embutido_tabela: row.icms_embutido_tabela || null,
-            aliquota_icms: row.aliquota_icms || 0,
-            fator_m3: row.fator_m3 || 0,
-            fator_m3_apartir_kg: row.fator_m3_apartir_kg || 0,
-            fator_m3_apartir_m3: row.fator_m3_apartir_m3 || 0,
-            fator_m3_apartir_valor: row.fator_m3_apartir_valor || 0,
-            percentual_gris: row.percentual_gris || 0,
-            gris_minimo: row.gris_minimo || 0,
-            seccat: row.seccat || 0,
-            despacho: row.despacho || 0,
-            itr: row.itr || 0,
-            taxa_adicional: row.taxa_adicional || 0,
-            coleta_entrega: row.coleta_entrega || 0,
-            tde_trt: row.tde_trt || 0,
-            tas: row.tas || 0,
-            taxa_suframa: row.taxa_suframa || 0,
-            valor_outros_percent: row.valor_outros_percent || 0,
-            valor_outros_minimo: row.valor_outros_minimo || 0,
-            taxa_outros_valor: row.taxa_outros_valor || 0,
-            taxa_outros_tipo_valor: row.taxa_outros_tipo_valor || null,
-            taxa_apartir_de: row.taxa_apartir_de || 0,
-            taxa_apartir_de_tipo: row.taxa_apartir_de_tipo || null,
-            taxa_outros_a_cada: row.taxa_outros_a_cada || 0,
-            taxa_outros_minima: row.taxa_outros_minima || 0,
-            frete_peso_minimo: row.frete_peso_minimo || 0,
-            frete_valor_minimo: row.frete_valor_minimo || 0,
-            frete_tonelada_minima: row.frete_tonelada_minima || 0,
-            frete_percentual_minimo: row.frete_percentual_minimo || 0,
-            frete_m3_minimo: row.frete_m3_minimo || 0,
-            valor_total_minimo: row.valor_total_minimo || 0,
-            observacoes: row.observacoes || null
-          };
-
-          const tarifaResult = await freightRatesService.createRate(tarifaToCreate as any);
-          const tarifaKey = `${row.transportador_codigo}|${row.tabela_nome}|${row.codigo}`;
-          tarifasMap.set(tarifaKey, tarifaResult.id);
-
-          recordsSuccess++;
-
-
-        } catch (error) {
-          recordsError++;
-          const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-          errors.push(`Tarifa linha ${lineNumber}: ${errorMessage}`);
-
-        }
-      }
-
-      // ETAPA 3: Processar Faixas
-
-      for (let i = 0; i < faixas.length; i++) {
-        const row = faixas[i];
-        const lineNumber = i + 2;
-
-        try {
-          if (!row.transportador_codigo || !row.tabela_nome || !row.tarifa_codigo ||
-              row.ordem === undefined || row.peso_ate === undefined || row.valor_faixa === undefined) {
-            throw new Error('Campos obrigatórios não preenchidos');
-          }
-
-          // Buscar tarifa
-          const tarifaKey = `${row.transportador_codigo}|${row.tabela_nome}|${row.tarifa_codigo}`;
-          const tarifaId = tarifasMap.get(tarifaKey);
-          if (!tarifaId) {
-            throw new Error(`Tarifa ${row.tarifa_codigo} não encontrada para tabela ${row.tabela_nome}`);
-          }
-
-          // Criar faixa
-          const faixaToCreate = {
-            freight_rate_id: tarifaId,
-            ordem: row.ordem,
-            peso_ate: row.peso_ate,
-            m3_ate: row.m3_ate || 0,
-            volume_ate: row.volume_ate || 0,
-            valor_ate: row.valor_ate || 0,
-            valor_faixa: row.valor_faixa,
-            tipo_calculo: row.tipo_calculo || 'normal',
-            tipo_frete: row.tipo_frete || 'normal',
-            frete_valor: row.frete_valor || 0,
-            frete_minimo: row.frete_minimo || 0,
-            tipo_taxa: row.tipo_taxa || 'com_taxas',
-            taxa_minima: row.taxa_minima || 0
-          };
-
-          await freightRatesService.createRateDetail(faixaToCreate as any);
-          recordsSuccess++;
-
-
-        } catch (error) {
-          recordsError++;
-          const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-          errors.push(`Faixa linha ${lineNumber}: ${errorMessage}`);
-
-        }
-      }
-
-      const recordsProcessed = tabelas.length + tarifas.length + faixas.length;
 
       await this.updateImportLog(logResult.id, {
-        records_processed: recordsProcessed,
+        records_processed: flatData.length,
         records_success: recordsSuccess,
-        records_error: recordsError,
-        status: recordsError > 0 ? 'completed' : 'completed',
+        records_error: errors.length > 0 ? Object.keys(flatData).length : 0,
+        status: errors.length > 0 ? 'failed' : 'completed',
         errors: errors,
         summary: {
-          tabelas: tabelas.length,
-          tarifas: tarifas.length,
-          faixas: faixas.length,
-          tabelas_criadas: tabelasMap.size,
-          tarifas_criadas: tarifasMap.size
+           tabelas_importadas: tablesCount,
+           tarifas_geradas: ratesCount,
+           faixas_processadas: detailsCount,
         }
       });
 
       return {
-        success: true,
+        success: errors.length === 0,
         logId: logResult.id,
-        message: `Importação concluída. ${tabelasMap.size} tabelas, ${tarifasMap.size} tarifas e ${recordsSuccess - tabelasMap.size - tarifasMap.size} faixas criadas.`,
-        recordsProcessed,
-        errors: recordsError > 0 ? errors : undefined
+        message: errors.length === 0 ? `Importação efetuada. Tabelas: ${tablesCount}, Rotas: ${ratesCount}, Faixas: ${detailsCount}.` : 'Falha na persistência',
+        recordsProcessed: flatData.length,
+        errors: errors.length > 0 ? errors : undefined
       };
-    } catch (error) {
-
-      return { success: false, message: 'Erro ao processar arquivo: ' + (error as Error).message };
+    } catch (error: any) {
+      return { success: false, message: 'Erro interno ao processar: ' + error.message };
     }
   },
 

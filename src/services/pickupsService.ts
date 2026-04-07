@@ -271,7 +271,11 @@ export const pickupsService = {
       const multipleCarriers = carrierGroups.length > 1;
 
       // Calculate pickupNumber iteratively
-      const { data: lastPickup } = await (supabase as any).from('pickups').select('numero_coleta').order('created_at', { ascending: false }).limit(1);
+      let query = (supabase as any).from('pickups').select('numero_coleta');
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (establishmentId) query = query.eq('establishment_id', establishmentId);
+      const { data: lastPickup } = await query.order('created_at', { ascending: false }).limit(1);
       let nextNum = 1;
       if (lastPickup && lastPickup.length > 0 && lastPickup[0].numero_coleta) {
         const match = lastPickup[0].numero_coleta.match(/COL-(\d+)/);
@@ -435,7 +439,11 @@ export const pickupsService = {
       const multipleCarriers = carrierGroups.length > 1;
 
       // Calculate pickupNumber iteratively
-      const { data: lastPickup } = await (supabase as any).from('pickups').select('numero_coleta').order('created_at', { ascending: false }).limit(1);
+      let query = (supabase as any).from('pickups').select('numero_coleta');
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (establishmentId) query = query.eq('establishment_id', establishmentId);
+      const { data: lastPickup } = await query.order('created_at', { ascending: false }).limit(1);
       let nextNum = 1;
       if (lastPickup && lastPickup.length > 0 && lastPickup[0].numero_coleta) {
         const match = lastPickup[0].numero_coleta.match(/COL-(\d+)/);

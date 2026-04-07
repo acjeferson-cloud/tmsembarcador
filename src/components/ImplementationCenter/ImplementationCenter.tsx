@@ -181,7 +181,7 @@ const ImplementationCenter: React.FC = () => {
           result = await implementationService.processCarriersImport(file, user.id);
           break;
         case 'freight':
-          result = await implementationService.processFreightTablesImport(file, user.id);
+          result = await implementationService.processFreightTablesImport(file, user, currentEstablishment?.id);
           break;
         case 'cities':
           result = await implementationService.processCitiesImport(file, user.id);
