@@ -57,23 +57,44 @@ export const CopyFreightTableModal: React.FC<CopyFreightTableModalProps> = ({
 
   const loadData = async () => {
     try {
-      // Carregar tabelas de frete
-      const { data: tables, error: tablesError } = await supabase
+      const { TenantContextHelper } = await import('../../utils/tenantContext');
+      const ctx = await TenantContextHelper.getCurrentContext();
+
+      let tablesQuery = supabase
         .from('freight_rate_tables')
         .select('id, nome, transportador_id, data_inicio, data_fim')
         .eq('status', 'ativo')
         .order('nome');
 
+      if (ctx?.organizationId) {
+        tablesQuery = tablesQuery.eq('organization_id', ctx.organizationId);
+      }
+      if (ctx?.environmentId) {
+        tablesQuery = tablesQuery.eq('environment_id', ctx.environmentId);
+      }
+
+      // Carregar tabelas de frete
+      const { data: tables, error: tablesError } = await tablesQuery;
+
       if (tablesError) throw tablesError;
 
-      // Buscar transportadores separadamente
-      const carrierIds = [...new Set(tables?.map(t => t.transportador_id) || [])];
-      const { data: tableCarriers } = await supabase
+      // Carregar transportadores com filtros de tenant
+      let carrierQuery = supabase
         .from('carriers')
-        .select('id, nome_fantasia')
-        .in('id', carrierIds);
+        .select('id, nome_fantasia, codigo')
+        .order('nome_fantasia');
 
-      const carrierMap = new Map(tableCarriers?.map(c => [c.id, c.nome_fantasia]) || []);
+      if (ctx?.organizationId) {
+        carrierQuery = carrierQuery.eq('organization_id', ctx.organizationId);
+      }
+      if (ctx?.environmentId) {
+        carrierQuery = carrierQuery.eq('environment_id', ctx.environmentId);
+      }
+
+      const { data: carriersData, error: carriersError } = await carrierQuery;
+      if (carriersError) throw carriersError;
+
+      const carrierMap = new Map(carriersData?.map(c => [c.id, c.nome_fantasia]) || []);
 
       const formattedTables = (tables || []).map(t => ({
         id: t.id,
@@ -85,14 +106,6 @@ export const CopyFreightTableModal: React.FC<CopyFreightTableModalProps> = ({
       }));
 
       setFreightTables(formattedTables);
-
-      // Carregar transportadores
-      const { data: carriersData, error: carriersError } = await supabase
-        .from('carriers')
-        .select('id, nome_fantasia, codigo')
-        .order('nome_fantasia');
-
-      if (carriersError) throw carriersError;
       setCarriers(carriersData || []);
     } catch (error) {
 

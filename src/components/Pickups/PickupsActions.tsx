@@ -22,9 +22,9 @@ export const PickupsActions: React.FC<PickupsActionsProps> = ({ selectedCount, o
 
         <button
           onClick={() => onAction('solicitar-coleta')}
-          disabled={selectedCount !== 1 || isLoading}
+          disabled={selectedCount === 0 || isLoading}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm font-medium"
-          title={selectedCount !== 1 ? t('pickups.actions.selectJustOne') : t('pickups.actions.requestPickupTooltip')}
+          title={t('pickups.actions.requestPickupTooltip')}
         >
           <Send size={18} />
           <span>{t('pickups.actions.requestPickupBtn')}</span>

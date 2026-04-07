@@ -147,12 +147,26 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
     try {
       if (action === 'solicitar-coleta') {
-        let successCount = 0;
+        let successGroupsCount = 0;
         let errorMessages: string[] = [];
+        
+        const groups: Record<string, any[]> = {};
+        
         for (const pickupId of selectedPickups) {
           const data = await pickupsService.getById(pickupId);
-          if (data && data.carrier_email) {
-            const fullPickup = {
+          if (data) {
+            const carrierKey = data.carrier_id || 'manual';
+            if (!groups[carrierKey]) groups[carrierKey] = [];
+            groups[carrierKey].push(data);
+          }
+        }
+
+        for (const carrierKey in groups) {
+          const groupData = groups[carrierKey];
+          const hasEmail = groupData[0].carrier_email;
+          
+          if (hasEmail) {
+             const fullPickups = groupData.map(data => ({
                ...data,
                numeroColeta: data.pickup_number || data.id,
                dataCriacao: data.created_at,
@@ -165,49 +179,43 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
                quantidadeNotas: data.packages_quantity || 0,
                total_weight: data.total_weight || 0,
                total_volume: data.total_volume || 0
-            };
-            
-            const pdfBase64 = pickupPdfService.generatePickupPDF([fullPickup], 'base64' as any);
-            
-            const res = await pickupRequestService.requestPickup({
-              pickupId: pickupId,
-              notificationMethod: 'email',
-              carrierEmail: data.carrier_email || '',
-              carrierPhone: '',
-              userId: user?.id || null,
-              userName: user?.name || 'Sistema',
-              pdfBase64: pdfBase64,
-              establishmentId: data.establishment_id || ''
-            });
-            
-            if (res.success) {
-              const statusRes = await pickupsService.updateStatus(pickupId, 'solicitada');
-              if (statusRes.success) {
-                successCount++;
-              } else {
-                errorMessages.push(`Coleta ${data.pickup_number}: E-mail enviado, mas falha ao atualizar status.`);
-              }
-            } else {
-              errorMessages.push(res.error || `Erro desconhecido na coleta ${data.pickup_number}`);
-            }
-          } else if (data && !data.carrier_email) {
-             // If no email, just update status
-             const res = await pickupsService.updateStatus(pickupId, 'solicitada');
+             }));
+
+             const pdfBase64 = pickupPdfService.generatePickupPDF(fullPickups, 'base64' as any);
+             
+             const res = await pickupRequestService.requestPickup({
+               pickupIds: groupData.map(p => p.id),
+               notificationMethod: 'email',
+               carrierEmail: groupData[0].carrier_email || '',
+               carrierPhone: '',
+               userId: user?.id || null,
+               userName: user?.name || 'Sistema',
+               pdfBase64: pdfBase64,
+               establishmentId: groupData[0].establishment_id || ''
+             });
+
              if (res.success) {
-               successCount++;
+               successGroupsCount += groupData.length;
              } else {
-               errorMessages.push(`Coleta ${data.pickup_number}: Transportador sem e-mail.`);
+               errorMessages.push(`Erro na transportadora ${groupData[0].carrier_name}: ${res.error}`);
+             }
+          } else {
+             // If no email, just update status
+             for (const p of groupData) {
+               const res = await pickupsService.updateStatus(p.id, 'solicitada');
+               if (res.success) successGroupsCount++;
              }
           }
         }
-        if (successCount > 0) {
+        
+        if (successGroupsCount > 0) {
           setToast({ 
-            message: `Coleta(s) solicitada(s) ao transportador com sucesso!${errorMessages.length > 0 ? '\n\nAlguns erros ocorreram:\n' + errorMessages.join('\n') : ''}`, 
+            message: `${successGroupsCount} coleta(s) solicitada(s) / agrupada(s) com sucesso ao transportador!${errorMessages.length > 0 ? '\n\nAlguns erros ocorreram:\n' + errorMessages.join('\n') : ''}`, 
             type: errorMessages.length > 0 ? 'warning' : 'success' 
           });
           await refreshData();
         } else {
-          setToast({ message: `Falha ao solicitar coleta(s).\n\n${errorMessages.join('\n')}`, type: 'error' });
+          setToast({ message: `Falha ao processar solicitação de coleta(s).\n\n${errorMessages.join('\n')}`, type: 'error' });
         }
       } else if (action === 'cancelar') {
         setConfirmDialog({

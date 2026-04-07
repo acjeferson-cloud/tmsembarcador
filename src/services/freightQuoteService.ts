@@ -36,6 +36,7 @@ export interface QuoteResult {
   percentageAboveLowest?: number;
   npsInterno?: number;
   freightRateTableId?: string;
+  tableName?: string;
   freightRate?: any;
 }
 
@@ -274,6 +275,21 @@ export const freightQuoteService = {
 
     const results: QuoteResult[] = [];
 
+    // Fetch table names in bulk
+    const validTableIds = filteredRatesData.map((r: any) => r.freight_rate_table_id).filter(Boolean);
+    const tableNamesMap: Record<string, string> = {};
+    if (validTableIds.length > 0) {
+      const uniqueTableIds = [...new Set(validTableIds)];
+      const { data: tablesInfo } = await supabase
+        .from('freight_rate_tables')
+        .select('id, nome')
+        .in('id', uniqueTableIds);
+        
+      if (tablesInfo) {
+        tablesInfo.forEach(t => tableNamesMap[t.id] = t.nome);
+      }
+    }
+
     // Processar todas as tarifas em paralelo
     const calculationPromises = filteredRatesData.map(async (rateData: any) => {
       try {
@@ -328,6 +344,7 @@ export const freightQuoteService = {
           deliveryDeadline: deliveryDeadline,
           npsInterno: rateData.carrier_nps_interno || undefined,
           freightRateTableId: rateData.freight_rate_table_id,
+          tableName: rateData.freight_rate_table_id ? tableNamesMap[rateData.freight_rate_table_id] : undefined,
           freightRate: tariff
         };
       } catch (error) {

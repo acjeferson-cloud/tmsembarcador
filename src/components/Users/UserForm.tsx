@@ -953,9 +953,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                   value={formData.perfil}
                   onChange={handleInputChange}
                   required
-                  disabled={isProtectedUser}
+                  disabled={isProtectedUser || currentUser?.perfil?.toLowerCase() !== 'administrador'}
                   className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    isProtectedUser ? 'bg-gray-100' : ''
+                    (isProtectedUser || currentUser?.perfil?.toLowerCase() !== 'administrador') ? 'bg-gray-100 cursor-not-allowed' : ''
                   }`}
                 >
                   <option value="administrador">{t('users.roles.admin')}</option>

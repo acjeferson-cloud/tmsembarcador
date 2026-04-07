@@ -104,6 +104,11 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                           {t('freightQuote.results.lowestPrice')}
                         </p>
                       )}
+                      {(result.tableName || result.freightRate?.name || result.freightRate?.description) && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          ↳ Tabela: {result.tableName || result.freightRate?.name || result.freightRate?.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </td>

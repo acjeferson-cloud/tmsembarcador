@@ -24,7 +24,7 @@ export interface PickupRequest {
 }
 
 interface RequestPickupParams {
-  pickupId: string;
+  pickupIds: string[];
   notificationMethod: 'email' | 'whatsapp' | 'both';
   carrierEmail?: string;
   carrierPhone?: string;
@@ -66,9 +66,15 @@ interface RomaneioData {
 }
 
 export const pickupRequestService = {
-  async generateRomaneio(pickupId: string): Promise<{ success: boolean; pdfBase64?: string; romaneioData?: RomaneioData; error?: string }> {
+  async generateRomaneio(pickupIds: string[]): Promise<{ success: boolean; pdfBase64?: string; romaneioData?: RomaneioData; error?: string }> {
     try {
-      const pickup = await pickupsService.getById(pickupId);
+      if (!pickupIds || pickupIds.length === 0) {
+        return { success: false, error: 'Lista de coletas inválida' };
+      }
+
+      // We'll use the first pickup as base for contact and address info, 
+      // since grouped pickups belong to the same branch/carrier.
+      const pickup = await pickupsService.getById(pickupIds[0]);
 
       if (!pickup) {
         return { success: false, error: 'Coleta não encontrada' };
@@ -81,9 +87,24 @@ export const pickupRequestService = {
         establishment = await establishmentsService.getById(pickup.establishment_id);
       }
 
-      const rawInvoicesData = await pickupsService.getPickupInvoices(pickupId);
+      let allRawInvoices: any[] = [];
+      let manualTotals = { volumes: 0, cubic: 0, weight: 0 };
+      let accumulatedPickupNumbers: string[] = [];
 
-      const invoices = rawInvoicesData.map((item: any) => {
+      for (const pId of pickupIds) {
+        const pData = await pickupsService.getById(pId);
+        if (pData) {
+          accumulatedPickupNumbers.push(pData.pickup_number || '-');
+          manualTotals.volumes += (pData.packages_quantity || 0);
+          manualTotals.cubic += (pData.total_volume || 0);
+          manualTotals.weight += (pData.total_weight || 0);
+        }
+        
+        const rawInvoicesData = await pickupsService.getPickupInvoices(pId);
+        allRawInvoices = allRawInvoices.concat(rawInvoicesData);
+      }
+
+      const invoices = allRawInvoices.map((item: any) => {
         const inv = item.invoices_nfe || item.invoices;
         if (!inv) return null;
 
@@ -105,10 +126,10 @@ export const pickupRequestService = {
 
       const totals = {
         totalInvoices: invoices.length,
-        totalVolumes: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.quantidade_volumes || 0), 0) : (pickup.packages_quantity || 0),
-        totalCubicMeters: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.metros_cubicos || 0), 0) : (pickup.total_volume || 0), // Use total_volume mapping for manual pick-ups
-        totalWeight: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.peso || 0), 0) : (pickup.total_weight || 0),
-        totalValue: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.valor_total || 0), 0) : 0 // Valor_total is not stored on manual pickup creation fallback directly, keep 0 or calculate
+        totalVolumes: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.quantidade_volumes || 0), 0) : manualTotals.volumes,
+        totalCubicMeters: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.metros_cubicos || 0), 0) : manualTotals.cubic,
+        totalWeight: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.peso || 0), 0) : manualTotals.weight,
+        totalValue: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + (inv.valor_total || 0), 0) : 0
       };
 
       // Since the request asks to use establishment data for address and contact:
@@ -120,7 +141,7 @@ export const pickupRequestService = {
       const contactPhone = establishment ? (establishment.telefone || pickup.contact_phone || '-') : (pickup.contact_phone || '-');
 
       const romaneioData: RomaneioData = {
-        pickupNumber: pickup.pickup_number || '-',
+        pickupNumber: accumulatedPickupNumbers.join(', '),
         carrierName: pickup.carrier_name || '-',
         pickupAddress: address,
         pickupCity: city,
@@ -249,59 +270,69 @@ export const pickupRequestService = {
     return doc.output('datauristring').split(',')[1];
   },
 
-  async requestPickup(params: RequestPickupParams): Promise<{ success: boolean; requestId?: string; error?: string }> {
+  async requestPickup(params: RequestPickupParams): Promise<{ success: boolean; requestIds?: string[]; error?: string }> {
     try {
       if (!params.pdfBase64) {
         return { success: false, error: 'PDF da coleta é obrigatório' };
       }
 
       const requestNumber = `REQ-${Date.now()}`;
-
-      const requestData: Partial<PickupRequest> = {
-        pickup_id: params.pickupId,
-        request_number: requestNumber,
-        requested_at: new Date().toISOString(),
-        requested_by: (typeof params.userId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.userId)) ? params.userId : null,
-        requested_by_name: params.userName,
-        notification_method: params.notificationMethod,
-        carrier_email: params.carrierEmail,
-        carrier_phone: params.carrierPhone,
-        email_sent: false,
-        whatsapp_sent: false,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { data: request, error: requestError } = await supabase
-        .from('pickup_requests')
-        .insert(requestData)
-        .select()
-        .single();
-
-      if (requestError || !request) {
-
-        return { success: false, error: `Erro ao criar solicitação na base: ${requestError?.message || 'Motivo desconhecido'}` };
-      }
-
-      await supabase
-        .from('pickups')
-        .update({
-          status: 'solicitada',
-          requested_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', params.pickupId);
+      const generatedRequests: string[] = [];
 
       let emailSent = false;
       let whatsappSent = false;
       let finalStatus: 'sent' | 'failed' | 'pending' = 'failed';
 
+      // Insert logic for each pickup
+      for (const pId of params.pickupIds) {
+        const requestData: Partial<PickupRequest> = {
+          pickup_id: pId,
+          request_number: requestNumber,
+          requested_at: new Date().toISOString(),
+          requested_by: (typeof params.userId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.userId)) ? params.userId : null,
+          requested_by_name: params.userName,
+          notification_method: params.notificationMethod,
+          carrier_email: params.carrierEmail,
+          carrier_phone: params.carrierPhone,
+          email_sent: false,
+          whatsapp_sent: false,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const { data: request, error: requestError } = await (supabase as any)
+          .from('pickup_requests')
+          .insert(requestData)
+          .select()
+          .single();
+
+        if (requestError || !request) {
+           console.error(`Falha ao registrar log log para coleta ${pId}`, requestError);
+           continue; 
+        }
+
+        generatedRequests.push(request.id);
+
+        await (supabase as any)
+          .from('pickups')
+          .update({
+            status: 'solicitada',
+            requested_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', pId);
+      }
+
+      if (generatedRequests.length === 0) {
+        return { success: false, error: 'Falha ao processar inserções no banco.' };
+      }
+
       if ((params.notificationMethod === 'email' || params.notificationMethod === 'both') && params.carrierEmail) {
         try {
           const config = await emailOutgoingConfigService.getActiveConfig(params.establishmentId);
           if (config) {
-            const { romaneioData, pdfBase64: internalPdf } = await this.generateRomaneio(params.pickupId);
+            const { romaneioData, pdfBase64: internalPdf } = await this.generateRomaneio(params.pickupIds);
 
             let rawBase64Content = '';
             if (internalPdf) {
@@ -313,44 +344,89 @@ export const pickupRequestService = {
                  : params.pdfBase64.replace(/^data:.*?,/, '');
             }
 
+            const establishmentObj: any = await establishmentsService.getById(params.establishmentId);
+            const logoUrl = establishmentObj?.logo_claro_url || 'https://raw.githubusercontent.com/acjeferson-cloud/tmsembarcador/main/public/logo-logaxis.png';
+            const signName = establishmentObj?.fantasia || establishmentObj?.razao_social || 'Sua Empresa';
+
             let htmlBody = `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; text-align: left;">
-                <h2 style="color: #2563eb;">Nova Solicitação de Coleta</h2>
-                <p>Olá,</p>
-                <p>Você possui uma nova solicitação de coleta registrada no sistema TMS.</p>
+              <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #333; text-align: center; background-color: #ffffff;">
+                <div style="margin-bottom: 30px; padding-top: 20px;">
+                  <img src="${logoUrl}" alt="Logo" style="max-height: 80px; max-width: 250px; display: block; margin: 0 auto;" />
+                </div>
+                <h2 style="color: #2563eb; font-size: 22px; margin-bottom: 20px;">Solicitação de Coleta</h2>
+                <p style="text-align: left; font-size: 14px; line-height: 1.6;">Olá,</p>
+                <p style="text-align: left; font-size: 14px; line-height: 1.6;">Você possui uma nova solicitação de coleta registrada no sistema para ser realizada. Abaixo estão os detalhes completos da carga e do local de coleta:</p>
             `;
 
             if (romaneioData) {
               const scheduledDateStr = romaneioData.scheduledDate ? new Date(romaneioData.scheduledDate).toLocaleDateString('pt-BR') : '-';
               
+              let invoiceHtmlRows = '';
+              romaneioData.invoices.forEach((inv: any) => {
+                 invoiceHtmlRows += `
+                   <tr style="border-bottom: 1px solid #e5e7eb;">
+                     <td style="padding: 8px; text-align: left; color: #374151;">${inv.serie || '-'}/${inv.numero_nota || '-'}</td>
+                     <td style="padding: 8px; text-align: center; color: #374151;">${inv.quantidade_volumes || 1}</td>
+                     <td style="padding: 8px; text-align: right; color: #374151;">${Number(inv.peso || 0).toFixed(2)} kg</td>
+                     <td style="padding: 8px; text-align: right; color: #374151;">${Number(inv.metros_cubicos || 0).toFixed(3)} m³</td>
+                     <td style="padding: 8px; text-align: right; color: #374151;">R$ ${Number(inv.valor_total || 0).toFixed(2)}</td>
+                   </tr>
+                 `;
+              });
+
               htmlBody += `
-                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <h3 style="margin-top: 0; color: #1f2937;">Detalhes da Coleta</h3>
-                  <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="margin-bottom: 8px;"><strong>Número:</strong> ${romaneioData.pickupNumber}</li>
-                    <li style="margin-bottom: 8px;"><strong>Endereço:</strong> ${romaneioData.pickupAddress}</li>
-                    <li style="margin-bottom: 8px;"><strong>Cidade/UF:</strong> ${romaneioData.pickupCity}/${romaneioData.pickupState} - CEP: ${romaneioData.pickupZip}</li>
-                    <li style="margin-bottom: 8px;"><strong>Contato Local:</strong> ${romaneioData.contactName} (${romaneioData.contactPhone})</li>
-                    <li style="margin-bottom: 8px;"><strong>Data Agendada:</strong> ${scheduledDateStr}</li>
-                  </ul>
+                <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: left;">
+                  <h3 style="margin-top: 0; margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Detalhes da Coleta</h3>
+                  <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #374151;">
+                    <tr><td style="padding: 4px 0;"><strong>Número/Romaneio:</strong> ${romaneioData.pickupNumber}</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>Endereço:</strong> ${romaneioData.pickupAddress}</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>Cidade/UF:</strong> ${romaneioData.pickupCity}/${romaneioData.pickupState} - CEP: ${romaneioData.pickupZip}</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>Contato Local:</strong> ${romaneioData.contactName} (${romaneioData.contactPhone})</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>Data Agendada:</strong> ${scheduledDateStr}</td></tr>
+                  </table>
                 </div>
 
-                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <h3 style="margin-top: 0; color: #1f2937;">Resumo da Carga</h3>
-                  <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="margin-bottom: 8px;"><strong>Qtd. Notas Fiscais:</strong> ${romaneioData.totals.totalInvoices}</li>
-                    <li style="margin-bottom: 8px;"><strong>Total Volumes:</strong> ${romaneioData.totals.totalVolumes}</li>
-                    <li style="margin-bottom: 8px;"><strong>Peso Total:</strong> ${romaneioData.totals.totalWeight.toFixed(2)} kg</li>
-                    <li style="margin-bottom: 8px;"><strong>Metros Cúbicos:</strong> ${romaneioData.totals.totalCubicMeters.toFixed(3)} m³</li>
-                    <li style="margin-bottom: 0;"><strong>Valor Total da Carga:</strong> R$ ${romaneioData.totals.totalValue.toFixed(2)}</li>
-                  </ul>
+                <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: left;">
+                  <h3 style="margin-top: 0; margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Resumo da Carga</h3>
+                  <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #374151;">
+                     <tr>
+                        <td style="padding: 4px 0; width: 50%;"><strong>Qtd. Notas Fiscais:</strong> ${romaneioData.totals.totalInvoices}</td>
+                        <td style="padding: 4px 0; width: 50%;"><strong>Total Volumes:</strong> ${romaneioData.totals.totalVolumes}</td>
+                     </tr>
+                     <tr>
+                        <td style="padding: 4px 0; width: 50%;"><strong>Peso Total:</strong> ${romaneioData.totals.totalWeight.toFixed(2)} kg</td>
+                        <td style="padding: 4px 0; width: 50%;"><strong>Metros Cúbicos:</strong> ${romaneioData.totals.totalCubicMeters.toFixed(3)} m³</td>
+                     </tr>
+                     <tr>
+                        <td style="padding: 4px 0;" colspan="2"><strong>Valor Total da Carga:</strong> R$ ${romaneioData.totals.totalValue.toFixed(2)}</td>
+                     </tr>
+                  </table>
+                </div>
+
+                <div style="background-color: #ffffff; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: left;">
+                  <h3 style="margin-top: 0; margin-bottom: 15px; color: #1f2937; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Detalhes das Notas Fiscais</h3>
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                      <tr style="background-color: #f3f4f6;">
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #d1d5db; color: #1f2937;">Série/Número</th>
+                        <th style="padding: 8px; text-align: center; border-bottom: 2px solid #d1d5db; color: #1f2937;">Vols</th>
+                        <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db; color: #1f2937;">Peso</th>
+                        <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db; color: #1f2937;">Metros C³</th>
+                        <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db; color: #1f2937;">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${invoiceHtmlRows}
+                    </tbody>
+                  </table>
                 </div>
               `;
             }
 
             htmlBody += `
-                <br/>
-                <p>Atenciosamente,<br/><br/><strong>Equipe Log Axis</strong></p>
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: left; font-size: 14px; line-height: 1.6; color: #6b7280;">
+                  <p>Atenciosamente,<br/><br/><strong style="color: #374151;">${signName}</strong></p>
+                </div>
               </div>
             `;
 
@@ -402,17 +478,20 @@ export const pickupRequestService = {
          finalStatus = 'sent';
       }
 
-      await supabase
-        .from('pickup_requests')
-        .update({
-          email_sent: emailSent,
-          whatsapp_sent: whatsappSent,
-          status: finalStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', request.id);
+      // Update all generated requests status
+      for (const reqId of generatedRequests) {
+        await (supabase as any)
+          .from('pickup_requests')
+          .update({
+            email_sent: emailSent,
+            whatsapp_sent: whatsappSent,
+            status: finalStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', reqId);
+      }
 
-      return { success: true, requestId: request.id };
+      return { success: true, requestIds: generatedRequests };
     } catch (error) {
 
       return { success: false, error: 'Erro ao solicitar coleta' };
