@@ -116,9 +116,15 @@ async function calculateSyncFreight(supabase, w, ov, cm, destState, destCity, de
             if (!cityDataId && destState && destCity) {
                 const { data: stateData } = await supabase.from('states').select('id').eq('sigla', destState).maybeSingle();
                 if (stateData) {
-                    const normalizedCityName = destCity.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-                    const { data: cd } = await supabase.from('cities').select('id').eq('state_id', stateData.id).ilike('nome', '%' + normalizedCityName + '%').limit(1).maybeSingle();
-                    if (cd) cityDataId = cd.id;
+                    const normalizedCityName = destCity.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+                    const { data: allCities } = await supabase.from('cities').select('id, nome').eq('state_id', stateData.id);
+                    if (allCities && allCities.length > 0) {
+                        const matchedCity = allCities.find(c => {
+                             const dbCityNorm = c.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+                             return dbCityNorm === normalizedCityName;
+                        });
+                        if (matchedCity) cityDataId = matchedCity.id;
+                    }
                 }
             }
 
