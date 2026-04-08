@@ -123,4 +123,25 @@ export const logoStorageService = {
       return false;
     }
   },
+
+  async removeLogoType(estabelecimentoId: string, logoType: 'light' | 'dark' | 'nps'): Promise<boolean> {
+    try {
+      const { data: files } = await supabase.storage
+        .from('logos')
+        .list('establishments', {
+          search: `${estabelecimentoId}_${logoType}.`,
+        });
+
+      if (!files || files.length === 0) return true;
+
+      for (const file of files) {
+        await supabase.storage
+          .from('logos')
+          .remove([`establishments/${file.name}`]);
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
 };

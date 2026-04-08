@@ -387,9 +387,22 @@ export const establishmentsService = {
           }
         };
 
-        if (establishment.logo_light_base64) await uploadLogo(establishment.logo_light_base64, 'light');
-        if (establishment.logo_dark_base64) await uploadLogo(establishment.logo_dark_base64, 'dark');
-        if (establishment.logo_nps_base64) await uploadLogo(establishment.logo_nps_base64, 'nps');
+        const handleLogoDeletion = async (type: 'light' | 'dark' | 'nps') => {
+          await logoStorageService.removeLogoType(id, type);
+          if (updateData.metadata) {
+             delete updateData.metadata[`logo_${type}_url`];
+             delete updateData.metadata[`logo_${type}_base64`];
+          }
+        };
+
+        if (establishment.logo_light_base64 === '') await handleLogoDeletion('light');
+        else if (establishment.logo_light_base64 && establishment.logo_light_base64.startsWith('data:image/')) await uploadLogo(establishment.logo_light_base64, 'light');
+
+        if (establishment.logo_dark_base64 === '') await handleLogoDeletion('dark');
+        else if (establishment.logo_dark_base64 && establishment.logo_dark_base64.startsWith('data:image/')) await uploadLogo(establishment.logo_dark_base64, 'dark');
+
+        if (establishment.logo_nps_base64 === '') await handleLogoDeletion('nps');
+        else if (establishment.logo_nps_base64 && establishment.logo_nps_base64.startsWith('data:image/')) await uploadLogo(establishment.logo_nps_base64, 'nps');
       }
 
       const { data, error } = await supabase
