@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FreightRate, FreightRateDetail } from '../../services/freightRatesService';
 
@@ -15,6 +15,9 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
   onCancel
 }) => {
   const { t } = useTranslation();
+
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
 
   const [grisInputValue, setGrisInputValue] = useState<string>(
     rate.percentual_gris
@@ -93,7 +96,8 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
       frete_valor: 0,
       frete_minimo: 0,
       tipo_taxa: 'com_taxas',
-      taxa_minima: 0
+      taxa_minima: 0,
+      fracao_base: null
     };
 
     setFormData(prev => ({
@@ -159,7 +163,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="pedagio_minimo"
                     value={formData.pedagio_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -173,7 +177,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="pedagio_por_kg"
                     value={formData.pedagio_por_kg}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -187,7 +191,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="pedagio_a_cada_kg"
                     value={formData.pedagio_a_cada_kg}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -232,7 +236,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="aliquota_icms"
                     value={formData.aliquota_icms}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -247,7 +251,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="fator_m3"
                     value={formData.fator_m3}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -261,7 +265,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="fator_m3_apartir_kg"
                     value={formData.fator_m3_apartir_kg}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -275,7 +279,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="fator_m3_apartir_m3"
                     value={formData.fator_m3_apartir_m3}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -289,7 +293,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="fator_m3_apartir_valor"
                     value={formData.fator_m3_apartir_valor}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -340,7 +344,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="gris_minimo"
                     value={formData.gris_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -354,7 +358,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="seccat"
                     value={formData.seccat}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -368,7 +372,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="despacho"
                     value={formData.despacho}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -382,7 +386,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="itr"
                     value={formData.itr}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -396,7 +400,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="taxa_adicional"
                     value={formData.taxa_adicional}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -410,7 +414,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="coleta_entrega"
                     value={formData.coleta_entrega}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -424,7 +428,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="tde_trt"
                     value={formData.tde_trt}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -438,7 +442,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="tas"
                     value={formData.tas}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -452,7 +456,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="taxa_suframa"
                     value={formData.taxa_suframa}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -480,7 +484,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="valor_outros_minimo"
                     value={formData.valor_outros_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -523,7 +527,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="taxa_apartir_de"
                     value={formData.taxa_apartir_de}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -552,7 +556,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="taxa_outros_a_cada"
                     value={formData.taxa_outros_a_cada}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -566,7 +570,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="taxa_outros_minima"
                     value={formData.taxa_outros_minima}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -581,7 +585,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="frete_peso_minimo"
                     value={formData.frete_peso_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -595,7 +599,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="frete_valor_minimo"
                     value={formData.frete_valor_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -609,7 +613,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="frete_tonelada_minima"
                     value={formData.frete_tonelada_minima}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -623,7 +627,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="frete_percentual_minimo"
                     value={formData.frete_percentual_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -637,7 +641,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="frete_m3_minimo"
                     value={formData.frete_m3_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -651,7 +655,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                     name="valor_total_minimo"
                     value={formData.valor_total_minimo}
                     onChange={handleInputChange}
-                    step="0.01"
+                    step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -662,6 +666,16 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.values.sectionDetails')}</h3>
+              <div className="flex items-center">
+              <button 
+                type="button"
+                onClick={() => setShowHelpModal(true)}
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-white border border-gray-300 px-3 py-1 rounded text-sm shadow-sm hover:bg-gray-50 transition-colors mr-2"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span className="font-medium">Como é calculado?</span>
+              </button>
+
                 <button
                   type="button"
                   onClick={handleAddDetail}
@@ -671,53 +685,12 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                   <span>{t('carriers.freightRates.values.addDetailRow')}</span>
                 </button>
               </div>
+              </div>
 
               {/* Info sobre tipo de cálculo Excedente e Tipo Taxa */}
-              <div className="space-y-3 mb-4">
-                {/* Info Tipo de Cálculo: Excedente */}
-                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <h3 className="text-sm font-medium text-blue-800">{t('carriers.freightRates.values.infoExcedente.title')}</h3>
-                      <div className="mt-2 text-sm text-blue-700">
-                        <p className="mb-1"><strong>{t('carriers.freightRates.values.infoExcedente.subtitle')}</strong></p>
-                        <p className="mb-1">{t('carriers.freightRates.values.infoExcedente.desc1')}</p>
-                        <p className="mb-1"><strong>{t('carriers.freightRates.values.infoExcedente.exampleTitle')}</strong> {t('carriers.freightRates.values.infoExcedente.exampleDesc')}</p>
-                        <ul className="list-disc list-inside ml-2 mt-1 space-y-0.5">
-                          <li>{t('carriers.freightRates.values.infoExcedente.li1')}</li>
-                          <li>{t('carriers.freightRates.values.infoExcedente.li2')}</li>
-                          <li>{t('carriers.freightRates.values.infoExcedente.li3')}</li>
-                          <li>{t('carriers.freightRates.values.infoExcedente.li4')}</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              
 
-                {/* Info Tipo Taxa: Sem Taxas */}
-                <div className="bg-amber-50 border border-amber-200 rounded p-3">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <h3 className="text-sm font-medium text-amber-800">{t('carriers.freightRates.values.infoSemTaxas.title')}</h3>
-                      <div className="mt-2 text-sm text-amber-700">
-                        <p className="mb-1"><strong>{t('carriers.freightRates.values.infoSemTaxas.subtitle')}</strong></p>
-                        <p>{t('carriers.freightRates.values.infoSemTaxas.desc1')}</p>
-                        <p className="mt-1">{t('carriers.freightRates.values.infoSemTaxas.desc2')}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-xs">
@@ -729,6 +702,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                       <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.volumeAte')}</th>
                       <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.valorAte')}</th>
                       <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.valorFaixaCol')}</th>
+                      <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.fracaoBaseCol')}</th>
                       <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.tipoCalculo')}</th>
                       <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.tipoFrete')}</th>
                       <th className="px-2 py-2 text-left font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.values.detailsTable.freteValor')}</th>
@@ -782,7 +756,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               type="number"
                               value={detail.valor_ate}
                               onChange={(e) => handleDetailChange(index, 'valor_ate', parseFloat(e.target.value) || 0)}
-                              step="0.01"
+                              step="any"
                               className="w-24 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             />
                           </td>
@@ -791,10 +765,21 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               type="number"
                               value={detail.valor_faixa}
                               onChange={(e) => handleDetailChange(index, 'valor_faixa', parseFloat(e.target.value) || 0)}
-                              step="0.01"
+                              step="any"
                               className="w-24 px-1 py-0.5 border border-gray-300 rounded text-xs"
                               title={detail.tipo_calculo === 'excedente' ? t('carriers.freightRates.values.infoExcedente.li3').split(':')[0] : t('carriers.freightRates.values.valorFaixa')}
                               placeholder={detail.tipo_calculo === 'excedente' ? 'R$/KG' : ''}
+                            />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input
+                              type="number"
+                              value={detail.fracao_base || ''}
+                              onChange={(e) => handleDetailChange(index, 'fracao_base', parseFloat(e.target.value) || 0)}
+                              step="0.001"
+                              disabled={detail.tipo_calculo !== 'multiplicador'}
+                              className={`w-20 px-1 py-0.5 border border-gray-300 rounded text-xs ${detail.tipo_calculo !== 'multiplicador' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                              placeholder={detail.tipo_calculo === 'multiplicador' ? 'Ex: 1000' : ''}
                             />
                           </td>
                           <td className="px-2 py-2">
@@ -806,6 +791,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               <option value="valor_faixa">{t('carriers.freightRates.values.valorFaixa')}</option>
                               <option value="percentual">{t('carriers.freightRates.values.percentual')}</option>
                               <option value="excedente">{t('carriers.freightRates.values.excedente')}</option>
+                              <option value="multiplicador">{t('carriers.freightRates.values.multiplicador')}</option>
                             </select>
                           </td>
                           <td className="px-2 py-2">
@@ -832,7 +818,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               type="number"
                               value={detail.frete_minimo}
                               onChange={(e) => handleDetailChange(index, 'frete_minimo', parseFloat(e.target.value) || 0)}
-                              step="0.01"
+                              step="any"
                               className="w-24 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             />
                           </td>
@@ -851,7 +837,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                               type="number"
                               value={detail.taxa_minima}
                               onChange={(e) => handleDetailChange(index, 'taxa_minima', parseFloat(e.target.value) || 0)}
-                              step="0.01"
+                              step="any"
                               className="w-24 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             />
                           </td>

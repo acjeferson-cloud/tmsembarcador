@@ -60,6 +60,7 @@ export interface FreightRateDetail {
   frete_minimo: number;
   tipo_taxa: string;
   taxa_minima: number;
+  fracao_base?: number | null;
 }
 
 export interface FreightRate {
@@ -348,6 +349,7 @@ export const freightRatesService = {
             const { id, created_at, updated_at, ...cleanDetail } = detail as any;
             return {
               ...cleanDetail,
+              fracao_base: cleanDetail.fracao_base || null,
               freight_rate_id: newRate.id
             };
           });
@@ -653,7 +655,8 @@ export const freightRatesService = {
               frete_valor: Number(detailWithoutId.frete_valor) || 0,
               frete_minimo: Number(detailWithoutId.frete_minimo) || 0,
               tipo_taxa: detailWithoutId.tipo_taxa || 'com_taxas',
-              taxa_minima: Number(detailWithoutId.taxa_minima) || 0
+              taxa_minima: Number(detailWithoutId.taxa_minima) || 0,
+              fracao_base: detailWithoutId.fracao_base ? Number(detailWithoutId.fracao_base) : null
             };
 
 

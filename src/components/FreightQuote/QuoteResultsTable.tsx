@@ -231,6 +231,10 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Ad Valorem</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.freteValor)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.gris')}</div>
                             <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.gris)}</div>
                           </div>
@@ -261,6 +265,11 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.otherValues')}</div>
                             <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.outrosValores)}</div>
+                          </div>
+                          
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Taxa Adicional</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.taxaAdicional || 0)}</div>
                           </div>
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-500 dark:text-gray-400">TEC</div>

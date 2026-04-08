@@ -2061,6 +2061,7 @@
         "comApartir": "Com a partir",
         "valorFaixa": "Valor faixa",
         "excedente": "Excedente",
+        "multiplicador": "Multiplicador",
         "normal": "Normal",
         "expresso": "Expresso",
         "comTaxas": "Com taxas",
@@ -2072,6 +2073,7 @@
           "volumeAte": "Volume até",
           "valorAte": "Valor até",
           "valorFaixaCol": "Valor da faixa",
+          "fracaoBaseCol": "Fração Base (KG)",
           "tipoCalculo": "Tipo de cálculo",
           "tipoFrete": "Tipo frete",
           "freteValor": "Frete valor",
@@ -2096,6 +2098,13 @@
           "subtitle": "Atenção:",
           "desc1": "Quando uma linha tiver Tipo taxa = \"Sem taxas\", o sistema irá IGNORAR todas as taxas adicionais configuradas nos campos acima (GRIS, Pedágio, SECCAT, Despacho, ITR, TAS, Coleta/Entrega, Taxa SUFRAMA, etc.).",
           "desc2": "O cálculo considerará APENAS o valor da faixa (Frete Peso + Frete Valor)."
+        },
+        "infoMultiplicador": {
+          "title": "Tipo de Cálculo: Multiplicador",
+          "subtitle": "Como funciona:",
+          "desc1": "No tipo \"Multiplicador\", a faixa funciona baseada em uma unidade escalar, como a Tonelada ou Centenas de Quilos, evitando que você precise fazer contas de cabeça.",
+          "li1": "Digite o valor cheio (ex: R$ 208,00)",
+          "li2": "Informe a Fração Base (ex: 1000 se for Tonelada). O sistema cuidará da conversão proporcional ao peso do documento (Ex: NF com 1.690KG gerará o fator de 1,69x)."
         }
       }
     },

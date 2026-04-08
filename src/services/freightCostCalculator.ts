@@ -494,6 +494,9 @@ export const freightCostCalculator = {
     // 9. COLETA/ENTREGA (arredondar individualmente)
     const coletaEntrega = this.roundValue(semTaxas ? 0 : (tariff.coleta_entrega || 0));
 
+    // 9.1 TAXA ADICIONAL (da tabela)
+    const taxaAdicional = this.roundValue(semTaxas ? 0 : (tariff.taxa_adicional || 0));
+
     // 10. TAXAS ADICIONAIS (TDA, TDE, TRT) - arredondar individualmente
     let tda = 0;
     let tde = 0;
@@ -545,7 +548,7 @@ export const freightCostCalculator = {
 
     // 11. BASE DE CÁLCULO (sem outros valores) - somar valores já arredondados
     const baseCalculo = this.roundValue(fretePeso + freteValor + gris + pedagio + tas + seccat +
-                        despacho + itr + coletaEntrega + tda + tde + trt + tec);
+                        despacho + itr + coletaEntrega + tda + tde + trt + tec + taxaAdicional);
 
     // 13. ICMS - Calcular ANTES de "outros valores"
     const icmsAliquota = parseFloat(tariff.aliquota_icms?.toString() || '0');
@@ -573,48 +576,25 @@ export const freightCostCalculator = {
         const valorComICMS = baseFrete / (1 - (icmsAliquota / 100));
         icmsBase = this.roundValue(valorComICMS);
         icmsValor = this.roundValue(valorComICMS - baseFrete);
-
-
-
-
-
-
-
-
-
-
       } else {
-        // ICMS NÃO EMBUTIDO: "Outros Valores" = ICMS (não calcular percentual)
-        // Base do frete SEM "outros valores"
-        baseFrete = baseCalculo;
-
-        // ICMS calculado sobre a base SEM "outros valores" (arredondar)
-        icmsValor = this.roundValue((baseFrete * icmsAliquota) / (100 - icmsAliquota));
-        icmsBase = this.roundValue(baseFrete + icmsValor);
-
-        // "Outros Valores" é igual ao ICMS quando não está embutido
-        outrosValores = icmsValor;
-
-
-
-
-
-
-
-
-
-
+        // ICMS NÃO EMBUTIDO: Calcula Gross-Up nativame sem sobrepor 'outrosValores'
+        outrosValores = this.roundValue(semTaxas ? 0 : this.calculateOutrosValores(baseCalculo, tariff));
+        baseFrete = this.roundValue(baseCalculo + outrosValores);
+        
+        // ICMS calculado sobre a base
+        const valorComICMS = baseFrete / (1 - (icmsAliquota / 100));
+        icmsBase = this.roundValue(valorComICMS);
+        icmsValor = this.roundValue(valorComICMS - baseFrete);
       }
     } else {
       // Sem ICMS: calcular "outros valores" normalmente
       outrosValores = this.roundValue(semTaxas ? 0 : this.calculateOutrosValores(baseCalculo, tariff));
       baseFrete = this.roundValue(baseCalculo + outrosValores);
+      icmsBase = baseFrete;
     }
 
     // 14. VALOR TOTAL
-    // ICMS NÃO EMBUTIDO: Total = baseCalculo + outrosValores (que é igual ao ICMS)
-    // ICMS EMBUTIDO: Total = baseCalculo + outrosValores (que é percentual) + icmsValor
-    const valorTotal = icmsEmbutido ? icmsBase : this.roundValue(baseCalculo + outrosValores);
+    const valorTotal = icmsAliquota > 0 ? icmsBase : baseFrete;
 
 
 
@@ -652,6 +632,7 @@ export const freightCostCalculator = {
       tde,
       trt,
       tec,
+      taxaAdicional,
       outrosValores,
       icmsBase,
       icmsAliquota,
@@ -693,7 +674,7 @@ export const freightCostCalculator = {
     if (!weightRange) return tariff.frete_peso_minimo || 0;
 
     const valorFaixa = weightRange.valor_faixa || 0;
-    const freteMinimo = tariff.frete_peso_minimo || 0;
+    const freteMinimo = weightRange.frete_minimo || tariff.frete_peso_minimo || 0;
     const tipoCalculo = weightRange.tipo_calculo || 'valor_faixa';
 
     let calculated = valorFaixa;
@@ -736,10 +717,12 @@ export const freightCostCalculator = {
 
         calculated = valorFaixa;
       }
+    } else if (tipoCalculo === 'multiplicador') {
+      const fracaoBase = weightRange.fracao_base || 1;
+      const fatorAplicacao = weight / fracaoBase;
+      calculated = valorFaixa * fatorAplicacao;
     } else {
       // Tipo "valor_faixa": usar o valor fixo da faixa
-
-
       calculated = valorFaixa;
     }
 

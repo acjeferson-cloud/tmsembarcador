@@ -1,0 +1,1 @@
+ALTER TABLE freight_quotes_history DISABLE ROW LEVEL SECURITY;

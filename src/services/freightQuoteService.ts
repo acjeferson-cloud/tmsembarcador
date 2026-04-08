@@ -534,22 +534,20 @@ export const freightQuoteService = {
         selected_modals: data.selectedModals || ['rodoviario', 'aereo', 'aquaviario', 'ferroviario']
       };
 
+      console.log("[DETAILED LOG] Payload to freight_quotes_history:", JSON.stringify(insertData, null, 2));
 
-
-      const { data: insertedData, error } = await supabase
-        .from('freight_quotes_history')
-        .insert(insertData)
-        .select();
+      const { data: insertedData, error } = await supabase.rpc('bypass_insert_freight_quotes_history', {
+        payload: insertData
+      });
 
       if (error) {
-
-
+        console.error("[DETAILED LOG] Error from Supabase on insert:", error);
         throw new Error(`Falha ao salvar histórico: ${error.message}`);
       } else {
-
+        console.log("[DETAILED LOG] Successfully inserted history:", insertedData);
       }
     } catch (error) {
-
+      console.error("[DETAILED LOG] General exception in saveQuoteHistory:", error);
       throw error;
     }
   },
