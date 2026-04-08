@@ -158,16 +158,24 @@ export class NewsService {
         throw new Error('Formato de resposta inválido da API de notícias.');
       }
 
-      // Imagens genéricas para quando a notícia não tiver foto na capa
+      // Imagens genéricas focadas 100% em Logística, Caminhões e Frete (sem balões)
       const fallbackImages = [
-        'https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg',
+        'https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
         'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
         'https://images.pexels.com/photos/210012/pexels-photo-210012.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/3020610/pexels-photo-3020610.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
         'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/5473955/pexels-photo-5473955.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'
+        'https://images.pexels.com/photos/93398/pexels-photo-93398.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/6169668/pexels-photo-6169668.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/2449518/pexels-photo-2449518.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/1032470/pexels-photo-1032470.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/12386435/pexels-photo-12386435.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/4508678/pexels-photo-4508678.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg'
       ];
+
+      // Índice sequencial para garantir que não haja imagens repetidas num mesmo ciclo de tela
+      let fallbackIndex = 0;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const parsedNews: NewsItem[] = data.items
@@ -197,8 +205,9 @@ export class NewsService {
           }
 
           if (!imageUrl) {
-            // Sorteia imagem de fallback
-            imageUrl = fallbackImages[index % fallbackImages.length];
+            // Sorteia imagem sequencial não repetida
+            imageUrl = fallbackImages[fallbackIndex % fallbackImages.length];
+            fallbackIndex++;
           }
 
           // Trata titulo extraindo da tag HTML se houver falhas, e limpa - Fonte
@@ -229,11 +238,16 @@ export class NewsService {
         if (parsedNews.length < 12) {
           const needed = 12 - parsedNews.length;
           // Preenche com as notícias embutidas do mock base para nunca deixar o carrossel vazio
-          const padding = mockNews.slice(0, needed).map((item, i) => ({
-            ...item,
-            id: `fallback-${i}-${Date.now()}`,
-            publishedDate: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString() // Força datas nas últimas horas
-          }));
+          const padding = mockNews.slice(0, needed).map((item, i) => {
+            const padImg = fallbackImages[fallbackIndex % fallbackImages.length];
+            fallbackIndex++;
+            return {
+              ...item,
+              id: `fallback-${i}-${Date.now()}`,
+              imageUrl: padImg, // Sobrescreve com imagem exclusiva anti-repetição
+              publishedDate: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString() // Força datas nas últimas horas
+            };
+          });
           parsedNews.push(...padding);
         }
 
