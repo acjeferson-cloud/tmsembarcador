@@ -272,6 +272,18 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                             <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.taxaAdicional || 0)}</div>
                           </div>
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">TDA</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.tda || 0)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">TDE</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.tde || 0)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">TRT</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.trt || 0)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-500 dark:text-gray-400">TEC</div>
                             <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.tec || 0)}</div>
                           </div>
