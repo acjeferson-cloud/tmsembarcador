@@ -374,9 +374,6 @@ export const establishmentsService = {
           ...currentMetadata,
           ...(establishment.tracking_prefix !== undefined && { tracking_prefix: establishment.tracking_prefix }),
           ...(establishment.email_config !== undefined && { email_config: establishment.email_config }),
-          ...(establishment.logo_light_base64 !== undefined && { logo_light_base64: establishment.logo_light_base64 }),
-          ...(establishment.logo_dark_base64 !== undefined && { logo_dark_base64: establishment.logo_dark_base64 }),
-          ...(establishment.logo_nps_base64 !== undefined && { logo_nps_base64: establishment.logo_nps_base64 }),
         };
       }
 

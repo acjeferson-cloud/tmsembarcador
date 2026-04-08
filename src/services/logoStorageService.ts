@@ -82,9 +82,13 @@ export const logoStorageService = {
         };
       }
 
+      // Add cache buster to URL to force UI to load the new image
+      const timestamp = new Date().getTime();
+      const bustedUrl = `${publicUrlData.publicUrl}?t=${timestamp}`;
+
       return {
         success: true,
-        logoUrl: publicUrlData.publicUrl,
+        logoUrl: bustedUrl,
       };
     } catch (error: any) {
 

@@ -18,7 +18,7 @@ import { useActivityLogger } from '../../hooks/useActivityLogger';
 export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const { t } = useTranslation();
 
-  const { user } = useAuth();
+  const { user, currentEstablishment } = useAuth();
   
   useActivityLogger('Coletas', 'Acesso', 'Acessou a Gestão de Coletas');
 
@@ -181,7 +181,9 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
                total_volume: data.total_volume || 0
              }));
 
-             const pdfBase64 = pickupPdfService.generatePickupPDF(fullPickups, 'base64' as any);
+             const pdfBase64 = await pickupPdfService.generatePickupPDF(fullPickups, 'base64' as any, {
+                user, establishment: currentEstablishment, filters
+             });
              
              const res = await pickupRequestService.requestPickup({
                pickupIds: groupData.map(p => p.id),
@@ -266,9 +268,9 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         }
 
         if (action === 'download') {
-          pickupPdfService.generatePickupPDF(validPickups, 'download');
+          await pickupPdfService.generatePickupPDF(validPickups, 'download', { user, establishment: currentEstablishment, filters });
         } else {
-          const pdfUrl = pickupPdfService.generatePickupPDF(validPickups, 'print');
+          const pdfUrl = await pickupPdfService.generatePickupPDF(validPickups, 'print', { user, establishment: currentEstablishment, filters });
           const printWindow = window.open(pdfUrl, '_blank');
           if (printWindow) {
             printWindow.onload = () => {

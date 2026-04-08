@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import emailOutgoingConfigService from './emailOutgoingConfigService';
 import { pickupsService } from './pickupsService';
 import { establishmentsService } from './establishmentsService';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface PickupRequest {
   id?: string;
@@ -275,6 +276,7 @@ export const pickupRequestService = {
 
   async requestPickup(params: RequestPickupParams): Promise<{ success: boolean; requestIds?: string[]; error?: string }> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
       if (!params.pdfBase64) {
         return { success: false, error: 'PDF da coleta é obrigatório' };
       }
@@ -288,13 +290,17 @@ export const pickupRequestService = {
 
       // Insert logic for each pickup
       for (const pId of params.pickupIds) {
-        let tenantInfo = { org: null, env: null, est: params.establishmentId };
+        let tenantInfo: { org?: string; env?: string; est?: string } = { 
+           org: ctx?.organizationId || undefined, 
+           env: ctx?.environmentId || undefined, 
+           est: ctx?.establishmentId || params.establishmentId 
+        };
         try {
            const { data: pkData } = await (supabase as any).from('pickups').select('organization_id, environment_id, establishment_id').eq('id', pId).single();
            if (pkData) {
-              tenantInfo.org = pkData.organization_id;
-              tenantInfo.env = pkData.environment_id;
-              tenantInfo.est = pkData.establishment_id || params.establishmentId;
+              tenantInfo.org = pkData.organization_id || tenantInfo.org;
+              tenantInfo.env = pkData.environment_id || tenantInfo.env;
+              tenantInfo.est = pkData.establishment_id || tenantInfo.est;
            }
         } catch(e) {}
 
@@ -465,7 +471,7 @@ export const pickupRequestService = {
               smtp_config: { host: config.smtp_host, port: config.smtp_port, secure: config.smtp_secure, auth: { user: config.smtp_user, pass: config.smtp_password } }
             };
 
-            const { data: edgeData, error: edgeError } = await supabase.functions.invoke('send-test-email', { body: payload });
+            const { data: edgeData, error: edgeError } = await supabase!.functions.invoke('send-test-email', { body: payload });
             
             if (!edgeError && edgeData?.success) {
               emailSent = true;
@@ -516,7 +522,7 @@ export const pickupRequestService = {
 
   async getPickupRequests(pickupId: string): Promise<PickupRequest[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('pickup_requests')
         .select('*')
         .eq('pickup_id', pickupId)

@@ -198,7 +198,10 @@ export const pickupsService = {
             cubagem_total,
             valor_total,
             customer:invoices_nfe_customers(
-              razao_social
+              razao_social,
+              nome_fantasia,
+              cidade,
+              estado
             ),
             products:invoices_nfe_products(
               cubagem
