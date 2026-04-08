@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, AlertCircle, Hash, Info, Eye, EyeOff, Mail, User, Shield, CheckCircle, Building, Camera, X, Globe } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertCircle, Hash, Info, Eye, EyeOff, Mail, User, Shield, CheckCircle, Building, Camera, X, Globe, Users } from 'lucide-react';
 import { User as UserType, usersService } from '../../services/usersService';
 import { fetchCityByZipCode } from '../../data/citiesData';
 import { establishmentsService, Establishment } from '../../services/establishmentsService';
@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { InlineMessage } from '../common/InlineMessage';
 import zxcvbn from 'zxcvbn';
 import { useAuth } from '../../hooks/useAuth';
+import { CopyPermissionsModal } from './CopyPermissionsModal';
 
 interface UserFormProps {
   onBack: () => void;
@@ -51,6 +52,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
   const [cepError, setCepError] = useState('');
   const [cepSuccess, setCepSuccess] = useState('');
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -480,6 +482,27 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
       ...prev,
       permissoes: permissions
     }));
+  };
+
+  const handleCopyPermissionsSubmit = async (targetUserIds: string[]) => {
+    try {
+      const updatePromises = targetUserIds.map((targetId) => 
+        usersService.update(targetId, {
+          permissoes: formData.permissoes
+        } as Partial<UserType>) // Cast because usersService update accepts Partial<User>
+      );
+      
+      await Promise.all(updatePromises);
+      
+      setToast({
+        message: `Permissões distribuídas com sucesso para ${targetUserIds.length} usuário(s)!`,
+        type: 'success'
+      });
+      setShowCopyModal(false);
+    } catch (error) {
+      console.error('Error copying permissions:', error);
+      throw new Error('Falha ao transferir permissões.'); 
+    }
   };
 
   const handleEstablishmentsChange = (establishmentCodes: string[]) => {
@@ -1295,7 +1318,20 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
 
         {activeTab === 'permissions' && formData.perfil === 'personalizado' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('users.form.hints.customPermissionsTitle')}</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('users.form.hints.customPermissionsTitle')}</h2>
+              
+              {currentUser?.perfil?.toLowerCase() === 'administrador' && (
+                <button
+                  type="button"
+                  onClick={() => setShowCopyModal(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors text-sm font-medium border border-blue-200 dark:border-blue-800"
+                >
+                  <Users size={16} />
+                  <span>Copiar para Outros...</span>
+                </button>
+              )}
+            </div>
             
             <div className="mb-4 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-start space-x-2">
@@ -1338,6 +1374,16 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {showCopyModal && (
+        <CopyPermissionsModal
+          sourceUserId={user?.id}
+          sourceUserName={formData.nome || 'Novo Usuário (Rascunho)'}
+          sourcePermissions={formData.permissoes}
+          onClose={() => setShowCopyModal(false)}
+          onConfirm={handleCopyPermissionsSubmit}
         />
       )}
     </div>
