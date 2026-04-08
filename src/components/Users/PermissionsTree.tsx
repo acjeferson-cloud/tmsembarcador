@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, CheckSquare, Square } from 'lucide-react';
 
+import { useTranslation } from 'react-i18next';
+import { menuConfig } from '../../data/menuConfig';
+
 interface MenuItem {
   id: string;
-  label: string;
+  label?: string; // Optional due to translation
   hasSubmenu?: boolean;
   submenu?: MenuItem[];
 }
@@ -13,70 +16,25 @@ interface PermissionsTreeProps {
   onChange: (permissions: string[]) => void;
 }
 
-// Menu structure from Sidebar.tsx
-const menuItems: MenuItem[] = [
-  { id: 'fiori', label: 'Área de trabalho' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'control-tower', label: 'Torre de Controle' },
-  { id: 'carriers', label: 'Transportadores' },
-  { id: 'calculator', label: 'Cotação de Fretes' },
-  { 
-    id: 'operational-docs', 
-    label: 'Documentos Operacionais',
-    hasSubmenu: true,
-    submenu: [
-      { id: 'orders', label: 'Pedidos' },
-      { id: 'invoices', label: 'Notas Fiscais' },
-      { id: 'ctes', label: 'CT-es' },
-      { id: 'bills', label: 'Faturas' }
-    ]
-  },
-  { id: 'shipments', label: 'Rastreamento de Entregas' },
-  { id: 'reverse-logistics', label: 'Logística Reversa' },
-  { id: 'electronic-docs', label: 'Documentos Eletrônicos' },
-  { 
-    id: 'edi', 
-    label: 'EDI',
-    hasSubmenu: true,
-    submenu: [
-      { id: 'edi-input', label: 'EDIs de Entrada' },
-      { id: 'edi-output', label: 'EDIs de Saída' }
-    ]
-  },
-  { 
-    id: 'reports', 
-    label: 'Relatórios',
-    hasSubmenu: true,
-    submenu: [
-      { id: 'report-cte-audit', label: 'Auditoria de CT-es' },
-      { id: 'report-invoice-reconciliation', label: 'Conciliação de Faturas' },
-      { id: 'report-deliveries-occurrences', label: 'Entregas com Ocorrências' },
-      { id: 'report-nfe-without-cte', label: 'NF-e Não Atendida' },
-      { id: 'report-rejection-history', label: 'Histórico de Reprovações' },
-      { id: 'report-carrier-efficiency', label: 'Eficiência dos Transportadores' },
-      { id: 'report-xml-download-history', label: 'Download de XMLs de CT-es' },
-      { id: 'report-tolerance-usage', label: 'Uso de Tolerância Contratual' }
-    ]
-  },
-  { 
-    id: 'settings', 
-    label: 'Configurações',
-    hasSubmenu: true,
-    submenu: [
-      { id: 'establishments', label: 'Estabelecimentos' },
-      { id: 'users', label: 'Usuários' },
-      { id: 'countries', label: 'Países' },
-      { id: 'states', label: 'Estados' },
-      { id: 'cities', label: 'Cidades' },
-      { id: 'occurrences', label: 'Históricos de Ocorrências' },
-      { id: 'rejection-reasons', label: 'Motivos de Rejeições' }
-    ]
-  },
-];
-
 export const PermissionsTree: React.FC<PermissionsTreeProps> = ({ selectedPermissions, onChange }) => {
+  const { t } = useTranslation();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [localPermissions, setLocalPermissions] = useState<string[]>(selectedPermissions);
+
+  // Generate dynamic menu structure exactly mirroring the app navigation
+  const menuItems: MenuItem[] = React.useMemo(() => {
+    return menuConfig
+      .filter(item => item.id !== 'saas-admin') // Ignore administrative console route
+      .map(item => ({
+        id: item.id,
+        label: t(item.labelKey),
+        hasSubmenu: item.hasSubmenu,
+        submenu: item.submenu?.map(sub => ({
+          id: sub.id,
+          label: t(sub.labelKey)
+        }))
+      }));
+  }, [t]);
 
   // Update local permissions when prop changes
   useEffect(() => {
