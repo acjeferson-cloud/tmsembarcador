@@ -25,6 +25,14 @@ export const FioriMenu: React.FC<FioriMenuProps> = ({ onPageChange }) => {
       if (item.id === 'saas-admin' && !isMasterAdmin) {
         return false;
       }
+
+      // Regra para Perfil Personalizado: ocultar menus não permitidos
+      if (user?.perfil === 'personalizado' && user.permissoes) {
+        if (!user.permissoes.includes(item.id)) {
+          return false;
+        }
+      }
+
       return true;
     })
   );

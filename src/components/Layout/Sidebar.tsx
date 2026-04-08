@@ -38,13 +38,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Filter menu items based on user permissions
   const menuItems = useMemo(() => {
-    return menuConfig.filter(item => {
-      if (item.id === 'saas-admin' && !isMasterAdmin) {
-        return false;
+    return menuConfig.map(item => {
+      // Cria uma cópia profunda básica do item para não mutar a config global
+      const itemCopy = { ...item };
+      
+      // Ocultar Saas Admin se não for master admin
+      if (itemCopy.id === 'saas-admin' && !isMasterAdmin) {
+        return null;
       }
-      return true;
-    });
-  }, [isMasterAdmin]);
+
+      // Regra para Perfil Personalizado: ocultar menus não permitidos
+      if (user?.perfil === 'personalizado' && user.permissoes) {
+        const permissoes = user.permissoes; // Type narrowing
+        if (itemCopy.hasSubmenu && itemCopy.submenu) {
+          // Filtra submenus
+          itemCopy.submenu = itemCopy.submenu.filter(sub => permissoes.includes(sub.id));
+          // Se ficou sem nenhum submenu ativo, remove o pai inteiro
+          if (itemCopy.submenu.length === 0) {
+            return null;
+          }
+        } else {
+          // Item direto sem submenu
+          if (!permissoes.includes(itemCopy.id)) {
+            return null;
+          }
+        }
+      }
+
+      return itemCopy;
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
+  }, [isMasterAdmin, user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
