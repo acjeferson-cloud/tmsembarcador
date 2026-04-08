@@ -139,6 +139,32 @@ export class NewsService {
     return NewsService.instance;
   }
 
+  // Extrai a imagem real do portal da reportagem via proxy CORS
+  private async fetchRealArticleImage(url: string, fallbackUrl: string): Promise<string> {
+    try {
+      // Usamos um proxy genérico público para conseguir ler o HTML do portal (bypass CORS bloqueante)
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl, { mode: 'cors' });
+      const data = await response.json();
+      
+      if (data && data.contents) {
+        const html = data.contents;
+        // Tenta capturar imagens de preview (OpenGraph ou Twitter Card) exclusivas da matéria
+        const match = html.match(/<meta[^>]*property=['"]og:image['"][^>]*content=['"]([^'"]+)['"]/i) ||
+                      html.match(/<meta[^>]*content=['"]([^'"]+)['"][^>]*property=['"]og:image['"]/i) ||
+                      html.match(/<meta[^>]*name=['"]twitter:image['"][^>]*content=['"]([^'"]+)['"]/i);
+        
+        if (match && match[1] && match[1].startsWith('http')) {
+          // Decodifica possíveis codificações HTML na URL da imagem
+          return match[1].replace(/&amp;/g, '&');
+        }
+      }
+    } catch (e) {
+      console.warn('Falha silenciosa ao obter imagem real da reportagem (fallback ativado):', e);
+    }
+    return fallbackUrl;
+  }
+
   // Carregar notícias (API real + fallback)
   private async loadNews(): Promise<void> {
     try {
@@ -158,27 +184,24 @@ export class NewsService {
         throw new Error('Formato de resposta inválido da API de notícias.');
       }
 
-      // Imagens genéricas focadas 100% em Logística, Caminhões e Frete (sem balões)
+      // Imagens 100% blindadas focadas em Logística (sem flores, sem praias) via Unsplash
       const fallbackImages = [
-        'https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/210012/pexels-photo-210012.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/3020610/pexels-photo-3020610.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/93398/pexels-photo-93398.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/6169668/pexels-photo-6169668.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/2449518/pexels-photo-2449518.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/1032470/pexels-photo-1032470.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/12386435/pexels-photo-12386435.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        'https://images.pexels.com/photos/4508678/pexels-photo-4508678.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg'
+        'https://images.unsplash.com/photo-1580674294071-8bcca3622416?q=80&w=600&auto=format&fit=crop', // Truck Highway
+        'https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=80&w=600&auto=format&fit=crop', // Port
+        'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=600&auto=format&fit=crop', // Warehouse
+        'https://images.unsplash.com/photo-1586528116311-ad8ed7c50800?q=80&w=600&auto=format&fit=crop', // Highway Trucks Motion
+        'https://images.unsplash.com/photo-1591741511977-1deef7d37dc1?q=80&w=600&auto=format&fit=crop', // Truck Side
+        'https://images.unsplash.com/photo-1577223625816-7546f13df4be?q=80&w=600&auto=format&fit=crop', // Packages Freight
+        'https://images.unsplash.com/photo-1616400619175-5beda3a17896?q=80&w=600&auto=format&fit=crop', // Highway logistics
+        'https://images.unsplash.com/photo-1517429128955-67ff5c1e29f4?q=80&w=600&auto=format&fit=crop', // Cargo train
+        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg' // Local asset
       ];
 
-      // Índice sequencial para garantir que não haja imagens repetidas num mesmo ciclo de tela
+      // Índice sequencial para garantir que não haja imagens repetidas num mesmo ciclo de tela nas fallbacks
       let fallbackIndex = 0;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parsedNews: NewsItem[] = data.items
+      let initialNews: NewsItem[] = data.items
         .filter((item: any) => {
           // Validação anti quebra de link
           if (!item || !item.link || !item.link.startsWith('http')) return false;
@@ -192,19 +215,13 @@ export class NewsService {
           }
           return true;
         })
+        .slice(0, 12)
         .map((item: any, index: number) => {
-          
-          // Ignora sumariamente qualquer imagem nativa da API externa para evitar "praias", 
-          // "logos" ou "duplicações", forçando 100% de imagens de logística premium do nosso banco.
-          let imageUrl = fallbackImages[fallbackIndex % fallbackImages.length];
-          fallbackIndex++;
-
           // Trata titulo extraindo da tag HTML se houver falhas, e limpa - Fonte
           let title = item.title;
           const sourceMatch = title.match(/ - ([^-]+)$/);
           const source = sourceMatch ? sourceMatch[1] : 'Portal Especializado';
           
-          // Limpa o nome da fonte no título para ficar estético
           if (sourceMatch) {
             title = title.replace(` - ${source}`, '');
           }
@@ -217,15 +234,23 @@ export class NewsService {
                       : 'Nenhuma descrição fornecida pelo portal para esta chamada.',
             link: item.link,
             publishedDate: item.pubDate || new Date().toISOString(),
-            imageUrl: imageUrl,
+            imageUrl: '', // Será preenchido dinamicamente abaixo
             source: source
           };
         });
 
-      if (parsedNews.length > 0) {
+      // Extrai async a imagem REAL de cada matéria processada
+      initialNews = await Promise.all(initialNews.map(async (item) => {
+        const fallImg = fallbackImages[fallbackIndex % fallbackImages.length];
+        fallbackIndex++;
+        const realImage = await this.fetchRealArticleImage(item.link, fallImg);
+        return { ...item, imageUrl: realImage };
+      }));
+
+      if (initialNews.length > 0) {
         // Assegura carrossel completo de 3 páginas (12 notícias)
-        if (parsedNews.length < 12) {
-          const needed = 12 - parsedNews.length;
+        if (initialNews.length < 12) {
+          const needed = 12 - initialNews.length;
           // Preenche com as notícias embutidas do mock base para nunca deixar o carrossel vazio
           const padding = mockNews.slice(0, needed).map((item, i) => {
             const padImg = fallbackImages[fallbackIndex % fallbackImages.length];
@@ -237,10 +262,10 @@ export class NewsService {
               publishedDate: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString() // Força datas nas últimas horas
             };
           });
-          parsedNews.push(...padding);
+          initialNews.push(...padding);
         }
 
-        this.news = parsedNews;
+        this.news = initialNews;
         this.lastUpdate = new Date();
       } else {
         throw new Error('Nenhuma notícia válida parseada.');
