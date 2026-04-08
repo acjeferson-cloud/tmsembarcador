@@ -139,25 +139,93 @@ export class NewsService {
     return NewsService.instance;
   }
 
-  // Carregar notícias (mock data ou API real)
+  // Carregar notícias (API real + fallback)
   private async loadNews(): Promise<void> {
     try {
-      // Em produção, aqui seria feita a chamada para APIs reais de notícias
-      // Por exemplo: RSS feeds de sites de logística, APIs de notícias, etc.
+      // API Key grátis via rss2json apontando para o feed filtrado de logística do Google News BR
+      const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=logistica+transporte+cargas+rodoviario+fretes+antt&hl=pt-BR&gl=BR&ceid=BR:pt-419');
+      const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
       
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(apiUrl, { mode: 'cors' });
       
-      // Por enquanto, usar dados mock
-      this.news = mockNews;
-      this.lastUpdate = new Date();
+      if (!response.ok) {
+        throw new Error(`Erro na API de notícias: ${response.status}`);
+      }
+
+      const data = await response.json();
       
+      if (data.status !== 'ok' || !Array.isArray(data.items)) {
+        throw new Error('Formato de resposta inválido da API de notícias.');
+      }
+
+      // Imagens genéricas para quando a notícia não tiver foto na capa
+      const fallbackImages = [
+        'https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg',
+        'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/210012/pexels-photo-210012.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+        'https://images.pexels.com/photos/5473955/pexels-photo-5473955.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'
+      ];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const parsedNews: NewsItem[] = data.items
+        .filter((item: any) => item && item.link && item.link.startsWith('http'))
+        .map((item: any, index: number) => {
+          
+          // Extrai conteúdo do <img src="..."> caso Google News jogue na description HTML
+          let imageUrl = item.thumbnail || item.enclosure?.link;
+          
+          if (!imageUrl && item.description) {
+            const match = item.description.match(/<img[^>]+src="([^">]+)"/);
+            if (match && match[1]) {
+              imageUrl = match[1];
+            }
+          }
+
+          if (!imageUrl) {
+            // Sorteia imagem de fallback
+            imageUrl = fallbackImages[index % fallbackImages.length];
+          }
+
+          // Trata titulo extraindo da tag HTML se houver falhas, e limpa - Fonte
+          let title = item.title;
+          const sourceMatch = title.match(/ - ([^-]+)$/);
+          const source = sourceMatch ? sourceMatch[1] : 'Portal Especializado';
+          
+          // Limpa o nome da fonte no título para ficar estético
+          if (sourceMatch) {
+            title = title.replace(` - ${source}`, '');
+          }
+
+          return {
+            id: item.guid || `${index}-${Date.now()}`,
+            title: title,
+            summary: item.description 
+                      ? item.description.replace(/(<([^>]+)>)/gi, "").substring(0, 150) // Strip HTML format
+                      : 'Nenhuma descrição fornecida pelo portal para esta chamada.',
+            link: item.link,
+            publishedDate: item.pubDate || new Date().toISOString(),
+            imageUrl: imageUrl,
+            source: source
+          };
+        });
+
+      if (parsedNews.length > 0) {
+        this.news = parsedNews;
+        this.lastUpdate = new Date();
+      } else {
+        throw new Error('Nenhuma notícia válida parseada.');
+      }
 
     } catch (error) {
-
-      // Em caso de erro, usar dados mock como fallback
-      this.news = mockNews;
-      this.lastUpdate = new Date();
+      console.error('Falha ao atualizar notícias em tempo real:', error);
+      // Fallback seguro: se falhar o request, entregamos o mock, mas tentará atualizar daqui a 3 horas silenciosamente.
+      if (this.news.length === 0) {
+        this.news = mockNews;
+      }
+      this.lastUpdate = new Date(); // Reset timer properly
     }
   }
 
