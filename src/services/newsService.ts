@@ -225,6 +225,18 @@ export class NewsService {
         });
 
       if (parsedNews.length > 0) {
+        // Assegura carrossel completo de 3 páginas (12 notícias)
+        if (parsedNews.length < 12) {
+          const needed = 12 - parsedNews.length;
+          // Preenche com as notícias embutidas do mock base para nunca deixar o carrossel vazio
+          const padding = mockNews.slice(0, needed).map((item, i) => ({
+            ...item,
+            id: `fallback-${i}-${Date.now()}`,
+            publishedDate: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString() // Força datas nas últimas horas
+          }));
+          parsedNews.push(...padding);
+        }
+
         this.news = parsedNews;
         this.lastUpdate = new Date();
       } else {
