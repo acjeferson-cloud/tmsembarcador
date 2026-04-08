@@ -194,21 +194,10 @@ export class NewsService {
         })
         .map((item: any, index: number) => {
           
-          // Extrai conteúdo do <img src="..."> caso Google News jogue na description HTML
-          let imageUrl = item.thumbnail || item.enclosure?.link;
-          
-          if (!imageUrl && item.description) {
-            const match = item.description.match(/<img[^>]+src="([^">]+)"/);
-            if (match && match[1]) {
-              imageUrl = match[1];
-            }
-          }
-
-          if (!imageUrl) {
-            // Sorteia imagem sequencial não repetida
-            imageUrl = fallbackImages[fallbackIndex % fallbackImages.length];
-            fallbackIndex++;
-          }
+          // Ignora sumariamente qualquer imagem nativa da API externa para evitar "praias", 
+          // "logos" ou "duplicações", forçando 100% de imagens de logística premium do nosso banco.
+          let imageUrl = fallbackImages[fallbackIndex % fallbackImages.length];
+          fallbackIndex++;
 
           // Trata titulo extraindo da tag HTML se houver falhas, e limpa - Fonte
           let title = item.title;
