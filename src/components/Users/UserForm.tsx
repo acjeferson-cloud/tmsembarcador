@@ -626,7 +626,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
                 <span>{t('users.form.tabs.address')}</span>
               </div>
             </button>
-            {formData.perfil === 'personalizado' && (
+            {formData.perfil === 'personalizado' && currentUser?.perfil?.toLowerCase() === 'administrador' && (
               <button
                 onClick={() => setActiveTab('permissions')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
@@ -1316,7 +1316,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
           </div>
         )}
 
-        {activeTab === 'permissions' && formData.perfil === 'personalizado' && (
+        {activeTab === 'permissions' && formData.perfil === 'personalizado' && currentUser?.perfil?.toLowerCase() === 'administrador' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('users.form.hints.customPermissionsTitle')}</h2>
