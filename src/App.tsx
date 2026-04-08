@@ -207,11 +207,22 @@ function AppContent() {
   useAutoXmlImport();
   const { isInnovationActive, isLoading: innovationsLoading } = useInnovations();
 
-  // Inicializar na Torre de Controle após o login
+  // Inicializar na página correta após o login com validação em cascata (QA Rules)
   useEffect(() => {
     if (user && !isLoading && !hasInitialized) {
-      setCurrentPage('control-tower');
-      localStorage.setItem('tms-current-page', 'control-tower');
+      let initialPage = 'fiori'; // Fallback: Área de Trabalho (Fiori)
+
+      const hasAcessoTorre = user.perfil !== 'personalizado' || (user.permissoes && user.permissoes.includes('control-tower'));
+      const hasAcessoDashboard = user.perfil !== 'personalizado' || (user.permissoes && user.permissoes.includes('dashboard'));
+
+      if (hasAcessoTorre) {
+        initialPage = 'control-tower';
+      } else if (hasAcessoDashboard) {
+        initialPage = 'dashboard';
+      }
+
+      setCurrentPage(initialPage);
+      localStorage.setItem('tms-current-page', initialPage);
       setHasInitialized(true);
     }
 
