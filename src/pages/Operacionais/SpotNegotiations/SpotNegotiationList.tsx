@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { spotNegotiationService, SpotNegotiation } from '../../services/spotNegotiationService';
+import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
 import { Plus, Search, FileText, CheckCircle, Clock } from 'lucide-react';
-import Breadcrumbs from '../Layout/Breadcrumbs';
+import Breadcrumbs from '../../../components/Layout/Breadcrumbs';
 
 export const SpotNegotiationList: React.FC<{ onNew: () => void }> = ({ onNew }) => {
   const { t } = useTranslation();

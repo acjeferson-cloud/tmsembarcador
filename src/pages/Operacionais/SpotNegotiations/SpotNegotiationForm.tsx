@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { spotNegotiationService, SpotNegotiation } from '../../services/spotNegotiationService';
-import { supabase } from '../../lib/supabase';
-import { TenantContextHelper } from '../../services/TenantContextHelper';
+import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
+import { supabase } from '../../../lib/supabase';
+import { TenantContextHelper } from '../../../utils/tenantContext';
 import { ArrowLeft, Save, Upload, Info, Search, CheckSquare, Square } from 'lucide-react';
 
 export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {

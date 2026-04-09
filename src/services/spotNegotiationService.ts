@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { TenantContextHelper } from './TenantContextHelper';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 // Supabase client instance (reusing app env)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;

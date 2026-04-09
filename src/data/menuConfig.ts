@@ -96,7 +96,7 @@ export const menuConfig: MenuItem[] = [
   {
     id: 'spot-negotiations',
     labelKey: 'menu.spotNegotiations',
-    icon: Handshake,
+    icon: DollarSign,
     color: 'bg-emerald-500',
     categoryKey: 'menu.categories.operacoes'
   },

@@ -863,7 +863,8 @@
     "noMenusFound": "No se encontraron menús",
     "tryAnotherSearch": "Intente con otro término de búsqueda",
     "expandMenu": "Expandir menú",
-    "collapseMenu": "Contraer menú"
+    "collapseMenu": "Contraer menú",
+    "spotNegotiations": "Cotizaciones Manuales (Spot)"
   },
   "messages": {
     "saveSuccess": "¡Registro guardado con éxito!",

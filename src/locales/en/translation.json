@@ -863,7 +863,8 @@
     "noMenusFound": "No menus found",
     "tryAnotherSearch": "Try another search term",
     "expandMenu": "Expand menu",
-    "collapseMenu": "Collapse menu"
+    "collapseMenu": "Collapse menu",
+    "spotNegotiations": "Manual Spot Quotes"
   },
   "messages": {
     "saveSuccess": "Record saved successfully!",
