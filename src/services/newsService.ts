@@ -15,7 +15,7 @@ const mockNews: NewsItem[] = [
     id: '1',
     title: 'Nova regulamentação para transporte de cargas perigosas entra em vigor',
     summary: 'ANTT publica novas diretrizes que impactam o setor de transporte rodoviário de cargas especiais.',
-    link: 'https://www.gov.br/antt/pt-br/assuntos/cargas-perigosas',
+    link: 'https://www.gov.br/antt/pt-br',
     publishedDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 horas atrás
     imageUrl: 'https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'ANTT'
@@ -24,7 +24,7 @@ const mockNews: NewsItem[] = [
     id: '2',
     title: 'Setor logístico brasileiro cresce 8,5% no primeiro trimestre',
     summary: 'Dados do IBGE mostram recuperação forte do setor, impulsionada pelo e-commerce e exportações.',
-    link: 'https://www.ibge.gov.br/estatisticas/economicas/comercio/9227-pesquisa-mensal-de-comercio.html',
+    link: 'https://www.ibge.gov.br',
     publishedDate: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 horas atrás
     imageUrl: '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg',
     source: 'IBGE'
@@ -33,7 +33,7 @@ const mockNews: NewsItem[] = [
     id: '3',
     title: 'Tecnologia blockchain revoluciona rastreamento de cargas',
     summary: 'Empresas adotam soluções baseadas em blockchain para maior transparência na cadeia logística.',
-    link: 'https://www.tecnologistica.com.br/blockchain-logistica',
+    link: 'https://www.tecnologistica.com.br',
     publishedDate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 horas atrás
     imageUrl: 'https://images.pexels.com/photos/5473955/pexels-photo-5473955.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'TecnoLogística'
@@ -42,7 +42,7 @@ const mockNews: NewsItem[] = [
     id: '4',
     title: 'Combustível: preços estabilizam após alta volatilidade',
     summary: 'ANP registra estabilização nos preços do diesel, principal combustível do transporte rodoviário.',
-    link: 'https://www.gov.br/anp/pt-br/centrais-de-conteudo/noticias',
+    link: 'https://www.gov.br/anp/pt-br',
     publishedDate: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 horas atrás
     imageUrl: 'https://images.pexels.com/photos/33688/delicate-arch-night-stars-landscape.jpg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'ANP'
@@ -51,7 +51,7 @@ const mockNews: NewsItem[] = [
     id: '5',
     title: 'Investimentos em infraestrutura portuária batem recorde',
     summary: 'Governo anuncia R$ 15 bilhões em investimentos para modernização dos portos brasileiros.',
-    link: 'https://www.gov.br/infraestrutura/pt-br/assuntos/noticias',
+    link: 'https://www.gov.br/portos-e-aeroportos/pt-br',
     publishedDate: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 horas atrás
     imageUrl: 'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'Ministério da Infraestrutura'
@@ -60,7 +60,7 @@ const mockNews: NewsItem[] = [
     id: '6',
     title: 'Sustentabilidade: transportadoras investem em veículos elétricos',
     summary: 'Setor aposta em eletrificação da frota para reduzir emissões e custos operacionais.',
-    link: 'https://www.mobilidadeeletrica.com.br/transporte-cargas',
+    link: 'https://www.mobilidade.estadao.com.br',
     publishedDate: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(), // 18 horas atrás
     imageUrl: 'https://images.pexels.com/photos/110844/pexels-photo-110844.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'Mobilidade Elétrica'
@@ -78,7 +78,7 @@ const mockNews: NewsItem[] = [
     id: '8',
     title: 'Inteligência artificial otimiza rotas de entrega urbana',
     summary: 'Algoritmos de IA reduzem em até 25% o tempo de entrega em grandes centros urbanos.',
-    link: 'https://www.inovacaourbana.com.br/ia-logistica',
+    link: 'https://canaltech.com.br/logistica/',
     publishedDate: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(), // 1.25 dias atrás
     imageUrl: 'https://images.pexels.com/photos/2599244/pexels-photo-2599244.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'Inovação Urbana'
@@ -87,7 +87,7 @@ const mockNews: NewsItem[] = [
     id: '9',
     title: 'Cabotagem cresce 15% e ganha espaço no transporte nacional',
     summary: 'Modal aquaviário se consolida como alternativa sustentável para longas distâncias.',
-    link: 'https://www.antaq.gov.br/Portal/Anuarios_Portuarios/Anuario_Aquaviario.asp',
+    link: 'https://www.gov.br/antaq/pt-br',
     publishedDate: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(), // 1.5 dias atrás
     imageUrl: 'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'ANTAQ'
@@ -96,7 +96,7 @@ const mockNews: NewsItem[] = [
     id: '10',
     title: 'Acordo comercial facilita transporte entre Brasil e Argentina',
     summary: 'Novo protocolo reduz burocracia e agiliza o transporte internacional de cargas.',
-    link: 'https://www.gov.br/mdic/pt-br/assuntos/comercio-exterior',
+    link: 'https://www.gov.br/mdic/pt-br',
     publishedDate: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
     imageUrl: 'https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'MDIC'
@@ -105,7 +105,7 @@ const mockNews: NewsItem[] = [
     id: '11',
     title: 'Startups de logística recebem R$ 500 milhões em investimentos',
     summary: 'Venture capital aposta forte em inovação tecnológica para o setor de transportes.',
-    link: 'https://www.startuplogistica.com.br/investimentos',
+    link: 'https://startups.com.br',
     publishedDate: new Date(Date.now() - 60 * 60 * 60 * 1000).toISOString(), // 2.5 dias atrás
     imageUrl: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'Startup Logística'
@@ -114,7 +114,7 @@ const mockNews: NewsItem[] = [
     id: '12',
     title: 'Ferrovias brasileiras ampliam capacidade em 20%',
     summary: 'Investimentos em infraestrutura ferroviária prometem reduzir custos de transporte de grãos.',
-    link: 'https://www.antt.gov.br/ferrovias',
+    link: 'https://www.gov.br/antt/pt-br',
     publishedDate: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(), // 3 dias atrás
     imageUrl: 'https://images.pexels.com/photos/210012/pexels-photo-210012.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
     source: 'ANTT'
