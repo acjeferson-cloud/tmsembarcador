@@ -52,7 +52,10 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
     }
 
     let iQuery = supabase.from('invoices_nfe')
-      .select('id, numero, serie, data_emissao, quantidade_volumes, peso_total, cubagem_total, valor_total, destinatario_nome')
+      .select(`
+        id, numero, serie, data_emissao, quantidade_volumes, peso_total, cubagem_total, valor_total, destinatario_nome,
+        customer:invoices_nfe_customers(cidade, estado)
+      `)
       .order('created_at', { ascending: false })
       .limit(200);
       
@@ -307,7 +310,9 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
                         <td className="p-3 text-gray-600 dark:text-gray-400 text-right">{Number(nf.peso_total || 0).toLocaleString('pt-BR')}</td>
                         <td className="p-3 text-gray-600 dark:text-gray-400 text-right">{Number(nf.cubagem_total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 4})}</td>
                         <td className="p-3 font-medium text-gray-800 dark:text-gray-200 text-right">{Number(nf.valor_total || 0).toLocaleString('pt-BR', {style: 'currency', currency:'BRL'})}</td>
-                        <td className="p-3 text-gray-500 dark:text-gray-500 text-center text-xs font-semibold bg-gray-50/50 dark:bg-gray-700/20">N/A</td>
+                        <td className="p-3 text-gray-500 dark:text-gray-400 text-center text-xs font-semibold bg-gray-50/50 dark:bg-gray-700/20">
+                          {nf.customer?.[0] ? `${nf.customer[0].cidade} / ${nf.customer[0].estado}` : 'N/A'}
+                        </td>
                       </tr>
                     )
                   })
