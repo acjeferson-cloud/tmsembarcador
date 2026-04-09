@@ -18,6 +18,7 @@ export const controlTowerService = {
     
     // Mocks padrão para manter o layout enquanto não são revitalizados
     let totalDeliveries = 0;
+    let inTransit = 0;
     
     try {
       const twentyFourHoursAgo = new Date();
@@ -33,25 +34,35 @@ export const controlTowerService = {
         .contains('metadata', { occurrences: [{ codigo: '02' }] })
         .gte('updated_at', isoDate);
       
+      // KPI 2: Em Trânsito ou Saiu para Entrega
+      let queryTransit = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
+        .in('situacao', ['em_transito', 'saiu_entrega'])
+        .gte('updated_at', isoDate);
+
+      
       if (ctx?.organizationId) {
         query01 = query01.eq('organization_id', ctx.organizationId);
         query02 = query02.eq('organization_id', ctx.organizationId);
+        queryTransit = queryTransit.eq('organization_id', ctx.organizationId);
       }
       if (ctx?.environmentId) {
         query01 = query01.eq('environment_id', ctx.environmentId);
         query02 = query02.eq('environment_id', ctx.environmentId);
+        queryTransit = queryTransit.eq('environment_id', ctx.environmentId);
       }
       if (ctx?.establishmentId) {
         query01 = query01.eq('establishment_id', ctx.establishmentId);
         query02 = query02.eq('establishment_id', ctx.establishmentId);
+        queryTransit = queryTransit.eq('establishment_id', ctx.establishmentId);
       }
 
-      const [res01, res02] = await Promise.all([query01, query02]);
+      const [res01, res02, resTransit] = await Promise.all([query01, query02, queryTransit]);
       
       const count01 = res01.count || 0;
       const count02 = res02.count || 0;
       
       totalDeliveries = count01 + count02;
+      inTransit = resTransit.count || 0;
 
     } catch (error) {
       console.error('Erro ao buscar KPIs', error);
@@ -59,7 +70,7 @@ export const controlTowerService = {
 
     return {
       totalDeliveries: totalDeliveries,
-      inTransit: 89, // Mocks originais
+      inTransit: inTransit,
       delivered: 1098,
       delayed: 23,
       waitingCollection: 37,

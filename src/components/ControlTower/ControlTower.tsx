@@ -81,7 +81,7 @@ export const ControlTower: React.FC = () => {
     {
       title: t('controlTower.kpis.inTransit'),
       value: kpiData.inTransit.toString(),
-      change: '+3',
+      change: kpiData.inTransit > 0 ? 'Conectado' : '-',
       changeType: 'positive' as const,
       icon: Truck,
       color: 'orange'
