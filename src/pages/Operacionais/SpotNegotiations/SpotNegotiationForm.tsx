@@ -24,7 +24,10 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
       if(!ctx) return;
       
       // Fetch Carriers
-      let cQuery = supabase.from('carriers').select('id, nome_fantasia, razao_social');
+      let cQuery = supabase.from('carriers')
+        .select('id, codigo, nome_fantasia, razao_social')
+        .order('codigo', { ascending: true });
+      
       if (ctx.organizationId) cQuery = cQuery.eq('organization_id', ctx.organizationId);
       const { data: cData } = await cQuery;
       setCarriers(cData || []);
@@ -109,7 +112,11 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
                       className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
                     >
                       <option value="">Selecione...</option>
-                      {carriers.map(c => <option key={c.id} value={c.id}>{c.nome_fantasia || c.razao_social}</option>)}
+                      {carriers.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.codigo ? `${c.codigo} - ` : ''}{c.nome_fantasia || c.razao_social}
+                        </option>
+                      ))}
                     </select>
                  </div>
 
