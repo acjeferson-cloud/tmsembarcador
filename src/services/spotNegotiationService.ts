@@ -194,6 +194,61 @@ export const spotNegotiationService = {
     }
   },
 
+  async getNegotiationById(id: string): Promise<any | null> {
+    try {
+      const { data: neg, error } = await supabase
+        .from('freight_spot_negotiations')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error || !neg) return null;
+
+      // Buscar os NFE IDs atrelados
+      const { data: pivots } = await supabase
+        .from('freight_spot_invoices')
+        .select('invoice_id')
+        .eq('negotiation_id', id);
+
+      const nfeIds = pivots ? pivots.map(p => p.invoice_id) : [];
+
+      return {
+        ...neg,
+        nfeIds
+      };
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  },
+
+  async updateNegotiation(id: string, carrierId: string, value: number, validTo: string, attachmentUrl: string | null): Promise<boolean> {
+    try {
+      // In a real application we would also sync the selected invoices if they change.
+      // But typically a spot negotiation might only be updated on value or validTo.
+      const payload: any = {
+        carrier_id: carrierId,
+        agreed_value: value,
+        valid_to: validTo
+      };
+      if (attachmentUrl) payload.attachment_url = attachmentUrl;
+
+      const { error } = await supabase
+        .from('freight_spot_negotiations')
+        .update(payload)
+        .eq('id', id);
+
+      if (error) {
+         console.error('Failed to update negotiation', error);
+         return false;
+      }
+      return true;
+    } catch(e) {
+      console.error(e);
+      return false;
+    }
+  },
+
   async getFirstLinkedInvoice(negotiationId: string): Promise<any | null> {
     try {
       const { data: pivots, error: pivotErr } = await supabase

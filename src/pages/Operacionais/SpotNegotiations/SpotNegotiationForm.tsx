@@ -5,7 +5,7 @@ import { TenantContextHelper } from '../../../utils/tenantContext';
 import { ArrowLeft, Save, Upload, Info, CheckSquare, Square, Calendar, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
-export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: string }> = ({ onBack, initialId }) => {
+export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: string; isReadOnly?: boolean }> = ({ onBack, initialId, isReadOnly }) => {
   const [carriers, setCarriers] = useState<any[]>([]);
   const [availableNfes, setAvailableNfes] = useState<any[]>([]);
   const [selectedNfeIds, setSelectedNfeIds] = useState<string[]>([]);
@@ -15,6 +15,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
   const [validTo, setValidTo] = useState('');
   const [observations, setObservations] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [existingAttachmentUrl, setExistingAttachmentUrl] = useState<string | null>(null);
   
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -22,6 +23,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
   const [saving, setSaving] = useState(false);
   const [loadingNfes, setLoadingNfes] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isInitializing, setIsInitializing] = useState(!!initialId);
 
   useEffect(() => {
     const fetchSelects = async () => {
@@ -40,8 +42,35 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
   }, []);
 
   useEffect(() => {
-    fetchNfes();
+    if (initialId) {
+      loadInitialData();
+    } else {
+      fetchNfes();
+    }
   }, [startDate, endDate]);
+
+  const loadInitialData = async () => {
+    setIsInitializing(true);
+    const data = await spotNegotiationService.getNegotiationById(initialId!);
+    if (data) {
+      setCarrierId(data.carrier_id);
+      setValue(data.agreed_value.toString());
+      setValidTo(data.valid_to ? data.valid_to.substring(0, 10) : '');
+      setSelectedNfeIds(data.nfeIds);
+      setExistingAttachmentUrl(data.attachment_url);
+
+      // Force fetch the specific NFs regardless of Date Filter
+      if (data.nfeIds && data.nfeIds.length > 0) {
+         const { data: iData } = await supabase.from('invoices_nfe')
+           .select('id, numero, serie, data_emissao, quantidade_volumes, peso_total, cubagem_total, valor_total, destinatario_nome, customer:invoices_nfe_customers(cidade, estado)')
+           .in('id', data.nfeIds);
+         if (iData) {
+            setAvailableNfes(iData);
+         }
+      }
+    }
+    setIsInitializing(false);
+  };
 
   const fetchNfes = async () => {
     setLoadingNfes(true);
@@ -92,47 +121,68 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
     if (!value || isNaN(Number(value))) return setErrorMsg('Informe um valor acordado válido.');
     if (!validTo) return setErrorMsg('Informe a data limite (validade).');
     if (selectedNfeIds.length === 0) return setErrorMsg('Selecione ao menos 1 NF para o agrupamento Spot.');
-    if (!file) return setErrorMsg('Upload de evidência é obrigatório em cotações Spot.');
 
     setSaving(true);
     setErrorMsg('');
 
-    const attachment_url = await spotNegotiationService.uploadProof(file);
-    if (!attachment_url) {
+    let attachment_url = existingAttachmentUrl;
+    if (file) {
+      attachment_url = await spotNegotiationService.uploadProof(file);
+      if (!attachment_url) {
+        setErrorMsg('Falha ao processar upload da evidência. Tente novamente.');
+        setSaving(false);
+        return;
+      }
+    } else if (!attachment_url) {
+       setErrorMsg('Upload de evidência é obrigatório em cotações Spot.');
        setSaving(false);
-       return setErrorMsg('Falha ao enviar a evidência. Verifique permissões do Supabase Storage.');
+       return;
     }
 
-    const negotiation: SpotNegotiation = {
-      carrier_id: carrierId,
-      agreed_value: Number(value),
-      valid_to: new Date(validTo).toISOString(),
-      attachment_url: attachment_url,
-      observations: observations,
-      status: 'pendente_faturamento'
-    };
-
-    const success = await spotNegotiationService.createNegotiation(negotiation, selectedNfeIds);
-    if (success) {
-      onBack();
+    if (initialId) {
+       const ok = await spotNegotiationService.updateNegotiation(initialId, carrierId, Number(value), validTo, attachment_url);
+       if (ok) {
+           onBack();
+       } else {
+           setErrorMsg('Erro ao atualizar cotação.');
+       }
     } else {
-      setErrorMsg('Falha ao registrar a negociação no Banco de Dados.');
-      setSaving(false);
+        const payload = {
+          carrier_id: carrierId,
+          agreed_value: Number(value),
+          valid_to: validTo,
+          attachment_url
+        };
+        const success = await spotNegotiationService.createSpotNegotiation(payload, selectedNfeIds);
+        if (success) {
+          onBack();
+        } else {
+          setErrorMsg('Ocorreu um erro ao gerar a cotação Spot. Verifique os dados.');
+        }
     }
+    setSaving(false);
   };
+
+  if (isInitializing) {
+     return <div className="p-6 text-center text-gray-500">Carregando dados da cotação...</div>;
+  }
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen space-y-6">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors">
-            <ArrowLeft className="text-gray-600 dark:text-gray-300"/>
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Registrar Frete Spot (Bypass de Tabela)</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Ajuste os parâmetros Comerciais no topo e direcione as NFs atreladas abaixo.</p>
-          </div>
+        <div className="flex items-center gap-4 mb-6">
+        <button onClick={onBack} className="text-gray-500 hover:text-gray-700 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isReadOnly ? 'Consulta de Cotação Spot' : initialId ? 'Editar Cotação Spot' : 'Nova Cotação Spot'}
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+             {isReadOnly ? 'Visualização dos termos acordados.' : initialId ? 'Altere as informações comerciais da negociação.' : 'Agrupe notas fiscais sob um valor de frete pré-acordado com a transportadora.'}
+          </p>
         </div>
+      </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -142,23 +192,23 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Inicial</label>
               <input 
-                type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                type="date" value={startDate} onChange={e => setStartDate(e.target.value)} disabled={isReadOnly}
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Final</label>
               <input 
-                type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                type="date" value={endDate} onChange={e => setEndDate(e.target.value)} disabled={isReadOnly}
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
 
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Transportadora</label>
               <select 
-                value={carrierId} onChange={(e) => setCarrierId(e.target.value)}
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                value={carrierId} onChange={(e) => setCarrierId(e.target.value)} disabled={isReadOnly}
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 <option value="">Selecione...</option>
                 {carriers.map(c => (
@@ -172,17 +222,17 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor Global (R$)</label>
               <input 
-                type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)}
+                type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)} disabled={isReadOnly}
                 placeholder="Ex: 1500.00"
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
 
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Validade Comercial</label>
               <input 
-                type="date" value={validTo} onChange={e => setValidTo(e.target.value)}
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                type="date" value={validTo} onChange={e => setValidTo(e.target.value)} disabled={isReadOnly}
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
          </div>
@@ -194,19 +244,27 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
                   <input 
                     type="file" 
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
+                    disabled={isReadOnly}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                     accept=".pdf,image/*"
                     title="Anexar email ou print comercial"
                   />
+                  {existingAttachmentUrl && (
+                     <div className="mt-2 text-sm text-blue-600 font-medium">
+                        <a href={existingAttachmentUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 hover:underline">
+                          <CheckSquare size={16}/> Evidência já anexada (clique para ver)
+                        </a>
+                     </div>
+                  )}
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações Internas (Visível só para Auditoria)</label>
               <textarea 
-                value={observations} onChange={e => setObservations(e.target.value)}
+                value={observations} onChange={e => setObservations(e.target.value)} disabled={isReadOnly}
                 placeholder="Detalhes acordados via telefone, restrição, nome da pessoa de contato..."
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white min-h-[60px] max-h-[80px] focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white min-h-[60px] max-h-[80px] focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
             </div>
          </div>
@@ -228,14 +286,16 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
                </span>
             </div>
             
-            <button 
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2 transition-colors whitespace-nowrap"
-            >
-              <Save size={18} />
-              {saving ? 'Gravando e Travando NFes...' : 'Concluir Agrupamento Spot'}
-            </button>
+            {!isReadOnly && (
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2 transition-colors whitespace-nowrap"
+              >
+                <Save size={18} />
+                {saving ? 'Gravando e Travando NFes...' : 'Concluir Agrupamento Spot'}
+              </button>
+            )}
           </div>
         </div>
         
@@ -258,7 +318,8 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
                   <th className="p-3 w-12 text-center">
                      <input 
                        type="checkbox" 
-                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                       disabled={isReadOnly || !!initialId}
+                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                        checked={availableNfes.length > 0 && selectedNfeIds.length === availableNfes.length}
                        onChange={(e) => toggleNfeSelection('', true, e.target.checked)}
                      />
@@ -293,7 +354,8 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
                         <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <input 
                             type="checkbox" 
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            disabled={isReadOnly || !!initialId}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                             checked={isSelected}
                             onChange={() => toggleNfeSelection(nf.id)}
                           />

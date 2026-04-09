@@ -7,7 +7,7 @@ import { RelationshipMapModal } from '../../../components/RelationshipMap';
 import { Toast, ToastType } from '../../../components/common/Toast';
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 
-export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: string) => void }> = ({ onNew, onEdit }) => {
+export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: string) => void; onView?: (id: string) => void }> = ({ onNew, onEdit, onView }) => {
   const { t } = useTranslation();
   const [data, setData] = useState<SpotNegotiation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,8 +77,11 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
     if (!item) return;
 
     if (action === 'view') {
-      // Abre o form em modo readonly - futuramente suportado via prop id
-      setToast({ message: 'Funcionalidade de visualização em desenvolvimento.', type: 'info' });
+      if (onView) {
+        onView(id);
+      } else {
+        setToast({ message: 'Funcionalidade de visualização indisponível.', type: 'info' });
+      }
     } else if (action === 'edit') {
       if (onEdit) {
         onEdit(id);
@@ -86,13 +89,17 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
         setToast({ message: 'Funcionalidade de edição indisponível.', type: 'info' });
       }
     } else if (action === 'map') {
-      const invoiceDoc = await spotNegotiationService.getFirstLinkedInvoice(id);
-      if (invoiceDoc) {
-        setSelectedInvoiceForMap(invoiceDoc);
-        setShowRelationshipMap(true);
-      } else {
-        setToast({ message: 'Nenhuma Nota Fiscal atrelada a esta cotação para formar relacionamento.', type: 'warning' });
-      }
+      // The Spot itself becomes the Root Node
+      const spotDoc = {
+        id: `spot-${id}`,
+        type: 'spot' as const,
+        number: item.carrier_name, // Carrier shows as the "number" or title
+        date: item.valid_to || new Date().toISOString(),
+        status: item.status,
+        value: Number(item.agreed_value)
+      };
+      setSelectedInvoiceForMap(spotDoc);
+      setShowRelationshipMap(true);
     } else if (action === 'cancel') {
       setConfirmDialog({
         isOpen: true,
@@ -226,6 +233,15 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
                     <td className="px-3 py-4 whitespace-nowrap">
                        <div className="flex items-center space-x-2">
+                          {/* Consulta */}
+                          <button
+                            onClick={() => handleAction(item.id!, 'view')}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            title="Consulta"
+                          >
+                            <Eye size={16} />
+                          </button>
+
                           {/* Mapa de Relações */}
                           <button
                             onClick={() => handleAction(item.id!, 'map')}
@@ -247,13 +263,6 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                             {openActionMenu === item.id && (
                               <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
                                 <div className="py-1">
-                                  <button
-                                    onClick={() => handleAction(item.id!, 'view')}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
-                                  >
-                                    <Eye size={14} />
-                                    <span>Consulta</span>
-                                  </button>
                                   <button
                                     onClick={() => handleAction(item.id!, 'edit')}
                                     disabled={item.status === 'liquidado'}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileText, Package, Truck, CreditCard, ExternalLink, RefreshCw, PackageCheck } from 'lucide-react';
+import { X, FileText, Package, Truck, CreditCard, ExternalLink, RefreshCw, PackageCheck, Receipt } from 'lucide-react';
 import ReactFlow, { 
   Node, 
   Edge, 
@@ -14,7 +14,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 // Document types
-type DocumentType = 'order' | 'invoice' | 'pickup' | 'cte' | 'bill';
+type DocumentType = 'order' | 'invoice' | 'spot' | 'pickup' | 'cte' | 'bill';
 
 // Document interface
 interface Document {
@@ -43,7 +43,73 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
   const documents: Document[] = [sourceDocument];
   const relationships: Array<{from: string, to: string}> = [];
   
-  if (sourceDocument.type === 'order') {
+  if (sourceDocument.type === 'spot') {
+    const spotId = sourceDocument.id.replace('spot-', '');
+    // Busca Invoices ligados a essa cotacao
+    const { data: pivots } = await (supabase as any)
+      .from('freight_spot_invoices')
+      .select('invoice_id')
+      .eq('negotiation_id', spotId);
+
+    if (pivots && pivots.length > 0) {
+      const invoiceIds = pivots.map((p: any) => p.invoice_id);
+      
+      const { data: invoicesData } = await (supabase as any)
+        .from('invoices_nfe')
+        .select('id, numero, data_emissao, situacao, valor_total')
+        .in('id', invoiceIds);
+
+      if (invoicesData) {
+        for (const inv of invoicesData) {
+          const invId = `invoice-${inv.id}`;
+          documents.push({
+            id: invId,
+            type: 'invoice',
+            number: inv.numero,
+            date: inv.data_emissao || new Date().toISOString(),
+            status: inv.situacao || 'Emitida',
+            value: Number(inv.valor_total || 0)
+          });
+          // Relation: Invoice -> Spot (Spot sits between NF and CTe)
+          relationships.push({ from: invId, to: sourceDocument.id });
+        }
+
+        // Busca CTes conectados a essas Invoices
+        const invoiceNumbers = invoicesData.map((inv: any) => inv.numero);
+        const { data: cteLinks } = await (supabase as any)
+          .from('ctes_invoices')
+          .select('cte_id, number')
+          .in('number', invoiceNumbers);
+
+        const resolvedCteIds = cteLinks ? [...new Set(cteLinks.map((l:any) => l.cte_id))] : [];
+
+        if (resolvedCteIds.length > 0) {
+          const { data: ctesDataLinked } = await (supabase as any)
+            .from('ctes_complete')
+            .select('id, number, issue_date, status, total_value')
+            .in('id', resolvedCteIds);
+            
+          if (ctesDataLinked) {
+            for (const c of ctesDataLinked) {
+              const cteId = `cte-${c.id}`;
+              if (!documents.some(d => d.id === cteId)) {
+                documents.push({
+                  id: cteId,
+                  type: 'cte',
+                  number: c.number,
+                  date: c.issue_date || new Date().toISOString(),
+                  status: c.status || 'Emitido',
+                  value: Number(c.total_value || 0)
+                });
+              }
+              // Relation: Spot -> CTE (Spot is the middleman)
+              relationships.push({ from: sourceDocument.id, to: cteId });
+            }
+          }
+        }
+      }
+    }
+  } else if (sourceDocument.type === 'order') {
     // Busca Invoices e CTes relacionados a esse pedido
     const orderId = sourceDocument.id.replace('order-', '');
     const orderNumber = sourceDocument.number;
@@ -968,6 +1034,8 @@ const getDocumentIcon = (type: DocumentType) => {
       return <PackageCheck className="text-cyan-600 dark:text-cyan-400" />;
     case 'cte':
       return <Truck className="text-orange-600 dark:text-orange-400" />;
+    case 'spot':
+      return <Receipt className="text-yellow-600 dark:text-yellow-400" />;
     case 'bill':
       return <CreditCard className="text-purple-600 dark:text-purple-400" />;
   }
@@ -984,6 +1052,8 @@ const getDocumentColor = (type: DocumentType) => {
       return { bg: 'bg-cyan-50 dark:bg-cyan-900/30', border: 'border-cyan-200 dark:border-cyan-800', text: 'text-cyan-800 dark:text-cyan-200' };
     case 'cte':
       return { bg: 'bg-orange-50 dark:bg-orange-900/30', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-800 dark:text-orange-200' };
+    case 'spot':
+      return { bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-800 dark:text-yellow-200' };
     case 'bill':
       return { bg: 'bg-purple-50 dark:bg-purple-900/30', border: 'border-purple-200 dark:border-purple-800', text: 'text-purple-800 dark:text-purple-200' };
   }
@@ -1000,6 +1070,8 @@ const getDocumentTypeLabel = (type: DocumentType, t: any) => {
       return t('orders.relationshipMap.pickup');
     case 'cte':
       return t('orders.relationshipMap.cte');
+    case 'spot':
+      return 'Cotação Spot';
     case 'bill':
       return t('orders.relationshipMap.bill');
   }
