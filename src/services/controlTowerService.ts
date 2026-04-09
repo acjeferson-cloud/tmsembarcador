@@ -37,7 +37,7 @@ export const controlTowerService = {
       // KPI 2: Em Trânsito ou Saiu para Entrega
       let queryTransit = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
         .in('situacao', ['em_transito', 'saiu_entrega'])
-        .gte('updated_at', isoDate);
+        .gte('status_updated_at', isoDate);
 
       
       if (ctx?.organizationId) {

@@ -492,6 +492,7 @@ export const trackingService = {
       if (nfeId) {
         await (supabase as any).from('invoices_nfe').update({ 
           situacao: calculatedStatus, 
+          status_updated_at: new Date().toISOString(),
           updated_at: new Date().toISOString() 
         }).eq('id', nfeId);
       }

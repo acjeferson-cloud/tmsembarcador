@@ -334,6 +334,7 @@ export const nfeService = {
         .from('invoices_nfe')
         .update({
           situacao: status,
+          status_updated_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', id);

@@ -306,8 +306,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         if (inputCubage !== (invoice.cubagem_total || 0)) {
             updateData.cubagem_total = inputCubage;
         }
-        
         if (Object.keys(updateData).length > 0) {
+            updateData.updated_at = new Date().toISOString();
+            if (updateData.situacao) {
+              updateData.status_updated_at = new Date().toISOString();
+            }
             const { error: updateError } = await (supabase as any)
               .from('invoices_nfe')
               .update(updateData)
