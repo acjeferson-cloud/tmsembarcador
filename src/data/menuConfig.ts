@@ -94,13 +94,6 @@ export const menuConfig: MenuItem[] = [
     categoryKey: 'menu.categories.operacoes'
   },
   {
-    id: 'spot-negotiations',
-    labelKey: 'menu.spotNegotiations',
-    icon: DollarSign,
-    color: 'bg-emerald-500',
-    categoryKey: 'menu.categories.operacoes'
-  },
-  {
     id: 'operational-docs',
     labelKey: 'menu.operationalDocs',
     icon: FileText,
@@ -110,6 +103,7 @@ export const menuConfig: MenuItem[] = [
     submenu: [
       { id: 'orders', labelKey: 'menu.orders', icon: ShoppingCart, color: 'bg-amber-500', categoryKey: 'menu.categories.documentos' },
       { id: 'invoices', labelKey: 'menu.invoices', icon: Receipt, color: 'bg-orange-500', categoryKey: 'menu.categories.documentos' },
+      { id: 'spot-negotiations', labelKey: 'menu.spotNegotiations', icon: DollarSign, color: 'bg-emerald-500', categoryKey: 'menu.categories.documentos' },
       { id: 'pickups', labelKey: 'menu.pickups', icon: Package, color: 'bg-yellow-500', categoryKey: 'menu.categories.documentos' },
       { id: 'ctes', labelKey: 'menu.ctes', icon: FileCheck, color: 'bg-red-500', categoryKey: 'menu.categories.documentos' },
       { id: 'bills', labelKey: 'menu.bills', icon: CreditCard, color: 'bg-rose-500', categoryKey: 'menu.categories.documentos' }
