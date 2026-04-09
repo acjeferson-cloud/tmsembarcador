@@ -74,16 +74,20 @@ export const ControlTowerCalcModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4 text-gray-700 dark:text-gray-300">
             <h4 className="flex items-center gap-2 font-bold text-lg text-gray-900 dark:text-white border-b pb-2 dark:border-gray-700">
               <Radio className="w-5 h-5 text-indigo-600" />
-              Informações do Hub
+              Saúde da Esteira Operacional
             </h4>
             <div className="space-y-4">
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Radar de Alertas</p>
-                <p className="text-sm">Rastreia qualquer quebra de fluxo padrão detectada nas Materialized Views, garantindo visão antecipada de anomalias (tais como: atrasos sistêmicos, notas travadas, etc).</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">Radar de Anomalias (Resumo 24h)</p>
+                <p className="text-sm">Consolida todos os incidentes logísticos ativos no dia de forma visual. Acompanha Devoluções de mercadoria, Atrasos reportados pela base e Sinistros graves, mantendo o foco no tratamento das anomalias críticas (By-Exception).</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
-                <p className="font-semibold text-gray-900 dark:text-white mb-1">Carrossel Semanal de Notícias</p>
-                <p className="text-sm">Motor que varre os principais portais logísticos em busca das pautas mais recentes (limite de 15 dias) e aplica filtros de verificação para exibir somente conteúdo de qualidade.</p>
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">Projeções do Dia (Funil SLA)</p>
+                <p className="text-sm">Um gráfico de funil que cruza a volumetria de demandas de entrega daquele dia contra o que já foi finalizado. Mostra rapidamente se a operação vai deixar pendências de SLA para o dia seguinte (previsto x entregue x em rota x atrasado).</p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">Carrossel de Notícias Corporativas</p>
+                <p className="text-sm">Motor que varre os principais portais logísticos em busca das pautas de mercado mais recentes (limite de 15 dias) auxiliando no radar executivo (cotações, greves em modais, tendências econômicas).</p>
               </div>
             </div>
           </div>
