@@ -64,14 +64,14 @@
     "sending": "Enviando..."
   },
   "freightQuote": {
-    "title": "Cotización de Fletes",
-    "subtitle": "Simule y compare fletes entre transportistas",
+    "title": "Calculadora de Fletes",
+    "subtitle": "Calcule y compare valores entre transportistas",
     "tabs": {
-      "newQuote": "Nueva Cotización",
+      "newQuote": "Nuevo Cálculo",
       "history": "Historial"
     },
     "form": {
-      "title": "Datos de Cotización",
+      "title": "Datos del Cálculo",
       "origin": "Origen",
       "destination": "Destino",
       "modeCity": "Estado+Ciudad",
@@ -98,7 +98,7 @@
       "cubicMeters": "M³ (Cubicación)",
       "cubicMetersPlaceholder": "0,0000",
       "modalsConsidered": "Modales de Transporte Considerados *",
-      "calculateBtn": "Simular Cotizaciones",
+      "calculateBtn": "Calcular Fletes",
       "calculating": "Calculando..."
     },
     "modals": {
@@ -109,8 +109,8 @@
       "all": "Todos los modales"
     },
     "emptyState": {
-      "readyToQuote": "Listo para Cotizar",
-      "description": "Complete los datos de origen, destino y características de la carga arriba para buscar los mejores transportistas."
+      "readyToQuote": "Listo para Calcular",
+      "description": "Complete el origen, destino y detalles de la carga arriba para buscar los mejores transportistas."
     },
     "messages": {
       "selectDestination": "Seleccione la ciudad de destino",
@@ -118,13 +118,13 @@
       "valueGreaterThanZero": "El valor de la mercancía debe ser mayor que cero",
       "selectAtLeastOneModal": "Seleccione al menos un modal de transporte",
       "noCarriersFound": "No se encontraron transportistas para el destino informado",
-      "quotesFound": "{{count}} cotizaciones encontradas",
-      "errorCalculating": "Error al calcular cotización",
-      "reloadingHistory": "🔄 Recargando historial de cotizaciones...",
+      "quotesFound": "{{count}} cálculos encontrados",
+      "errorCalculating": "Error al calcular flete",
+      "reloadingHistory": "🔄 Recargando historial de cálculos...",
       "historyReloaded": "✅ ¡Historial recargado!"
     },
     "results": {
-      "title": "Resultados de Cotización ({{count}})",
+      "title": "Resultados del Cálculo ({{count}})",
       "subtitle": "Ordenado por menor valor",
       "columns": {
         "carrier": "Transportista",
@@ -155,10 +155,10 @@
       "days_plural": "{{count}} días"
     },
     "history": {
-      "title": "Historial de Cotizaciones",
+      "title": "Historial de Cálculos",
       "subtitle": "{{count}} simulaciones realizadas",
       "refresh": "Actualizar",
-      "emptyState": "No se encontraron cotizaciones",
+      "emptyState": "Ningún cálculo encontrado",
       "columns": {
         "number": "Nº",
         "date": "Fecha",
@@ -180,7 +180,7 @@
         "results": "resultados"
       },
       "modal": {
-        "title": "Detalles de la Cotización",
+        "title": "Detalles del Cálculo",
         "results": "Resultados",
         "percentLowest": "% menor:",
         "percentInvoice": "% Factura:"
@@ -800,7 +800,7 @@
     "controlTower": "Torre de Control",
     "carriers": "Transportistas",
     "businessPartners": "Socios Comerciales",
-    "freightQuote": "Cotización de Fletes",
+    "freightQuote": "Calculadora de Flete",
     "operationalDocs": "Documentos Operacionales",
     "orders": "Pedidos",
     "invoices": "Facturas",

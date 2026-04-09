@@ -64,14 +64,14 @@
     "sending": "Sending..."
   },
   "freightQuote": {
-    "title": "Freight Quote",
-    "subtitle": "Simulate and compare freight rates among carriers",
+    "title": "Freight Calculator",
+    "subtitle": "Calculate and compare values between carriers",
     "tabs": {
-      "newQuote": "New Quote",
+      "newQuote": "New Calculation",
       "history": "History"
     },
     "form": {
-      "title": "Quote Data",
+      "title": "Calculation Data",
       "origin": "Origin",
       "destination": "Destination",
       "modeCity": "State+City",
@@ -98,7 +98,7 @@
       "cubicMeters": "M³ (Cubature)",
       "cubicMetersPlaceholder": "0.0000",
       "modalsConsidered": "Considered Transport Modals *",
-      "calculateBtn": "Simulate Quotes",
+      "calculateBtn": "Calculate Freights",
       "calculating": "Calculating..."
     },
     "modals": {
@@ -109,8 +109,8 @@
       "all": "All modals"
     },
     "emptyState": {
-      "readyToQuote": "Ready to Quote",
-      "description": "Fill in the origin, destination, and cargo characteristics data above to search for the best carriers."
+      "readyToQuote": "Ready to Calculate",
+      "description": "Fill in the origin, destination, and cargo details above to find the best carriers."
     },
     "messages": {
       "selectDestination": "Select destination city",
@@ -118,13 +118,13 @@
       "valueGreaterThanZero": "Cargo value must be greater than zero",
       "selectAtLeastOneModal": "Select at least one transport modal",
       "noCarriersFound": "No carriers found for the specified destination",
-      "quotesFound": "{{count}} quotes found",
-      "errorCalculating": "Error calculating quote",
-      "reloadingHistory": "🔄 Reloading quote history...",
+      "quotesFound": "{{count}} calculations found",
+      "errorCalculating": "Error calculating freight",
+      "reloadingHistory": "🔄 Reloading calculation history...",
       "historyReloaded": "✅ History reloaded!"
     },
     "results": {
-      "title": "Quote Results ({{count}})",
+      "title": "Calculation Results ({{count}})",
       "subtitle": "Sorted by lowest price",
       "columns": {
         "carrier": "Carrier",
@@ -155,10 +155,10 @@
       "days_plural": "{{count}} days"
     },
     "history": {
-      "title": "Quote History",
+      "title": "Calculation History",
       "subtitle": "{{count}} simulations performed",
       "refresh": "Refresh",
-      "emptyState": "No quotes found",
+      "emptyState": "No calculations found",
       "columns": {
         "number": "No.",
         "date": "Date",
@@ -180,7 +180,7 @@
         "results": "results"
       },
       "modal": {
-        "title": "Quote Details",
+        "title": "Calculation Details",
         "results": "Results",
         "percentLowest": "% lowest:",
         "percentInvoice": "% Invoice:"
@@ -800,7 +800,7 @@
     "controlTower": "Control Tower",
     "carriers": "Carriers",
     "businessPartners": "Business Partners",
-    "freightQuote": "Freight Quote",
+    "freightQuote": "Freight Calculator",
     "operationalDocs": "Operational Documents",
     "orders": "Orders",
     "invoices": "Invoices",

@@ -64,14 +64,14 @@
     "sending": "Enviando..."
   },
   "freightQuote": {
-    "title": "Cotação de Fretes",
-    "subtitle": "Simule e compare fretes entre transportadoras",
+    "title": "Calculadora de Fretes",
+    "subtitle": "Calcule e compare valores entre transportadoras",
     "tabs": {
-      "newQuote": "Nova Cotação",
+      "newQuote": "Novo Cálculo",
       "history": "Histórico"
     },
     "form": {
-      "title": "Dados da Cotação",
+      "title": "Dados do Cálculo",
       "origin": "Origem",
       "destination": "Destino",
       "modeCity": "UF+Cidade",
@@ -98,7 +98,7 @@
       "cubicMeters": "M³ (Cubagem)",
       "cubicMetersPlaceholder": "0,0000",
       "modalsConsidered": "Modais de Transporte Considerados *",
-      "calculateBtn": "Simular Cotações",
+      "calculateBtn": "Calcular Fretes",
       "calculating": "Calculando..."
     },
     "modals": {
@@ -109,7 +109,7 @@
       "all": "Todos os modais"
     },
     "emptyState": {
-      "readyToQuote": "Pronto para Cotar",
+      "readyToQuote": "Pronto para Calcular",
       "description": "Preencha os dados de origem, destino e características da carga acima para buscar as melhores transportadoras."
     },
     "messages": {
@@ -118,13 +118,13 @@
       "valueGreaterThanZero": "Valor da mercadoria deve ser maior que zero",
       "selectAtLeastOneModal": "Selecione pelo menos um modal de transporte",
       "noCarriersFound": "Nenhuma transportadora encontrada para o destino informado",
-      "quotesFound": "{{count}} cotações encontradas",
-      "errorCalculating": "Erro ao calcular cotação",
-      "reloadingHistory": "🔄 Recarregando histórico de cotações...",
+      "quotesFound": "{{count}} cálculos encontrados",
+      "errorCalculating": "Erro ao calcular frete",
+      "reloadingHistory": "🔄 Recarregando histórico de cálculos...",
       "historyReloaded": "✅ Histórico recarregado!"
     },
     "results": {
-      "title": "Resultados da Cotação ({{count}})",
+      "title": "Resultados do Cálculo ({{count}})",
       "subtitle": "Ordenado por menor valor",
       "columns": {
         "carrier": "Transportadora",
@@ -155,10 +155,10 @@
       "days_plural": "{{count}} dia(s)"
     },
     "history": {
-      "title": "Histórico de Cotações",
+      "title": "Histórico de Cálculos",
       "subtitle": "{{count}} simulações realizadas",
       "refresh": "Atualizar",
-      "emptyState": "Nenhuma cotação encontrada",
+      "emptyState": "Nenhum cálculo encontrado",
       "columns": {
         "number": "Nº",
         "date": "Data",
@@ -180,7 +180,7 @@
         "results": "resultados"
       },
       "modal": {
-        "title": "Detalhes da Cotação",
+        "title": "Detalhes do Cálculo",
         "results": "Resultados",
         "percentLowest": "% menor:",
         "percentInvoice": "% NF-e:"
@@ -800,7 +800,7 @@
     "controlTower": "Torre de Controle",
     "carriers": "Transportadores",
     "businessPartners": "Parceiros de Negócios",
-    "freightQuote": "Cotação de Fretes",
+    "freightQuote": "Calculadora de Fretes",
     "operationalDocs": "Documentos Operacionais",
     "orders": "Pedidos",
     "invoices": "Notas Fiscais",

@@ -262,7 +262,7 @@ const FreightQuote: React.FC = () => {
 
     const isAlreadyAdded = quoteItems.some(i => i.itemCode === catalogItem.item_code);
     if (isAlreadyAdded) {
-      setToast({ message: 'Iten já inserido na cotação!', type: 'error' });
+      setToast({ message: 'Iten já inserido na cálculo!', type: 'error' });
       return;
     }
 
@@ -736,7 +736,7 @@ const FreightQuote: React.FC = () => {
 
               </div>
 
-              {/* Seção de Itens da Cotação (Accordion) */}
+              {/* Seção de Itens do Cálculo (Accordion) */}
               <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mt-6">
                 <button
                   type="button"
