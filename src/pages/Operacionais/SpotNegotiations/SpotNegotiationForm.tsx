@@ -5,7 +5,7 @@ import { TenantContextHelper } from '../../../utils/tenantContext';
 import { ArrowLeft, Save, Upload, Info, CheckSquare, Square, Calendar, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
-export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: string }> = ({ onBack, initialId }) => {
   const [carriers, setCarriers] = useState<any[]>([]);
   const [availableNfes, setAvailableNfes] = useState<any[]>([]);
   const [selectedNfeIds, setSelectedNfeIds] = useState<string[]>([]);

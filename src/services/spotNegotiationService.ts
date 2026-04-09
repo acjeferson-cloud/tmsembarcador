@@ -174,5 +174,57 @@ export const spotNegotiationService = {
        console.error('Failed to get active negotiations', e);
        return [];
     }
+  },
+
+  async cancelNegotiation(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('freight_spot_negotiations')
+        .update({ status: 'cancelado' })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Failed to cancel negotiation', error);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+
+  async getFirstLinkedInvoice(negotiationId: string): Promise<any | null> {
+    try {
+      const { data: pivots, error: pivotErr } = await supabase
+        .from('freight_spot_invoices')
+        .select('invoice_id')
+        .eq('negotiation_id', negotiationId)
+        .limit(1);
+
+      if (pivotErr || !pivots || pivots.length === 0) return null;
+
+      const invoiceId = pivots[0].invoice_id;
+      
+      const { data: inv, error: invErr } = await supabase
+        .from('invoices_nfe')
+        .select('id, numero, data_emissao, situacao, valor_total')
+        .eq('id', invoiceId)
+        .single();
+
+      if (invErr || !inv) return null;
+
+      return {
+        id: `invoice-${inv.id}`,
+        type: 'invoice',
+        number: inv.numero,
+        date: inv.data_emissao || new Date().toISOString(),
+        status: inv.situacao || 'Emitida',
+        value: Number(inv.valor_total || 0)
+      };
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 };
