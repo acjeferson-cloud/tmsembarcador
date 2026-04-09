@@ -883,6 +883,46 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
           </div>
         </form>
       </div>
+
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-blue-600" />
+                Como é calculado?
+              </h3>
+              <button onClick={() => setShowHelpModal(false)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">Tipos de Cálculo</h4>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>Valor Faixa (Fixo):</strong> Cobra exatamente o valor estipulado na coluna "Valor Faixa" se o peso da nota estiver dentro dessa faixa.</li>
+                  <li><strong>Percentual:</strong> O "Valor Faixa" funciona como percentual. O frete será X% do valor da mercadoria transportada.</li>
+                  <li><strong>Excedente:</strong> Você informa o valor base e quanto cobrar por KG adicional. Exemplo: Para até 50kg R$ 50,00 e o KG excedente R$ 1,50. Configure uma faixa até 50kg (Valor Fixo) e a linha seguinte (Ex: 9999kg) configure Tipo Excedente, informando 1,50 no campo "Valor Faixa".</li>
+                  <li><strong>Multiplicador:</strong> O "Valor Faixa" é multiplicado pela quantidade informada. Se o multiplicador for o Peso, o frete será igual ao Peso da NFe vezes o "Valor Faixa" (Você usa a coluna Fração Base para definir se é cobrado a cada 100kg, por exemplo).</li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Dica de Configuração (Faixas)</h4>
+                <p>O campo <strong>Peso até</strong> define o limite superior da faixa de peso. Para a última faixa de peso de uma tabela (ex: frete de todos acima de 100kg), insira um número grande como <code>99999</code>.</p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={() => setShowHelpModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

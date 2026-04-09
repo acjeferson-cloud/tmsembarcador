@@ -22,8 +22,9 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
   const { t } = useTranslation();
   const [showCitiesModal, setShowCitiesModal] = useState(false);
 
-  const formatCurrency = (value: number): string => {
-    return value.toLocaleString('pt-BR', {
+  const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return 'R$ 0,00';
+    return Number(value).toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     });

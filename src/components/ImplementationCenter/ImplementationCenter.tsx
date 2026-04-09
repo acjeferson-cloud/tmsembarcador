@@ -175,19 +175,20 @@ const ImplementationCenter: React.FC = () => {
 
     try {
       let result;
+      const validUserId = user.user_id || String(user.id);
 
       switch (type) {
         case 'carriers':
-          result = await implementationService.processCarriersImport(file, user.id);
+          result = await implementationService.processCarriersImport(file, validUserId);
           break;
         case 'freight':
           result = await implementationService.processFreightTablesImport(file, user, currentEstablishment?.id);
           break;
         case 'cities':
-          result = await implementationService.processCitiesImport(file, user.id);
+          result = await implementationService.processCitiesImport(file, validUserId);
           break;
         case 'table-fees':
-          result = await implementationService.processTableFeesImport(file, user.id);
+          result = await implementationService.processTableFeesImport(file, validUserId);
           break;
         default:
           result = { success: false, message: t('implementationCenter.messages.unsupportedImport') };
@@ -1362,7 +1363,7 @@ const ImplementationCenter: React.FC = () => {
 
         {activeTab === 'freight' && (
           <ImportSection
-            type="freight-tables"
+            type="freight"
             title={t('implementationCenter.imports.freightTables.title')}
             description={t('implementationCenter.imports.freightTables.description')}
             icon={DollarSign}

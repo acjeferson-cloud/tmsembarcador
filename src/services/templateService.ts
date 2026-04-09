@@ -358,7 +358,6 @@ export const processERPIntegrationFile = (file: File): Promise<ERPIntegrationTem
 // ===== CARRIERS TEMPLATE =====
 
 interface CarrierTemplate {
-  codigo: string;
   razao_social: string;
   fantasia: string;
   cnpj: string;
@@ -388,7 +387,6 @@ export const generateCarriersTemplate = (): void => {
   // Dados de exemplo para o template
   const templateData: CarrierTemplate[] = [
     {
-      codigo: 'TRANSP001',
       razao_social: 'Transportadora Exemplo Ltda',
       fantasia: 'Exemplo Transportes',
       cnpj: '12.345.678/0001-90',
@@ -414,7 +412,6 @@ export const generateCarriersTemplate = (): void => {
       status: 'Ativo'
     },
     {
-      codigo: 'TRANSP002',
       razao_social: 'Logística Rápida S.A.',
       fantasia: 'LR Express',
       cnpj: '98.765.432/0001-10',
@@ -449,7 +446,6 @@ export const generateCarriersTemplate = (): void => {
 
   // Definir larguras das colunas
   const colWidths = [
-    { wch: 12 },  // codigo
     { wch: 35 },  // razao_social
     { wch: 25 },  // fantasia
     { wch: 20 },  // cnpj
@@ -482,13 +478,6 @@ export const generateCarriersTemplate = (): void => {
 
   // Criar segunda aba com instruções
   const instructionsData = [
-    {
-      Campo: 'codigo',
-      Descrição: 'Código único da transportadora',
-      Obrigatório: 'Sim',
-      Formato: 'Texto (máx. 20 caracteres)',
-      Exemplo: 'TRANSP001'
-    },
     {
       Campo: 'razao_social',
       Descrição: 'Razão social da transportadora',
@@ -700,23 +689,81 @@ export const processCarriersFile = (file: File): Promise<CarrierTemplate[]> => {
 // ===== FREIGHT RATES TEMPLATE (FLAT) =====
 
 export interface FlatFreightRateTemplate {
-  cnpj_transportador: string;
+  // Cabeçalho Tabela
+  codigo_transportador: string | number;
   nome_tabela: string;
   modal: string;
   validade_inicio: string;
   validade_fim: string;
+  
+  // Cabeçalho Tarifa
   origem_uf: string;
   destino_uf: string;
   destino_cidade: string;
   prazo_entrega: number;
-  pedagio_fracao: number;
-  pedagio_valor: number;
-  gris_percentual: number;
-  taxa_despacho: number;
-  frete_minimo: number;
+  
+  // Valores da Tarifa (Pedágio)
+  pedagio_minimo: number;
+  pedagio_por_kg: number;
+  pedagio_a_cada_kg: number;
+  pedagio_tipo_kg: string;
+  
+  // Valores da Tarifa (ICMS)
+  icms_embutido_tabela: string;
+  aliquota_icms: number;
+  
+  // Valores da Tarifa (Fator m³)
+  fator_m3: number;
+  fator_m3_apartir_kg: number;
+  fator_m3_apartir_m3: number;
+  fator_m3_apartir_valor: number;
+  
+  // Valores da Tarifa (Taxas Extras Padrão 1)
+  percentual_gris: number;
+  gris_minimo: number;
+  seccat: number;
+  despacho: number;
+  itr: number;
+  taxa_adicional: number;
+  
+  // Valores da Tarifa (Taxas Extras Padrão 2)
+  coleta_entrega: number;
+  tde_trt: number;
+  tas: number;
+  taxa_suframa: number;
+  
+  // Valores da Tarifa (Outras Taxas)
+  valor_outros_percent: number;
+  valor_outros_minimo: number;
+  taxa_outros_valor: number;
+  taxa_outros_tipo_valor: string;
+  taxa_apartir_de: number;
+  taxa_apartir_de_tipo: string;
+  taxa_outros_a_cada: number;
+  taxa_outros_minima: number;
+  
+  // Valores da Tarifa (Fretes Mínimos)
+  frete_peso_minimo: number;
+  frete_valor_minimo: number;
+  frete_tonelada_minima: number;
+  frete_percentual_minimo: number;
+  frete_m3_minimo: number;
+  valor_total_minimo: number;
+  
+  // Detalhes da Faixa
+  detalhe_ordem: number;
   faixa_peso_ate: number | string;
+  faixa_m3_ate: number;
+  faixa_volume_ate: number;
+  faixa_valor_ate: number;
   valor_faixa: number;
+  fracao_base: number | string;
   tipo_calculo: string;
+  tipo_frete: string;
+  frete_valor: number;
+  frete_minimo_faixa: number;
+  tipo_taxa: string;
+  taxa_minima: number;
 }
 
 export const generateFreightRatesTemplate = (): void => {
@@ -724,90 +771,151 @@ export const generateFreightRatesTemplate = (): void => {
 
   const tabelasData: FlatFreightRateTemplate[] = [
     {
-      cnpj_transportador: '12.345.678/0001-90',
-      nome_tabela: 'Tabela Nacional Flat 2026',
+      codigo_transportador: '0001',
+      nome_tabela: 'Tabela Nacional Completa 2026',
       modal: 'rodoviario',
       validade_inicio: '01/01/2026',
       validade_fim: '31/12/2026',
       origem_uf: 'SP',
       destino_uf: 'RJ',
-      destino_cidade: 'Rio de Janeiro',
-      prazo_entrega: 2,
-      pedagio_fracao: 100,
-      pedagio_valor: 5.50,
-      gris_percentual: 0.3,
-      taxa_despacho: 25.00,
-      frete_minimo: 150.00,
-      faixa_peso_ate: 10,
-      valor_faixa: 55.00,
-      tipo_calculo: 'Fixo'
+      destino_cidade: '',
+      prazo_entrega: 3,
+      
+      pedagio_minimo: 0,
+      pedagio_por_kg: 0.055,
+      pedagio_a_cada_kg: 10,
+      pedagio_tipo_kg: 'peso_calculo',
+      
+      icms_embutido_tabela: 'nao_embutido',
+      aliquota_icms: 12,
+      
+      fator_m3: 300,
+      fator_m3_apartir_kg: 0,
+      fator_m3_apartir_m3: 0,
+      fator_m3_apartir_valor: 0,
+      
+      percentual_gris: 0.3,
+      gris_minimo: 5.0,
+      seccat: 0,
+      despacho: 25.00,
+      itr: 0,
+      taxa_adicional: 0,
+      
+      coleta_entrega: 0,
+      tde_trt: 0,
+      tas: 0,
+      taxa_suframa: 0,
+      
+      valor_outros_percent: 0,
+      valor_outros_minimo: 0,
+      taxa_outros_valor: 0,
+      taxa_outros_tipo_valor: 'valor',
+      taxa_apartir_de: 0,
+      taxa_apartir_de_tipo: 'sem_apartir',
+      taxa_outros_a_cada: 0,
+      taxa_outros_minima: 0,
+      
+      frete_peso_minimo: 0,
+      frete_valor_minimo: 0,
+      frete_tonelada_minima: 0,
+      frete_percentual_minimo: 0,
+      frete_m3_minimo: 0,
+      valor_total_minimo: 150.00,
+      
+      detalhe_ordem: 1,
+      faixa_peso_ate: 50,
+      faixa_m3_ate: 0,
+      faixa_volume_ate: 0,
+      faixa_valor_ate: 0,
+      valor_faixa: 45.00,
+      fracao_base: '',
+      tipo_calculo: 'valor_faixa',
+      tipo_frete: 'normal',
+      frete_valor: 0,
+      frete_minimo_faixa: 0,
+      tipo_taxa: 'com_taxas',
+      taxa_minima: 0
     },
     {
-      cnpj_transportador: '12.345.678/0001-90',
-      nome_tabela: 'Tabela Nacional Flat 2026',
+      codigo_transportador: '0001',
+      nome_tabela: 'Tabela Nacional Completa 2026',
       modal: 'rodoviario',
       validade_inicio: '01/01/2026',
       validade_fim: '31/12/2026',
       origem_uf: 'SP',
       destino_uf: 'RJ',
-      destino_cidade: 'Rio de Janeiro',
-      prazo_entrega: 2,
-      pedagio_fracao: 100,
-      pedagio_valor: 5.50,
-      gris_percentual: 0.3,
-      taxa_despacho: 25.00,
-      frete_minimo: 150.00,
-      faixa_peso_ate: 30,
-      valor_faixa: 110.00,
-      tipo_calculo: 'Fixo'
-    },
-    {
-      cnpj_transportador: '12.345.678/0001-90',
-      nome_tabela: 'Tabela Nacional Flat 2026',
-      modal: 'rodoviario',
-      validade_inicio: '01/01/2026',
-      validade_fim: '31/12/2026',
-      origem_uf: 'SP',
-      destino_uf: 'RJ',
-      destino_cidade: 'Rio de Janeiro',
-      prazo_entrega: 2,
-      pedagio_fracao: 100,
-      pedagio_valor: 5.50,
-      gris_percentual: 0.3,
-      taxa_despacho: 25.00,
-      frete_minimo: 150.00,
+      destino_cidade: '',
+      prazo_entrega: 3,
+      
+      pedagio_minimo: 0,
+      pedagio_por_kg: 0.055,
+      pedagio_a_cada_kg: 10,
+      pedagio_tipo_kg: 'peso_calculo',
+      
+      icms_embutido_tabela: 'nao_embutido',
+      aliquota_icms: 12,
+      
+      fator_m3: 300,
+      fator_m3_apartir_kg: 0,
+      fator_m3_apartir_m3: 0,
+      fator_m3_apartir_valor: 0,
+      
+      percentual_gris: 0.3,
+      gris_minimo: 5.0,
+      seccat: 0,
+      despacho: 25.00,
+      itr: 0,
+      taxa_adicional: 0,
+      
+      coleta_entrega: 0,
+      tde_trt: 0,
+      tas: 0,
+      taxa_suframa: 0,
+      
+      valor_outros_percent: 0,
+      valor_outros_minimo: 0,
+      taxa_outros_valor: 0,
+      taxa_outros_tipo_valor: 'valor',
+      taxa_apartir_de: 0,
+      taxa_apartir_de_tipo: 'sem_apartir',
+      taxa_outros_a_cada: 0,
+      taxa_outros_minima: 0,
+      
+      frete_peso_minimo: 0,
+      frete_valor_minimo: 0,
+      frete_tonelada_minima: 0,
+      frete_percentual_minimo: 0,
+      frete_m3_minimo: 0,
+      valor_total_minimo: 150.00,
+      
+      detalhe_ordem: 2,
       faixa_peso_ate: 99999,
+      faixa_m3_ate: 0,
+      faixa_volume_ate: 0,
+      faixa_valor_ate: 0,
       valor_faixa: 1.25,
-      tipo_calculo: 'Excedente'
+      fracao_base: '',
+      tipo_calculo: 'excedente',
+      tipo_frete: 'normal',
+      frete_valor: 0,
+      frete_minimo_faixa: 0,
+      tipo_taxa: 'com_taxas',
+      taxa_minima: 0
     }
   ];
 
   const wsTabelas = XLSX.utils.json_to_sheet(tabelasData);
-  wsTabelas['!cols'] = [
-    { wch: 22 },  // cnpj_transportador
-    { wch: 35 },  // nome_tabela
-    { wch: 15 },  // modal
-    { wch: 20 },  // validade_inicio
-    { wch: 20 },  // validade_fim
-    { wch: 12 },  // origem_uf
-    { wch: 12 },  // destino_uf
-    { wch: 30 },  // destino_cidade
-    { wch: 22 },  // prazo_entrega
-    { wch: 20 },  // pedagio_fracao
-    { wch: 18 },  // pedagio_valor
-    { wch: 20 },  // gris_percentual
-    { wch: 20 },  // taxa_despacho
-    { wch: 22 },  // frete_minimo
-    { wch: 23 },  // faixa_peso_ate
-    { wch: 20 },  // valor_faixa
-    { wch: 18 }   // tipo_calculo
-  ];
+  // Ajuste simplificado de larguras das colunas
+  const wsCols = Array(49).fill({ wch: 20 });
+  wsCols[1] = { wch: 35 }; // nome_tabela
+  wsTabelas['!cols'] = wsCols;
+
   XLSX.utils.book_append_sheet(wb, wsTabelas, 'Tabela de Importação Base');
 
   // ABA 2: Instruções
   const instructionsData = [
-    { Campo: 'cnpj_transportador', Descrição: 'CNPJ válido do transportador cadastrado', Obrigatório: 'Sim', Exemplo: '12.345.678/0001-90' },
-    { Campo: 'nome_tabela', Descrição: 'Nome da tabela de frete', Obrigatório: 'Sim', Exemplo: 'Tabela Nacional Flat 2026' },
+    { Campo: 'codigo_transportador', Descrição: 'Código sequencial interno do transportador cadastrado', Obrigatório: 'Sim', Exemplo: '0001' },
+    { Campo: 'nome_tabela', Descrição: 'Nome da tabela de frete', Obrigatório: 'Sim', Exemplo: 'Tabela Nacional Completa 2026' },
     { Campo: 'modal', Descrição: 'Modal da tabela (rodoviario, aereo, aquaviario, ferroviario)', Obrigatório: 'Sim', Exemplo: 'rodoviario' },
     { Campo: 'validade_inicio', Descrição: 'Data de início (DD/MM/YYYY)', Obrigatório: 'Sim', Exemplo: '01/01/2026' },
     { Campo: 'validade_fim', Descrição: 'Data de fim de vigência (DD/MM/YYYY)', Obrigatório: 'Sim', Exemplo: '31/12/2026' },
@@ -815,18 +923,20 @@ export const generateFreightRatesTemplate = (): void => {
     { Campo: 'destino_uf', Descrição: 'Sigla do estado de destino (Ex: RJ)', Obrigatório: 'Sim', Exemplo: 'RJ' },
     { Campo: 'destino_cidade', Descrição: 'Nome exato do Município de destino. Deixe vazio para aplicar ao UF todo.', Obrigatório: 'Não', Exemplo: 'Rio de Janeiro' },
     { Campo: 'prazo_entrega', Descrição: 'Prazo estipulado em dias úteis', Obrigatório: 'Sim', Exemplo: '5' },
-    { Campo: 'pedagio_fracao', Descrição: 'Fração em KG. Ex: 100 para "Pedágio a cada 100kg". Se não houver, 0.', Obrigatório: 'Não', Exemplo: '100' },
-    { Campo: 'pedagio_valor', Descrição: 'Valor do Pedágio cobrado referente à fração', Obrigatório: 'Não', Exemplo: '5.50' },
-    { Campo: 'gris_percentual', Descrição: 'Percentual do GRIS cobrado (já com ponto/virgula, Ex: 0.3 para 0,3%)', Obrigatório: 'Não', Exemplo: '0.3' },
-    { Campo: 'taxa_despacho', Descrição: 'Taxa fixa de Despacho (R$)', Obrigatório: 'Não', Exemplo: '25.00' },
-    { Campo: 'frete_minimo', Descrição: 'Valor mínimo cobrado na tarifa (R$)', Obrigatório: 'Não', Exemplo: '150.00' },
-    { Campo: 'faixa_peso_ate', Descrição: 'Limite de peso em KG da faixa atual. Para peso Excedente infinito: 99999', Obrigatório: 'Sim', Exemplo: '10' },
-    { Campo: 'valor_faixa', Descrição: 'Valor financeiro ou custo desta faixa', Obrigatório: 'Sim', Exemplo: '55.00' },
-    { Campo: 'tipo_calculo', Descrição: 'Formato que o motor de cálculo vai aplicar nesta faixa', Obrigatório: 'Sim', Exemplo: 'Fixo ou Excedente' },
-    { Campo: '---', Descrição: '---', Obrigatório: '---', Exemplo: '---' },
-    { Campo: 'INSTRUÇÃO IMPORTANTE 1', Descrição: 'Não altere o nome das colunas da Aba 1.', Obrigatório: '', Exemplo: '' },
-    { Campo: 'INSTRUÇÃO IMPORTANTE 2', Descrição: 'Para rotas com múltiplas faixas de peso, repita as mesmíssimas informações de Cabeçalho na nova linha, alterando apenas os detalhes de Faixa (Colunas 15 a 17)', Obrigatório: '', Exemplo: '' },
-    { Campo: 'INSTRUÇÃO IMPORTANTE 3', Descrição: 'Exemplo: Se a Rota SP->RJ tem 3 faixas de peso (0 a 10, Até 30, e Excedente), serão 3 LINHAS idênticas até a coluna 14.', Obrigatório: '', Exemplo: '' }
+    { Campo: '---', Descrição: 'A PARTIR DAQUI: Valores da Tarifa. Podem ficar ZERADOS (0) se não utilizados.', Obrigatório: '---', Exemplo: '---' },
+    { Campo: 'pedagio_por_kg', Descrição: 'Valor de pedágio por KG real ou cálculo', Obrigatório: 'Não', Exemplo: '0.055' },
+    { Campo: 'pedagio_a_cada_kg', Descrição: 'Fração em KG (Ex: 100 para "Pedágio a cada 100kg")', Obrigatório: 'Não', Exemplo: '100' },
+    { Campo: 'pedagio_tipo_kg', Descrição: 'peso_calculo ou peso_real', Obrigatório: 'Não', Exemplo: 'peso_calculo' },
+    { Campo: 'icms_embutido_tabela', Descrição: 'embutido ou nao_embutido', Obrigatório: 'Não', Exemplo: 'nao_embutido' },
+    { Campo: 'percentual_gris', Descrição: 'Percentual do GRIS (Ex: 0.3 para 0,3%)', Obrigatório: 'Não', Exemplo: '0.3' },
+    { Campo: 'despacho / seccat / etc', Descrição: 'Demais taxas fixas em R$', Obrigatório: 'Não', Exemplo: '25.00' },
+    { Campo: 'frete_***_minimo', Descrição: 'Definições de frete mínimo em Reais, KG ou %', Obrigatório: 'Não', Exemplo: '150.00' },
+    { Campo: '---', Descrição: 'A PARTIR DAQUI: Configuração da Faixa de Peso (Detalhes)', Obrigatório: '---', Exemplo: '---' },
+    { Campo: 'detalhe_ordem', Descrição: 'Número sequencial da faixa para a rota (1, 2, 3...)', Obrigatório: 'Sim', Exemplo: '1' },
+    { Campo: 'faixa_peso_ate', Descrição: 'Limite de peso em KG (ex: 50). Para kg infinito informe 99999', Obrigatório: 'Sim', Exemplo: '50' },
+    { Campo: 'valor_faixa', Descrição: 'Custo R$ desta faixa. Ex: 45.00 para R$ 45 fixo ou 1.25 para R$ 1,25 / KG excedente', Obrigatório: 'Sim', Exemplo: '45.00' },
+    { Campo: 'tipo_calculo', Descrição: 'valor_faixa, percentual, excedente, multiplicador', Obrigatório: 'Sim', Exemplo: 'valor_faixa' },
+    { Campo: 'INSTRUÇÃO GERAL 1', Descrição: 'Para adicionar múltiplas faixas (ex: 0 a 50kg, e excedente), repita toda a configuração da Tarifa na linha de baixo, alterando APENAS as colunas de "Detalhes da Faixa" (ordem, peso, valor e tipo cálculo).', Obrigatório: '', Exemplo: '' }
   ];
 
   const wsInstructions = XLSX.utils.json_to_sheet(instructionsData);

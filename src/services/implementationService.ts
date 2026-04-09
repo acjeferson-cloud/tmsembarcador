@@ -33,8 +33,8 @@ interface ERPIntegrationConfig {
   last_sync_time?: string;
   created_at?: string;
   updated_at?: string;
-  created_by?: number;
-  updated_by?: number;
+  created_by?: string;
+  updated_by?: string;
 }
 
 interface ImportLog {
@@ -48,7 +48,7 @@ interface ImportLog {
   errors?: any;
   summary?: any;
   created_at?: string;
-  performed_by: number;
+  performed_by?: string;
 }
 
 interface FreightAdjustment {
@@ -61,8 +61,14 @@ interface FreightAdjustment {
   new_values?: any;
   notes?: string;
   created_at?: string;
-  performed_by: number;
+  performed_by?: string;
 }
+
+// Utilitário para validar sintaxe de UUID e evitar erros 400 Type Mismatch no Supabase
+const isValidUUID = (str: string | undefined): boolean => {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+};
 
 export const implementationService = {
   // ===== ERP Integration Config =====
@@ -203,13 +209,13 @@ export const implementationService = {
         .single();
 
       if (error) {
-
+        console.error('[createImportLog] Erro do Supabase no insert:', error, 'Payload enviado:', log);
         return { success: false, error: error.message };
       }
 
       return { success: true, id: data.id };
     } catch (error) {
-
+      console.error('[createImportLog] Exceção inesperada:', error);
       return { success: false, error: 'Erro ao criar log' };
     }
   },
@@ -323,7 +329,7 @@ export const implementationService = {
 
   async processCarriersImport(
     file: File,
-    performedBy: number
+    performedBy: string
   ): Promise<{ success: boolean; logId?: string; message: string; recordsProcessed?: number; errors?: string[] }> {
     try {
       // Importar função de processamento do template service
@@ -331,18 +337,23 @@ export const implementationService = {
       const { carriersService } = await import('./carriersService');
       const { countriesService } = await import('./countriesService');
       const { statesService } = await import('./statesService');
-      const { citiesService } = await import('./citiesService');
+      const { getCitiesByState } = await import('./citiesService');
 
       // Criar log inicial
-      const logResult = await this.createImportLog({
+      const logPayload: ImportLog = {
         import_type: 'carriers',
         file_name: file.name,
         records_processed: 0,
         records_success: 0,
         records_error: 0,
-        status: 'processing',
-        performed_by: performedBy
-      });
+        status: 'processing'
+      };
+      
+      if (isValidUUID(performedBy)) {
+        logPayload.performed_by = performedBy;
+      }
+
+      const logResult = await this.createImportLog(logPayload);
 
       if (!logResult.success || !logResult.id) {
         return { success: false, message: 'Erro ao criar log de importação' };
@@ -355,6 +366,10 @@ export const implementationService = {
       let recordsError = 0;
       const errors: string[] = [];
 
+      let currentCodeStr = await carriersService.getNextCode();
+      let currentCodeInt = parseInt(currentCodeStr, 10);
+      if (isNaN(currentCodeInt)) currentCodeInt = 1;
+
       // Processar cada linha do arquivo
       for (let i = 0; i < carrierData.length; i++) {
         const row = carrierData[i];
@@ -362,14 +377,8 @@ export const implementationService = {
 
         try {
           // Validações obrigatórias
-          if (!row.codigo || !row.razao_social || !row.cnpj || !row.status) {
-            throw new Error('Campos obrigatórios não preenchidos (codigo, razao_social, cnpj, status)');
-          }
-
-          // Verificar se o código já existe
-          const existingByCode = await carriersService.getByCode(row.codigo);
-          if (existingByCode) {
-            throw new Error(`Transportadora com código ${row.codigo} já existe`);
+          if (!row.razao_social || !row.cnpj || !row.status) {
+            throw new Error('Campos obrigatórios não preenchidos (razao_social, cnpj, status)');
           }
 
           // Verificar se o CNPJ já existe
@@ -400,16 +409,20 @@ export const implementationService = {
           }
 
           if (row.cidade && row.estado) {
-            const cities = await citiesService.getAllByState(estadoId || '');
+            const cities = await getCitiesByState(row.estado);
             const city = cities.find(c =>
-              c.nome.toLowerCase() === row.cidade.toLowerCase()
+              (c.nome || c.name || '').toLowerCase() === row.cidade.toLowerCase()
             );
             cidadeId = city?.id || null;
           }
 
+          // Gerar código sequencial
+          const formattedCode = currentCodeInt.toString().padStart(4, '0');
+          currentCodeInt++;
+
           // Criar transportadora
           const carrierToCreate = {
-            codigo: row.codigo,
+            codigo: formattedCode,
             razao_social: row.razao_social,
             fantasia: row.fantasia || null,
             cnpj: normalizarCNPJ(row.cnpj),
@@ -466,7 +479,7 @@ export const implementationService = {
         errors: recordsError > 0 ? errors : undefined
       };
     } catch (error) {
-
+      console.error('[processCarriersImport] Falha ao processar arquivo.', error);
       return { success: false, message: 'Erro ao processar arquivo' };
     }
   },
@@ -481,17 +494,22 @@ export const implementationService = {
       const { parseBulkFreightRates } = await import('./freightRateParser');
       const { supabase } = await import('../lib/supabase');
 
-      const performedBy = Number(user.id) || 0;
+      const performedBy = String(user.user_id || user.id);
 
-      const logResult = await this.createImportLog({
+      const logPayload: ImportLog = {
         import_type: 'freight_tables',
         file_name: file.name,
         records_processed: 0,
         records_success: 0,
         records_error: 0,
-        status: 'processing',
-        performed_by: performedBy
-      });
+        status: 'processing'
+      };
+
+      if (isValidUUID(performedBy)) {
+        logPayload.performed_by = performedBy;
+      }
+
+      const logResult = await this.createImportLog(logPayload);
 
       if (!logResult.success || !logResult.id) {
         return { success: false, message: 'Erro ao criar log de importação' };
@@ -499,12 +517,18 @@ export const implementationService = {
 
       const flatData = await processFreightRatesFile(file);
 
-      const tenantContext = {
-        organization_id: user.organization_id,
-        environment_id: user.environment_id,
-        establishment_id: currentEstablishmentId || user.establishment_id,
-        created_by: String(user.id)
-      };
+      const tenantContext: any = {};
+      
+      if (isValidUUID(user.organization_id)) tenantContext.organization_id = user.organization_id;
+      if (isValidUUID(user.environment_id)) tenantContext.environment_id = user.environment_id;
+      
+      const realEstId = currentEstablishmentId || user.establishment_id;
+      if (isValidUUID(String(realEstId))) tenantContext.establishment_id = String(realEstId);
+      
+      const realUserId = user.user_id || String(user.id);
+      if (isValidUUID(realUserId)) {
+        tenantContext.created_by = realUserId;
+      }
 
       const parseInfo = await parseBulkFreightRates(flatData, tenantContext);
 
@@ -542,13 +566,35 @@ export const implementationService = {
             
             // Clean up missing foreign keys just in case
             const validRates = parseInfo.rates.filter(r => r.freight_rate_table_id);
-            const { error: ratesError, data: createdRates } = await supabase.from('freight_rates').insert(validRates).select();
+            const ratesToInsert = validRates.map(r => {
+               const cleanRate = { ...r };
+               delete (cleanRate as any)._tableKey;
+               delete (cleanRate as any)._rateKey;
+               delete (cleanRate as any)._origem;
+               delete (cleanRate as any)._destino;
+               delete (cleanRate as any)._destino_cidade;
+               return cleanRate;
+            });
+            
+            const { error: ratesError, data: createdRates } = await supabase.from('freight_rates').insert(ratesToInsert).select();
             if (ratesError) throw ratesError;
             ratesCount = createdRates?.length || 0;
 
+            // Reinjetar proxy props no createdRates para vincular
+            if (createdRates) {
+               createdRates.forEach(cr => {
+                  const original = validRates.find(vr => vr.codigo === cr.codigo);
+                  if (original) {
+                     (cr as any)._rateKey = (original as any)._rateKey;
+                     (cr as any)._origem = (original as any)._origem;
+                     (cr as any)._destino_cidade = (original as any)._destino_cidade;
+                  }
+               });
+            }
+
             if (parseInfo.details && parseInfo.details.length > 0 && createdRates) {
                parseInfo.details.forEach(detail => {
-                  const rateMatch = createdRates.find(r => (detail as any)._rateKey.includes(r.codigo) && (detail as any)._rateKey.includes((r as any)._origem || ''));
+                  const rateMatch = createdRates.find(r => (r as any)._rateKey === (detail as any)._rateKey);
                   if (rateMatch) detail.freight_rate_id = rateMatch.id;
                   delete (detail as any)._rateKey;
                });
@@ -618,18 +664,23 @@ export const implementationService = {
 
   async processCitiesImport(
     file: File,
-    performedBy: number
+    performedBy: string
   ): Promise<{ success: boolean; logId?: string; message: string; recordsProcessed?: number; errors?: string[] }> {
     try {
-      const logResult = await this.createImportLog({
+      const logPayload: ImportLog = {
         import_type: 'cities',
         file_name: file.name,
         records_processed: 0,
         records_success: 0,
         records_error: 0,
-        status: 'processing',
-        performed_by: performedBy
-      });
+        status: 'processing'
+      };
+
+      if (isValidUUID(performedBy)) {
+        logPayload.performed_by = performedBy;
+      }
+
+      const logResult = await this.createImportLog(logPayload);
 
       if (!logResult.success || !logResult.id) {
         return { success: false, message: 'Erro ao criar log de importação' };
@@ -663,7 +714,7 @@ export const implementationService = {
     tableIds: string[],
     adjustmentType: 'percentage' | 'manual',
     adjustmentValue: number | null,
-    performedBy: number | string,
+    performedBy: string,
     notes?: string
   ): Promise<{ success: boolean; affectedTables: number; affectedRoutes: number; message: string }> {
     if (!tableIds || tableIds.length === 0) {
@@ -776,7 +827,7 @@ export const implementationService = {
         affected_tables: tableIds.length,
         affected_routes: totalRoutesAffected,
         notes: notes || `Reajuste de ${percentage}% aplicado`,
-        performed_by: Number(performedBy) || 0
+        performed_by: performedBy
       });
 
       return {
@@ -798,7 +849,7 @@ export const implementationService = {
 
   async processTableFeesImport(
     file: File,
-    performedBy: number
+    performedBy: string
   ): Promise<{ success: boolean; logId?: string; message: string; recordsProcessed?: number; errors?: string[] }> {
     try {
       const logResult = await this.createImportLog({
