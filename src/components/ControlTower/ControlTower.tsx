@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { useSupabaseRealtime } from '../../hooks/useSupabaseRealtime';
 import { RealTimeMap } from './RealTimeMap';
-import { AlertsPanel } from './AlertsPanel';
+import { AnomalyRadar } from './AnomalyRadar';
+import { DeliveryFunnel } from './DeliveryFunnel';
 import { NewsCarousel } from './NewsCarousel';
 import { ControlTowerCalcModal } from './ControlTowerCalcModal';
 import { controlTowerService, KPIData } from '../../services/controlTowerService';
@@ -188,17 +189,20 @@ export const ControlTower: React.FC = () => {
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Real-time Map takes 2/3 (Left/Center) */}
-        <div className="lg:col-span-2 flex flex-col h-full">
-          <div className="flex-grow">
-            <RealTimeMap />
-          </div>
+        <div className="lg:col-span-2 flex flex-col h-full min-h-[500px]">
+          <RealTimeMap />
         </div>
 
         {/* Right Sidebar takes 1/3 */}
         <div className="flex flex-col gap-6">
-          <AlertsPanel />
-          <NewsCarousel />
+          <AnomalyRadar />
+          <DeliveryFunnel />
         </div>
+      </div>
+      
+      {/* Footer Banner */}
+      <div className="w-full">
+         <NewsCarousel />
       </div>
       
       <ControlTowerCalcModal
