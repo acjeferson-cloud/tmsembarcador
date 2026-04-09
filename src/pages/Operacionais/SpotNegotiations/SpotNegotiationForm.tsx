@@ -140,14 +140,14 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Inicial</label>
               <input 
                 type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Final</label>
               <input 
                 type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -155,7 +155,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Transportadora</label>
               <select 
                 value={carrierId} onChange={(e) => setCarrierId(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Selecione...</option>
                 {carriers.map(c => (
@@ -171,7 +171,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
               <input 
                 type="number" step="0.01" value={value} onChange={e => setValue(e.target.value)}
                 placeholder="Ex: 1500.00"
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -179,7 +179,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Validade Comercial</label>
               <input 
                 type="date" value={validTo} onChange={e => setValidTo(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
          </div>
@@ -203,7 +203,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
               <textarea 
                 value={observations} onChange={e => setObservations(e.target.value)}
                 placeholder="Detalhes acordados via telefone, restrição, nome da pessoa de contato..."
-                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white min-h-[60px] max-h-[80px] focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white min-h-[60px] max-h-[80px] focus:ring-2 focus:ring-blue-500"
               />
             </div>
          </div>
