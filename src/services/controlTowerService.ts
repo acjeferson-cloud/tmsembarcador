@@ -20,9 +20,18 @@ export const controlTowerService = {
     let totalDeliveries = 0;
     
     try {
-      // KPI 1: Total de Entregas (Ocorrências 01 ou 02 lançadas nas Notas Fiscais)
-      let query01 = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true }).contains('metadata', { occurrences: [{ codigo: '01' }] });
-      let query02 = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true }).contains('metadata', { occurrences: [{ codigo: '02' }] });
+      const twentyFourHoursAgo = new Date();
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+      const isoDate = twentyFourHoursAgo.toISOString();
+
+      // KPI 1: Total de Entregas (Ocorrências 01 ou 02 lançadas nas Notas Fiscais nas últimas 24h)
+      let query01 = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
+        .contains('metadata', { occurrences: [{ codigo: '01' }] })
+        .gte('updated_at', isoDate);
+        
+      let query02 = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
+        .contains('metadata', { occurrences: [{ codigo: '02' }] })
+        .gte('updated_at', isoDate);
       
       if (ctx?.organizationId) {
         query01 = query01.eq('organization_id', ctx.organizationId);
