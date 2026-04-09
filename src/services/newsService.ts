@@ -142,8 +142,8 @@ export class NewsService {
   // Carregar notícias (API real + Imagens Locais Estáticas)
   private async loadNews(): Promise<void> {
     try {
-      // API Key grátis via rss2json apontando para o feed filtrado de logística do Google News BR (restringido para apenas 15 dias usando keyword when:15d)
-      const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=logistica+transporte+cargas+rodoviario+fretes+antt+when:15d&hl=pt-BR&gl=BR&ceid=BR:pt-419');
+      // API Key grátis via rss2json apontando para o feed filtrado de logística do Google News BR (restringido para apenas 7 dias usando keyword when:7d)
+      const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=logistica+transporte+cargas+rodoviario+fretes+antt+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419');
       const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
       
       const response = await fetch(apiUrl, { mode: 'cors' });
@@ -174,7 +174,8 @@ export class NewsService {
             const pubDate = new Date(item.pubDate);
             const now = new Date();
             const diffInDays = Math.floor((now.getTime() - pubDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffInDays > 15) return false;
+            // Validação estrita (máximo 7 dias)
+            if (diffInDays > 7) return false;
           }
           return true;
         })
