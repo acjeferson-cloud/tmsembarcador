@@ -474,16 +474,32 @@ export const carriersService = {
 
   async getByCnpj(cnpj: string): Promise<Carrier | null> {
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        return null;
+      }
+
       const cleanCnpj = normalizarCNPJ(cnpj);
       if (cleanCnpj.length < 8) {
         return null;
       }
 
       const cnpjRoot = cleanCnpj.substring(0, 8);
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('carriers')
         .select('*')
-        .ilike('cnpj', `${cnpjRoot}%`)
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId)
+        .ilike('cnpj', `${cnpjRoot}%`);
+
+      if (ctx.establishmentId) {
+        query = query.or(`establishment_id.eq.${ctx.establishmentId},scope.eq.ENVIRONMENT,scope.eq.ORGANIZATION`);
+      } else {
+        query = query.filter('scope', 'in', '("ENVIRONMENT","ORGANIZATION")');
+      }
+
+      const { data, error } = await query
         .order('codigo', { ascending: true })
         .limit(1);
       if (error) {
