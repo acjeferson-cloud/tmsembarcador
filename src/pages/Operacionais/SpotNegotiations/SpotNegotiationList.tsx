@@ -40,7 +40,7 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void }> = ({ onNew }) 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cotações Manuais (Spot)</h1>
-           <p className="text-sm text-gray-600 dark:text-gray-400">Hub de negociações avulsas para auditoria de CTes fora da tabela.</p>
+           <p className="text-sm text-gray-600 dark:text-gray-400">Hub de negociações avulsas para auditoria de CT-es e Faturas fora da tabela.</p>
         </div>
         <button 
            onClick={onNew}
@@ -60,7 +60,7 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void }> = ({ onNew }) 
                <FileText className="text-gray-400" size={32}/>
              </div>
              <p className="text-gray-600 dark:text-gray-300 font-medium">Nenhuma negociação avulsa registrada.</p>
-             <p className="text-sm text-gray-500 mt-1">Sua auditoria está baseada inteiramente nas tabelas fixas cadastradas.</p>
+             <p className="text-sm text-gray-500 mt-1">Registre os valores acordados para que o motor de auditoria considere estas negociações avulsas.</p>
            </div>
         ) : (
           <div className="overflow-x-auto">
