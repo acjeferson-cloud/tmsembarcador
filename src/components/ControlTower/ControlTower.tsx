@@ -11,12 +11,12 @@ import {
   TrendingUp,
   TrendingDown,
   RefreshCw,
-  Zap
+  Zap,
+  DollarSign
 } from 'lucide-react';
-import { DeliveryStatusChart } from './DeliveryStatusChart';
+import { useSupabaseRealtime } from '../../hooks/useSupabaseRealtime';
 import { RealTimeMap } from './RealTimeMap';
 import { AlertsPanel } from './AlertsPanel';
-import { PerformanceMetrics } from './PerformanceMetrics';
 import { NewsCarousel } from './NewsCarousel';
 import { controlTowerService, KPIData } from '../../services/controlTowerService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
@@ -36,9 +36,12 @@ export const ControlTower: React.FC = () => {
     delivered: 0,
     delayed: 0,
     waitingCollection: 0,
-    activeVehicles: 0,
-    avgDeliveryTime: 0,
-    onTimeRate: 0
+    activeCarriers: 0,
+    volumeReais: 0,
+    volumeKg: 0,
+    onTimeRate: 0,
+    freightEstimated: 0,
+    freightSpot: 0
   });
 
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -59,10 +62,10 @@ export const ControlTower: React.FC = () => {
 
   useEffect(() => {
     fetchKPIs();
-    // Refresh a cada 60 segundos
-    const interval = setInterval(fetchKPIs, 60000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Escuta atualizações da tabela invoices_nfe para re-fazer o fetch dos KPIs reais e re-pintar o Dash
+  useSupabaseRealtime('invoices_nfe', fetchKPIs);
 
   const refreshData = async () => {
     await fetchKPIs();
@@ -70,69 +73,36 @@ export const ControlTower: React.FC = () => {
 
   const kpiCards = [
     {
-      title: t('controlTower.kpis.totalDeliveries'),
-      value: kpiData.totalDeliveries.toLocaleString(),
-      change: kpiData.totalDeliveries > 0 ? 'Conectado' : '-',
-
-      changeType: 'positive' as const,
-      icon: Package,
+      title: 'Auditoria Spot vs Standard',
+      value: kpiData.freightSpot.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      change: `Est: ${kpiData.freightEstimated.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+      changeType: kpiData.freightSpot > kpiData.freightEstimated && kpiData.freightEstimated > 0 ? 'negative' : 'positive' as const,
+      icon: DollarSign,
       color: 'blue'
     },
     {
-      title: t('controlTower.kpis.inTransit'),
-      value: kpiData.inTransit.toString(),
-      change: kpiData.inTransit > 0 ? 'Conectado' : '-',
-      changeType: 'positive' as const,
-      icon: Truck,
-      color: 'orange'
-    },
-    {
-      title: t('controlTower.kpis.delivered'),
-      value: kpiData.delivered.toString(),
-      change: '+45',
-      changeType: 'positive' as const,
+      title: 'Entregas no Prazo (OTIF Diário)',
+      value: `${kpiData.onTimeRate}%`,
+      change: 'Hoje',
+      changeType: kpiData.onTimeRate >= 95 ? 'positive' : (kpiData.onTimeRate >= 80 ? 'neutral' : 'negative') as const,
       icon: CheckCircle,
-      color: 'green'
+      color: 'emerald'
     },
     {
-      title: t('controlTower.kpis.delayed'),
-      value: kpiData.delayed.toString(),
-      change: '-2',
-      changeType: 'negative' as const,
-      icon: AlertTriangle,
-      color: 'red'
-    },
-    {
-      title: t('controlTower.kpis.waitingCollection'),
-      value: kpiData.waitingCollection.toString(),
-      change: '+5',
+      title: 'Volume Faturado Diário',
+      value: kpiData.volumeReais.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      change: `${kpiData.volumeKg} kg trafegados`,
       changeType: 'neutral' as const,
-      icon: Clock,
-      color: 'yellow'
-    },
-    {
-      title: t('controlTower.kpis.activeVehicles'),
-      value: kpiData.activeVehicles.toString(),
-      change: '0',
-      changeType: 'neutral' as const,
-      icon: Activity,
-      color: 'purple'
-    },
-    {
-      title: t('controlTower.kpis.avgDeliveryTime'),
-      value: `${kpiData.avgDeliveryTime}h`,
-      change: '-0.2h',
-      changeType: 'positive' as const,
       icon: TrendingUp,
       color: 'indigo'
     },
     {
-      title: t('controlTower.kpis.onTimeRate'),
-      value: `${kpiData.onTimeRate}%`,
-      change: '+1.2%',
+      title: 'Transportadores em Operação',
+      value: kpiData.activeCarriers.toString(),
+      change: kpiData.activeCarriers > 0 ? 'Rotas Ativas' : '-',
       changeType: 'positive' as const,
-      icon: Zap,
-      color: 'emerald'
+      icon: Truck,
+      color: 'orange'
     }
   ];
 
@@ -205,26 +175,18 @@ export const ControlTower: React.FC = () => {
 
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Delivery Status Chart */}
-        <div className="lg:col-span-2">
-          <DeliveryStatusChart />
+        {/* Real-time Map takes 2/3 (Left/Center) */}
+        <div className="lg:col-span-2 flex flex-col h-full">
+          <div className="flex-grow">
+            <RealTimeMap />
+          </div>
         </div>
 
-        {/* Alerts Panel */}
-        <div>
+        {/* Right Sidebar takes 1/3 */}
+        <div className="flex flex-col gap-6">
           <AlertsPanel />
+          <NewsCarousel />
         </div>
-      </div>
-
-      {/* Real-time Map and Performance Metrics */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <RealTimeMap />
-        <PerformanceMetrics />
-      </div>
-
-      {/* News Section */}
-      <div className="mt-6">
-        <NewsCarousel />
       </div>
     </div>
   );

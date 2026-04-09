@@ -5,78 +5,110 @@ export interface KPIData {
   totalDeliveries: number;
   inTransit: number;
   delivered: number;
-  delayed: number;
   waitingCollection: number;
-  activeVehicles: number;
-  avgDeliveryTime: number;
+  activeCarriers: number;
+  
+  volumeReais: number;
+  volumeKg: number;
   onTimeRate: number;
+  
+  freightEstimated: number;
+  freightSpot: number;
 }
 
 export const controlTowerService = {
   async getKpiData(): Promise<KPIData> {
     const ctx = await TenantContextHelper.getCurrentContext();
     
-    // Mocks padrão para manter o layout enquanto não são revitalizados
-    let totalDeliveries = 0;
-    let inTransit = 0;
+    // Fallbacks
+    let dailyData = {
+      total_em_transito: 0,
+      total_entregue: 0,
+      volume_produtos_reais: 0,
+      volume_peso_kg: 0,
+      entregues_no_prazo: 0
+    };
+    
+    let auditData = {
+      frete_acordado_estimado: 0,
+      custo_mercado_spot: 0
+    };
     
     try {
-      const twentyFourHoursAgo = new Date();
-      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-      const isoDate = twentyFourHoursAgo.toISOString();
-
-      // KPI 1: Total de Entregas (Ocorrências 01 ou 02 lançadas nas Notas Fiscais nas últimas 24h)
-      let query01 = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
-        .contains('metadata', { occurrences: [{ codigo: '01' }] })
-        .gte('updated_at', isoDate);
-        
-      let query02 = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
-        .contains('metadata', { occurrences: [{ codigo: '02' }] })
-        .gte('updated_at', isoDate);
+      // 1. Fetch Daily KPIs
+      let queryDaily = supabase.from('mv_control_tower_daily_kpis').select('*');
       
-      // KPI 2: Em Trânsito ou Saiu para Entrega
-      let queryTransit = supabase.from('invoices_nfe').select('*', { count: 'exact', head: true })
-        .in('situacao', ['em_transito', 'saiu_entrega'])
-        .gte('status_updated_at', isoDate);
-
+      // 2. Fetch Financial Audit
+      let queryAudit = supabase.from('mv_control_tower_financial_audit').select('*');
+      
+      // 3. Fetch Active Carriers
+      let queryCarriers = supabase.from('carriers').select('*', { count: 'exact', head: true }).eq('ativo', true);
       
       if (ctx?.organizationId) {
-        query01 = query01.eq('organization_id', ctx.organizationId);
-        query02 = query02.eq('organization_id', ctx.organizationId);
-        queryTransit = queryTransit.eq('organization_id', ctx.organizationId);
+        queryDaily = queryDaily.eq('organization_id', ctx.organizationId);
+        queryAudit = queryAudit.eq('organization_id', ctx.organizationId);
+        queryCarriers = queryCarriers.eq('organization_id', ctx.organizationId);
       }
       if (ctx?.environmentId) {
-        query01 = query01.eq('environment_id', ctx.environmentId);
-        query02 = query02.eq('environment_id', ctx.environmentId);
-        queryTransit = queryTransit.eq('environment_id', ctx.environmentId);
+        queryDaily = queryDaily.eq('environment_id', ctx.environmentId);
+        queryAudit = queryAudit.eq('environment_id', ctx.environmentId);
+        queryCarriers = queryCarriers.eq('environment_id', ctx.environmentId);
       }
       if (ctx?.establishmentId) {
-        query01 = query01.eq('establishment_id', ctx.establishmentId);
-        query02 = query02.eq('establishment_id', ctx.establishmentId);
-        queryTransit = queryTransit.eq('establishment_id', ctx.establishmentId);
+        queryDaily = queryDaily.eq('establishment_id', ctx.establishmentId);
+        queryAudit = queryAudit.eq('establishment_id', ctx.establishmentId);
+        queryCarriers = queryCarriers.eq('establishment_id', ctx.establishmentId);
       }
 
-      const [res01, res02, resTransit] = await Promise.all([query01, query02, queryTransit]);
-      
-      const count01 = res01.count || 0;
-      const count02 = res02.count || 0;
-      
-      totalDeliveries = count01 + count02;
-      inTransit = resTransit.count || 0;
+      // We only care about Today for Daily KPIs
+      const today = new Date().toISOString().split('T')[0];
+      queryDaily = queryDaily.eq('data_referencia', today);
 
+      const [resDaily, resAudit, resCarriers] = await Promise.all([queryDaily, queryAudit, queryCarriers]);
+      
+      let activeCarriersCount = resCarriers.count || 0;
+      
+      if (resDaily.data && resDaily.data.length > 0) {
+        // Sum across all matched records (in case of missing establishment_id grouping)
+        dailyData = resDaily.data.reduce((acc, curr) => ({
+          total_em_transito: acc.total_em_transito + (Number(curr.total_em_transito) || 0),
+          total_entregue: acc.total_entregue + (Number(curr.total_entregue) || 0),
+          volume_produtos_reais: acc.volume_produtos_reais + (Number(curr.volume_produtos_reais) || 0),
+          volume_peso_kg: acc.volume_peso_kg + (Number(curr.volume_peso_kg) || 0),
+          entregues_no_prazo: acc.entregues_no_prazo + (Number(curr.entregues_no_prazo) || 0)
+        }), dailyData);
+      }
+      
+      if (resAudit.data && resAudit.data.length > 0) {
+        // Sum across all weeks or just the current week?
+        // For audit, usually we sum the current week.
+        auditData = resAudit.data.reduce((acc, curr) => ({
+          frete_acordado_estimado: acc.frete_acordado_estimado + (Number(curr.frete_acordado_estimado) || 0),
+          custo_mercado_spot: acc.custo_mercado_spot + (Number(curr.custo_mercado_spot) || 0)
+        }), auditData);
+      }
     } catch (error) {
-      console.error('Erro ao buscar KPIs', error);
+      console.error('Erro ao buscar KPIs Reais das Views', error);
     }
+    
+    const otifRate = dailyData.total_entregue > 0 
+      ? (dailyData.entregues_no_prazo / dailyData.total_entregue) * 100 
+      : 0;
 
     return {
-      totalDeliveries: totalDeliveries,
-      inTransit: inTransit,
-      delivered: 1098,
-      delayed: 23,
-      waitingCollection: 37,
-      activeVehicles: 45,
-      avgDeliveryTime: 2.4,
-      onTimeRate: 94.2
+      totalDeliveries: dailyData.total_entregue,
+      inTransit: dailyData.total_em_transito,
+      delivered: dailyData.total_entregue,
+      delayed: 0, // TBA from Alerts
+      waitingCollection: 0, // TBA 
+      activeCarriers: activeCarriersCount,
+      
+      volumeReais: dailyData.volume_produtos_reais,
+      volumeKg: dailyData.volume_peso_kg,
+      onTimeRate: Number(otifRate.toFixed(2)),
+      
+      freightEstimated: auditData.frete_acordado_estimado,
+      freightSpot: auditData.custo_mercado_spot
     };
   }
 };
