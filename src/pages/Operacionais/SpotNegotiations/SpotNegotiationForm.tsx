@@ -34,12 +34,15 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
 
       // Fetch Recent Invoices available to be linked
       let iQuery = supabase.from('invoices_nfe')
-        .select('id, numero, chave_acesso, destinatario_nome, valor_nf')
+        .select('id, numero, chave_acesso, destinatario_nome, valor_total')
         .order('created_at', { ascending: false })
         .limit(50);
+        
       if (ctx.organizationId) iQuery = iQuery.eq('organization_id', ctx.organizationId);
+      if (ctx.establishmentId) iQuery = iQuery.eq('establishment_id', ctx.establishmentId);
       
-      const { data: iData } = await iQuery;
+      const { data: iData, error: iErr } = await iQuery;
+      if (iErr) console.error('Error fetching NFs:', iErr);
       setAvailableNfes(iData || []);
     };
     fetchData();
@@ -200,7 +203,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void }> = ({ onBack }
                            </td>
                            <td className="p-3 font-medium text-gray-800 dark:text-gray-200">{nf.numero}</td>
                            <td className="p-3 text-gray-600 dark:text-gray-400 truncate max-w-[200px]">{nf.destinatario_nome}</td>
-                           <td className="p-3 text-gray-600 dark:text-gray-400">{Number(nf.valor_nf || 0).toLocaleString('pt-BR')}</td>
+                           <td className="p-3 text-gray-600 dark:text-gray-400">{Number(nf.valor_total || 0).toLocaleString('pt-BR')}</td>
                          </tr>
                        )
                      })}
