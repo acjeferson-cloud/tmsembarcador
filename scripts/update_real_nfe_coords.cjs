@@ -4,58 +4,84 @@ require('dotenv').config({ path: '.env' });
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 async function injectRealData() {
-  console.log('Buscando NFs reais para transformação...');
+  console.log('Buscando as 10 NFs recentes para extrair Cidades do XML...');
   
-  // Pegar algumas notas recentes válidas (que existam na base do usuário)
   const { data: invoices, error } = await supabase
     .from('invoices_nfe')
-    .select('*')
+    .select('id, numero, destinatario_nome, xml_content, metadata')
     .order('created_at', { ascending: false })
     .limit(10);
 
   if (error || !invoices || invoices.length === 0) {
-    console.error('Falha ou Nenhuma Nota encontrada', error);
+    console.error('Falha ao buscar NFs', error);
     return;
   }
-
-  console.log(`Encontradas ${invoices.length} NFs. Injetando SLA e Coordenadas...`);
-
-  // SP Base Coordinates
-  const baseLat = -23.5505;
-  const baseLng = -46.6333;
 
   for (let i = 0; i < invoices.length; i++) {
     const inv = invoices[i];
     
-    const randomLat = baseLat + (Math.random() * 0.1 - 0.05);
-    const randomLng = baseLng + (Math.random() * 0.1 - 0.05);
+    // Parse Destinatário Address from XML using Regex
+    let city = 'São Paulo'; // Fallback
+    let uf = 'SP';
     
+    if (inv.xml_content) {
+       const xMunMatch = inv.xml_content.match(/<dest>.*?<xMun>(.*?)<\/xMun>/);
+       const ufMatch = inv.xml_content.match(/<dest>.*?<UF>(.*?)<\/UF>/);
+       
+       if (xMunMatch && xMunMatch[1]) city = xMunMatch[1];
+       if (ufMatch && ufMatch[1]) uf = ufMatch[1];
+    }
+    
+    console.log(`[NF ${inv.numero}] Buscando coordenadas reais para: ${city} - ${uf}`);
+    
+    let lat = -23.5505;
+    let lng = -46.6333;
+    
+    try {
+        const query = encodeURIComponent(`${city}, ${uf}, Brazil`);
+        const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'TMSEmbarcador/1.0' }
+        });
+        const geodata = await resp.json();
+        
+        if (geodata && geodata.length > 0) {
+            lat = parseFloat(geodata[0].lat);
+            lng = parseFloat(geodata[0].lon);
+            console.log(`[NF ${inv.numero}] Sucesso! Lat/Lng: ${lat}, ${lng}`);
+        } else {
+            console.log(`[NF ${inv.numero}] Geocoding falhou, usando fallback SP.`);
+        }
+    } catch (e) {
+        console.error(`[NF ${inv.numero}] Erro no Geocoding`, e.message);
+    }
+
+    // Atrasar request pra não tomar block do Nominatim
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Determinar Status Fake de SLA para a tela
     let situacao = 'em_transito';
     let delayed = false;
     let expectedDate = new Date();
     
-    // Configurar cenários
     if (i % 3 === 0) {
-      situacao = 'entregue'; // Green
+      situacao = 'entregue';
       expectedDate.setDate(expectedDate.getDate() + 2);
     } else if (i % 3 === 1) {
-      situacao = 'em_transito'; // Red (Blinking) because delayed = true
-      expectedDate.setDate(expectedDate.getDate() - 2); // Passou do prazo
+      situacao = 'em_transito';
+      expectedDate.setDate(expectedDate.getDate() - 2); 
       delayed = true;
     } else {
-      situacao = 'saiu_entrega'; // Yellow
+      situacao = 'saiu_entrega';
       expectedDate.setDate(expectedDate.getDate() + 5);
     }
     
     const existingMeta = inv.metadata || {};
     const newMeta = {
       ...existingMeta,
-      dest_lat: randomLat,
-      dest_lng: randomLng,
+      dest_lat: lat,
+      dest_lng: lng,
       is_delayed_mock: delayed
     };
-
-    console.log(`Atualizando NF ${inv.numero} (${inv.destinatario_nome}) -> ${situacao}`);
 
     const { error: updErr } = await supabase
       .from('invoices_nfe')
@@ -66,10 +92,10 @@ async function injectRealData() {
       })
       .eq('id', inv.id);
 
-    if (updErr) console.error('Erro ao atualizar NF', inv.numero, updErr);
+    if (updErr) console.error('Erro ao atualizar DB', inv.numero, updErr);
   }
   
-  console.log('Update concluído com sucesso nas NFs Reais do tenant.');
+  console.log('Update de coordenadas verdadeiras concluído!');
 }
 
 injectRealData();

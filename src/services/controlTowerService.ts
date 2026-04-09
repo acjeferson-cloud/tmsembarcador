@@ -133,7 +133,7 @@ export const controlTowerService = {
       // Busca NFs com metadados de geolocalização e que não estejam finalizadas há muito tempo
       let query = supabase
         .from('invoices_nfe')
-        .select('id, numero, destinatario_nome, carrier_id, situacao, expected_delivery_date:delivery_forecast_date, metadata, created_at')
+        .select('id, numero, destinatario_nome, carrier_id, situacao, expected_delivery_date:delivery_forecast_date, metadata, created_at, carriers(nome_fantasia)')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -151,7 +151,7 @@ export const controlTowerService = {
             id: nf.id,
             numero: nf.numero || 'S/N',
             destinatario_nome: nf.destinatario_nome || 'Destinatário N/I',
-            carrier_id: nf.carrier_id || 'Autônomo / N/I',
+            carrier_id: (nf.carriers && nf.carriers.nome_fantasia) ? nf.carriers.nome_fantasia : (nf.carrier_id || 'Autônomo / N/I'),
             situacao: nf.situacao || 'pendente',
             expected_delivery_date: nf.expected_delivery_date || nf.created_at,
             lat: Number(nf.metadata.dest_lat),
