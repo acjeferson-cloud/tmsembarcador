@@ -22,6 +22,7 @@ const FreightQuote = lazy(() => import('./components/FreightQuote/FreightQuote')
 const Establishments = lazy(() => import('./components/Establishments/Establishments').then(m => ({ default: m.Establishments })));
 const Users = lazy(() => import('./components/Users/Users').then(m => ({ default: m.Users })));
 const ElectronicDocuments = lazy(() => import('./components/ElectronicDocuments/ElectronicDocuments').then(m => ({ default: m.ElectronicDocuments })));
+const SpotNegotiations = lazy(() => import('./pages/Operacionais/SpotNegotiations/index'));
 const FreightRates = lazy(() => import('./components/FreightRates/FreightRates').then(m => ({ default: m.FreightRates })));
 const Occurrences = lazy(() => import('./components/Occurrences/Occurrences').then(m => ({ default: m.Occurrences })));
 const RejectionReasons = lazy(() => import('./components/RejectionReasons/RejectionReasons').then(m => ({ default: m.RejectionReasons })));
@@ -359,6 +360,8 @@ function AppContent() {
         return <Calculator key={`calculator-${refreshKey}`} />;
       case 'freight-quote':
         return <FreightQuote key={`freight-quote-${refreshKey}`} />;
+      case 'spot-negotiations':
+        return <SpotNegotiations key={`spot-negotiations-${refreshKey}`} />;
       case 'orders':
         return <Orders key={`orders-${refreshKey}`} initialId={selectedItemId} />;
       case 'invoices':

@@ -94,6 +94,13 @@ export const menuConfig: MenuItem[] = [
     categoryKey: 'menu.categories.operacoes'
   },
   {
+    id: 'spot-negotiations',
+    labelKey: 'menu.spotNegotiations',
+    icon: Handshake,
+    color: 'bg-emerald-500',
+    categoryKey: 'menu.categories.operacoes'
+  },
+  {
     id: 'operational-docs',
     labelKey: 'menu.operationalDocs',
     icon: FileText,
