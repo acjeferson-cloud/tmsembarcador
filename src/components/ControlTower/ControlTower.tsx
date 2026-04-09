@@ -18,18 +18,8 @@ import { RealTimeMap } from './RealTimeMap';
 import { AlertsPanel } from './AlertsPanel';
 import { PerformanceMetrics } from './PerformanceMetrics';
 import { NewsCarousel } from './NewsCarousel';
+import { controlTowerService, KPIData } from '../../services/controlTowerService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
-
-interface KPIData {
-  totalDeliveries: number;
-  inTransit: number;
-  delivered: number;
-  delayed: number;
-  waitingCollection: number;
-  activeVehicles: number;
-  avgDeliveryTime: number;
-  onTimeRate: number;
-}
 
 export const ControlTower: React.FC = () => {
   const { t } = useTranslation();
@@ -41,48 +31,49 @@ export const ControlTower: React.FC = () => {
   ];
 
   const [kpiData, setKpiData] = useState<KPIData>({
-    totalDeliveries: 1247,
-    inTransit: 89,
-    delivered: 1098,
-    delayed: 23,
-    waitingCollection: 37,
-    activeVehicles: 45,
-    avgDeliveryTime: 2.4,
-    onTimeRate: 94.2
+    totalDeliveries: 0,
+    inTransit: 0,
+    delivered: 0,
+    delayed: 0,
+    waitingCollection: 0,
+    activeVehicles: 0,
+    avgDeliveryTime: 0,
+    onTimeRate: 0
   });
 
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setKpiData(prev => ({
-        ...prev,
-        inTransit: prev.inTransit + Math.floor(Math.random() * 3) - 1,
-        delivered: prev.delivered + Math.floor(Math.random() * 2),
-        delayed: Math.max(0, prev.delayed + Math.floor(Math.random() * 2) - 1),
-        waitingCollection: Math.max(0, prev.waitingCollection + Math.floor(Math.random() * 2) - 1),
-      }));
+  const fetchKPIs = async () => {
+    try {
+      setIsRefreshing(true);
+      const data = await controlTowerService.getKpiData();
+      setKpiData(data);
       setLastUpdate(new Date());
-    }, 30000); // Update every 30 seconds
+    } catch (error) {
+      console.error('Falha ao buscar KPIs', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchKPIs();
+    // Refresh a cada 60 segundos
+    const interval = setInterval(fetchKPIs, 60000);
     return () => clearInterval(interval);
   }, []);
 
   const refreshData = async () => {
-    setIsRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLastUpdate(new Date());
-    setIsRefreshing(false);
+    await fetchKPIs();
   };
 
   const kpiCards = [
     {
       title: t('controlTower.kpis.totalDeliveries'),
       value: kpiData.totalDeliveries.toLocaleString(),
-      change: '+12',
+      change: kpiData.totalDeliveries > 0 ? 'Conectado' : '-',
+
       changeType: 'positive' as const,
       icon: Package,
       color: 'blue'
