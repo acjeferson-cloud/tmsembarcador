@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Truck,
   Package,
+  TrendingUp,
   TrendingDown,
   RefreshCw,
   PieChart,
