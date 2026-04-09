@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface PickupProof {
   id?: string;
@@ -7,8 +8,12 @@ export interface PickupProof {
   collector_name: string;
   collector_document?: string;
   driver_name?: string;
+  driver_document?: string;
   vehicle_plate?: string;
+  rntrc?: string;
   observations?: string;
+  has_hazardous_materials?: boolean;
+  has_mopp_course?: boolean;
   photo_1_url?: string;
   photo_2_url?: string;
   photo_3_url?: string;
@@ -93,10 +98,15 @@ export const pickupProofService = {
 
     // Senão, usar Supabase
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      
       const { data, error } = await supabase
         .from('pickup_proofs')
         .insert({
           ...proof,
+          organization_id: ctx?.organizationId || null,
+          environment_id: ctx?.environmentId || null,
+          establishment_id: ctx?.establishmentId || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -139,10 +149,15 @@ export const pickupProofService = {
 
     // Senão, usar Supabase
     try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+
       const { error } = await supabase
         .from('pickup_proofs')
         .update({
           ...proof,
+          organization_id: ctx?.organizationId || null,
+          environment_id: ctx?.environmentId || null,
+          establishment_id: ctx?.establishmentId || null,
           updated_at: new Date().toISOString()
         })
         .eq('pickup_id', pickupId);

@@ -29,7 +29,11 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
   const [collectorName, setCollectorName] = useState('');
   const [collectorDocument, setCollectorDocument] = useState('');
   const [driverName, setDriverName] = useState('');
+  const [driverDocument, setDriverDocument] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
+  const [rntrc, setRntrc] = useState('');
+  const [hasHazardousMaterials, setHasHazardousMaterials] = useState(false);
+  const [hasMoppCourse, setHasMoppCourse] = useState<boolean | null>(null);
   const [observations, setObservations] = useState('');
   const [photo1, setPhoto1] = useState<string>('');
   const [photo2, setPhoto2] = useState<string>('');
@@ -52,7 +56,11 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
         setCollectorName(proof.collector_name);
         setCollectorDocument(proof.collector_document || '');
         setDriverName(proof.driver_name || pickup.driver_name || '');
+        setDriverDocument(proof.driver_document || '');
         setVehiclePlate(proof.vehicle_plate || pickup.vehicle_plate || '');
+        setRntrc(proof.rntrc || '');
+        setHasHazardousMaterials(proof.has_hazardous_materials || false);
+        setHasMoppCourse(proof.has_mopp_course !== undefined ? proof.has_mopp_course : null);
         setObservations(proof.observations || '');
         setPhoto1(proof.photo_1_url || '');
         setPhoto2(proof.photo_2_url || '');
@@ -166,6 +174,30 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
       return;
     }
 
+    if (!driverName.trim()) {
+      setError('O Nome do Motorista na aba Detalhes é obrigatório.');
+      setActiveTab('details');
+      return;
+    }
+
+    if (!driverDocument) {
+      setError('O CPF do Motorista na aba Detalhes é obrigatório.');
+      setActiveTab('details');
+      return;
+    }
+
+    if (!vehiclePlate.trim()) {
+      setError('A Placa do Veículo na aba Detalhes é obrigatória.');
+      setActiveTab('details');
+      return;
+    }
+
+    if (hasHazardousMaterials && hasMoppCourse === null) {
+      setError('Por favor, informe se o motorista possui curso MOPP para carga perigosa.');
+      setActiveTab('details');
+      return;
+    }
+
     if (!legalTermsAccepted) {
       setError(t('pickups.proofModal.legal.errorTermsRequired'));
       setActiveTab('legal');
@@ -181,7 +213,11 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
         collector_name: collectorName.trim(),
         collector_document: collectorDocument.trim() || undefined,
         driver_name: driverName.trim() || undefined,
+        driver_document: driverDocument.trim() || undefined,
         vehicle_plate: vehiclePlate.trim() || undefined,
+        rntrc: rntrc.trim() || undefined,
+        has_hazardous_materials: hasHazardousMaterials,
+        has_mopp_course: hasMoppCourse === null ? undefined : hasMoppCourse,
         observations: observations.trim() || undefined,
         photo_1_url: photo1 || undefined,
         photo_2_url: photo2 || undefined,
@@ -446,7 +482,29 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('pickups.proofModal.details.driverLabel')}
+                    CPF do Motorista *
+                  </label>
+                  <input
+                    type="text"
+                    value={driverDocument}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 11) {
+                        val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                        val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                        val = val.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                        setDriverDocument(val);
+                      }
+                    }}
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('pickups.proofModal.details.driverLabel')} *
                   </label>
                   <input
                     type="text"
@@ -459,16 +517,108 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('pickups.proofModal.details.vehicleLabel')}
+                    {t('pickups.proofModal.details.vehicleLabel')} *
                   </label>
                   <input
                     type="text"
                     value={vehiclePlate}
-                    onChange={(e) => setVehiclePlate(e.target.value)}
-                    placeholder={t('pickups.proofModal.details.vehiclePlaceholder')}
+                    onChange={(e) => {
+                      let val = e.target.value.toUpperCase();
+                      if (val.length <= 8) {
+                        val = val.replace(/[^A-Z0-9-]/g, '');
+                        // Adicionar hífen automático após 3 letras se não houver Mercosul
+                        if (val.length === 3 && !val.includes('-')) {
+                          val = val + '-';
+                        }
+                        setVehiclePlate(val);
+                      }
+                    }}
+                    placeholder="ABC-1A23"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Código RNTRC/ANTT
+                  </label>
+                  <input
+                    type="text"
+                    value={rntrc}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 8) setRntrc(val);
+                    }}
+                    placeholder="Apenas números (8 dígitos)"
+                    maxLength={8}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Risco Checkbox & MOPP */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-6">
+                <label className="flex items-start gap-3 cursor-pointer p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={hasHazardousMaterials}
+                    onChange={(e) => {
+                      setHasHazardousMaterials(e.target.checked);
+                      if (!e.target.checked) setHasMoppCourse(null);
+                    }}
+                    className="mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                      A coleta possui produto(s) perigoso(s)?
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Marque caso a carga seja classificada como inflamável, tóxica, explosiva, etc.
+                    </p>
+                  </div>
+                </label>
+
+                {hasHazardousMaterials && (
+                  <div className="mt-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700 space-y-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      O motorista possui o curso MOPP? *
+                    </p>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="mopp"
+                          checked={hasMoppCourse === true}
+                          onChange={() => setHasMoppCourse(true)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Sim</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="mopp"
+                          checked={hasMoppCourse === false}
+                          onChange={() => setHasMoppCourse(false)}
+                          className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Não</span>
+                      </label>
+                    </div>
+
+                    {hasMoppCourse === false && (
+                      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex gap-2">
+                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-red-800 dark:text-red-300 tracking-tight">ALERTA DE RISCO E INFRAÇÃO</p>
+                          <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                            O transporte de cargas perigosas por motorista sem o curso MOPP atualizado gera infração de trânsito gravíssima, retenção do veículo e risco alto de segurança. Tenha ciência ao prosseguir.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -498,6 +648,21 @@ export const PickupProofModal: React.FC<PickupProofModalProps> = ({
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-4">
                 {t('pickups.proofModal.legal.title')}
               </h3>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 flex items-center justify-between">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  Preencher com os mesmos dados do Motorista?
+                </p>
+                <button
+                  onClick={() => {
+                    setCollectorName(driverName);
+                    setCollectorDocument(driverDocument);
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition"
+                >
+                  Confirmar Cópia
+                </button>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

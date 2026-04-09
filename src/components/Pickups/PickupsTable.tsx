@@ -269,15 +269,7 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                         <Eye size={18} />
                       </button>
 
-                      {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
-                        <button
-                          onClick={() => onAction(pickup.id, 'realizar')}
-                          title={t('pickups.actions.markAsDone')}
-                          className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
-                      )}
+                      {/* 'Confirmar Realização' movido para dentro do menu três pontinhos */}
 
                       <button
                         onClick={() => onAction(pickup.id, 'view-relationship-map')}
@@ -299,6 +291,19 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                         {openActionMenu === pickup.id && (
                           <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
                             <div className="py-1">
+                              {/* Confirmar Realização Action */}
+                              {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
+                              <button
+                                onClick={() => {
+                                  onAction(pickup.id, 'realizar');
+                                  setOpenActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
+                              >
+                                <CheckCircle size={16} />
+                                <span>{t('pickups.actions.markAsDone')}</span>
+                              </button>
+                              )}
                               {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
                               <button
                                 onClick={() => {

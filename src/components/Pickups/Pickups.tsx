@@ -5,6 +5,7 @@ import { PickupsFilters } from './PickupsFilters';
 import { PickupsTable } from './PickupsTable';
 import { PickupsActions } from './PickupsActions';
 import { PickupDetailsModal } from './PickupDetailsModal';
+import { PickupProofModal } from './PickupProofModal';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { pickupsService } from '../../services/pickupsService';
@@ -28,9 +29,11 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
+  const [pickupForProof, setPickupForProof] = useState<any | null>(null);
   const [selectedPickup, setSelectedPickup] = useState<any>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; action: 'cancelar' | 'realizar' | 'delete' | null; message: string; title: string; targetIds: string[] }>({ 
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; action: 'cancelar' | 'realizar' | 'delete' | 'prompt-proof' | null; message: string; title: string; targetIds: string[] }>({ 
     isOpen: false, action: null, message: '', title: '', targetIds: [] 
   });
   const [filters, setFilters] = useState({
@@ -390,6 +393,15 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
          } else if (errors > 0) {
             setToast({ message: `Erro ao excluir coleta(s).`, type: 'error' });
          }
+      } else if (confirmDialog.action === 'prompt-proof') {
+         // O usuário aceitou lançar o comprovante de coleta
+         const pickupId = confirmDialog.targetIds[0];
+         const pickup = pickups.find(p => p.id === pickupId) || pickups.find(p => p.id === Number(pickupId));
+         
+         if (pickup) {
+           setPickupForProof({ ...pickup, status: 'realizada' });
+           setShowProofModal(true);
+         }
       } else {
         let successCount = 0;
         const newStatus = confirmDialog.action === 'realizar' ? 'realizada' : 'cancelada';
@@ -408,6 +420,19 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
             }
             return pickup;
           }));
+
+          // Se a ação foi "realizar" e é de apenas UMA coleta, pergunta se quer lançar o comprovante
+          if (confirmDialog.action === 'realizar' && confirmDialog.targetIds.length === 1) {
+            setTimeout(() => {
+              setConfirmDialog({
+                isOpen: true,
+                action: 'prompt-proof',
+                title: 'Comprovante de Coleta',
+                message: 'A coleta foi confirmada como realizada com sucesso! Deseja preencher e anexar o Comprovante de Coleta agora?',
+                targetIds: confirmDialog.targetIds
+              });
+            }, 300); // pequeno timeout para a tela não dar flicker
+          }
         }
       }
       setSelectedPickups([]); // Limpar seleção após a ação
@@ -556,6 +581,21 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         />
       )}
 
+      {showProofModal && pickupForProof && (
+        <PickupProofModal
+          pickup={pickupForProof}
+          userId={user?.id || 0}
+          userName={user?.name || ''}
+          onClose={() => {
+            setShowProofModal(false);
+            setPickupForProof(null);
+          }}
+          onSuccess={() => {
+            refreshData();
+          }}
+        />
+      )}
+
       {toast && (
         <Toast
           message={toast.message}
@@ -568,8 +608,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        confirmText={confirmDialog.action === 'cancelar' ? t('pickups.dialogs.yesCancel') : confirmDialog.action === 'delete' ? t('pickups.dialogs.yesDelete') : t('pickups.dialogs.yesDone')}
-        cancelText={t('pickups.dialogs.back')}
+        confirmText={confirmDialog.action === 'cancelar' ? t('pickups.dialogs.yesCancel') : confirmDialog.action === 'delete' ? t('pickups.dialogs.yesDelete') : confirmDialog.action === 'prompt-proof' ? 'Sim, lançar comprovante' : t('pickups.dialogs.yesDone')}
+        cancelText={confirmDialog.action === 'prompt-proof' ? 'Não, mais tarde' : t('pickups.dialogs.back')}
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />

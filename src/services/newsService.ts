@@ -140,15 +140,18 @@ export class NewsService {
   }
 
   // Extrai a imagem real do portal da reportagem via proxy CORS
-  private async fetchRealArticleImage(url: string, fallbackUrl: string): Promise<string> {
+  private async fetchRealArticleImage(url: string, fallbackUrl: string, title: string = 'Indisponível', fallbackIndex: number = 0): Promise<string> {
+    const logPrefix = `[NewsService][${title.substring(0, 30)}...]`;
+    console.info(`${logPrefix} Iniciando busca de imagem via proxy para a URL: ${url}`);
     try {
-      // Usamos um proxy genérico público para conseguir ler o HTML do portal (bypass CORS bloqueante)
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      // Usamos um proxy alternativo de alta disponibilidade para mitigar erros de CORS restritos
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl, { mode: 'cors' });
-      const data = await response.json();
+      // A maioria dos proxies retorna o HTML em .text() ao invés de JSON envelopado dependendo da proxy
+      const html = await response.text();
       
-      if (data && data.contents) {
-        const html = data.contents;
+      if (html) {
+        console.info(`${logPrefix} HTML retornado com sucesso da proxy. Analisando tags Meta/OpenGraph...`);
         // Tenta capturar imagens de preview (OpenGraph ou Twitter Card) exclusivas da matéria
         const match = html.match(/<meta[^>]*property=['"]og:image['"][^>]*content=['"]([^'"]+)['"]/i) ||
                       html.match(/<meta[^>]*content=['"]([^'"]+)['"][^>]*property=['"]og:image['"]/i) ||
@@ -156,11 +159,17 @@ export class NewsService {
         
         if (match && match[1] && match[1].startsWith('http')) {
           // Decodifica possíveis codificações HTML na URL da imagem
-          return match[1].replace(/&amp;/g, '&');
+          const extractedUrl = match[1].replace(/&amp;/g, '&');
+          console.info(`${logPrefix} ✅ Imagem extraída com sucesso: ${extractedUrl.substring(0, 80)}...`);
+          return extractedUrl;
+        } else {
+          console.warn(`${logPrefix} ⚠️ Nenhuma tag de imagem Meta OG/Twitter encontrada no HTML. Acionando Imagem Fallback (Index: ${fallbackIndex}).`);
         }
+      } else {
+        console.warn(`${logPrefix} ⚠️ Proxy não retornou conteúdo HTML válido. Acionando Imagem Fallback (Index: ${fallbackIndex}).`);
       }
-    } catch (e) {
-      console.warn('Falha silenciosa ao obter imagem real da reportagem (fallback ativado):', e);
+    } catch (e: any) {
+      console.error(`${logPrefix} ❌ Erro de rede ou proxy CORS falhou (${e.message || e}). Aplicando Imagem Fallback (Index: ${fallbackIndex}).`);
     }
     return fallbackUrl;
   }
@@ -184,17 +193,21 @@ export class NewsService {
         throw new Error('Formato de resposta inválido da API de notícias.');
       }
 
-      // Imagens 100% blindadas focadas em Logística (sem flores, sem praias) via Unsplash
+      // Imagens logísticas curadas exclusivas do Pexels (evitando imagens genéricas ou aleatórias do Unsplash)
       const fallbackImages = [
-        'https://images.unsplash.com/photo-1580674294071-8bcca3622416?q=80&w=600&auto=format&fit=crop', // Truck Highway
-        'https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=80&w=600&auto=format&fit=crop', // Port
-        'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=600&auto=format&fit=crop', // Warehouse
-        'https://images.unsplash.com/photo-1586528116311-ad8ed7c50800?q=80&w=600&auto=format&fit=crop', // Highway Trucks Motion
-        'https://images.unsplash.com/photo-1591741511977-1deef7d37dc1?q=80&w=600&auto=format&fit=crop', // Truck Side
-        'https://images.unsplash.com/photo-1577223625816-7546f13df4be?q=80&w=600&auto=format&fit=crop', // Packages Freight
-        'https://images.unsplash.com/photo-1616400619175-5beda3a17896?q=80&w=600&auto=format&fit=crop', // Highway logistics
-        'https://images.unsplash.com/photo-1517429128955-67ff5c1e29f4?q=80&w=600&auto=format&fit=crop', // Cargo train
-        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg' // Local asset
+        'https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Caminhões na rodovia
+        'https://images.pexels.com/photos/5473955/pexels-photo-5473955.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Escaneamento de centro de distribuição
+        'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Navio cargueiro gigante
+        'https://images.pexels.com/photos/110844/pexels-photo-110844.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Tratores e esteiras industriais
+        'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Trem de carga e logística ferroviária
+        'https://images.pexels.com/photos/2599244/pexels-photo-2599244.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Caminhão basculante
+        'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Reunião de equipe logística
+        'https://images.pexels.com/photos/210012/pexels-photo-210012.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Contêineres empilhados
+        'https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Galpão de armazenamento
+        'https://images.pexels.com/photos/2853909/pexels-photo-2853909.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Entregador com caixa
+        'https://images.pexels.com/photos/6169052/pexels-photo-6169052.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Logística de armazém e pallets
+        'https://images.pexels.com/photos/4508931/pexels-photo-4508931.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Logística aérea de cargas
+        '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg' // Local asset de segurança máxima
       ];
 
       // Índice sequencial para garantir que não haja imagens repetidas num mesmo ciclo de tela nas fallbacks
@@ -241,9 +254,10 @@ export class NewsService {
 
       // Extrai async a imagem REAL de cada matéria processada
       initialNews = await Promise.all(initialNews.map(async (item) => {
-        const fallImg = fallbackImages[fallbackIndex % fallbackImages.length];
+        const currentFallbackIdx = fallbackIndex % fallbackImages.length;
+        const fallImg = fallbackImages[currentFallbackIdx];
         fallbackIndex++;
-        const realImage = await this.fetchRealArticleImage(item.link, fallImg);
+        const realImage = await this.fetchRealArticleImage(item.link, fallImg, item.title, currentFallbackIdx);
         return { ...item, imageUrl: realImage };
       }));
 
@@ -253,7 +267,9 @@ export class NewsService {
           const needed = 12 - initialNews.length;
           // Preenche com as notícias embutidas do mock base para nunca deixar o carrossel vazio
           const padding = mockNews.slice(0, needed).map((item, i) => {
-            const padImg = fallbackImages[fallbackIndex % fallbackImages.length];
+            const currentPaddingIdx = fallbackIndex % fallbackImages.length;
+            const padImg = fallbackImages[currentPaddingIdx];
+            console.info(`[NewsService] Notícia de preenchimento inserida. Adotando Imagem Fallback (Index: ${currentPaddingIdx})`);
             fallbackIndex++;
             return {
               ...item,
