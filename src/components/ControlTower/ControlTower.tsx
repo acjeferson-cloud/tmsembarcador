@@ -13,12 +13,14 @@ import {
   PieChart,
   Percent,
   BarChart3,
-  DollarSign
+  DollarSign,
+  Info
 } from 'lucide-react';
 import { useSupabaseRealtime } from '../../hooks/useSupabaseRealtime';
 import { RealTimeMap } from './RealTimeMap';
 import { AlertsPanel } from './AlertsPanel';
 import { NewsCarousel } from './NewsCarousel';
+import { ControlTowerCalcModal } from './ControlTowerCalcModal';
 import { controlTowerService, KPIData } from '../../services/controlTowerService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
 
@@ -47,6 +49,7 @@ export const ControlTower: React.FC = () => {
 
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showCalcModal, setShowCalcModal] = useState(false);
 
   const fetchKPIs = async () => {
     try {
@@ -121,12 +124,20 @@ export const ControlTower: React.FC = () => {
             {t('controlTower.lastUpdate')} {lastUpdate.toLocaleTimeString()}
           </div>
           <button
+            onClick={() => setShowCalcModal(true)}
+            className="p-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors shadow-sm items-center gap-2 hidden sm:flex"
+            title="Como é calculado?"
+          >
+            <Info size={16} />
+            <span className="text-sm font-medium">Como é calculado?</span>
+          </button>
+          <button
             onClick={refreshData}
             disabled={isRefreshing}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors shadow-sm"
           >
             <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-            <span>{isRefreshing ? t('controlTower.refreshing') : t('common.refresh')}</span>
+            <span className="hidden sm:inline">{isRefreshing ? t('controlTower.refreshing') : t('common.refresh')}</span>
           </button>
         </div>
       </div>
@@ -189,6 +200,11 @@ export const ControlTower: React.FC = () => {
           <NewsCarousel />
         </div>
       </div>
+      
+      <ControlTowerCalcModal
+        isOpen={showCalcModal}
+        onClose={() => setShowCalcModal(false)}
+      />
     </div>
   );
 };
