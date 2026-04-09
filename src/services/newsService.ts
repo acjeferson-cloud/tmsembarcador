@@ -186,7 +186,10 @@ export class NewsService {
           extractedUrl = extractedUrl.replace(/&amp;/g, '&'); // Safe decodes
           
           const blackListExts = ['.svg', '.gif'];
-          const blackListTerms = ['logo', 'avatar', 'default', 'favicon', 'placeholder', 'blank', 'no-image'];
+          const blackListTerms = [
+             'logo', 'avatar', 'default', 'favicon', 'placeholder', 'blank', 'no-image',
+             'gstatic.com', 'google.com', 'googleusercontent'
+          ];
           
           const isBlacklistedTheme = blackListTerms.some(term => extractedUrl.toLowerCase().includes(term));
           const isBlacklistedExt = blackListExts.some(ext => extractedUrl.toLowerCase().endsWith(ext)) || extractedUrl.toLowerCase().includes('data:image/');
