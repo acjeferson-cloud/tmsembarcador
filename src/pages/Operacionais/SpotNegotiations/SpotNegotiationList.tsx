@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
-import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Link, Edit2, XCircle, FilePlus2, Receipt } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt } from 'lucide-react';
 import Breadcrumbs from '../../../components/Layout/Breadcrumbs';
 import { RelationshipMapModal } from '../../../components/RelationshipMap';
 import { Toast, ToastType } from '../../../components/common/Toast';
@@ -224,52 +224,56 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {data.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
-                    <td className="px-3 py-4 w-16 text-center whitespace-nowrap">
-                       <div className="relative inline-block text-left">
+                    <td className="px-3 py-4 whitespace-nowrap">
+                       <div className="flex items-center space-x-2">
+                          {/* Mapa de Relações */}
                           <button
-                            onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id!)}
-                            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-gray-500 transition-colors"
+                            onClick={() => handleAction(item.id!, 'map')}
+                            className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                            title="Mapa de Relações"
                           >
-                            <MoreHorizontal size={18} />
+                            <Share2 size={16} />
                           </button>
 
-                          {openActionMenu === item.id && (
-                            <div className="absolute left-1/2 -top-2 transform -translate-x-full -translate-y-full mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
-                              <div className="py-1">
-                                <button
-                                  onClick={() => handleAction(item.id!, 'view')}
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                                >
-                                  <Eye size={16} />
-                                  <span>Consulta</span>
-                                </button>
-                                <button
-                                  onClick={() => handleAction(item.id!, 'map')}
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                                >
-                                  <Link size={16} />
-                                  <span>Mapa de Relações</span>
-                                </button>
-                                <button
-                                  onClick={() => handleAction(item.id!, 'edit')}
-                                  disabled={item.status === 'liquidado'}
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <Edit2 size={16} />
-                                  <span>Editar Cotação</span>
-                                </button>
-                                <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                                <button
-                                  onClick={() => handleAction(item.id!, 'cancel')}
-                                  disabled={item.status === 'cancelado'}
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-red-600 dark:text-red-400 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <XCircle size={16} />
-                                  <span>Cancelar</span>
-                                </button>
+                          {/* More actions button */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setOpenActionMenu(openActionMenu === item.id ? null : item.id!)}
+                              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              <MoreHorizontal size={16} />
+                            </button>
+
+                            {openActionMenu === item.id && (
+                              <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => handleAction(item.id!, 'view')}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                                  >
+                                    <Eye size={14} />
+                                    <span>Consulta</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleAction(item.id!, 'edit')}
+                                    disabled={item.status === 'liquidado'}
+                                    className="w-full text-left px-4 py-2 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <Edit2 size={14} />
+                                    <span>Editar Cotação</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleAction(item.id!, 'cancel')}
+                                    disabled={item.status === 'cancelado'}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <Trash2 size={14} />
+                                    <span>Cancelar</span>
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                        </div>
                     </td>
                     <td className="px-6 py-4">
