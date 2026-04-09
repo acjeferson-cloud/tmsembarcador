@@ -66,14 +66,17 @@ VALUES ('spot_negotiations_proofs', 'spot_negotiations_proofs', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage Policy allowing anon/auth access to proofs
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
 CREATE POLICY "Public Access" 
 ON storage.objects FOR SELECT 
 USING ( bucket_id = 'spot_negotiations_proofs' );
 
+DROP POLICY IF EXISTS "Enable Upload" ON storage.objects;
 CREATE POLICY "Enable Upload" 
 ON storage.objects FOR INSERT 
 WITH CHECK ( bucket_id = 'spot_negotiations_proofs' );
 
+DROP POLICY IF EXISTS "Enable Update" ON storage.objects;
 CREATE POLICY "Enable Update" 
 ON storage.objects FOR UPDATE 
 USING ( bucket_id = 'spot_negotiations_proofs' );

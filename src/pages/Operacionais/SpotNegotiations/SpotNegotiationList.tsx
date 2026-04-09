@@ -24,6 +24,8 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void }> = ({ onNew }) 
     switch (status) {
       case 'pendente_faturamento':
         return <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 w-max"><Clock size={12}/> Pendente CTe</span>;
+      case 'aguardando_fatura':
+        return <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 w-max"><FileText size={12}/> Aguardando Fatura</span>;
       case 'liquidado':
         return <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 w-max"><CheckCircle size={12}/> Faturado</span>;
       case 'cancelado':

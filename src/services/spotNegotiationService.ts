@@ -129,7 +129,7 @@ export const spotNegotiationService = {
         return [];
       }
       
-      return (data || []).map(r => ({
+      const mapped = (data || []).map(r => ({
         id: r.id,
         carrier_id: r.carrier_id,
         agreed_value: r.agreed_value,
@@ -141,6 +141,35 @@ export const spotNegotiationService = {
         created_at: r.created_at,
         carrier_name: (r.carriers as any)?.nome_fantasia || (r.carriers as any)?.razao_social || 'Desconhecido'
       }));
+
+      const negotiationIds = mapped.map(n => n.id);
+      if (negotiationIds.length > 0) {
+        const { data: pivotData } = await supabase
+          .from('freight_spot_invoices')
+          .select('negotiation_id, invoice_id')
+          .in('negotiation_id', negotiationIds);
+          
+        if (pivotData && pivotData.length > 0) {
+           const invoiceIds = pivotData.map(p => p.invoice_id);
+           const { data: cteInvoiceData } = await supabase
+             .from('ctes_invoices')
+             .select('invoice_id')
+             .in('invoice_id', invoiceIds);
+             
+           if (cteInvoiceData && cteInvoiceData.length > 0) {
+              const invoicesWithCte = new Set(cteInvoiceData.map(c => c.invoice_id));
+              mapped.forEach(n => {
+                 const nInvoices = pivotData.filter(p => p.negotiation_id === n.id).map(p => p.invoice_id);
+                 const hasCte = nInvoices.some(invId => invoicesWithCte.has(invId));
+                 if (hasCte && n.status === 'pendente_faturamento') {
+                    n.status = 'aguardando_fatura' as any;
+                 }
+              });
+           }
+        }
+      }
+
+      return mapped;
     } catch (e) {
        console.error('Failed to get active negotiations', e);
        return [];
