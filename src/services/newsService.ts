@@ -159,9 +159,11 @@ export class NewsService {
       }
 
       // Arrays fixo de caminhos locais para as imagens. 
-      // Considerando que o usuário subiu 5 arquivos WebP
+      // O usuário subiu 12 arquivos WebP perfeitamente enfileirados para as 3 páginas do carrossel
       const localImageFolders = [
-        '/news/1.webp', '/news/2.webp', '/news/3.webp', '/news/4.webp', '/news/5.webp'
+        '/news/1.webp', '/news/2.webp', '/news/3.webp', '/news/4.webp',
+        '/news/5.webp', '/news/6.webp', '/news/7.webp', '/news/8.webp',
+        '/news/9.webp', '/news/10.webp', '/news/11.webp', '/news/12.webp'
       ];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
