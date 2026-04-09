@@ -24,6 +24,7 @@
     "test:e2e:webkit": "playwright test --project=webkit"
   },
   "dependencies": {
+    "@googlemaps/markerclusterer": "^2.6.2",
     "@marsidev/react-turnstile": "^1.4.2",
     "@react-google-maps/api": "^2.20.8",
     "@supabase/supabase-js": "^2.58.0",

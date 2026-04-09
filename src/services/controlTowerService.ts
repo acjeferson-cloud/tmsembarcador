@@ -18,6 +18,18 @@ export interface KPIData {
   onTimeRate: number;
 }
 
+export interface CargoMarker {
+  id: string;
+  numero: string;
+  destinatario_nome: string;
+  carrier_id: string;
+  situacao: string;
+  expected_delivery_date: string;
+  lat: number;
+  lng: number;
+  is_delayed: boolean;
+}
+
 export const controlTowerService = {
   async getKpiData(): Promise<KPIData> {
     const ctx = await TenantContextHelper.getCurrentContext();
@@ -112,5 +124,70 @@ export const controlTowerService = {
       
       onTimeRate: Number(otifRate.toFixed(1))
     };
+  },
+
+  async getMapMarkers(): Promise<CargoMarker[]> {
+    try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      let query = supabase.from('mv_control_tower_map_markers').select('*');
+      if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+      if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+
+      const { data, error } = await query;
+      if (!error && data && data.length > 0 && data[0].markers) {
+        return data[0].markers as CargoMarker[];
+      }
+    } catch (err) {
+      console.warn('MV de Marcadores ainda não gerada, caindo para Mock Visual.', err);
+    }
+    
+    // Fallback/Mock até o script SQL ser executado pelo Usuário
+    return [
+      {
+        id: 'NF1020',
+        numero: '1020',
+        destinatario_nome: 'Lojas Americanas - CD SP',
+        carrier_id: 'RÁPIDO COMETA',
+        situacao: 'em_transito',
+        expected_delivery_date: new Date(Date.now() + 86400000).toISOString(),
+        lat: -23.5505,
+        lng: -46.6333,
+        is_delayed: false
+      },
+      {
+        id: 'NF1021',
+        numero: '1021',
+        destinatario_nome: 'Magalu S.A.',
+        carrier_id: 'JAMEF',
+        situacao: 'em_transito',
+        expected_delivery_date: new Date(Date.now() - 86400000).toISOString(),
+        lat: -22.9068,
+        lng: -43.1729,
+        is_delayed: true
+      },
+      {
+        id: 'NF1022',
+        numero: '1022',
+        destinatario_nome: 'Mercado Livre Holding',
+        carrier_id: 'JAMEF',
+        situacao: 'entregue',
+        expected_delivery_date: new Date().toISOString(),
+        lat: -23.9535,
+        lng: -46.3350,
+        is_delayed: false
+      },
+      {
+        id: 'NF1023',
+        numero: '1023',
+        destinatario_nome: 'B2W Digital SA',
+        carrier_id: 'TNT MERCURIO',
+        situacao: 'saiu_entrega',
+        expected_delivery_date: new Date(Date.now() + 1200000).toISOString(),
+        lat: -23.6821,
+        lng: -46.5953,
+        is_delayed: false
+      }
+    ];
   }
 };

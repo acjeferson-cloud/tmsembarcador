@@ -1,216 +1,224 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Truck, AlertTriangle, Clock, Navigation } from 'lucide-react';
-import GoogleMap from '../Maps/GoogleMap';
-
-interface Vehicle {
-  id: string;
-  name: string;
-  status: 'moving' | 'stopped' | 'delayed' | 'delivered';
-  location: string;
-  latitude: number;
-  longitude: number;
-  lastUpdate: string;
-  stoppedTime?: number;
-  route: string;
-}
+import { Package, AlertTriangle, CheckCircle, Navigation, Clock } from 'lucide-react';
+import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+import { CargoMarker, controlTowerService } from '../../services/controlTowerService';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 export const RealTimeMap: React.FC = () => {
   const { t } = useTranslation();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: 'V001',
-      name: 'Caminhão ABC-1234',
-      status: 'moving',
-      location: 'Rod. Presidente Dutra, KM 180',
-      latitude: -23.2237,
-      longitude: -45.9009,
-      lastUpdate: '2 min atrás',
-      route: 'São Paulo → Rio de Janeiro'
-    },
-    {
-      id: 'V002',
-      name: 'Van XYZ-5678',
-      status: 'stopped',
-      location: 'Posto Shell - Guarulhos',
-      latitude: -23.4538,
-      longitude: -46.5333,
-      lastUpdate: '15 min atrás',
-      stoppedTime: 120,
-      route: 'São Paulo → Campinas'
-    },
-    {
-      id: 'V003',
-      name: 'Caminhão DEF-9012',
-      status: 'delayed',
-      location: 'BR-116, KM 45',
-      latitude: -23.6821,
-      longitude: -46.5953,
-      lastUpdate: '5 min atrás',
-      stoppedTime: 180,
-      route: 'Belo Horizonte → São Paulo'
-    },
-    {
-      id: 'V004',
-      name: 'Truck GHI-3456',
-      status: 'delivered',
-      location: 'Centro de Distribuição RJ',
-      latitude: -22.9068,
-      longitude: -43.1729,
-      lastUpdate: '30 min atrás',
-      route: 'São Paulo → Rio de Janeiro'
-    }
-  ]);
+  
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [clusterer, setClusterer] = useState<any>(null);
+  
+  const [cargoMarkers, setCargoMarkers] = useState<CargoMarker[]>([]);
+  const [selectedCargo, setSelectedCargo] = useState<CargoMarker | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [mapCenter] = useState({ lat: -23.5505, lng: -46.6333 }); // São Paulo como padrão
+  // Default Center (São Paulo)
+  const defaultCenter = { lat: -23.5505, lng: -46.6333 };
 
-  const [alerts] = useState([
-    {
-      id: 1,
-      vehicleId: 'V002',
-      type: 'stopped',
-      message: 'Veículo parado há mais de 2 horas',
-      severity: 'high'
-    },
-    {
-      id: 2,
-      vehicleId: 'V003',
-      type: 'delay',
-      message: 'Atraso de 3 horas na rota',
-      severity: 'medium'
-    }
-  ]);
-
-  // Simulate real-time updates
+  // Sync Markers Array
   useEffect(() => {
-    const interval = setInterval(() => {
-      setVehicles(prev => prev.map(vehicle => ({
-        ...vehicle,
-        lastUpdate: Math.random() > 0.7 ? 'Agora' : vehicle.lastUpdate,
-        stoppedTime: vehicle.status === 'stopped' ? (vehicle.stoppedTime || 0) + 1 : vehicle.stoppedTime
-      })));
-    }, 10000);
-
-    return () => clearInterval(interval);
+    const fetchData = async () => {
+      setIsLoading(true);
+      const data = await controlTowerService.getMapMarkers();
+      setCargoMarkers(data);
+      setIsLoading(false);
+    };
+    fetchData();
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'moving': return 'text-green-600 bg-green-100';
-      case 'stopped': return 'text-yellow-600 bg-yellow-100';
-      case 'delayed': return 'text-red-600 bg-red-100';
-      case 'delivered': return 'text-blue-600 bg-blue-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
+  // Initialize Map
+  useEffect(() => {
+    const initMap = async () => {
+      if (!mapRef.current) return;
+      try {
+        await loadGoogleMapsAPI();
+        if (!isGoogleMapsLoaded() || mapInstance) return;
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'moving': return <Navigation size={16} />;
-      case 'stopped': return <Clock size={16} />;
-      case 'delayed': return <AlertTriangle size={16} />;
-      case 'delivered': return <MapPin size={16} />;
-      default: return <Truck size={16} />;
-    }
-  };
+        const map = new window.google.maps.Map(mapRef.current, {
+          center: defaultCenter,
+          zoom: 7,
+          mapTypeControl: false,
+          streetViewControl: false,
+        });
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'moving': return t('controlTower.map.moving');
-      case 'stopped': return t('controlTower.map.stopped');
-      case 'delayed': return t('controlTower.map.delayed');
-      case 'delivered': return t('controlTower.map.delivered');
-      default: return t('controlTower.map.unknown');
+        setMapInstance(map);
+        
+        // Inicializar Cluster vazio
+        const markerClusterer = new MarkerClusterer({ map, markers: [] });
+        setClusterer(markerClusterer);
+        
+      } catch (e) {
+        console.error('Erro ao instanciar mapa', e);
+      }
+    };
+    initMap();
+  }, []);
+
+  // Update Markers inside Map Clusterer
+  useEffect(() => {
+    if (!mapInstance || !clusterer || !cargoMarkers.length) return;
+
+    // Limpar markers anteriores do clusterer
+    clusterer.clearMarkers();
+
+    const gMarkers = cargoMarkers.map(cargo => {
+      // Logic for Colors/SLA
+      let pinColor = '#FBBF24'; // Yellow (Em trânsito)
+      let isBouncing = false;
+      
+      if (cargo.situacao === 'entregue') {
+        pinColor = '#10B981'; // Green (Entregue)
+      } else if (cargo.is_delayed) {
+        pinColor = '#EF4444'; // Red (Atrasado)
+        isBouncing = true;
+      }
+
+      // Create SVG Icon for Marker natively
+      const svgMarker = {
+        path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+        fillColor: pinColor,
+        fillOpacity: 1,
+        strokeWeight: 1,
+        strokeColor: '#FFFFFF',
+        rotation: 0,
+        scale: 1.5,
+        anchor: new window.google.maps.Point(12, 24),
+      };
+
+      const gMarker = new window.google.maps.Marker({
+        position: { lat: cargo.lat, lng: cargo.lng },
+        icon: svgMarker,
+        title: `NF: ${cargo.numero}`,
+        animation: isBouncing ? window.google.maps.Animation.BOUNCE : null,
+      });
+
+      gMarker.addListener('click', () => {
+        setSelectedCargo(cargo);
+        mapInstance.setZoom(12);
+        mapInstance.panTo({ lat: cargo.lat, lng: cargo.lng });
+      });
+
+      return gMarker;
+    });
+
+    clusterer.addMarkers(gMarkers);
+    
+    // Fit Bounds if we have markers
+    if (gMarkers.length > 0 && !selectedCargo) {
+      const bounds = new window.google.maps.LatLngBounds();
+      gMarkers.forEach((m: any) => bounds.extend(m.getPosition()!));
+      mapInstance.fitBounds(bounds);
     }
+  }, [mapInstance, clusterer, cargoMarkers]);
+
+  const getSlaBadge = (cargo: CargoMarker) => {
+    if (cargo.situacao === 'entregue') {
+      return { class: 'bg-green-100 text-green-700', text: 'Entregue', icon: <CheckCircle size={14} /> };
+    }
+    if (cargo.is_delayed) {
+      return { class: 'bg-red-100 text-red-700 animate-pulse', text: 'Atrasado SLA', icon: <AlertTriangle size={14} /> };
+    }
+    return { class: 'bg-yellow-100 text-yellow-700', text: 'Em Trânsito', icon: <Navigation size={14} /> };
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('controlTower.map.realTimeMap')}</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            Central GeoVision
+            {isLoading && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse ml-2" />}
+          </h3>
+          <p className="text-sm text-gray-500">Monitoramento baseado em inteligência de SLA da Carga e Ocorrências.</p>
+        </div>
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span className="text-sm text-gray-600 dark:text-gray-400">{t('controlTower.map.live')}</span>
         </div>
       </div>
 
-      {/* Google Maps */}
-      <div className="rounded-lg mb-6 overflow-hidden">
-        <GoogleMap
-          latitude={selectedVehicle?.latitude || mapCenter.lat}
-          longitude={selectedVehicle?.longitude || mapCenter.lng}
-          height="400px"
-          zoom={selectedVehicle ? 14 : 9}
-          interactive={true}
-        />
+      {/* Google Maps Container */}
+      <div className="w-full relative rounded-lg border border-gray-300 dark:border-gray-600 mb-4 overflow-hidden" style={{ minHeight: '400px', flex: '1 1 auto' }}>
+        <div ref={mapRef} className="w-full h-full absolute inset-0" />
       </div>
 
-      {selectedVehicle && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      {selectedCargo && (
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-gray-700/50 border border-blue-200 dark:border-gray-600 rounded-lg shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-blue-900">{selectedVehicle.name}</p>
-              <p className="text-sm text-blue-700">{selectedVehicle.location}</p>
-              <p className="text-xs text-blue-600">{selectedVehicle.route}</p>
+              <p className="font-medium text-blue-900 dark:text-blue-100">Destaque: NF-e {selectedCargo.numero}</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">Destinatário: {selectedCargo.destinatario_nome}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">Previsão: {new Date(selectedCargo.expected_delivery_date).toLocaleDateString()}</p>
             </div>
             <button
-              onClick={() => setSelectedVehicle(null)}
+              onClick={() => {
+                setSelectedCargo(null);
+                if (mapInstance && cargoMarkers.length > 0) {
+                     const bounds = new window.google.maps.LatLngBounds();
+                     cargoMarkers.forEach(m => bounds.extend(new window.google.maps.LatLng(m.lat, m.lng)));
+                     mapInstance.fitBounds(bounds);
+                }
+              }}
               className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
             >
-              {t('controlTower.map.viewAll')}
+              Exibir Todas
             </button>
           </div>
         </div>
       )}
 
-      {/* Vehicle List */}
-      <div className="space-y-3">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('controlTower.map.activeVehicles')} ({vehicles.length})</h4>
-        {vehicles.map((vehicle) => (
-          <div
-            key={vehicle.id}
-            onClick={() => setSelectedVehicle(vehicle)}
-            className={`flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
-              selectedVehicle?.id === vehicle.id
-                ? 'bg-blue-100 border-2 border-blue-500'
-                : 'bg-gray-50 hover:bg-gray-100'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <div className={`p-2 rounded-lg ${getStatusColor(vehicle.status)}`}>
-                {getStatusIcon(vehicle.status)}
+      {/* Cargo List View */}
+      <div className="space-y-3 shrink-0 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">Documentos Monitorados ({cargoMarkers.length})</h4>
+        
+        {cargoMarkers.map((cargo) => {
+          const badge = getSlaBadge(cargo);
+          return (
+            <div
+              key={cargo.id}
+              onClick={() => {
+                setSelectedCargo(cargo);
+                if(mapInstance) {
+                   mapInstance.setZoom(12);
+                   mapInstance.panTo({ lat: cargo.lat, lng: cargo.lng });
+                }
+              }}
+              className={`flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer border ${
+                selectedCargo?.id === cargo.id
+                  ? 'bg-blue-50 border-blue-300 dark:bg-gray-700 dark:border-blue-500'
+                  : 'bg-gray-50 border-transparent hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700'
+              }`}
+            >
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                   <Package size={16} className="text-blue-600" />
+                   <p className="font-semibold text-gray-900 dark:text-white text-sm">NF-e {cargo.numero}</p>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{cargo.destinatario_nome}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-500 border border-gray-200 dark:border-gray-600 rounded px-1 w-max">{cargo.carrier_id}</p>
               </div>
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white text-sm">{vehicle.name}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">{vehicle.route}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{vehicle.location}</p>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badge.class}`}>
+                  {badge.icon}
+                  {badge.text}
+                </span>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 uppercase">Previsão</p>
+                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">{new Date(cargo.expected_delivery_date).toLocaleDateString()}</p>
               </div>
             </div>
-            <div className="text-right">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}>
-                {getStatusLabel(vehicle.status)}
-              </span>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{vehicle.lastUpdate}</p>
-              {vehicle.stoppedTime && (
-                <p className="text-xs text-red-600">{t('controlTower.map.stoppedFor', { hours: Math.floor(vehicle.stoppedTime / 60), minutes: vehicle.stoppedTime % 60 })}</p>
-              )}
-            </div>
+          );
+        })}
+        {cargoMarkers.length === 0 && !isLoading && (
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded text-gray-500">
+            Nenhuma carga geolocalizada no momento. Rodar o script SQL de marcações.
           </div>
-        ))}
+        )}
       </div>
-
-      {/* Quick Stats */}
-      <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="text-center p-3 bg-green-50 rounded-lg">
-          <p className="text-2xl font-bold text-green-600">{vehicles.filter(v => v.status === 'moving').length}</p>
-          <p className="text-sm text-green-700">{t('controlTower.map.moving')}</p>
-        </div>
-        <div className="text-center p-3 bg-red-50 rounded-lg">
-          <p className="text-2xl font-bold text-red-600">{alerts.length}</p>
-          <p className="text-sm text-red-700">{t('controlTower.map.activeAlerts')}</p>
-        </div>
-      </div>
+      
     </div>
   );
 };
