@@ -159,11 +159,9 @@ export class NewsService {
       }
 
       // Arrays fixo de caminhos locais para as imagens. 
-      // O usuário comprometeu-se a adicionar as imagens na pasta: public/news/1.jpg até 12.jpg
+      // Considerando que o usuário subiu 5 arquivos WebP
       const localImageFolders = [
-        '/news/1.jpg', '/news/2.jpg', '/news/3.jpg', '/news/4.jpg', 
-        '/news/5.jpg', '/news/6.jpg', '/news/7.jpg', '/news/8.jpg', 
-        '/news/9.jpg', '/news/10.jpg', '/news/11.jpg', '/news/12.jpg'
+        '/news/1.webp', '/news/2.webp', '/news/3.webp', '/news/4.webp', '/news/5.webp'
       ];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
