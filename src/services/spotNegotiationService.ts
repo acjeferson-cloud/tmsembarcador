@@ -124,7 +124,10 @@ export const spotNegotiationService = {
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Database Error:', error);
+        return [];
+      }
       
       return (data || []).map(r => ({
         id: r.id,

@@ -4,6 +4,7 @@ import { SpotNegotiationForm } from './SpotNegotiationForm';
 
 export const SpotNegotiations: React.FC = () => {
   const [view, setView] = useState<'list' | 'form'>('list');
+  console.log('SpotNegotiations mounted! Current view:', view);
 
   return (
     <>
