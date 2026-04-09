@@ -139,80 +139,7 @@ export class NewsService {
     return NewsService.instance;
   }
 
-  // Extrai a imagem real do portal da reportagem via proxy CORS
-  private async fetchRealArticleImage(url: string, fallbackUrl: string, title: string = 'Indisponível', fallbackIndex: number = 0): Promise<string> {
-    const logPrefix = `[NewsService][${title.substring(0, 30)}...]`;
-    try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-      // Abort controller para fallback por timeout (max 2.5s)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-
-      const response = await fetch(proxyUrl, { mode: 'cors', signal: controller.signal });
-      clearTimeout(timeoutId);
-      
-      const html = await response.text();
-      
-      if (html) {
-        let extractedUrl = '';
-
-        // Estratégia Avançada 1: JSON-LD (Extremamente preciso, fornecido ao Google News)
-        const jsonLdMatch = html.match(/<script type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
-        if (jsonLdMatch && jsonLdMatch[1]) {
-          try {
-            const parsedLd = JSON.parse(jsonLdMatch[1]);
-            if (parsedLd.image) {
-              extractedUrl = Array.isArray(parsedLd.image) ? parsedLd.image[0] : (parsedLd.image.url || parsedLd.image);
-            }
-          } catch (e) {
-            // Ignorar falhas de parser JSON e seguir
-          }
-        }
-
-        // Estratégia Avançada 2: Meta Tags Prioritárias
-        if (!extractedUrl) {
-          const secureOgUrl = html.match(/<meta[^>]*property=['"]og:image:secure_url['"][^>]*content=['"]([^'"]+)['"]/i);
-          const ogUrl = html.match(/<meta[^>]*property=['"]og:image['"][^>]*content=['"]([^'"]+)['"]/i) || 
-                        html.match(/<meta[^>]*content=['"]([^'"]+)['"][^>]*property=['"]og:image['"]/i);
-          const twitUrl = html.match(/<meta[^>]*name=['"]twitter:image[:a-z]*['"][^>]*content=['"]([^'"]+)['"]/i);
-          const match = secureOgUrl || ogUrl || twitUrl;
-          if (match && match[1]) {
-            extractedUrl = match[1];
-          }
-        }
-
-        // Validação da imagem extraída (Blacklist Analytics)
-        if (extractedUrl && extractedUrl.startsWith('http')) {
-          extractedUrl = extractedUrl.replace(/&amp;/g, '&'); // Safe decodes
-          
-          const blackListExts = ['.svg', '.gif'];
-          const blackListTerms = [
-             'logo', 'avatar', 'default', 'favicon', 'placeholder', 'blank', 'no-image',
-             'gstatic.com', 'google.com', 'googleusercontent'
-          ];
-          
-          const isBlacklistedTheme = blackListTerms.some(term => extractedUrl.toLowerCase().includes(term));
-          const isBlacklistedExt = blackListExts.some(ext => extractedUrl.toLowerCase().endsWith(ext)) || extractedUrl.toLowerCase().includes('data:image/');
-
-          if (!isBlacklistedTheme && !isBlacklistedExt) {
-             return extractedUrl;
-          }
-          console.warn(`${logPrefix} ⚠️ Imagem extraída (${extractedUrl}) caiu na Blacklist! Acionando Imagem Fallback Semântico.`);
-        } else {
-          console.warn(`${logPrefix} ⚠️ Nenhuma tag de imagem Meta OG/Twitter/JSON-LD encontrada. Acionando Fallback Semântico.`);
-        }
-      }
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
-         console.warn(`${logPrefix} ⏱️ Timeout na proxy. Aplicando Imagem Fallback Semântico.`);
-      } else {
-         console.error(`${logPrefix} ❌ Proxy CORS falhou. Aplicando Imagem Fallback Semântico.`);
-      }
-    }
-    return fallbackUrl;
-  }
-
-  // Carregar notícias (API real + fallback)
+  // Carregar notícias (API real + Imagens Locais Estáticas)
   private async loadNews(): Promise<void> {
     try {
       // API Key grátis via rss2json apontando para o feed filtrado de logística do Google News BR (restringido para apenas 15 dias usando keyword when:15d)
@@ -231,66 +158,18 @@ export class NewsService {
         throw new Error('Formato de resposta inválido da API de notícias.');
       }
 
-      // Estrutura de Dicionário de Imagens de Fallback (Categorizadas por Tema Logístico)
-      const fallbackThemes: Record<string, string[]> = {
-        rodoviario: [
-          'https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Caminhões na rodovia
-          'https://images.pexels.com/photos/2599244/pexels-photo-2599244.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Caminhão de entulho/carga
-          'https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Veículos pesados
-          'https://images.pexels.com/photos/6169052/pexels-photo-6169052.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'  // Pneus traseiros / Rodovia
-        ],
-        armazem: [
-          'https://images.pexels.com/photos/5473955/pexels-photo-5473955.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Código de barras
-          'https://images.pexels.com/photos/122429/pexels-photo-122429.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Armazém empilhadeiras
-          'https://images.pexels.com/photos/2853909/pexels-photo-2853909.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Galpão com caixas
-          'https://images.pexels.com/photos/4481259/pexels-photo-4481259.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'  // CDs de logística
-        ],
-        aquaviario: [
-          'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Navios gigantes
-          'https://images.pexels.com/photos/210012/pexels-photo-210012.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Container porto
-          'https://images.pexels.com/photos/2880507/pexels-photo-2880507.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'  // Gruas de container
-        ],
-        aereo: [
-          'https://images.pexels.com/photos/4508931/pexels-photo-4508931.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Entregas e avião
-          'https://images.pexels.com/photos/723240/pexels-photo-723240.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'   // Carga aérea
-        ],
-        tecnologia: [
-          'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Equipe analisando
-          'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Código / IA
-          'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop'  // Servidores Logísticos
-        ],
-        neutro: [
-          'https://images.pexels.com/photos/110844/pexels-photo-110844.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Máquinas em geral
-          'https://images.pexels.com/photos/590016/pexels-photo-590016.jpg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop', // Ferroviário trem
-          '/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg'
-        ]
-      };
-
-      // Mapeador Semântico
-      const getSemanticFallbackImage = (title: string, index: number): string => {
-        const t = title.toLowerCase();
-        let list = fallbackThemes.neutro;
-        if (/caminhão|antt|rodovia|pedágio|frota|estrada|br-|eixo|motorista|caminhoneiro/i.test(t)) {
-          list = fallbackThemes.rodoviario;
-        } else if (/armazém|armazem|estoque|galpão|centro de distribuição|cd|picking/i.test(t)) {
-          list = fallbackThemes.armazem;
-        } else if (/navio|porto|marítimo|cabotagem|antaq|container|contêiner/i.test(t)) {
-          list = fallbackThemes.aquaviario;
-        } else if (/aéreo|aeroporto|avião|voo|infraero|anac/i.test(t)) {
-          list = fallbackThemes.aereo;
-        } else if (/ia|inteligência|software|startup|blockchain|tecnologia/i.test(t)) {
-          list = fallbackThemes.tecnologia;
-        }
-        return list[index % list.length];
-      };
+      // Arrays fixo de caminhos locais para as imagens. 
+      // O usuário comprometeu-se a adicionar as imagens na pasta: public/news/1.jpg até 12.jpg
+      const localImageFolders = [
+        '/news/1.jpg', '/news/2.jpg', '/news/3.jpg', '/news/4.jpg', 
+        '/news/5.jpg', '/news/6.jpg', '/news/7.jpg', '/news/8.jpg', 
+        '/news/9.jpg', '/news/10.jpg', '/news/11.jpg', '/news/12.jpg'
+      ];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let initialNews: NewsItem[] = data.items
         .filter((item: any) => {
-          // Validação anti quebra de link
           if (!item || !item.link || !item.link.startsWith('http')) return false;
-          
-          // Validação estrita de data (máximo 15 dias)
           if (item.pubDate) {
             const pubDate = new Date(item.pubDate);
             const now = new Date();
@@ -301,7 +180,6 @@ export class NewsService {
         })
         .slice(0, 12)
         .map((item: any, index: number) => {
-          // Trata titulo extraindo da tag HTML se houver falhas, e limpa - Fonte
           let title = item.title;
           const sourceMatch = title.match(/ - ([^-]+)$/);
           const source = sourceMatch ? sourceMatch[1] : 'Portal Especializado';
@@ -310,40 +188,34 @@ export class NewsService {
             title = title.replace(` - ${source}`, '');
           }
 
+          // Uso estrito do array de Pastas do Usuário
+          const safeImageAssigned = localImageFolders[index % localImageFolders.length];
+
           return {
             id: item.guid || `${index}-${Date.now()}`,
             title: title,
             summary: item.description 
-                      ? item.description.replace(/(<([^>]+)>)/gi, "").substring(0, 150) // Strip HTML format
+                      ? item.description.replace(/(<([^>]+)>)/gi, "").substring(0, 150)
                       : 'Nenhuma descrição fornecida pelo portal para esta chamada.',
             link: item.link,
             publishedDate: item.pubDate || new Date().toISOString(),
-            imageUrl: '', // Será preenchido dinamicamente abaixo
+            imageUrl: safeImageAssigned,
             source: source
           };
         });
 
-      // Extrai async a imagem REAL de cada matéria processada
-      let fallbackIndexCounter = 0;
-      initialNews = await Promise.all(initialNews.map(async (item, i) => {
-        fallbackIndexCounter++;
-        const fallImg = getSemanticFallbackImage(item.title, fallbackIndexCounter);
-        const realImage = await this.fetchRealArticleImage(item.link, fallImg, item.title, fallbackIndexCounter);
-        return { ...item, imageUrl: realImage };
-      }));
-
       if (initialNews.length > 0) {
-        // Assegura carrossel completo de 3 páginas (12 notícias)
         if (initialNews.length < 12) {
           const needed = 12 - initialNews.length;
-          // Preenche com as notícias embutidas do mock base para nunca deixar o carrossel vazio
           const padding = mockNews.slice(0, needed).map((item, i) => {
-            fallbackIndexCounter++;
-            const padImg = getSemanticFallbackImage(item.title, fallbackIndexCounter);
-            return {
+             // Indexação contínua pro padding via offset
+             const offsetIndex = initialNews.length + i;
+             const safePaddingImage = localImageFolders[offsetIndex % localImageFolders.length];
+             
+             return {
               ...item,
               id: `fallback-${i}-${Date.now()}`,
-              imageUrl: padImg, // Fallback Semântico para Mocks
+              imageUrl: safePaddingImage,
               publishedDate: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString()
             };
           });
