@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useTranslation } from 'react-i18next';
 import {
-  Activity,
   Clock,
   AlertTriangle,
   CheckCircle,
   Truck,
   Package,
-  TrendingUp,
   TrendingDown,
   RefreshCw,
-  Zap,
+  PieChart,
+  Percent,
+  BarChart3,
   DollarSign
 } from 'lucide-react';
 import { useSupabaseRealtime } from '../../hooks/useSupabaseRealtime';
@@ -34,14 +34,14 @@ export const ControlTower: React.FC = () => {
     totalDeliveries: 0,
     inTransit: 0,
     delivered: 0,
-    delayed: 0,
     waitingCollection: 0,
-    activeCarriers: 0,
-    volumeReais: 0,
-    volumeKg: 0,
-    onTimeRate: 0,
-    freightEstimated: 0,
-    freightSpot: 0
+    cfv: 0,
+    custoPorKg: 0,
+    shareContrato: 0,
+    shareSpot: 0,
+    freteTotal: 0,
+    faturamentoTotal: 0,
+    onTimeRate: 0
   });
 
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -73,36 +73,36 @@ export const ControlTower: React.FC = () => {
 
   const kpiCards = [
     {
-      title: 'Auditoria Spot vs Standard',
-      value: kpiData.freightSpot.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-      change: `Est: ${kpiData.freightEstimated.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
-      changeType: kpiData.freightSpot > kpiData.freightEstimated && kpiData.freightEstimated > 0 ? 'negative' : 'positive' as const,
-      icon: DollarSign,
+      title: 'Custo de Frete sobre Vendas (CFV)',
+      value: `${kpiData.cfv}%`,
+      change: `Frete: ${kpiData.freteTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}`,
+      changeType: kpiData.cfv > 15 ? 'negative' : 'positive' as const,
+      icon: Percent,
       color: 'blue'
+    },
+    {
+      title: 'Share de Frete (Contrato vs Spot)',
+      value: `${kpiData.shareContrato}% / ${kpiData.shareSpot}%`,
+      change: 'Contrato frente à mercado livre',
+      changeType: kpiData.shareContrato >= kpiData.shareSpot ? 'positive' : 'negative' as const,
+      icon: PieChart,
+      color: 'orange'
+    },
+    {
+      title: 'Custo Médio por KG',
+      value: kpiData.custoPorKg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      change: 'Baseado no faturado diário',
+      changeType: 'neutral' as const,
+      icon: BarChart3,
+      color: 'indigo'
     },
     {
       title: 'Entregas no Prazo (OTIF Diário)',
       value: `${kpiData.onTimeRate}%`,
-      change: 'Hoje',
+      change: 'Hoje (mantido p/ tracking operacional)',
       changeType: kpiData.onTimeRate >= 95 ? 'positive' : (kpiData.onTimeRate >= 80 ? 'neutral' : 'negative') as const,
       icon: CheckCircle,
       color: 'emerald'
-    },
-    {
-      title: 'Volume Faturado Diário',
-      value: kpiData.volumeReais.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-      change: `${kpiData.volumeKg} kg trafegados`,
-      changeType: 'neutral' as const,
-      icon: TrendingUp,
-      color: 'indigo'
-    },
-    {
-      title: 'Transportadores em Operação',
-      value: kpiData.activeCarriers.toString(),
-      change: kpiData.activeCarriers > 0 ? 'Rotas Ativas' : '-',
-      changeType: 'positive' as const,
-      icon: Truck,
-      color: 'orange'
     }
   ];
 

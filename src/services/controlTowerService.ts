@@ -6,14 +6,16 @@ export interface KPIData {
   inTransit: number;
   delivered: number;
   waitingCollection: number;
-  activeCarriers: number;
   
-  volumeReais: number;
-  volumeKg: number;
+  // Executive Metrics
+  cfv: number;               // Custo de Frete sobre Vendas (%)
+  custoPorKg: number;        // Custo Médio por KG
+  shareContrato: number;     // % do frete em contrato
+  shareSpot: number;         // % do frete em spot
+  freteTotal: number;        // Total de frete gasto
+  faturamentoTotal: number;
+  
   onTimeRate: number;
-  
-  freightEstimated: number;
-  freightSpot: number;
 }
 
 export const controlTowerService = {
@@ -35,41 +37,29 @@ export const controlTowerService = {
     };
     
     try {
-      // 1. Fetch Daily KPIs
       let queryDaily = supabase.from('mv_control_tower_daily_kpis').select('*');
-      
-      // 2. Fetch Financial Audit
       let queryAudit = supabase.from('mv_control_tower_financial_audit').select('*');
-      
-      // 3. Fetch Active Carriers
-      let queryCarriers = supabase.from('carriers').select('*', { count: 'exact', head: true }).eq('ativo', true);
       
       if (ctx?.organizationId) {
         queryDaily = queryDaily.eq('organization_id', ctx.organizationId);
         queryAudit = queryAudit.eq('organization_id', ctx.organizationId);
-        queryCarriers = queryCarriers.eq('organization_id', ctx.organizationId);
       }
       if (ctx?.environmentId) {
         queryDaily = queryDaily.eq('environment_id', ctx.environmentId);
         queryAudit = queryAudit.eq('environment_id', ctx.environmentId);
-        queryCarriers = queryCarriers.eq('environment_id', ctx.environmentId);
       }
       if (ctx?.establishmentId) {
         queryDaily = queryDaily.eq('establishment_id', ctx.establishmentId);
         queryAudit = queryAudit.eq('establishment_id', ctx.establishmentId);
-        queryCarriers = queryCarriers.eq('establishment_id', ctx.establishmentId);
       }
 
-      // We only care about Today for Daily KPIs
+      // Daily KPIs focus on Today
       const today = new Date().toISOString().split('T')[0];
       queryDaily = queryDaily.eq('data_referencia', today);
 
-      const [resDaily, resAudit, resCarriers] = await Promise.all([queryDaily, queryAudit, queryCarriers]);
-      
-      let activeCarriersCount = resCarriers.count || 0;
+      const [resDaily, resAudit] = await Promise.all([queryDaily, queryAudit]);
       
       if (resDaily.data && resDaily.data.length > 0) {
-        // Sum across all matched records (in case of missing establishment_id grouping)
         dailyData = resDaily.data.reduce((acc, curr) => ({
           total_em_transito: acc.total_em_transito + (Number(curr.total_em_transito) || 0),
           total_entregue: acc.total_entregue + (Number(curr.total_entregue) || 0),
@@ -80,8 +70,6 @@ export const controlTowerService = {
       }
       
       if (resAudit.data && resAudit.data.length > 0) {
-        // Sum across all weeks or just the current week?
-        // For audit, usually we sum the current week.
         auditData = resAudit.data.reduce((acc, curr) => ({
           frete_acordado_estimado: acc.frete_acordado_estimado + (Number(curr.frete_acordado_estimado) || 0),
           custo_mercado_spot: acc.custo_mercado_spot + (Number(curr.custo_mercado_spot) || 0)
@@ -91,24 +79,38 @@ export const controlTowerService = {
       console.error('Erro ao buscar KPIs Reais das Views', error);
     }
     
+    // Calculations
     const otifRate = dailyData.total_entregue > 0 
       ? (dailyData.entregues_no_prazo / dailyData.total_entregue) * 100 
       : 0;
+
+    const freteContrato = auditData.frete_acordado_estimado || 0;
+    const freteSpot = auditData.custo_mercado_spot || 0;
+    const freteTotal = freteContrato + freteSpot;
+    
+    const faturamentoTotal = dailyData.volume_produtos_reais || 0;
+    const pesoTotal = dailyData.volume_peso_kg || 0;
+
+    const cfv = faturamentoTotal > 0 ? (freteTotal / faturamentoTotal) * 100 : 0;
+    const custoPorKg = pesoTotal > 0 ? (freteTotal / pesoTotal) : 0;
+    
+    const shareContrato = freteTotal > 0 ? (freteContrato / freteTotal) * 100 : 0;
+    const shareSpot = freteTotal > 0 ? (freteSpot / freteTotal) * 100 : 0;
 
     return {
       totalDeliveries: dailyData.total_entregue,
       inTransit: dailyData.total_em_transito,
       delivered: dailyData.total_entregue,
-      delayed: 0, // TBA from Alerts
-      waitingCollection: 0, // TBA 
-      activeCarriers: activeCarriersCount,
+      waitingCollection: 0,
       
-      volumeReais: dailyData.volume_produtos_reais,
-      volumeKg: dailyData.volume_peso_kg,
-      onTimeRate: Number(otifRate.toFixed(2)),
+      cfv: Number(cfv.toFixed(2)),
+      custoPorKg: Number(custoPorKg.toFixed(2)),
+      shareContrato: Number(shareContrato.toFixed(1)),
+      shareSpot: Number(shareSpot.toFixed(1)),
+      freteTotal: freteTotal,
+      faturamentoTotal: faturamentoTotal,
       
-      freightEstimated: auditData.frete_acordado_estimado,
-      freightSpot: auditData.custo_mercado_spot
+      onTimeRate: Number(otifRate.toFixed(1))
     };
   }
 };
