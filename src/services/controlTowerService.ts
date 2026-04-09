@@ -129,65 +129,44 @@ export const controlTowerService = {
   async getMapMarkers(): Promise<CargoMarker[]> {
     try {
       const ctx = await TenantContextHelper.getCurrentContext();
-      let query = supabase.from('mv_control_tower_map_markers').select('*');
+      
+      // Busca NFs com metadados de geolocalização e que não estejam finalizadas há muito tempo
+      let query = supabase
+        .from('invoices_nfe')
+        .select('id, numero, destinatario_nome, carrier_id, situacao, expected_delivery_date:delivery_forecast_date, metadata, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
       if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
       const { data, error } = await query;
-      if (!error && data && data.length > 0 && data[0].markers) {
-        return data[0].markers as CargoMarker[];
+      
+      if (!error && data && data.length > 0) {
+        // Filtrar apenas NFs que ganharam latitude e longitude no metadata
+        const mappedData: CargoMarker[] = data
+          .filter(nf => nf.metadata && nf.metadata.dest_lat && nf.metadata.dest_lng)
+          .map(nf => ({
+            id: nf.id,
+            numero: nf.numero || 'S/N',
+            destinatario_nome: nf.destinatario_nome || 'Destinatário N/I',
+            carrier_id: nf.carrier_id || 'Autônomo / N/I',
+            situacao: nf.situacao || 'pendente',
+            expected_delivery_date: nf.expected_delivery_date || nf.created_at,
+            lat: Number(nf.metadata.dest_lat),
+            lng: Number(nf.metadata.dest_lng),
+            is_delayed: !!nf.metadata.is_delayed_mock
+          }));
+          
+        if (mappedData.length > 0) {
+          return mappedData;
+        }
       }
     } catch (err) {
-      console.warn('MV de Marcadores ainda não gerada, caindo para Mock Visual.', err);
+      console.warn('Falha ao buscar Invoices_nfe reais para o Mapa', err);
     }
     
-    // Fallback/Mock até o script SQL ser executado pelo Usuário
-    return [
-      {
-        id: 'NF1020',
-        numero: '1020',
-        destinatario_nome: 'Lojas Americanas - CD SP',
-        carrier_id: 'RÁPIDO COMETA',
-        situacao: 'em_transito',
-        expected_delivery_date: new Date(Date.now() + 86400000).toISOString(),
-        lat: -23.5505,
-        lng: -46.6333,
-        is_delayed: false
-      },
-      {
-        id: 'NF1021',
-        numero: '1021',
-        destinatario_nome: 'Magalu S.A.',
-        carrier_id: 'JAMEF',
-        situacao: 'em_transito',
-        expected_delivery_date: new Date(Date.now() - 86400000).toISOString(),
-        lat: -22.9068,
-        lng: -43.1729,
-        is_delayed: true
-      },
-      {
-        id: 'NF1022',
-        numero: '1022',
-        destinatario_nome: 'Mercado Livre Holding',
-        carrier_id: 'JAMEF',
-        situacao: 'entregue',
-        expected_delivery_date: new Date().toISOString(),
-        lat: -23.9535,
-        lng: -46.3350,
-        is_delayed: false
-      },
-      {
-        id: 'NF1023',
-        numero: '1023',
-        destinatario_nome: 'B2W Digital SA',
-        carrier_id: 'TNT MERCURIO',
-        situacao: 'saiu_entrega',
-        expected_delivery_date: new Date(Date.now() + 1200000).toISOString(),
-        lat: -23.6821,
-        lng: -46.5953,
-        is_delayed: false
-      }
-    ];
+    return [];
   }
 };
