@@ -656,7 +656,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
             <div className="p-6">
               {activeTab === 'basic' && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.table.serie')}</label>
                       <input
@@ -737,6 +737,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
+
 
                     <div className="col-span-3">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.carrier')}</label>

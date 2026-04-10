@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2,
 import { RelationshipMapModal } from '../RelationshipMap';
 import { formatCurrency } from '../../utils/formatters';
 import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
-import { establishments } from '../../data/establishmentsData';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Order {
   id: number;
@@ -21,7 +21,6 @@ interface Order {
   valorPedido: number;
   chaveAcesso: string;
   serie?: string;
-  establishmentId?: string;
   date?: string;
   number?: string;
   trackingCode?: string;
@@ -48,6 +47,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
   canEdit,
   isLoading
 }) => {
+  const { availableEstablishments } = useAuth();
   const { t } = useTranslation();
   const [sortField, setSortField] = useState<keyof Order>('dataEmissao');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
