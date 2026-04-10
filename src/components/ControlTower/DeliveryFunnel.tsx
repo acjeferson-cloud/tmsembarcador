@@ -9,16 +9,34 @@ interface FunnelData {
   atrasadas: number;
 }
 
+import { controlTowerService } from '../../services/controlTowerService';
+
 export const DeliveryFunnel: React.FC = () => {
   const { t } = useTranslation();
 
-  // Mock initial state as requested
-  const [data] = useState<FunnelData>({
-    previstas: 150,
-    concluidas: 120,
-    emRota: 25,
-    atrasadas: 5
+  const [data, setData] = useState<FunnelData>({
+    previstas: 0,
+    concluidas: 0,
+    emRota: 0,
+    atrasadas: 0
   });
+
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const realData = await controlTowerService.getDeliveryFunnel();
+        setData(realData);
+      } catch (err) {
+        console.error('Erro ao buscar pipeline de entregas', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const getPercent = (value: number) => {
     if (data.previstas === 0) return 0;

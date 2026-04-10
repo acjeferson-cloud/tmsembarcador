@@ -525,8 +525,6 @@ export const cteXmlService = {
           .from('ctes_invoices')
           .insert(
             parsedData.invoices.map(invoice => ({
-              organization_id: ctx?.organizationId,
-              environment_id: ctx?.environmentId,
               cte_id: cteData.id,
               establishment_code: invoice.establishment_code,
               invoice_type: invoice.invoice_type,
@@ -540,21 +538,49 @@ export const cteXmlService = {
 
         } else {
            // Promove o status de rastreamento das notas vinculadas (ex: Em transporte)
+           // E avança automaticamente o Status das Cotações Spot vinculadas
            for (const inv of parsedData.invoices) {
               if (!inv.number) continue;
               try {
-                const { data: foundInvoice } = await (supabase as any)
-                   .from('invoices_nfe')
-                   .select('id, numero')
-                   .or(`numero.eq.${inv.number},chave_acesso.eq.${inv.number}`)
-                   .limit(1)
-                   .maybeSingle();
+                let query = (supabase as any).from('invoices_nfe').select('id, numero, chave_acesso').limit(1);
+                
+                if (inv.number.length === 44) {
+                  query = query.eq('chave_acesso', inv.number);
+                } else {
+                  const normalizedNum = inv.number.replace(/^0+/, '');
+                  query = query.or(`numero.eq.${normalizedNum},numero.eq.${inv.number}`);
+                }
+                
+                const { data: foundInvoice } = await query.maybeSingle();
                    
                 if (foundInvoice) {
-                   await trackingService.syncDocumentTrackingStatus('nfe', foundInvoice.id, foundInvoice.numero);
+                   // Spot Negotiation Auto-Advance Hook: Fetch ALL linked spot negotiations for this NFe
+                   try {
+                     const { data: spotLinks } = await (supabase as any)
+                       .from('freight_spot_invoices')
+                       .select('negotiation_id')
+                       .eq('invoice_id', foundInvoice.id);
+
+                     if (spotLinks && spotLinks.length > 0) {
+                       const negIds = spotLinks.map((s: any) => s.negotiation_id);
+                       await (supabase as any)
+                         .from('freight_spot_negotiations')
+                         .update({ status: 'aguardando_fatura' })
+                         .in('id', negIds)
+                         .eq('status', 'pendente_faturamento');
+                     }
+                    } catch (spotErr) {
+                      console.warn('Spot sync error:', spotErr);
+                    }
+                    
+                    try {
+                       await trackingService.syncDocumentTrackingStatus('nfe', foundInvoice.id, foundInvoice.numero);
+                    } catch (trkErr) {
+                       console.warn("Tracking error:", trkErr);
+                    }
                 }
               } catch (err) {
-
+                 console.warn("Error sinking spot/tracking rules for NFe", inv.number, err);
               }
            }
         }

@@ -168,5 +168,78 @@ export const controlTowerService = {
     }
     
     return [];
+  },
+
+  async getDeliveryFunnel() {
+    const ctx = await TenantContextHelper.getCurrentContext();
+    
+    let query = supabase.from('invoices_nfe').select('situacao, metadata, delivery_forecast_date');
+    if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+    if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+    if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+    
+    const { data } = await query.order('created_at', { ascending: false }).limit(1000);
+    
+    let previstas = 0;
+    let concluidas = 0;
+    let emRota = 0;
+    let atrasadas = 0;
+    
+    if (data && data.length > 0) {
+      data.forEach(nf => {
+        // Ignora notas canceladas/rejeitadas do funil principal
+        if (['cancelada', 'rejeitada'].includes(nf.situacao?.toLowerCase() || '')) return;
+        
+        previstas++;
+        
+        const isAtrasada = nf.metadata?.is_delayed_mock === true || nf.metadata?.is_delayed === true || (nf.delivery_forecast_date && new Date(nf.delivery_forecast_date).getTime() < new Date().getTime() && nf.situacao !== 'entregue');
+        
+        if (nf.situacao?.toLowerCase() === 'entregue') {
+          concluidas++;
+        } else if (isAtrasada) {
+          atrasadas++;
+        } else if (['em_transito', 'saiu_entrega', 'saiu p/ entrega', 'coletada'].includes(nf.situacao?.toLowerCase() || '')) {
+          emRota++;
+        }
+      });
+    }
+    
+    return { previstas, concluidas, emRota, atrasadas };
+  },
+
+  async getAnomalyRadar() {
+    const ctx = await TenantContextHelper.getCurrentContext();
+    
+    let query = supabase.from('invoices_nfe').select('situacao, metadata, direction');
+    if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+    if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+    if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
+    
+    const { data } = await query.order('created_at', { ascending: false }).limit(1000);
+    
+    let devolucoes = 0;
+    let atrasos = 0;
+    let sinistros = 0;
+    
+    if (data && data.length > 0) {
+      data.forEach(nf => {
+         const occs = nf.metadata?.occurrences || [];
+         
+         const isAtrasada = nf.metadata?.is_delayed_mock === true || nf.metadata?.is_delayed === true;
+         if (isAtrasada && nf.situacao?.toLowerCase() !== 'entregue') {
+             atrasos++;
+         }
+         
+         if (nf.situacao?.toLowerCase() === 'devolvida' || nf.direction === 'reverse' || occs.some((o: any) => o.codigo === '03' || o.descricao?.toLowerCase().includes('devol'))) {
+            devolucoes++;
+         }
+         
+         if (occs.some((o: any) => o.codigo === '04' || o.descricao?.toLowerCase().includes('sinistro') || o.descricao?.toLowerCase().includes('avaria'))) {
+            sinistros++;
+         }
+      });
+    }
+    
+    return { devolucoes, atrasos, sinistros };
   }
 };

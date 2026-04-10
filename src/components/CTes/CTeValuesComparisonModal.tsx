@@ -32,10 +32,11 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
   // Buscar valores calculados
   const calculatedICMSBase = parseFloat(cte.carrier_costs?.find(c => c.cost_type === 'icms_base')?.cost_value.toString() || '0');
   const calculatedICMSValue = parseFloat(cte.carrier_costs?.find(c => c.cost_type === 'icms_value')?.cost_value.toString() || '0');
+  const calculatedTotalValue = parseFloat(cte.carrier_costs?.find(c => c.cost_type === 'total_value')?.cost_value.toString() || '0');
 
-  // A Base ICMS sempre contém o valor total COM ICMS
-  // (independente de ser embutido ou não)
-  const totalCalculado = calculatedICMSBase;
+  // O Total Calculado deve vir diretamente do custo consolidado `total_value`.
+  // Em lógicas de tabela padrão ele já contém as taxas, em Spot Negotiation contém o valor exato fechado.
+  const totalCalculado = calculatedTotalValue;
 
   const taxComparisons: TaxComparison[] = [
     {

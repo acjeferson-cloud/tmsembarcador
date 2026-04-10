@@ -8,15 +8,32 @@ interface AnomalyData {
   sinistros: number;
 }
 
+import { controlTowerService } from '../../services/controlTowerService';
+
 export const AnomalyRadar: React.FC = () => {
   const { t } = useTranslation();
 
-  // Mock initial state as requested
-  const [data] = useState<AnomalyData>({
-    devolucoes: 3,
-    atrasos: 12,
-    sinistros: 1,
+  const [data, setData] = useState<AnomalyData>({
+    devolucoes: 0,
+    atrasos: 0,
+    sinistros: 0,
   });
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const realData = await controlTowerService.getAnomalyRadar();
+        setData(realData);
+      } catch (err) {
+        console.error('Erro ao recarregar radar de anomalias', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const totalAnomalies = data.devolucoes + data.atrasos + data.sinistros;
 

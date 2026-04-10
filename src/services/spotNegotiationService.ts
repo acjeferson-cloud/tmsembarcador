@@ -8,6 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface SpotNegotiation {
   id?: string;
+  code?: string;
   carrier_id: string;
   agreed_value: number;
   valid_from?: string;
@@ -98,6 +99,49 @@ export const spotNegotiationService = {
          return false; // Transaction fail manual rollback expected or backend RPC. For simplicity returning false.
       }
 
+      // 3. Post-Creation Hook: Check if any of these invoices ALREADY has a CT-e imported
+      try {
+        const { data: invoices } = await supabase
+          .from('invoices_nfe')
+          .select('chave_acesso, numero')
+          .in('id', invoiceIds);
+
+        if (invoices && invoices.length > 0) {
+          const lookupStrings = invoices.flatMap((i: any) => [i.chave_acesso, i.numero]).filter((x: string) => !!x);
+          
+          if (lookupStrings.length > 0) {
+            const { data: cteInvoices } = await supabase
+              .from('ctes_invoices')
+              .select('cte_id')
+              .in('number', lookupStrings);
+
+            if (cteInvoices && cteInvoices.length > 0) {
+              // Found a CT-e! Advance this Spot status automatically.
+              await supabase
+                .from('freight_spot_negotiations')
+                .update({ status: 'aguardando_fatura' })
+                .eq('id', negotiationResult.id);
+                
+              // Trigger recalculation for the affected CTEs to absorb the Spot value
+              const uniqueCteIds = Array.from(new Set(cteInvoices.map((c: any) => c.cte_id)));
+              
+              const { ctesCompleteService } = await import('./ctesCompleteService');
+              const { freightCostCalculator } = await import('./freightCostCalculator');
+              
+              for (const cteId of uniqueCteIds) {
+                const fullCTe = await ctesCompleteService.getById(cteId as string);
+                if (fullCTe) {
+                  const calculation = await freightCostCalculator.calculateCTeCost(fullCTe);
+                  await freightCostCalculator.saveCostsToCTe(cteId as string, calculation);
+                }
+              }
+            }
+          }
+        }
+      } catch (postHookErr) {
+        console.warn('Error in post-creation CT-e hook', postHookErr);
+      }
+
       return true;
     } catch (e) {
       console.error('Error creating negotiation', e);
@@ -114,7 +158,7 @@ export const spotNegotiationService = {
         .select(`
            *,
            carriers (
-             nome_fantasia, razao_social
+             codigo, nome_fantasia, razao_social
            )
         `)
         .order('created_at', { ascending: false });
@@ -129,18 +173,25 @@ export const spotNegotiationService = {
         return [];
       }
       
-      const mapped = (data || []).map(r => ({
-        id: r.id,
-        carrier_id: r.carrier_id,
-        agreed_value: r.agreed_value,
-        valid_from: r.valid_from,
-        valid_to: r.valid_to,
-        attachment_url: r.attachment_url,
-        status: r.status,
-        observations: r.observations,
-        created_at: r.created_at,
-        carrier_name: (r.carriers as any)?.nome_fantasia || (r.carriers as any)?.razao_social || 'Desconhecido'
-      }));
+      const mapped = (data || []).map(r => {
+        let carrierNameStr = (r.carriers as any)?.nome_fantasia || (r.carriers as any)?.razao_social || 'Desconhecido';
+        const codigo = (r.carriers as any)?.codigo;
+        if (codigo) carrierNameStr = `${codigo} - ${carrierNameStr}`;
+        
+        return {
+          id: r.id,
+          code: r.code,
+          carrier_id: r.carrier_id,
+          agreed_value: r.agreed_value,
+          valid_from: r.valid_from,
+          valid_to: r.valid_to,
+          attachment_url: r.attachment_url,
+          status: r.status,
+          observations: r.observations,
+          created_at: r.created_at,
+          carrier_name: carrierNameStr
+        };
+      });
 
       const negotiationIds = mapped.map(n => n.id);
       if (negotiationIds.length > 0) {

@@ -45,13 +45,60 @@ export const freightCostCalculator = {
    * Calcula o custo total do frete baseado nos dados do CT-e
    */
   async calculateCTeCost(cte: CTeWithRelations): Promise<CalculationResult> {
-    // 1. Identificar o transportador
+    // 1. Identificar se o CT-e pertence a uma Cotação Spot. Se pertencer, o valor acordado (agreed_value) sobrepõe as tabelas padrões.
+    const { data: cteInvs } = await supabase
+      .from('ctes_invoices')
+      .select('number')
+      .eq('cte_id', cte.id);
+
+    if (cteInvs && cteInvs.length > 0) {
+      const numbers = cteInvs.map((l: any) => l.number).filter(n => !!n);
+      if (numbers.length > 0) {
+        // Encontra as faturas na tabela invoices_nfe pelas chaves/números
+        const { data: matchedByKey } = await supabase
+          .from('invoices_nfe')
+          .select('id')
+          .in('chave_acesso', numbers);
+          
+        const { data: matchedByNumber } = await supabase
+          .from('invoices_nfe')
+          .select('id')
+          .in('numero', numbers);
+        
+        const invoiceIds = [];
+        if (matchedByKey) invoiceIds.push(...matchedByKey.map(n => n.id));
+        if (matchedByNumber) invoiceIds.push(...matchedByNumber.map(n => n.id));
+
+        if (invoiceIds.length > 0) {
+          const { data: spotNegLink } = await supabase
+            .from('freight_spot_invoices')
+            .select('negotiation_id')
+            .in('invoice_id', invoiceIds)
+            .limit(1)
+            .maybeSingle();
+
+          if (spotNegLink && spotNegLink.negotiation_id) {
+            const { data: spotHeader } = await supabase
+              .from('freight_spot_negotiations')
+              .select('agreed_value')
+              .eq('id', spotNegLink.negotiation_id)
+              .single();
+
+            if (spotHeader && spotHeader.agreed_value > 0) {
+               return this.buildSpotCalculationResult(parseFloat(spotHeader.agreed_value));
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Se não encontrou Spot, proceed para a Identificação do transportador e tabela padrão
     const carrierId = cte.carrier_id;
     if (!carrierId) {
       throw new Error('Transportador não identificado no CT-e');
     }
 
-    // 2. Buscar tabelas de frete vigentes
+    // 3. Buscar tabelas de frete vigentes
     const freightTables = await this.findActiveFreightTables(carrierId, cte.issue_date);
     if (!freightTables || freightTables.length === 0) {
       throw new Error('Nenhuma tabela de frete ativa encontrada para este transportador');
@@ -133,6 +180,32 @@ export const freightCostCalculator = {
 
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * Constrói o resultado de Custo para CT-es encobertos por Cotação Spot.
+   */
+  buildSpotCalculationResult(agreedValue: number): CalculationResult {
+    return {
+      fretePeso: agreedValue,
+      freteValor: 0,
+      gris: 0,
+      pedagio: 0,
+      tas: 0,
+      seccat: 0,
+      despacho: 0,
+      itr: 0,
+      coletaEntrega: 0,
+      tda: 0,
+      tde: 0,
+      trt: 0,
+      tec: 0,
+      outrosValores: 0,
+      icmsBase: 0,
+      icmsAliquota: 0,
+      icmsValor: 0,
+      valorTotal: agreedValue
+    };
   },
 
   /**

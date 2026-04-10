@@ -364,6 +364,9 @@ export const pickupsService = {
         }
 
         const pickupInvoices = group.invoices.map((invoice: any) => ({
+          organization_id: ctx?.organizationId || null,
+          environment_id: ctx?.environmentId || null,
+          establishment_id: establishmentId,
           pickup_id: pickup.id,
           invoice_id: invoice.id,
           created_at: new Date().toISOString()
@@ -501,6 +504,9 @@ export const pickupsService = {
         }
 
         const pickupInvoices = group.invoices.map((invoice: any) => ({
+          organization_id: ctx?.organizationId || null,
+          environment_id: ctx?.environmentId || null,
+          establishment_id: establishmentId,
           pickup_id: pickup.id,
           invoice_id: invoice.id,
           created_at: new Date().toISOString()

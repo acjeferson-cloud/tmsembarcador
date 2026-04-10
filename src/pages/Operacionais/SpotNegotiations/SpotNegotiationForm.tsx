@@ -153,7 +153,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
           valid_to: validTo,
           attachment_url
         };
-        const success = await spotNegotiationService.createSpotNegotiation(payload, selectedNfeIds);
+        const success = await spotNegotiationService.createNegotiation(payload as any, selectedNfeIds);
         if (success) {
           onBack();
         } else {
@@ -243,7 +243,22 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
               <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 p-3 text-center rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors bg-gray-50 dark:bg-gray-700/30">
                   <input 
                     type="file" 
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const selectedFile = e.target.files?.[0];
+                      if (selectedFile) {
+                        const maxSize = 2 * 1024 * 1024; // 2MB
+                        if (selectedFile.size > maxSize) {
+                          setErrorMsg('O arquivo anexo não pode ser maior que 2MB para otimização de espaço. Escolha um arquivo menor.');
+                          e.target.value = ''; // clears the input
+                          setFile(null);
+                          return;
+                        }
+                        setErrorMsg('');
+                        setFile(selectedFile);
+                      } else {
+                        setFile(null);
+                      }
+                    }}
                     disabled={isReadOnly}
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                     accept=".pdf,image/*"

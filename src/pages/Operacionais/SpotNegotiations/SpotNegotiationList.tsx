@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
-import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt, Search, Filter } from 'lucide-react';
 import Breadcrumbs from '../../../components/Layout/Breadcrumbs';
 import { RelationshipMapModal } from '../../../components/RelationshipMap';
 import { Toast, ToastType } from '../../../components/common/Toast';
@@ -11,6 +11,11 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
   const { t } = useTranslation();
   const [data, setData] = useState<SpotNegotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Search and Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
 
   // States para Menu de Contexto
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
@@ -126,6 +131,16 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
   const liquidados = data.filter(d => d.status === 'liquidado').length;
   const cancelados = data.filter(d => d.status === 'cancelado').length;
 
+  // Filtered Data
+  const filteredData = data.filter(item => {
+    const matchesSearch = searchTerm === '' || 
+      item.carrier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === '' || item.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <Breadcrumbs items={[{ label: 'Cotações Spot', current: true }]} />
@@ -203,11 +218,68 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
         </div>
       </div>
 
+      {/* Filters and Search Bar */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por transportadora..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+          
+          <button 
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors dark:border-gray-600 dark:text-gray-300"
+          >
+            <Filter size={18} />
+            <span>Filtros Avançados</span>
+            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {statusFilter ? 1 : 0}
+            </span>
+          </button>
+        </div>
+
+        {isFiltersExpanded && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status da Cotação</label>
+                  <select 
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                     <option value="">Todos os Status</option>
+                     <option value="pendente_faturamento">Pendente de CT-e</option>
+                     <option value="aguardando_fatura">Aguardando Fatura / Auditar</option>
+                     <option value="liquidado">Liquidado</option>
+                     <option value="cancelado">Cancelado</option>
+                  </select>
+                </div>
+             </div>
+             
+             <div className="flex justify-end mt-4">
+               <button 
+                 onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
+                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+               >
+                 Limpar Filtros
+               </button>
+             </div>
+          </div>
+        )}
+      </div>
+
       {/* Grid */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible" ref={menuRef}>
         {loading ? (
            <div className="p-8 text-center text-gray-500">Carregando negociações...</div>
-        ) : data.length === 0 ? (
+        ) : filteredData.length === 0 ? (
            <div className="p-12 text-center flex flex-col items-center">
              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
                <FileText className="text-gray-400" size={32}/>
@@ -221,15 +293,16 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                   <th className="px-6 py-3 w-16 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Ações</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Nº Cotação</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Transportador</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Valor Prometido</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Validade</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Evidência</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {data.map((item) => (
+                {filteredData.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
                     <td className="px-3 py-4 whitespace-nowrap">
                        <div className="flex items-center space-x-2">
@@ -285,19 +358,38 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                           </div>
                        </div>
                     </td>
-                    <td className="px-6 py-4">
-                       <span className="font-medium text-gray-900 dark:text-white">{item.carrier_name}</span>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        item.status === 'pendente_faturamento' ? 'bg-yellow-600 text-white dark:bg-yellow-700' :
+                        item.status === 'aguardando_fatura' ? 'bg-blue-600 text-white dark:bg-blue-700' :
+                        item.status === 'liquidado' ? 'bg-green-600 text-white dark:bg-green-700' :
+                        'bg-red-600 text-white dark:bg-red-700'
+                      }`}>
+                        {item.status === 'pendente_faturamento' ? 'Pendente de CT-e' :
+                         item.status === 'aguardando_fatura' ? 'Aguardando Fatura' :
+                         item.status === 'liquidado' ? 'Liquidado' :
+                         'Cancelado'}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
-                       {Number(item.agreed_value).toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {item.code ? item.code : '-'}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {item.carrier_name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                       <div className="text-sm text-gray-900 dark:text-white">
+                         {Number(item.agreed_value).toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                        {item.valid_to ? new Date(item.valid_to).toLocaleDateString('pt-BR') : '-'}
                     </td>
-                    <td className="px-6 py-4">
-                       {getStatusBadge(item.status)}
-                    </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                        {item.attachment_url ? (
                          <a href={item.attachment_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1 text-sm">
                            <FileText size={16}/> Abrir Anexo

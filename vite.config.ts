@@ -79,6 +79,12 @@ export default defineConfig({
   build: {
     target: 'es2015',
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: ['log', 'info'],
+        pure_funcs: ['console.log', 'console.info', 'console.debug']
+      }
+    },
     sourcemap: false,
     outDir: 'dist',
     emptyOutDir: true,

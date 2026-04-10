@@ -56,7 +56,7 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
       
       const { data: invoicesData } = await (supabase as any)
         .from('invoices_nfe')
-        .select('id, numero, data_emissao, situacao, valor_total')
+        .select('id, numero, data_emissao, situacao, valor_total, order_number')
         .in('id', invoiceIds);
 
       if (invoicesData) {
@@ -72,6 +72,30 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
           });
           // Relation: Invoice -> Spot (Spot sits between NF and CTe)
           relationships.push({ from: invId, to: sourceDocument.id });
+
+          // Busca pedido conectado à NF-e
+          if (inv.order_number) {
+            const { data: orderData } = await (supabase as any)
+              .from('orders')
+              .select('id, numero_pedido, data_pedido, status, valor_mercadoria')
+              .eq('numero_pedido', inv.order_number)
+              .maybeSingle();
+
+            if (orderData) {
+              const orderId = `order-${orderData.id}`;
+              if (!documents.some(d => d.id === orderId)) {
+                documents.push({
+                  id: orderId,
+                  type: 'order',
+                  number: orderData.numero_pedido,
+                  date: orderData.data_pedido || new Date().toISOString(),
+                  status: orderData.status || 'Pendente',
+                  value: Number(orderData.valor_mercadoria || 0)
+                });
+              }
+              relationships.push({ from: orderId, to: invId });
+            }
+          }
         }
 
         // Busca CTes conectados a essas Invoices
@@ -1007,6 +1031,89 @@ const getLiveRelatedDocuments = async (sourceDocument: Document) => {
     }
   }
   
+  // --- Global Pass for Spot Negotiations ---
+  // Independent of how the graph was populated, any Invoice found might be linked to a Spot Negotiation.
+  const allInvoiceIds = documents.filter(d => d.type === 'invoice').map(d => d.id.replace('invoice-', ''));
+  if (allInvoiceIds.length > 0) {
+    const { data: spotLinks } = await (supabase as any)
+      .from('freight_spot_invoices')
+      .select('invoice_id, negotiation_id, freight_spot_negotiations(code, created_at, status, agreed_value)')
+      .in('invoice_id', allInvoiceIds);
+      
+    if (spotLinks && spotLinks.length > 0) {
+      for (const link of spotLinks) {
+        if (link.freight_spot_negotiations) {
+          const spotDocId = `spot-${link.negotiation_id}`;
+          
+          if (!documents.some(d => d.id === spotDocId)) {
+            documents.push({
+              id: spotDocId,
+              type: 'spot',
+              number: link.freight_spot_negotiations.code,
+              date: link.freight_spot_negotiations.created_at || new Date().toISOString(),
+              status: link.freight_spot_negotiations.status || 'Pendente',
+              value: Number(link.freight_spot_negotiations.agreed_value || 0)
+            });
+          }
+
+          const invId = `invoice-${link.invoice_id}`;
+
+          // Relink: Invoice -> Spot
+          if (!relationships.some(r => r.from === invId && r.to === spotDocId)) {
+            relationships.push({ from: invId, to: spotDocId });
+          }
+
+          // Remap: Any CTE that was pointing to or coming right from this invoice should now sit AFTER the Spot
+          const cteRels = relationships.filter(r => r.from === invId && r.to.startsWith('cte-'));
+          for (const r of cteRels) {
+             // Link Spot -> CTe
+             if (!relationships.some(sr => sr.from === spotDocId && sr.to === r.to)) {
+               relationships.push({ from: spotDocId, to: r.to });
+             }
+             // Retire original Invoice -> CTe shortcut to keep the topology clear
+             const idx = relationships.indexOf(r);
+             if (idx > -1) {
+               relationships.splice(idx, 1);
+             }
+          }
+        }
+      }
+    }
+  }
+
+  // --- Global Pass for Pickups ---
+  // Any invoice found might be linked to a Pickup.
+  if (allInvoiceIds.length > 0) {
+    const { data: pickupLinks } = await (supabase as any)
+      .from('pickup_invoices')
+      .select('invoice_id, pickup_id, pickups(numero_coleta, created_at, status, valor_total)')
+      .in('invoice_id', allInvoiceIds);
+
+    if (pickupLinks && pickupLinks.length > 0) {
+      for (const link of pickupLinks) {
+        if (link.pickups) {
+          const pickupDocId = `pickup-${link.pickup_id}`;
+          
+          if (!documents.some(d => d.id === pickupDocId)) {
+            documents.push({
+              id: pickupDocId,
+              type: 'pickup',
+              number: link.pickups.numero_coleta,
+              date: link.pickups.created_at || new Date().toISOString(),
+              status: link.pickups.status || 'Emitida',
+              value: Number(link.pickups.valor_total || 0)
+            });
+          }
+
+          const invId = `invoice-${link.invoice_id}`;
+          if (!relationships.some(r => r.from === invId && r.to === pickupDocId)) {
+            relationships.push({ from: invId, to: pickupDocId });
+          }
+        }
+      }
+    }
+  }
+
   return { documents, relationships };
 };
 
@@ -1170,13 +1277,18 @@ export const RelationshipMapModal: React.FC<RelationshipMapModalProps> = ({
               position = { x: 300, y: 100 * index };
               break;
             case 'pickup':
-              position = { x: 450, y: 100 * index };
+              // Se há múltiplos retornos em Y, a Coleta fica fisicamente agrupada
+              position = { x: 300, y: (100 * index) + 150 };
+              break;
+            case 'spot':
+              // Spot fica horizontalmente alinhado entre Notas (x:300) e CT-e (x:800)
+              position = { x: 550, y: 100 * index };
               break;
             case 'cte':
-              position = { x: 600, y: 100 * index };
+              position = { x: 800, y: 100 * index };
               break;
             case 'bill':
-              position = { x: 900, y: 100 * index };
+              position = { x: 1100, y: 100 * index };
               break;
           }
           
