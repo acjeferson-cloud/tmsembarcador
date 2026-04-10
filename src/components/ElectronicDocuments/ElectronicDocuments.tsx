@@ -46,48 +46,46 @@ export const ElectronicDocuments: React.FC = () => {
           try {
             parsedData = parseXML(doc.xml_content);
           } catch (e) {
-
+            console.warn("Error parsing XML content for doc", doc.id, e);
           }
-        } else {
-
         }
         
         return {
           id: doc.id,
-          tipo: doc.document_type,
-          modelo: doc.model,
-          numeroDocumento: doc.document_number,
-          serie: doc.series,
-          chaveAcesso: doc.access_key,
-          protocoloAutorizacao: doc.authorization_protocol,
-          dataAutorizacao: parsedData.dataAutorizacao || doc.authorization_date || doc.import_date,
-          dataImportacao: doc.import_date,
-          status: doc.status,
+          tipo: doc.document_type || 'NFe',
+          modelo: doc.model || '55',
+          numeroDocumento: doc.document_number || '0',
+          serie: doc.series || '0',
+          chaveAcesso: doc.access_key || '',
+          protocoloAutorizacao: doc.authorization_protocol || '',
+          dataAutorizacao: parsedData.dataAutorizacao || doc.authorization_date || doc.import_date || new Date().toISOString(),
+          dataImportacao: doc.import_date || new Date().toISOString(),
+          status: doc.status || 'processing',
           emitente: {
-            razaoSocial: doc.issuer_name,
-            cnpj: doc.issuer_document,
-            endereco: doc.issuer_address,
-            ...parsedData.emitente
+            razaoSocial: doc.issuer_name || 'Não Informado',
+            cnpj: doc.issuer_document || '',
+            endereco: doc.issuer_address || {},
+            ...(parsedData.emitente || {})
           },
           destinatario: doc.recipient_name ? {
             razaoSocial: doc.recipient_name,
-            cnpj: doc.recipient_document,
-            endereco: doc.recipient_address,
-            ...parsedData.destinatario
+            cnpj: doc.recipient_document || '',
+            endereco: doc.recipient_address || {},
+            ...(parsedData.destinatario || {})
           } : (parsedData.destinatario || null),
           remetente: parsedData.remetente || null,
           tomador: parsedData.tomador || null,
-          valorTotal: doc.total_value,
-          valorIcms: doc.icms_value,
-          valorFrete: doc.freight_value,
-          pesoTotal: doc.total_weight,
-          modalTransporte: doc.transport_mode,
-          xmlContent: doc.xml_content
+          valorTotal: doc.total_value || 0,
+          valorIcms: doc.icms_value || 0,
+          valorFrete: doc.freight_value || 0,
+          pesoTotal: doc.total_weight || 0,
+          modalTransporte: doc.transport_mode || 'Rodoviário',
+          xmlContent: doc.xml_content || ''
         };
       });
       setDocumentsList(mappedData);
     } catch (error) {
-
+      console.error("ERRO COMPONENTE LOAD_DOCUMENTS:", error);
     }
   };
 
@@ -96,32 +94,43 @@ export const ElectronicDocuments: React.FC = () => {
   };
 
   const filteredDocuments = documentsList.filter(doc => {
-    const matchesSearch = doc.chaveAcesso.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.numeroDocumento.includes(searchTerm) ||
-                         doc.emitente.razaoSocial.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.emitente.cnpj.includes(searchTerm) ||
-                         (doc.destinatario && doc.destinatario.razaoSocial.toLowerCase().includes(searchTerm.toLowerCase()));
+    const searchLower = searchTerm.toLowerCase();
+    const chaveAcesso = doc.chaveAcesso?.toLowerCase() || '';
+    const numDoc = doc.numeroDocumento || '';
+    const emitenteNome = doc.emitente?.razaoSocial?.toLowerCase() || '';
+    const emitenteCnpj = doc.emitente?.cnpj || '';
+    const destNome = doc.destinatario?.razaoSocial?.toLowerCase() || '';
+
+    const matchesSearch = chaveAcesso.includes(searchLower) ||
+                         numDoc.includes(searchTerm) ||
+                         emitenteNome.includes(searchLower) ||
+                         emitenteCnpj.includes(searchTerm) ||
+                         destNome.includes(searchLower);
     
     const matchesType = typeFilter === 'all' || doc.tipo === typeFilter;
     const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
     
     let matchesDate = true;
-    if (dateFilter !== 'all') {
-      const docDate = new Date(doc.dataAutorizacao);
-      const today = new Date();
-      const diffTime = Math.abs(today.getTime() - docDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      switch (dateFilter) {
-        case 'today':
-          matchesDate = diffDays <= 1;
-          break;
-        case 'week':
-          matchesDate = diffDays <= 7;
-          break;
-        case 'month':
-          matchesDate = diffDays <= 30;
-          break;
+    if (dateFilter !== 'all' && doc.dataAutorizacao) {
+      try {
+        const docDate = new Date(doc.dataAutorizacao);
+        const today = new Date();
+        const diffTime = Math.abs(today.getTime() - docDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        switch (dateFilter) {
+          case 'today':
+            matchesDate = diffDays <= 1;
+            break;
+          case 'week':
+            matchesDate = diffDays <= 7;
+            break;
+          case 'month':
+            matchesDate = diffDays <= 30;
+            break;
+        }
+      } catch (e) {
+        matchesDate = false;
       }
     }
     

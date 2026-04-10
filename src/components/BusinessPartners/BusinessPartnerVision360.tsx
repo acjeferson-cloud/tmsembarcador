@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import {
   Package,
   FileText,
@@ -153,6 +154,7 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
 };
 
 import { aiInsightService } from '../../services/aiInsightService';
+import { useAuth } from '../../hooks/useAuth';
 
 export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> = ({
   partnerId,
@@ -160,6 +162,7 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
   partnerType
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { isActive: openaiActive } = useInnovation(INNOVATION_IDS.OPENAI);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -172,61 +175,153 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [kpiData, setKpiData] = useState<KPIData>({
-    totalOrders: 342,
-    totalInvoices: 289,
-    totalPickups: 312,
-    totalCtes: 276,
-    totalBills: 145,
-    deliveriesCompleted: 265,
-    deliveriesPending: 24
+    totalOrders: 0,
+    totalInvoices: 0,
+    totalPickups: 0,
+    totalCtes: 0,
+    totalBills: 0,
+    deliveriesCompleted: 0,
+    deliveriesPending: 0
   });
 
-  const documentTypeData = [
-    { name: t('businessPartners.vision360.chartData.orders', 'Pedidos'), value: 342, color: '#3b82f6' },
-    { name: t('businessPartners.vision360.chartData.invoices', 'Notas Fiscais'), value: 289, color: '#10b981' },
-    { name: t('businessPartners.vision360.chartData.ctes', 'CT-e'), value: 276, color: '#8b5cf6' },
-    { name: t('businessPartners.vision360.chartData.bills', 'Faturas'), value: 145, color: '#f59e0b' },
-  ];
+  const [documentTypeData, setDocumentTypeData] = useState<any[]>([]);
+  const [deliveryStatusData, setDeliveryStatusData] = useState<any[]>([]);
+  const [weeklyActivityData, setWeeklyActivityData] = useState<any[]>([]);
+  const [monthlyTrendData, setMonthlyTrendData] = useState<any[]>([]);
+  const [pickupTrendData, setPickupTrendData] = useState<any[]>([]);
 
-  const deliveryStatusData = [
-    { name: t('businessPartners.vision360.chartData.completed', 'Concluídas'), value: 265, color: '#10b981' },
-    { name: t('businessPartners.vision360.chartData.pending', 'Pendentes'), value: 24, color: '#f59e0b' },
-  ];
-
-  const weeklyActivityData = [
-    { day: t('businessPartners.vision360.weekDays.mon', 'Seg'), pedidos: 15, nfes: 12, entregas: 10 },
-    { day: t('businessPartners.vision360.weekDays.tue', 'Ter'), pedidos: 18, nfes: 16, entregas: 14 },
-    { day: t('businessPartners.vision360.weekDays.wed', 'Qua'), pedidos: 22, nfes: 19, entregas: 17 },
-    { day: t('businessPartners.vision360.weekDays.thu', 'Qui'), pedidos: 25, nfes: 21, entregas: 19 },
-    { day: t('businessPartners.vision360.weekDays.fri', 'Sex'), pedidos: 28, nfes: 24, entregas: 22 },
-    { day: t('businessPartners.vision360.weekDays.sat', 'Sáb'), pedidos: 12, nfes: 10, entregas: 8 },
-    { day: t('businessPartners.vision360.weekDays.sun', 'Dom'), pedidos: 8, nfes: 6, entregas: 5 },
-  ];
-
-  const monthlyTrendData = [
-    { month: t('businessPartners.vision360.months.jan', 'Jan'), volume: 1200, valor: 450000 },
-    { month: t('businessPartners.vision360.months.feb', 'Fev'), volume: 1350, valor: 520000 },
-    { month: t('businessPartners.vision360.months.mar', 'Mar'), volume: 1580, valor: 610000 },
-    { month: t('businessPartners.vision360.months.apr', 'Abr'), volume: 1420, valor: 580000 },
-    { month: t('businessPartners.vision360.months.may', 'Mai'), volume: 1680, valor: 680000 },
-    { month: t('businessPartners.vision360.months.jun', 'Jun'), volume: 1850, valor: 750000 },
-  ];
-
-  const pickupTrendData = [
-    { month: t('businessPartners.vision360.months.jan', 'Jan'), coletas: 48 },
-    { month: t('businessPartners.vision360.months.feb', 'Fev'), coletas: 52 },
-    { month: t('businessPartners.vision360.months.mar', 'Mar'), coletas: 58 },
-    { month: t('businessPartners.vision360.months.apr', 'Abr'), coletas: 54 },
-    { month: t('businessPartners.vision360.months.may', 'Mai'), coletas: 61 },
-    { month: t('businessPartners.vision360.months.jun', 'Jun'), coletas: 65 },
-  ];
-
-  const handleRefresh = () => {
+  const fetchRealData = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const { data: dbOrders, error: ordersErr } = await supabase
+        .from('orders')
+        .select('id, status, data_pedido, data_prevista_entrega, valor_mercadoria, updated_at')
+        .eq('business_partner_id', partnerId)
+        .gte('data_pedido', dateRange.start)
+        .lte('data_pedido', dateRange.end);
+
+      const { data: dbInvoices, error: invErr } = await supabase
+        .from('invoices')
+        .select('id, status, issue_date, total_value')
+        .eq('customer_id', partnerId)
+        .gte('issue_date', dateRange.start)
+        .lte('issue_date', dateRange.end);
+
+      const { data: dbPickups, error: pickErr } = await supabase
+        .from('pickups')
+        .select('id, status, data_agendada')
+        .eq('customer_id', partnerId)
+        .gte('data_agendada', dateRange.start)
+        .lte('data_agendada', dateRange.end);
+
+      if (ordersErr && ordersErr.code !== '42703') console.error('Orders Error:', ordersErr);
+      if (invErr && invErr.code !== '42703') console.error('Invoices Error:', invErr);
+      if (pickErr && pickErr.code !== '42703') console.error('Pickups Error:', pickErr);
+
+      const orders = dbOrders || [];
+      const invoices = dbInvoices || [];
+      const pickups = dbPickups || [];
+
+      const pendingDeliveries = orders.filter((o: any) => o.status !== 'entregue' && o.status !== 'cancelado').length;
+      const completedDeliveries = orders.filter((o: any) => o.status === 'entregue').length;
+
+      setKpiData({
+        totalOrders: orders.length,
+        totalInvoices: invoices.length,
+        totalPickups: pickups.length,
+        totalCtes: 0,
+        totalBills: 0,
+        deliveriesCompleted: completedDeliveries,
+        deliveriesPending: pendingDeliveries
+      });
+
+      setDocumentTypeData([
+        { name: t('businessPartners.vision360.chartData.orders', 'Pedidos'), value: orders.length, color: '#3b82f6' },
+        { name: t('businessPartners.vision360.chartData.invoices', 'Notas Fiscais'), value: invoices.length, color: '#10b981' }
+      ]);
+
+      setDeliveryStatusData([
+        { name: t('businessPartners.vision360.chartData.completed', 'Concluídas'), value: completedDeliveries, color: '#10b981' },
+        { name: t('businessPartners.vision360.chartData.pending', 'Pendentes'), value: pendingDeliveries, color: '#f59e0b' },
+      ]);
+
+      const weekDaysStr = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const weekMap: Record<string, { pedidos: number; nfes: number; entregas: number }> = {};
+      weekDaysStr.forEach(d => weekMap[d] = { pedidos: 0, nfes: 0, entregas: 0 });
+
+      orders.forEach((o: any) => {
+        if (!o.data_pedido) return;
+        const dStr = o.data_pedido.substring(0, 10);
+        const wDay = weekDaysStr[new Date(dStr + 'T00:00:00').getDay()];
+        if (weekMap[wDay]) {
+            weekMap[wDay].pedidos++;
+            if (o.status === 'entregue') weekMap[wDay].entregas++;
+        }
+      });
+      invoices.forEach((i: any) => {
+        if (!i.issue_date) return;
+        const dStr = i.issue_date.substring(0, 10);
+        const wDay = weekDaysStr[new Date(dStr + 'T00:00:00').getDay()];
+        if (weekMap[wDay]) weekMap[wDay].nfes++;
+      });
+      
+      const newWeeklyData = weekDaysStr.map(d => ({
+        day: d,
+        ...weekMap[d]
+      }));
+      const rotatedWeekly = [...newWeeklyData.slice(1), newWeeklyData[0]];
+      setWeeklyActivityData(rotatedWeekly);
+
+      const monthesMap: Record<string, { volume: number; valor: number; coletas: number }> = {};
+      
+      orders.forEach((o: any) => {
+        if (!o.data_pedido) return;
+        const mm = o.data_pedido.substring(0, 7);
+        if (!monthesMap[mm]) monthesMap[mm] = { volume: 0, valor: 0, coletas: 0 };
+        monthesMap[mm].volume++;
+        monthesMap[mm].valor += (Number(o.valor_mercadoria) || 0);
+      });
+      pickups.forEach((p: any) => {
+        const dStr = p.data_agendada || p.created_at;
+        if (!dStr) return;
+        const mm = dStr.substring(0, 7);
+        if (!monthesMap[mm]) monthesMap[mm] = { volume: 0, valor: 0, coletas: 0 };
+        monthesMap[mm].coletas++;
+      });
+      
+      const shortMonths = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const monthlyDataArr = Object.keys(monthesMap).sort().map(k => {
+        const monthIndex = parseInt(k.split('-')[1]) - 1;
+        return {
+          month: shortMonths[monthIndex],
+          volume: monthesMap[k].volume,
+          valor: monthesMap[k].valor,
+        };
+      });
+      if (monthlyDataArr.length > 0) setMonthlyTrendData(monthlyDataArr);
+
+      const pickupDataArr = Object.keys(monthesMap).sort().map(k => {
+        const monthIndex = parseInt(k.split('-')[1]) - 1;
+        return {
+          month: shortMonths[monthIndex],
+          coletas: monthesMap[k].coletas
+        };
+      });
+      if (pickupDataArr.length > 0) setPickupTrendData(pickupDataArr);
+
+    } catch (error) {
+      console.error(error);
+      setToast({ message: t('businessPartners.vision360.errorFetch', 'Erro ao carregar dados reais.'), type: 'error' });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
+
+  useEffect(() => {
+    fetchRealData();
+  }, [partnerId, dateRange.start, dateRange.end]);
+
+  const handleRefresh = fetchRealData;
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -359,7 +454,7 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
             <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalInvoices}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('businessPartners.vision360.kpis.invoicesSub', '{{percent}}% dos pedidos', { percent: ((kpiData.totalInvoices / kpiData.totalOrders) * 100).toFixed(0) })}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('businessPartners.vision360.kpis.invoicesSub', '{{percent}}% dos pedidos', { percent: kpiData.totalOrders > 0 ? ((kpiData.totalInvoices / kpiData.totalOrders) * 100).toFixed(0) : 0 })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -368,7 +463,7 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
             <Package className="w-5 h-5 text-orange-600 dark:text-orange-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalPickups}</p>
-          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{t('businessPartners.vision360.kpis.pickupsSub', 'Média: 52/mês')}</p>
+          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{t('businessPartners.vision360.kpis.pickupsSub', 'Média calculada no período')}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -377,7 +472,7 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
             <TruckIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.totalCtes}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('businessPartners.vision360.kpis.ctesSub', '{{percent}}% das NF-e', { percent: ((kpiData.totalCtes / kpiData.totalInvoices) * 100).toFixed(0) })}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('businessPartners.vision360.kpis.ctesSub', '{{percent}}% das NF-e', { percent: kpiData.totalInvoices > 0 ? ((kpiData.totalCtes / kpiData.totalInvoices) * 100).toFixed(0) : 0 })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -395,7 +490,7 @@ export const BusinessPartnerVision360: React.FC<BusinessPartnerVision360Props> =
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{kpiData.deliveriesCompleted}</p>
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('businessPartners.vision360.kpis.deliveriesCompletedSub', '{{percent}}% do total', { percent: ((kpiData.deliveriesCompleted / (kpiData.deliveriesCompleted + kpiData.deliveriesPending)) * 100).toFixed(1) })}</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('businessPartners.vision360.kpis.deliveriesCompletedSub', '{{percent}}% do total', { percent: (kpiData.deliveriesCompleted + kpiData.deliveriesPending) > 0 ? ((kpiData.deliveriesCompleted / (kpiData.deliveriesCompleted + kpiData.deliveriesPending)) * 100).toFixed(1) : 0 })}</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">

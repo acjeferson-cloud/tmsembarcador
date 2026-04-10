@@ -23,6 +23,8 @@ const ImplementationCenter: React.FC = () => {
   const { user, currentEstablishment } = useAuth();
   const { t } = useTranslation();
   
+  const isAdmin = user?.perfil?.toLowerCase() === 'administrador';
+  
   const breadcrumbItems = [
     { label: t('implementationCenter.title'), current: true }
   ];
@@ -855,7 +857,22 @@ const ImplementationCenter: React.FC = () => {
         {/* ERP Integration Tab */}
         {activeTab === 'erp-integration' && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            {!isAdmin && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Shield className="h-5 w-5 text-yellow-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      <strong>Modo Leitura:</strong> Apenas usuários com perfil de Administrador podem realizar modificações nesta aba.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ${!isAdmin ? 'opacity-90' : ''}`}>
               <div className="flex items-center gap-3 mb-6">
                 <Settings className="w-6 h-6 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configuração de Integração ERP</h3>
@@ -877,7 +894,7 @@ const ImplementationCenter: React.FC = () => {
                       <Download className="w-4 h-4" />
                       {t('implementationCenter.erpIntegration.template.downloadBtn')}
                     </button>
-                    <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 cursor-pointer">
+                    <label className={`px-4 py-2 ${!isAdmin ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'} text-white rounded-lg flex items-center gap-2`}>
                       <Upload className="w-4 h-4" />
                       {t('implementationCenter.erpIntegration.template.importBtn')}
                       <input
@@ -885,7 +902,7 @@ const ImplementationCenter: React.FC = () => {
                         accept=".xlsx,.xls"
                         onChange={handleERPFileUpload}
                         className="hidden"
-                        disabled={isLoading}
+                        disabled={isLoading || !isAdmin}
                       />
                     </label>
                   </div>
@@ -915,6 +932,7 @@ const ImplementationCenter: React.FC = () => {
                 )}
               </div>
 
+              <fieldset disabled={!isAdmin} className="space-y-6 group">
               {/* ERP Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1312,11 +1330,14 @@ const ImplementationCenter: React.FC = () => {
                       )}
                     </button>
                   </div>
+                </div>
+              )}
+              </fieldset>
 
-                  {/* Cron Logs */}
-                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <SyncLogsViewer />
-                  </div>
+              {/* Cron Logs */}
+              {selectedERP === 'sap-business-one' && (
+                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <SyncLogsViewer />
                 </div>
               )}
 
@@ -1340,6 +1361,7 @@ const ImplementationCenter: React.FC = () => {
                         type="file"
                         className="hidden"
                         accept=".xlsx,.xls"
+                        disabled={!isAdmin}
                         onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'erp-integration')}
                       />
                     </label>

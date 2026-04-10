@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const payloadBody = await req.json();
-    const { partnerId, type, partnerName, orgId } = payloadBody;
+    const { partnerId, type, partnerName, orgId, envId, estabCode } = payloadBody;
 
     if (!partnerId || !type || !partnerName || !orgId) {
       throw new Error("Missing required fields: partnerId, type, partnerName, or orgId");
@@ -261,11 +261,15 @@ REGRAS OBRIGATÓRIAS:
       if (existing) {
         await supabase.from('ai_insights_cache').update({
           insight_text: resultText,
+          environment_id: envId,
+          establishment_code: estabCode,
           created_at: new Date().toISOString()
         }).eq('id', existing.id);
       } else {
         await supabase.from('ai_insights_cache').insert({
           organization_id: orgId,
+          environment_id: envId,
+          establishment_code: estabCode,
           partner_id: partnerId,
           type: type,
           insight_text: resultText

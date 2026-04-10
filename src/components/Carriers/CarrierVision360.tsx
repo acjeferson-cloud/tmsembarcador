@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '../../lib/supabase';
 import {
   Package,
   TrendingUp,
@@ -135,9 +136,11 @@ const AIInsightModal: React.FC<AIInsightModalProps> = ({
 };
 
 import { aiInsightService } from '../../services/aiInsightService';
+import { useAuth } from '../../hooks/useAuth';
 
 export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, carrierName }) => {
   const { t } = useTranslation();
+  const { user, currentEstablishment } = useAuth();
   const { isActive: openaiActive } = useInnovation(INNOVATION_IDS.OPENAI);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -149,46 +152,134 @@ export const CarrierVision360: React.FC<CarrierVision360Props> = ({ carrierId, c
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const [kpiData] = useState<KPIData>({
-    totalDeliveries: 1250,
-    inTransit: 89,
-    deliveredToday: 47,
-    delayed: 12,
-    awaitingPickup: 34,
-    punctualityRate: 94.5
+  const [kpiData, setKpiData] = useState<KPIData>({
+    totalDeliveries: 0,
+    inTransit: 0,
+    deliveredToday: 0,
+    delayed: 0,
+    awaitingPickup: 0,
+    punctualityRate: 0
   });
 
-  const deliveryStatusData = [
-    { name: t('carriers.vision360.status.delivered'), value: 1050, color: '#10b981' },
-    { name: t('carriers.vision360.status.inTransit'), value: 89, color: '#3b82f6' },
-    { name: t('carriers.vision360.status.delayed'), value: 12, color: '#ef4444' },
-    { name: t('carriers.vision360.status.awaiting'), value: 34, color: '#f59e0b' },
-  ];
+  const [deliveryStatusData, setDeliveryStatusData] = useState<any[]>([]);
+  const [weeklyPerformanceData, setWeeklyPerformanceData] = useState<any[]>([]);
+  const [monthlyTrendData, setMonthlyTrendData] = useState<any[]>([]);
 
-  const weeklyPerformanceData = [
-    { day: t('carriers.vision360.days.mon'), entregas: 45, pontualidade: 95 },
-    { day: t('carriers.vision360.days.tue'), entregas: 52, pontualidade: 93 },
-    { day: t('carriers.vision360.days.wed'), entregas: 48, pontualidade: 96 },
-    { day: t('carriers.vision360.days.thu'), entregas: 58, pontualidade: 92 },
-    { day: t('carriers.vision360.days.fri'), entregas: 61, pontualidade: 94 },
-    { day: t('carriers.vision360.days.sat'), entregas: 38, pontualidade: 97 },
-    { day: t('carriers.vision360.days.sun'), entregas: 25, pontualidade: 98 },
-  ];
+  const fetchRealData = async () => {
+    setIsLoading(true);
+    try {
+      const { data: dbOrders, error } = await supabase
+        .from('orders')
+        .select('id, status, data_pedido, data_prevista_entrega, updated_at')
+        .eq('carrier_id', carrierId)
+        .gte('data_pedido', dateRange.start)
+        .lte('data_pedido', dateRange.end);
 
-  const monthlyTrendData = [
-    { month: t('carriers.vision360.months.jan'), entregas: 890 },
-    { month: t('carriers.vision360.months.feb'), entregas: 950 },
-    { month: t('carriers.vision360.months.mar'), entregas: 1120 },
-    { month: t('carriers.vision360.months.apr'), entregas: 1050 },
-    { month: t('carriers.vision360.months.may'), entregas: 1180 },
-    { month: t('carriers.vision360.months.jun'), entregas: 1250 },
-  ];
+      if (error) throw error;
+      const orders = dbOrders || [];
+
+      // 1. KPIs
+      const todayStr = new Date().toISOString().split('T')[0];
+      const totalDeliveries = orders.length;
+      const inTransit = orders.filter((o: any) => o.status === 'em_transito' || o.status === 'saiu_entrega').length;
+      const deliveredToday = orders.filter((o: any) => o.status === 'entregue' && (o.updated_at || '').startsWith(todayStr)).length;
+      const awaitingPickup = orders.filter((o: any) => o.status === 'processando' || o.status === 'pendente' || o.status === 'emitido').length;
+      const delayed = orders.filter((o: any) => o.status !== 'entregue' && o.status !== 'cancelado' && o.data_prevista_entrega && o.data_prevista_entrega < todayStr).length;
+
+      const deliveredOrders = orders.filter((o: any) => o.status === 'entregue');
+      let onTime = 0;
+      deliveredOrders.forEach((o: any) => {
+        if (!o.data_prevista_entrega || o.data_prevista_entrega >= (o.updated_at || todayStr).split('T')[0]) {
+          onTime++;
+        }
+      });
+      const punctualityRate = deliveredOrders.length > 0 ? (onTime / deliveredOrders.length) * 100 : (totalDeliveries > 0 ? 100 : 0);
+
+      setKpiData({
+        totalDeliveries,
+        inTransit,
+        deliveredToday,
+        delayed,
+        awaitingPickup,
+        punctualityRate: Number(punctualityRate.toFixed(1))
+      });
+
+      // 2. Status Data
+      const deliveredCount = deliveredOrders.length;
+      setDeliveryStatusData([
+        { name: t('carriers.vision360.status.delivered'), value: deliveredCount, color: '#10b981' },
+        { name: t('carriers.vision360.status.inTransit'), value: inTransit, color: '#3b82f6' },
+        { name: t('carriers.vision360.status.delayed'), value: delayed, color: '#ef4444' },
+        { name: t('carriers.vision360.status.awaiting'), value: awaitingPickup, color: '#f59e0b' },
+      ]);
+
+      // 3. Weekly Data (Last 7 Days back from end Date)
+      const weekDays = [t('carriers.vision360.days.sun'), t('carriers.vision360.days.mon'), t('carriers.vision360.days.tue'), t('carriers.vision360.days.wed'), t('carriers.vision360.days.thu'), t('carriers.vision360.days.fri'), t('carriers.vision360.days.sat')];
+      const weekMap = new Map();
+      
+      const endDate = new Date(dateRange.end);
+      for(let i = 6; i >= 0; i--) {
+        const d = new Date(endDate);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        weekMap.set(dateStr, { day: weekDays[d.getDay()], dateStr, entregas: 0, onTimeCount: 0, totalDelivered: 0 });
+      }
+
+      orders.forEach((o: any) => {
+        const dStr = o.data_pedido;
+        if (weekMap.has(dStr)) {
+          const w = weekMap.get(dStr);
+          w.entregas++;
+          if (o.status === 'entregue') {
+            w.totalDelivered++;
+            if (!o.data_prevista_entrega || o.data_prevista_entrega >= (o.updated_at || todayStr).split('T')[0]) w.onTimeCount++;
+          }
+        }
+      });
+
+      const processedWeekly = Array.from(weekMap.values()).map(w => ({
+        day: w.day,
+        entregas: w.entregas,
+        pontualidade: w.totalDelivered > 0 ? Math.round((w.onTimeCount / w.totalDelivered) * 100) : (w.entregas > 0 ? 100 : 0)
+      }));
+      setWeeklyPerformanceData(processedWeekly);
+
+      // 4. Monthly Trend Data (Last 6 Months up to end Date)
+      const monthNames = [t('carriers.vision360.months.jan'), t('carriers.vision360.months.feb'), t('carriers.vision360.months.mar'), t('carriers.vision360.months.apr'), t('carriers.vision360.months.may'), t('carriers.vision360.months.jun'), t('carriers.vision360.months.jul'), t('carriers.vision360.months.aug'), t('carriers.vision360.months.sep'), t('carriers.vision360.months.oct'), t('carriers.vision360.months.nov'), t('carriers.vision360.months.dec')];
+      const monthMap = new Map();
+      const endMonthDate = new Date(dateRange.end);
+      endMonthDate.setDate(1); // Set to 1st to avoid overflow
+      
+      for(let i = 5; i >= 0; i--) {
+        const d = new Date(endMonthDate);
+        d.setMonth(d.getMonth() - i);
+        const mKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`;
+        monthMap.set(mKey, { month: monthNames[d.getMonth()], entregas: 0 });
+      }
+
+      orders.forEach((o: any) => {
+        if (!o.data_pedido) return;
+        const mKey = o.data_pedido.substring(0, 7); // YYYY-MM
+        if (monthMap.has(mKey)) {
+          monthMap.get(mKey).entregas++;
+        }
+      });
+
+      setMonthlyTrendData(Array.from(monthMap.values()));
+
+    } catch (err) {
+      console.error('Error fetching carrier metrics:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRealData();
+  }, [carrierId, dateRange, t]);
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    fetchRealData();
   };
 
   const generateAIInsight = async () => {

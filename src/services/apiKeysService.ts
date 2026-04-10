@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface ApiKeyConfig {
   id: string;
@@ -29,6 +30,9 @@ export interface ApiKeyConfig {
 export interface ApiKeyRotationHistory {
   id: string;
   key_config_id: string;
+  organization_id?: string;
+  environment_id?: string;
+  establishment_id?: string;
   old_key_hash: string | null;
   new_key_hash: string;
   rotated_by: string | null;
@@ -50,9 +54,9 @@ export interface ApiKeyUsageStats {
 
 class ApiKeysService {
   async getAllKeys(estabelecimentoId?: string): Promise<ApiKeyConfig[]> {
-    // Obter contexto org/env do localStorage
-    const orgId = localStorage.getItem('tms-selected-org-id');
-    const envId = localStorage.getItem('tms-selected-env-id');
+    const ctx = await TenantContextHelper.getCurrentContext();
+    const orgId = ctx?.organizationId;
+    const envId = ctx?.environmentId;
 
     if (!orgId || !envId) {
       throw new Error('Contexto de organização não encontrado');
@@ -114,9 +118,9 @@ class ApiKeysService {
   }
 
   async createKey(keyData: Partial<ApiKeyConfig>): Promise<ApiKeyConfig> {
-    // Obter contexto org/env do localStorage
-    const orgId = localStorage.getItem('tms-selected-org-id');
-    const envId = localStorage.getItem('tms-selected-env-id');
+    const ctx = await TenantContextHelper.getCurrentContext();
+    const orgId = ctx?.organizationId;
+    const envId = ctx?.environmentId;
 
     if (!orgId || !envId) {
       throw new Error('Contexto de organização não encontrado');
@@ -217,14 +221,34 @@ class ApiKeysService {
   }
 
   async getRotationHistory(keyConfigId: string): Promise<ApiKeyRotationHistory[]> {
-    const { data, error } = await supabase
+    const ctx = await TenantContextHelper.getCurrentContext();
+    const orgId = ctx?.organizationId;
+    const envId = ctx?.environmentId;
+
+    let query = supabase
       .from('api_keys_rotation_history')
       .select('*')
       .eq('key_config_id', keyConfigId)
       .order('rotated_at', { ascending: false });
 
+    // Se o banco possuir as colunas ativas na filha, assegura a limitação!
+    if (orgId) query = query.eq('organization_id', orgId);
+    if (envId) query = query.eq('environment_id', envId);
+
+    const { data, error } = await query;
+
     if (error) {
-      throw error;
+      // Ignora erro caso a coluna organization_id ainda não exista, degradando para sem filtro tenant explícito
+      if (error.code !== '42703') throw error;
+      
+      const { data: rawData, error: rawError } = await supabase
+        .from('api_keys_rotation_history')
+        .select('*')
+        .eq('key_config_id', keyConfigId)
+        .order('rotated_at', { ascending: false });
+        
+      if (rawError) throw rawError;
+      return rawData || [];
     }
 
     return data || [];

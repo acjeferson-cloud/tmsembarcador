@@ -94,7 +94,7 @@ export const whiteLabelService = {
   async getConfig(tenantId: string): Promise<WhiteLabelConfig | null> {
     try {
       const { data, error } = await supabase
-        .from('white_label_configs')
+        .from('white_label_config')
         .select('*')
         .eq('tenant_id', tenantId)
         .maybeSingle();
@@ -110,7 +110,7 @@ export const whiteLabelService = {
   async createConfig(config: Partial<WhiteLabelConfig>): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('white_label_configs')
+        .from('white_label_config')
         .insert({
           ...config,
           created_at: new Date().toISOString(),
@@ -130,7 +130,7 @@ export const whiteLabelService = {
   async updateConfig(tenantId: string, config: Partial<WhiteLabelConfig>): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase
-        .from('white_label_configs')
+        .from('white_label_config')
         .update({
           ...config,
           updated_at: new Date().toISOString()

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle } from 'lucide-react';
 import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
 import { CarrierVision360 } from './CarrierVision360';
+import { formatarCNPJ } from '../../utils/cnpj/formatter';
 
 interface CarrierViewProps {
   onBack: () => void;
@@ -24,53 +25,22 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
     ));
   };
 
-  const formatCurrency = (value: string) => {
-    if (!value) return t('carriers.view.notInformed');
-    const numericValue = parseInt(value);
+  const formatCurrency = (value: number | string | null | undefined) => {
+    if (value === undefined || value === null) return t('carriers.view.notInformed');
+    const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    if (isNaN(numericValue)) return t('carriers.view.notInformed');
     return (numericValue / 100).toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     });
   };
 
-  const formatPercentage = (value: string) => {
-    if (!value) return t('carriers.view.notInformed');
+  const formatPercentage = (value: number | string | null | undefined) => {
+    if (value === undefined || value === null) return t('carriers.view.notInformed');
     return `${value}%`;
   };
 
-  // Mock data for location names
-  const getLocationName = (type: 'pais' | 'estado' | 'cidade', id: string) => {
-    const locations = {
-      pais: { '1': 'Brasil' },
-      estado: {
-        '1': 'São Paulo',
-        '2': 'Rio de Janeiro',
-        '3': 'Minas Gerais',
-        '4': 'Rio Grande do Sul',
-        '5': 'Paraná',
-        '6': 'Bahia',
-        '7': 'Santa Catarina',
-        '8': 'Goiás',
-        '9': 'Pernambuco',
-        '10': 'Ceará'
-      },
-      cidade: {
-        '1': 'São Paulo',
-        '2': 'Campinas',
-        '3': 'Santos',
-        '4': 'Rio de Janeiro',
-        '5': 'Niterói',
-        '6': 'Belo Horizonte',
-        '7': 'Uberlândia',
-        '8': 'Porto Alegre',
-        '9': 'Caxias do Sul',
-        '10': 'Curitiba',
-        '11': 'Brasília'
-      }
-    };
-
-    return locations[type][id as keyof typeof locations[typeof type]] || t('carriers.view.notInformed');
-  };
+  // Remover mock de getLocationName, pois os dados já vêm diretamente do banco na chamada
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -174,23 +144,35 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                     {carrier.codigo}
                   </span>
                 </div>
-                <div className="flex items-center space-x-2 mb-3">
-                  {renderStars(carrier.rating)}
-                  <span className="text-lg font-medium text-gray-700 dark:text-gray-300">({carrier.rating})</span>
+                <div className="flex items-center space-x-6 mb-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">NPS Interno</span>
+                    <div className="flex items-center space-x-1">
+                      {renderStars(carrier.nps_interno || 0)}
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">({(carrier.nps_interno || 0).toFixed(1)})</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 mb-1">NPS Externo</span>
+                    <div className="flex items-center space-x-1">
+                      {renderStars(carrier.nps_externo || 0)}
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">({(carrier.nps_externo || 0).toFixed(1)})</span>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.companyNameLabel')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.razaoSocial || t('carriers.view.notInformed')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.razao_social || t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.fantasyName')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.fantasia || t('carriers.view.notInformed')}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.fantasia || carrier.nome_fantasia || t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">CNPJ</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.cnpj}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.cnpj ? formatarCNPJ(carrier.cnpj) : t('carriers.view.notInformed')}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.status')}</p>
@@ -207,7 +189,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               {/* Stats */}
               <div className="text-center">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-2xl font-bold text-blue-600">{carrier.activeShipments}</p>
+                  <p className="text-2xl font-bold text-blue-600">{carrier.active_shipments || 0}</p>
                   <p className="text-sm text-blue-700">{t('carriers.view.activeDeliveries')}</p>
                 </div>
               </div>
@@ -246,7 +228,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <Globe className="text-purple-500" size={20} />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.country')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{getLocationName('pais', carrier.pais)}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{carrier.pais || t('carriers.view.notInformed')}</p>
                 </div>
               </div>
               
@@ -254,7 +236,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <Building className="text-blue-500" size={20} />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.state')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{getLocationName('estado', carrier.estado)}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{carrier.estado || t('carriers.view.notInformed')}</p>
                 </div>
               </div>
               
@@ -262,7 +244,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <MapPin className="text-red-500" size={20} />
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.city')}</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{getLocationName('cidade', carrier.cidade)}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{carrier.cidade || t('carriers.view.notInformed')}</p>
                 </div>
               </div>
             </div>
@@ -278,11 +260,11 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.valueTolerance')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(carrier.toleranciaValorCte)}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(carrier.tolerancia_valor_cte)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.percentTolerance')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formatPercentage(carrier.toleranciaPercentualCte)}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatPercentage(carrier.tolerancia_percentual_cte)}</p>
                   </div>
                 </div>
               </div>
@@ -293,11 +275,11 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.valueTolerance')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(carrier.toleranciaValorFatura)}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(carrier.tolerancia_valor_fatura)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.view.percentTolerance')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formatPercentage(carrier.toleranciaPercentualFatura)}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatPercentage(carrier.tolerancia_percentual_fatura)}</p>
                   </div>
                 </div>
               </div>
@@ -379,15 +361,15 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.view.performanceMetrics')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">{carrier.rating}</p>
+                <p className="text-2xl font-bold text-blue-600">{(carrier.nps_interno || carrier.nps_externo) ? (((carrier.nps_interno || 0) + (carrier.nps_externo || 0)) / ((carrier.nps_interno ? 1 : 0) + (carrier.nps_externo ? 1 : 0))).toFixed(1) : 'S/N'}</p>
                 <p className="text-sm text-blue-700">{t('carriers.view.averageRating')}</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">{carrier.activeShipments}</p>
+                <p className="text-2xl font-bold text-green-600">{carrier.active_shipments || 0}</p>
                 <p className="text-sm text-green-700">{t('carriers.view.activeDeliveries')}</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">98.5%</p>
+                <p className="text-2xl font-bold text-purple-600">{carrier.taxa_entrega ? `${carrier.taxa_entrega}%` : 'S/N'}</p>
                 <p className="text-sm text-purple-700">{t('carriers.view.deliveryRate')}</p>
               </div>
             </div>

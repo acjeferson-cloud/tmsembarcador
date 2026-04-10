@@ -1,9 +1,13 @@
 import { supabase } from '../lib/supabase';
+import { TenantContextHelper } from '../utils/tenantContext';
 
 export interface AIInsightRequest {
   partnerId: string;
   type: 'carrier' | 'business_partner';
   partnerName: string;
+  orgId?: string;
+  envId?: string;
+  estabCode?: string;
 }
 
 export interface AIInsightResponse {
@@ -13,12 +17,16 @@ export interface AIInsightResponse {
 }
 
 export const aiInsightService = {
-  async generateInsight({ partnerId, type, partnerName }: AIInsightRequest): Promise<AIInsightResponse> {
+  async generateInsight({ partnerId, type, partnerName, orgId, envId, estabCode }: AIInsightRequest): Promise<AIInsightResponse> {
     try {
-      const orgId = localStorage.getItem('tms-selected-org-id');
+      const context = await TenantContextHelper.getCurrentContext();
+      
+      const finalOrgId = orgId || context?.organizationId;
+      const finalEnvId = envId || context?.environmentId;
+      const finalEstabId = estabCode || context?.establishmentId;
 
       const { data, error } = await supabase.functions.invoke('generate-partner-insight', {
-        body: { partnerId, type, partnerName, orgId }
+        body: { partnerId, type, partnerName, orgId: finalOrgId, envId: finalEnvId, estabCode: finalEstabId }
       });
 
       if (error) {

@@ -28,6 +28,7 @@ export const ApiKeysManagement: React.FC = () => {
   const [showRotationModal, setShowRotationModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [keyToDelete, setKeyToDelete] = useState<ApiKeyConfig | null>(null);
   const [alerts, setAlerts] = useState<Array<any>>([]);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
@@ -102,13 +103,15 @@ export const ApiKeysManagement: React.FC = () => {
     setShowHistoryModal(true);
   };
 
-  const handleDelete = async (key: ApiKeyConfig) => {
-    if (!confirm(t('apiKeys.messages.deleteConfirm', { name: key.key_name }))) {
-      return;
-    }
+  const confirmDelete = (key: ApiKeyConfig) => {
+    setKeyToDelete(key);
+  };
+
+  const executeDelete = async () => {
+    if (!keyToDelete) return;
 
     try {
-      await apiKeysService.deleteKey(key.id);
+      await apiKeysService.deleteKey(keyToDelete.id);
       await loadApiKeys();
       await loadStats();
       setToast({
@@ -120,6 +123,8 @@ export const ApiKeysManagement: React.FC = () => {
         message: t('apiKeys.messages.deleteError'),
         type: 'error'
       });
+    } finally {
+      setKeyToDelete(null);
     }
   };
 
@@ -322,7 +327,7 @@ export const ApiKeysManagement: React.FC = () => {
               key={key.id}
               apiKey={key}
               onRotate={handleRotate}
-              onDelete={handleDelete}
+              onDelete={confirmDelete}
               onViewHistory={handleViewHistory}
             />
           ))}
@@ -363,6 +368,34 @@ export const ApiKeysManagement: React.FC = () => {
             setShowFormModal(false);
           }}
         />
+      )}
+
+      {keyToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4 text-red-600">
+              <AlertTriangle size={24} />
+              <h3 className="text-xl font-semibold">Excluir Chave</h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-8">
+              {t('apiKeys.messages.deleteConfirm', { name: keyToDelete.key_name })}
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setKeyToDelete(null)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                {t('common.cancel', 'Cancelar')}
+              </button>
+              <button
+                onClick={executeDelete}
+                className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                {t('common.delete', 'Excluir')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (

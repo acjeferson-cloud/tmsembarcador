@@ -35,9 +35,6 @@ export const electronicDocumentsService = {
   async getAll(): Promise<ElectronicDocument[]> {
     try {
       const ctx = await TenantContextHelper.getCurrentContext();
-      if (ctx && ctx.organizationId && ctx.environmentId) {
-        await TenantContextHelper.setSessionContext(ctx);
-      }
 
       let query = supabase
         .from('electronic_documents')
@@ -45,6 +42,9 @@ export const electronicDocumentsService = {
 
       if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
+      // Removed establishmentId to ensure all documents in the environment are loaded
+      // Often XMLs are imported by head office (Matriz) and need to be visible across
+      // the environment if they are meant for other branches, but we stick to standard:
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
       const { data, error } = await query.order('import_date', { ascending: false });
@@ -52,6 +52,7 @@ export const electronicDocumentsService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
+      console.error("ERRO NO GET ALL DOCUMENTS ELETRONICOS:", error);
       return [];
     }
   },

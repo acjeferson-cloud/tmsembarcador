@@ -72,7 +72,10 @@ export const doccobImportService = {
                 bill_id: billData.id,
                 cte_id: ctesMap.get(cteData.number) || null,
                 cte_number: cteData.number,
-                cte_series: cteData.series
+                cte_series: cteData.series,
+                organization_id: organizationId || null,
+                environment_id: environmentId || null,
+                establishment_id: establishmentId || null
             }));
 
             // Insert links sequentially to avoid duplicates since we 'upsert' bills, 

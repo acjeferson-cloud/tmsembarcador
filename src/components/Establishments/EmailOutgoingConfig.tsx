@@ -3,6 +3,7 @@ import { Mail, Send, CheckCircle, AlertCircle, Eye, EyeOff, Server, Lock, User, 
 import emailOutgoingConfigService, { EmailOutgoingConfig, EmailOutgoingConfigInput } from '../../services/emailOutgoingConfigService';
 import { Toast, ToastType } from '../common/Toast';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
 
 interface EmailOutgoingConfigProps {
   establishmentId: string;
@@ -10,6 +11,7 @@ interface EmailOutgoingConfigProps {
 
 export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ establishmentId }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [config, setConfig] = useState<EmailOutgoingConfig | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
