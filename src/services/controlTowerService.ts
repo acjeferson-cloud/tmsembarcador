@@ -78,9 +78,12 @@ export const controlTowerService = {
       }
       
       // Mocking auditData temporarily until the view is created in the database to prevent 404 errors
+      const faturamento = dailyData.volume_produtos_reais || 0;
+      const fakeTotalFrete = faturamento * 0.0385; // Mocking freight as 3.85% of total billing
+
       auditData = {
-        frete_acordado_estimado: 5000,
-        custo_mercado_spot: 1500
+        frete_acordado_estimado: fakeTotalFrete * 0.769,
+        custo_mercado_spot: fakeTotalFrete * 0.231
       };
     } catch (error) {
       console.error('Erro ao buscar KPIs Reais das Views', error);
