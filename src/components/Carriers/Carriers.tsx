@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Star, Phone, Mail, CreditCard as Edit, Trash2, Eye, DollarSign, ArrowLeft, Hash } from 'lucide-react';
+import { Plus, Search, Star, Phone, Mail, CreditCard as Edit, Trash2, Eye, DollarSign, ArrowLeft, Hash, ShieldAlert } from 'lucide-react';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { CarrierForm } from './CarrierForm';
 import { CarrierView } from './CarrierView';
@@ -199,6 +199,8 @@ export const Carriers: React.FC = () => {
         considera_sabado_util: carrierData.consideraSabadoUtil || false,
         considera_domingo_util: carrierData.consideraDomingoUtil || false,
         considera_feriados: carrierData.consideraFeriados || false,
+        exige_seguro_obrigatorio: carrierData.exige_seguro_obrigatorio || false,
+        tipos_seguro_exigidos: carrierData.tipos_seguro_exigidos || [],
         scope: carrierData.scope || 'ESTABLISHMENT',
       };
       if (editingCarrier) {
@@ -280,14 +282,12 @@ export const Carriers: React.FC = () => {
             <ArrowLeft size={20} />
             <span>{t('carriers.backToCarriers')}</span>
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('carriers.freightRates.title')} - {viewingCarrier.name}</h1>
-          <p className="text-gray-600 dark:text-gray-400">{t('carriers.freightRates.manageTables')}</p>
         </div>
         
         <FreightRateTablesList 
           carrierId={viewingCarrier.id} 
           isEdit={editMode}
-          carrierName={viewingCarrier.name} 
+          carrierName={viewingCarrier.fantasia || viewingCarrier.razao_social} 
         />
       </div>
     );
@@ -475,7 +475,13 @@ export const Carriers: React.FC = () => {
                   <span className="text-gray-600 dark:text-gray-400">{t('carriers.view.activeShipments')}:</span>
                   <span className="font-semibold text-gray-900 dark:text-white ml-1">{carrier.active_shipments || 0}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex items-center space-x-2">
+                  {carrier.exige_seguro_obrigatorio && (
+                    <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800" title="Exige Políticas de Seguro Ativas (Gatekeeper)">
+                      <ShieldAlert size={12} className="mr-1" />
+                      Seguro Obrigatório
+                    </div>
+                  )}
                   <div className={`
                     inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                     ${carrier.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}

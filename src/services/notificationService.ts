@@ -43,8 +43,49 @@ export const notificationService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-
       return [];
+    }
+  },
+
+  async getPaginatedNotifications(
+    page = 1,
+    limit = 50,
+    unreadOnly = false
+  ): Promise<{ data: AppNotification[]; count: number }> {
+    try {
+      const savedUser = localStorage.getItem('tms-user');
+      if (!savedUser) return { data: [], count: 0 };
+      
+      const { organization_id, environment_id, id: userId } = JSON.parse(savedUser);
+      if (!supabase) return { data: [], count: 0 };
+
+      let query = supabase
+        .from('notifications')
+        .select('*', { count: 'exact' })
+        .eq('organization_id', organization_id)
+        .eq('environment_id', environment_id);
+
+      if (userId && isValidUUID(String(userId))) {
+        query = query.or(`user_id.eq.${userId},user_id.is.null`);
+      } else {
+        query = query.is('user_id', null);
+      }
+
+      if (unreadOnly) {
+        query = query.eq('is_read', false);
+      }
+
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+      return { data: data || [], count: count || 0 };
+    } catch (error) {
+      return { data: [], count: 0 };
     }
   },
 
@@ -106,8 +147,52 @@ export const notificationService = {
         if (error) throw error;
         return true;
     } catch (error) {
-
         return false;
+    }
+  },
+
+  async deleteNotification(id: string): Promise<boolean> {
+    try {
+      if (!supabase) return false;
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  async deleteMultiple(ids: string[]): Promise<boolean> {
+    try {
+      if (!supabase || !ids.length) return false;
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  async markMultipleAsRead(ids: string[]): Promise<boolean> {
+    try {
+      if (!supabase || !ids.length) return false;
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true } as any)
+        .in('id', ids);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      return false;
     }
   }
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Upload, X, Info, Hash, MapPin, Settings, Truck, Search, Loader } from 'lucide-react';
+import { ArrowLeft, Upload, X, Info, Hash, MapPin, Settings, Truck, Search, Loader, Shield } from 'lucide-react';
 import { carriersService } from '../../services/carriersService';
 import { countriesService } from '../../services/countriesService';
 import { statesService } from '../../services/statesService';
@@ -10,6 +10,10 @@ import { receitaFederalService } from '../../services/receitaFederalService';
 import { formatCompanyName, formatCNPJInput, formatPhone, unformatCNPJ, unformatPhone } from '../../utils/formatters';
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
+import { CarrierInsurancesTab } from './CarrierInsurancesTab';
+
+import { carrierInsuranceService } from '../../services/carrierInsuranceService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface CarrierFormProps {
   onBack: () => void;
@@ -54,12 +58,14 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     consideraSabadoUtil: carrier?.considera_sabado_util || false,
     consideraDomingoUtil: carrier?.considera_domingo_util || false,
     consideraFeriados: carrier?.considera_feriados !== undefined ? carrier.considera_feriados : true,
+    exigeSeguroObrigatorio: carrier?.exige_seguro_obrigatorio || false,
+    tiposSeguroExigidos: carrier?.tipos_seguro_exigidos || [],
     scope: carrier?.scope || 'ESTABLISHMENT'
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(carrier?.logotipo || null);
   const [codeError, setCodeError] = useState('');
-  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'tolerance'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'tolerance' | 'insurances'>('basic');
   const [countries, setCountries] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
@@ -98,6 +104,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       setFilteredCities([]);
     }
   }, [formData.estado]);
+
+  const [confirmSaveAlert, setConfirmSaveAlert] = useState<{isOpen: boolean, missing: string[], data?: any}>({isOpen: false, missing: []});
 
   const loadData = async () => {
     try {
@@ -338,8 +346,27 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       consideraSabadoUtil: formData.consideraSabadoUtil,
       consideraDomingoUtil: formData.consideraDomingoUtil,
       consideraFeriados: formData.consideraFeriados,
+      exige_seguro_obrigatorio: formData.exigeSeguroObrigatorio,
+      tipos_seguro_exigidos: formData.tiposSeguroExigidos,
       scope: formData.scope
     };
+
+    if (formData.exigeSeguroObrigatorio && formData.tiposSeguroExigidos.length > 0) {
+      if (!carrier) {
+         setConfirmSaveAlert({ isOpen: true, missing: formData.tiposSeguroExigidos, data: carrierData });
+         return;
+      } else {
+         const insurances = await carrierInsuranceService.getByCarrierId(carrier.id);
+         const activeTypes = insurances.filter(i => i.status === 'ativo').map(a => a.tipo_seguro.toUpperCase());
+         const missing = formData.tiposSeguroExigidos.filter(req => !activeTypes.includes(req.toUpperCase()));
+         
+         if (missing.length > 0) {
+            setConfirmSaveAlert({ isOpen: true, missing, data: carrierData });
+            return;
+         }
+      }
+    }
+
     try {
       await onSave(carrierData);
     } catch (error) {
@@ -709,6 +736,19 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
               <div className="flex items-center space-x-2">
                 <Settings size={16} />
                 <span>{t('carriers.form.tolerances')}</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('insurances')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'insurances'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Shield size={16} />
+                <span>Gestão de Risco e Seguros</span>
               </div>
             </button>
           </nav>
@@ -1363,6 +1403,57 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             </div>
           </div>
         )}
+        {activeTab === 'insurances' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Gestão de Risco e Tolerância Operacional</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Ative e gerencie as restrições e averbações obrigatórias para atuação desta transportadora na sua operação.</p>
+
+            <div className="space-y-4">
+              <label className="flex items-start p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-red-500 hover:bg-red-50 transition-all">
+                <input
+                  type="checkbox"
+                  name="exigeSeguroObrigatorio"
+                  checked={formData.exigeSeguroObrigatorio}
+                  onChange={(e) => setFormData({ ...formData, exigeSeguroObrigatorio: e.target.checked })}
+                  className="mt-0.5 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                />
+                <div className="ml-3">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Exigir Apólice de Seguro Vigente</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ao marcar, o TMS impedirá cotações e emissões de CT-e se as apólices estiverem vencidas ou ausentes.</div>
+                </div>
+              </label>
+
+              {formData.exigeSeguroObrigatorio && (
+                <div className="pl-8 mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                     Tipos Mínimos de Apólices Exigidos pelo Gatekeeper:
+                  </label>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    {['RCTR-C', 'RC-DC', 'RCF-DC', 'Ambiental'].map(tipo => (
+                      <label key={tipo} className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.tiposSeguroExigidos.includes(tipo)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData(prev => ({
+                              ...prev,
+                              tiposSeguroExigidos: checked 
+                                ? [...prev.tiposSeguroExigidos, tipo]
+                                : prev.tiposSeguroExigidos.filter(t => t !== tipo)
+                            }));
+                          }}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300 font-medium">{tipo}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center justify-end space-x-4">
@@ -1388,6 +1479,49 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
           </button>
         </div>
       </form>
+
+      {/* Renders outside the main form to prevent nested form submissions */}
+      {activeTab === 'insurances' && (
+        <div className="mt-6">
+          {carrier ? (
+            <CarrierInsurancesTab carrier={carrier} />
+          ) : (
+            <div className="p-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-center flex flex-col items-center">
+              <Shield className="h-12 w-12 text-gray-300 mb-3" />
+              <p className="text-lg font-medium text-gray-900 dark:text-white">Salvar Transportador Inicialmente</p>
+              <p className="text-sm mt-1 text-gray-500">
+                Para anexar novas apólices de seguro, salve o cadastro deste transportador primeiro e edite logo em seguida.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ConfirmDialog para Alerta de Seguros Faltantes */}
+      <ConfirmDialog
+        isOpen={confirmSaveAlert.isOpen}
+        title="Alerta de Bloqueio Operacional"
+        message={
+          !carrier
+            ? `Você marcou a exigência obrigatória para: ${confirmSaveAlert.missing.join(', ')}. Como o transportador é novo, o TMS irá bloqueá-lo imediatamente em cotações até que você salve e adicione essas apólices na aba "Gestão de Risco". Deseja salvar mesmo assim?`
+            : `Você exigiu os seguros ${confirmSaveAlert.missing.join(', ')}, porém faltam apólices cadastradas ou vigentes atendendo esta regra! Ao salvar, o TMS NÃO considerará este transportador em cotações a partir de agora. Deseja prosseguir com o bloqueio ou desmarcar a regra?`
+        }
+        confirmText="Sim, salvar com bloqueio"
+        cancelText="Revisar e Desmarcar"
+        type="warning"
+        onConfirm={async () => {
+           setConfirmSaveAlert(prev => ({ ...prev, isOpen: false }));
+           if (confirmSaveAlert.data) {
+             try {
+               await onSave(confirmSaveAlert.data);
+             } catch (error) {
+               console.error(error);
+             }
+           }
+        }}
+        onCancel={() => setConfirmSaveAlert({ isOpen: false, missing: [] })}
+      />
+
     </div>
   );
 };

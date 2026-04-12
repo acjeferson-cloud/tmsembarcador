@@ -9,13 +9,15 @@ interface NotificationsDropdownProps {
   onMarkAllAsRead: () => void;
   onMarkAsRead: (id: string) => void;
   onClear: () => void;
+  onClose: () => void;
 }
 
 export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ 
   notifications, 
   onMarkAllAsRead, 
   onMarkAsRead,
-  onClear 
+  onClear,
+  onClose
 }) => {
 
   const getNotificationIcon = (type: string) => {
@@ -110,9 +112,18 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
                     
                     <div className="mt-2 flex items-center justify-between">
                       {notification.link ? (
-                        <a href={notification.link} className="text-xs text-blue-600 hover:text-blue-800 flex items-center font-medium">
+                        <button 
+                          onClick={() => {
+                            onClose();
+                            if (notification.link) {
+                               const route = notification.link.replace(/^\//, ''); // remove leading slash se houver
+                               window.dispatchEvent(new CustomEvent('app-navigate', { detail: route }));
+                            }
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 flex items-center font-medium"
+                        >
                           Ação Necessária <Eye size={12} className="ml-1" />
-                        </a>
+                        </button>
                       ) : (
                         <span />
                       )}
@@ -148,7 +159,13 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
         >
           Limpar lista
         </button>
-        <button className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+        <button 
+          onClick={() => {
+            onClose();
+            window.dispatchEvent(new CustomEvent('app-navigate', { detail: 'notifications' }));
+          }}
+          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+        >
           Ver todas as notificações
         </button>
       </div>

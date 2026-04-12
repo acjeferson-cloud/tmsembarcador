@@ -3,7 +3,7 @@ import { freightCostCalculator } from './freightCostCalculator';
 import { holidaysService } from './holidaysService';
 import { findOrCreateCityByCEP } from './citiesService';
 import { TenantContextHelper } from '../utils/tenantContext';
-
+import { carrierInsuranceService } from './carrierInsuranceService';
 
 export interface QuoteParams {
   originCityId?: string;
@@ -293,6 +293,13 @@ export const freightQuoteService = {
     // Processar todas as tarifas em paralelo
     const calculationPromises = filteredRatesData.map(async (rateData: any) => {
       try {
+        // Gatekeeper: Controle de Seguros e Gestão de Risco
+        const validation = await carrierInsuranceService.evaluateOperationalBlock(rateData.carrier_id);
+        if (!validation.isValid) {
+           console.warn(`Carrier ${rateData.carrier_id} bloqueado: ${validation.message}`);
+           return null; // Remove transportador da cotação
+        }
+
         const tariff = rateData.rate_data.freight_rate;
         const details = rateData.rate_data.freight_rate_details || [];
         tariff.detalhes = details;

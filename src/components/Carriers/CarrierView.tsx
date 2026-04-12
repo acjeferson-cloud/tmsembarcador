@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle } from 'lucide-react';
+import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield } from 'lucide-react';
 import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
 import { CarrierVision360 } from './CarrierVision360';
+import { CarrierInsurancesTab } from './CarrierInsurancesTab';
 import { formatarCNPJ } from '../../utils/cnpj/formatter';
 
 interface CarrierViewProps {
@@ -13,7 +14,7 @@ interface CarrierViewProps {
 
 export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrier }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'vision360' | 'details' | 'freight-rates'>('vision360');
+  const [activeTab, setActiveTab] = useState<'vision360' | 'details' | 'freight-rates' | 'insurances'>('vision360');
   
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -98,6 +99,19 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               </div>
             </button>
             <button
+              onClick={() => setActiveTab('insurances')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'insurances'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Shield size={16} />
+                <span>Seguros e Apólices</span>
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab('freight-rates')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'freight-rates'
@@ -126,7 +140,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 {carrier.logotipo ? (
                   <img
                     src={carrier.logotipo}
-                    alt={`Logo ${carrier.name}`}
+                    alt={`Logo ${carrier.fantasia || carrier.razao_social}`}
                     className="w-24 h-24 object-contain border border-gray-200 dark:border-gray-700 rounded-lg"
                   />
                 ) : (
@@ -139,7 +153,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               {/* Basic Info */}
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{carrier.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{carrier.fantasia || carrier.razao_social}</h2>
                   <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium px-2.5 py-0.5 rounded">
                     {carrier.codigo}
                   </span>
@@ -375,8 +389,10 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
             </div>
           </div>
         </div>
+      ) : activeTab === 'insurances' ? (
+        <CarrierInsurancesTab carrier={carrier} />
       ) : (
-        <FreightRateTablesList carrierId={carrier.id} carrierName={carrier.name} />
+        <FreightRateTablesList carrierId={carrier.id} carrierName={carrier.fantasia || carrier.razao_social || 'Transportador'} />
       )}
     </div>
   );

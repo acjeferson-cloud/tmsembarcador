@@ -43,6 +43,8 @@ export interface Carrier {
   created_by?: string;
   updated_by?: string;
   scope?: 'ESTABLISHMENT' | 'ENVIRONMENT' | 'ORGANIZATION';
+  exige_seguro_obrigatorio?: boolean;
+  tipos_seguro_exigidos?: string[];
 }
 
 export const carriersService = {
@@ -87,6 +89,8 @@ export const carriersService = {
       tolerancia_percentual_cte: metadata.tolerancia_percentual_cte || 0,
       tolerancia_valor_fatura: metadata.tolerancia_valor_fatura || 0,
       tolerancia_percentual_fatura: metadata.tolerancia_percentual_fatura || 0,
+      exige_seguro_obrigatorio: metadata.exige_seguro_obrigatorio || false,
+      tipos_seguro_exigidos: metadata.tipos_seguro_exigidos || [],
       rating: metadata.rating || 0,
       active_shipments: metadata.active_shipments || 0,
       updated_at: carrier.updated_at,
@@ -298,6 +302,8 @@ export const carriersService = {
       if (carrier.tolerancia_percentual_cte !== undefined) metadata.tolerancia_percentual_cte = carrier.tolerancia_percentual_cte;
       if (carrier.tolerancia_valor_fatura !== undefined) metadata.tolerancia_valor_fatura = carrier.tolerancia_valor_fatura;
       if (carrier.tolerancia_percentual_fatura !== undefined) metadata.tolerancia_percentual_fatura = carrier.tolerancia_percentual_fatura;
+      if (carrier.exige_seguro_obrigatorio !== undefined) metadata.exige_seguro_obrigatorio = carrier.exige_seguro_obrigatorio;
+      if (carrier.tipos_seguro_exigidos !== undefined) metadata.tipos_seguro_exigidos = carrier.tipos_seguro_exigidos;
       if (carrier.rating !== undefined) metadata.rating = carrier.rating;
       if (carrier.active_shipments !== undefined) metadata.active_shipments = carrier.active_shipments;
 
@@ -403,6 +409,8 @@ export const carriersService = {
       if (carrier.tolerancia_percentual_cte !== undefined) metadata.tolerancia_percentual_cte = carrier.tolerancia_percentual_cte;
       if (carrier.tolerancia_valor_fatura !== undefined) metadata.tolerancia_valor_fatura = carrier.tolerancia_valor_fatura;
       if (carrier.tolerancia_percentual_fatura !== undefined) metadata.tolerancia_percentual_fatura = carrier.tolerancia_percentual_fatura;
+      if (carrier.exige_seguro_obrigatorio !== undefined) metadata.exige_seguro_obrigatorio = carrier.exige_seguro_obrigatorio;
+      if (carrier.tipos_seguro_exigidos !== undefined) metadata.tipos_seguro_exigidos = carrier.tipos_seguro_exigidos;
       if (carrier.rating !== undefined) metadata.rating = carrier.rating;
       if (carrier.active_shipments !== undefined) metadata.active_shipments = carrier.active_shipments;
 

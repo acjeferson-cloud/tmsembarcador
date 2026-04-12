@@ -54,6 +54,7 @@ const PublicPickupScheduling = lazy(() => import('./components/PublicPickupSched
 const SaasAdminConsole = lazy(() => import('./components/SaasAdmin/SaasAdminConsole').then(m => ({ default: m.SaasAdminConsole })));
 const SaasAdminApp = lazy(() => import('./components/SaasAdmin/SaasAdminApp').then(m => ({ default: m.SaasAdminApp })));
 const DeliveryTracking = lazy(() => import('./components/DeliveryTracking/DeliveryTracking').then(m => ({ default: m.DeliveryTracking })));
+const NotificationCenter = lazy(() => import('./components/Notifications/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
 import { ThemeProvider } from './context/ThemeContext';
 import { ConnectionProvider } from './context/ConnectionContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -428,6 +429,8 @@ function AppContent() {
         return <NPSDashboard key={`nps-dashboard-${refreshKey}`} />;
       case 'nps-config':
         return <NPSConfiguration key={`nps-config-${refreshKey}`} />;
+      case 'notifications':
+        return <NotificationCenter key={`notifications-${refreshKey}`} />;
       default:
         return <Dashboard key={`dashboard-${refreshKey}`} />;
       }
