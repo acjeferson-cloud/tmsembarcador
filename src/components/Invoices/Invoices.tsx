@@ -518,7 +518,7 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
             const styleMatch = firstDocHtml.match(/<style>([\s\S]*?)<\/style>/i);
             const originalStyles = styleMatch ? styleMatch[1] : '';
 
-            let fullHtml = `<html><head><style>${originalStyles}\n@page{size: A4 portrait; margin: 10mm;}</style></head><body>`;
+            let fullHtml = `<!DOCTYPE html><html><head><style>${originalStyles}\n@media print { body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; } .page-break { page-break-before: always !important; break-before: page !important; display: block !important; height: 0 !important; margin: 0 !important; padding: 0 !important; clear: both !important; } .doc-wrapper { width: 100%; max-width: 210mm; margin: 0 auto; } }</style></head><body style="background: white;">`;
             
             selectedInvoicesData.forEach((nfe, index) => {
               const doc = mapNFeToElectronicDoc(nfe);
@@ -530,8 +530,10 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
                 innerHtml = html.substring(bodyStart + 6, bodyEnd);
               }
               
-              const pageBreakStyle = index < selectedInvoicesData.length - 1 ? 'break-after: page; page-break-after: always;' : '';
-              fullHtml += `<div style="${pageBreakStyle}">${innerHtml}</div>`;
+              if (index > 0) {
+                fullHtml += '<div class="page-break"></div>';
+              }
+              fullHtml += `<div class="doc-wrapper">${innerHtml}</div>`;
             });
             fullHtml += '</body></html>';
             

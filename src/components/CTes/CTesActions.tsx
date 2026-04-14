@@ -16,16 +16,6 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
         </span>
         
         <div className="flex-1"></div>
-        
-        <button
-          onClick={() => onAction('print')}
-          disabled={selectedCount === 0 || isLoading}
-          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
-        >
-          <Printer size={16} />
-          <span>Imprimir DACTE</span>
-        </button>
-        
         <button
           onClick={() => onAction('recalculate')}
           disabled={selectedCount === 0 || isLoading}
@@ -61,15 +51,6 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
           <ArrowClockwise size={16} />
           <span>Estornar CT-e</span>
         </button>
-        
-        <button
-          onClick={() => onAction('download')}
-          disabled={selectedCount === 0 || isLoading}
-          className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
-        >
-          <Download size={16} />
-          <span>Download XMLs</span>
-        </button>
 
         <button
           onClick={() => onAction('reportDivergence')}
@@ -78,6 +59,24 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
         >
           <FileText size={16} />
           <span>Reportar Divergência</span>
+        </button>
+        
+        <button
+          onClick={() => onAction('print')}
+          disabled={selectedCount === 0 || isLoading}
+          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+        >
+          <Printer size={16} />
+          <span>Imprimir DACTE</span>
+        </button>
+        
+        <button
+          onClick={() => onAction('download')}
+          disabled={selectedCount === 0 || isLoading}
+          className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+        >
+          <Download size={16} />
+          <span>Download XMLs</span>
         </button>
       </div>
     </div>

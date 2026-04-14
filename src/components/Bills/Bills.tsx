@@ -12,6 +12,7 @@ import { BillCTesModal } from './BillCTesModal';
 import { BillRejectionModal } from './BillRejectionModal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { billsService } from '../../services/billsService';
+import { billPdfService } from '../../services/billPdfService';
 import { establishmentsService } from '../../services/establishmentsService';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
@@ -37,7 +38,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const [selectedBills, setSelectedBills] = useState<(string | number)[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDebugModal, setShowDebugModal] = useState(false);
-  const [currentEstablishment, setCurrentEstablishment] = useState<{id: string, name: string} | null>(null);
+  const [currentEstablishment, setCurrentEstablishment] = useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showCTesModal, setShowCTesModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
@@ -71,8 +72,16 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         if (establishments.length > 0) {
           const first = establishments[0];
           setCurrentEstablishment({
+            ...first,
             id: first.id,
-            name: `${first.codigo} - ${first.razao_social}`
+            name: `${first.codigo} - ${first.razao_social}`,
+            razaoSocial: first.razao_social,
+            fantasia: first.nome_fantasia || first.fantasia,
+            endereco: first.endereco,
+            cidade: first.cidade,
+            estado: first.estado || first.uf,
+            cnpj: first.cnpj,
+            bairro: first.bairro
           });
         }
       } catch (error) {
@@ -206,6 +215,29 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
     setIsLoading(true);
     
     try {
+      if (action === 'print' || action === 'download') {
+         const selectedBillsData = bills.filter(b => selectedBills.includes(b.id));
+         
+         if (action === 'print') {
+            const url = await billPdfService.generateBillPDF(selectedBillsData, 'print', { 
+                establishment: currentEstablishment 
+            });
+            if (url) {
+                window.open(url, '_blank');
+                URL.revokeObjectURL(url);
+            }
+            setToast({ message: `Relatório de Faturas gerado com sucesso.`, type: 'success' });
+         } else {
+            await billPdfService.generateBillPDF(selectedBillsData, 'download', { 
+                establishment: currentEstablishment 
+            });
+            setToast({ message: `Download do relatório iniciado.`, type: 'success' });
+         }
+         setIsLoading(false);
+         setSelectedBills([]);
+         return;
+      }
+
       let newStatus = '';
       
       switch (action) {
@@ -229,7 +261,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         setToast({ message: `Ação '${action}' executada em ${selectedBills.length} fatura(s).`, type: 'success' });
         loadBills();
       } else {
-         setToast({ message: `Ação suportável apenas visualmente nesta versão simulada.`, type: 'info' });
+         setToast({ message: `Ação não suportada nesta versão simulada.`, type: 'info' });
       }
     } catch (err: any) {
         setToast({ message: `Falha ao processar ações em lote: ${err.message}`, type: 'error' });

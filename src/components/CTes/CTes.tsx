@@ -397,63 +397,58 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         case 'print':
           (async () => {
             try {
-              if (selectedCTes.length === 1) {
-                const firstCTeId = selectedCTes[0];
-                const fullCTe = await ctesCompleteService.getById(firstCTeId.toString());
-
-                if (fullCTe) {
-                  const electronicDoc = convertCTeToElectronicDocument(fullCTe);
-                  setSelectedCTeForDacte(electronicDoc);
-                  setShowDacteModal(true);
-                } else {
-                  setToast({ message: 'Erro ao carregar dados do CT-e para impressão.', type: 'error' });
-                }
-                setIsLoading(false);
-              } else {
-                const ctesData = [];
-                for (const cid of selectedCTes) {
-                   const fcte = await ctesCompleteService.getById(cid.toString());
-                   if (fcte) ctesData.push(fcte);
-                }
-                
-                if (ctesData.length > 0) {
-                    const printWindow = window.open('', '_blank');
-                    if (printWindow) {
-                      const firstDocHtml = getDacteHtml(convertCTeToElectronicDocument(ctesData[0]));
-                      let originalStyles = '';
-                      const styleStart = firstDocHtml.indexOf('<style>');
-                      const styleEnd = firstDocHtml.indexOf('</style>');
-                      if (styleStart !== -1 && styleEnd !== -1) {
-                        originalStyles = firstDocHtml.substring(styleStart + 7, styleEnd);
-                      }
-
-                      let fullHtml = `<html><head><style>${originalStyles}\\n@page{size: A4 portrait; margin: 10mm;}</style></head><body>`;
-                      
-                      ctesData.forEach((cte, index) => {
-                        const doc = convertCTeToElectronicDocument(cte);
-                        const html = getDacteHtml(doc);
-                        let innerHtml = html;
-                        const bodyStart = html.indexOf('<body>');
-                        const bodyEnd = html.indexOf('</body>');
-                        if (bodyStart !== -1 && bodyEnd !== -1) {
-                          innerHtml = html.substring(bodyStart + 6, bodyEnd);
-                        }
-                        
-                        const pageBreakStyle = index < ctesData.length - 1 ? 'break-after: page; page-break-after: always;' : '';
-                        fullHtml += `<div style="${pageBreakStyle}">${innerHtml}</div>`;
-                      });
-                      fullHtml += '</body></html>';
-                      
-                      printWindow.document.write(fullHtml);
-                      printWindow.document.close();
-                      setTimeout(() => { printWindow.print(); }, 500);
-                      setToast({ message: `DACTE gerado para ${selectedCTes.length} CT-e(s).`, type: 'success' });
-                    }
-                }
-                setIsLoading(false);
+              const ctesData = [];
+              for (const cid of selectedCTes) {
+                 const fcte = await ctesCompleteService.getById(cid.toString());
+                 if (fcte) ctesData.push(fcte);
               }
+              
+              if (ctesData.length > 0) {
+                  const printWindow = window.open('', '_blank');
+                  if (printWindow) {
+                    let fileName = 'DACTEs';
+                    if (ctesData.length === 1 && ctesData[0].number) {
+                        fileName = `DACTE - ${ctesData[0].number}`;
+                    }
+                    printWindow.document.title = fileName;
+
+                    const firstDocHtml = getDacteHtml(convertCTeToElectronicDocument(ctesData[0]));
+                    let originalStyles = '';
+                    const styleStart = firstDocHtml.indexOf('<style>');
+                    const styleEnd = firstDocHtml.indexOf('</style>');
+                    if (styleStart !== -1 && styleEnd !== -1) {
+                      originalStyles = firstDocHtml.substring(styleStart + 7, styleEnd);
+                    }
+
+                    let fullHtml = `<!DOCTYPE html><html><head><title>${fileName}</title><style>${originalStyles}\n@media print { body { margin: 0; padding: 0; background: white; -webkit-print-color-adjust: exact; } .page-break { page-break-before: always !important; break-before: page !important; display: block !important; height: 0 !important; margin: 0 !important; padding: 0 !important; clear: both !important; } .doc-wrapper { width: 100%; max-width: 210mm; margin: 0 auto; } }</style></head><body style="background: white;">`;
+                    
+                    ctesData.forEach((cte, index) => {
+                      const doc = convertCTeToElectronicDocument(cte);
+                      const html = getDacteHtml(doc);
+                      let innerHtml = html;
+                      const bodyStart = html.indexOf('<body>');
+                      const bodyEnd = html.indexOf('</body>');
+                      if (bodyStart !== -1 && bodyEnd !== -1) {
+                        innerHtml = html.substring(bodyStart + 6, bodyEnd);
+                      }
+                      
+                      if (index > 0) {
+                        fullHtml += '<div class="page-break"></div>';
+                      }
+                      fullHtml += `<div class="doc-wrapper">${innerHtml}</div>`;
+                    });
+                    fullHtml += '</body></html>';
+                    
+                    printWindow.document.write(fullHtml);
+                    printWindow.document.close();
+                    
+                    setTimeout(() => { if(printWindow.document) printWindow.document.title = fileName; }, 100);
+                    setTimeout(() => { printWindow.print(); }, 500);
+                    setToast({ message: `DACTE gerado para ${selectedCTes.length} CT-e(s).`, type: 'success' });
+                  }
+              }
+              setIsLoading(false);
             } catch (error) {
-// null
               setToast({ message: 'Erro ao gerar DACTE.', type: 'error' });
               setIsLoading(false);
             }
@@ -835,7 +830,13 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     setTimeout(() => {
       switch (action) {
         case 'print':
-          setToast({ message: `DACTE gerado para o CT-e ${cte.numero}.`, type: 'success' });
+          (async () => {
+             // Handle single-action print essentially like a bulk of 1
+             const prevSelected = [...selectedCTes];
+             setSelectedCTes([cteId.toString()]);
+             setTimeout(() => handleBulkAction('print'), 50);
+             setTimeout(() => setSelectedCTes(prevSelected), 1000);
+          })();
           break;
         case 'recalculate':
           (async () => {

@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, MapPin, Package, DollarSign, RefreshCw, Eye, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, Package, DollarSign, RefreshCw, Eye, Users, ChevronLeft, ChevronRight, Printer, Download } from 'lucide-react';
 import { FreightQuoteHistory, QuoteResult } from '../../services/freightQuoteService';
 import { formatCurrency } from '../../utils/formatters';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
+import { quotePdfService } from '../../services/quotePdfService';
 
 type ExtendedHistory = FreightQuoteHistory & {
   quote_number?: number;
@@ -20,7 +22,10 @@ interface QuoteHistoryTableProps {
 
 export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, onRefresh }) => {
   const { t } = useTranslation();
+  const { user, currentEstablishment } = useAuth();
   const [selectedQuote, setSelectedQuote] = useState<FreightQuoteHistory | null>(null);
+  const [selectedQuotes, setSelectedQuotes] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -42,7 +47,46 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
   // Reset to page 1 when history changes
   React.useEffect(() => {
     setCurrentPage(1);
+    setSelectedQuotes([]);
   }, [history]);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedQuotes(paginatedHistory.map(q => q.id));
+    } else {
+      setSelectedQuotes([]);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedQuotes(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkAction = async (action: 'print' | 'download') => {
+    if (selectedQuotes.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const selectedData = history.filter(q => selectedQuotes.includes(q.id));
+      if (action === 'download') {
+        await quotePdfService.generateQuotePDF(selectedData, 'download', { user, establishment: currentEstablishment });
+      } else {
+        const pdfUrl = await quotePdfService.generateQuotePDF(selectedData, 'print', { user, establishment: currentEstablishment });
+        const printWindow = window.open(pdfUrl, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error generating quote PDF", error);
+      alert('Erro ao gerar documento de cotação.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -51,19 +95,49 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('freightQuote.history.title')}</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('freightQuote.history.subtitle', { count: sortedHistory.length })}</p>
         </div>
-        <button
-          onClick={onRefresh}
-          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4 inline mr-2" />
-          {t('freightQuote.history.refresh')}
-        </button>
+        <div className="flex items-center gap-3">
+          {selectedQuotes.length > 0 && (
+            <>
+              <button
+                onClick={() => handleBulkAction('print')}
+                disabled={isProcessing}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
+              >
+                <Printer size={16} />
+                <span>{isProcessing ? t('freightQuote.history.processing') || 'Processando...' : t('orders.actions.print')}</span>
+              </button>
+              <button
+                onClick={() => handleBulkAction('download')}
+                disabled={isProcessing}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
+              >
+                <Download size={16} />
+                <span>{isProcessing ? t('freightQuote.history.processing') || 'Processando...' : t('orders.actions.download')}</span>
+              </button>
+            </>
+          )}
+          <button
+            onClick={onRefresh}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4 inline mr-2" />
+            {t('freightQuote.history.refresh')}
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-10">
+                <input
+                  type="checkbox"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={paginatedHistory.length > 0 && selectedQuotes.length === paginatedHistory.length}
+                  onChange={handleSelectAll}
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t('freightQuote.history.columns.number')}
               </th>
@@ -105,7 +179,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
             {paginatedHistory.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-6 py-12 text-center">
+                <td colSpan={13} className="px-6 py-12 text-center">
                   <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">{t('freightQuote.history.emptyState')}</p>
                 </td>
@@ -113,6 +187,14 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
             ) : (
               paginatedHistory.map((quote) => (
                 <tr key={quote.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={selectedQuotes.includes(quote.id)}
+                      onChange={() => handleSelectRow(quote.id)}
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
                       {(quote as ExtendedHistory).quote_number || '-'}

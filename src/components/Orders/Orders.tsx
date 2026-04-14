@@ -37,7 +37,7 @@ interface Order {
 
 
 export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
-  const { user } = useAuth();
+  const { user, currentEstablishment } = useAuth();
   const { t } = useTranslation();
   
   useActivityLogger('Pedidos', 'Acesso', 'Acessou a gestão de Pedidos');
@@ -376,12 +376,23 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
             }
 
             if (action === 'export-pdf' || action === 'download') {
-                orderPdfService.generateOrderPDF(validOrders as any[], 'download');
+                await orderPdfService.generateOrderPDF(validOrders as any[], 'download', { user, establishment: currentEstablishment });
             } else {
-                const pdfUrl = orderPdfService.generateOrderPDF(validOrders as any[], 'print');
+                const pdfUrl = await orderPdfService.generateOrderPDF(validOrders as any[], 'print', { user, establishment: currentEstablishment });
                 const printWindow = window.open(pdfUrl, '_blank');
                 if (printWindow) {
+                    let fileName = 'Pedidos';
+                    if (validOrders.length === 1) {
+                        const order = validOrders[0] as any;
+                        const num = order.order_number || order.numero || 'Sem_Numero';
+                        fileName = `Pedido - ${num}`;
+                    }
+                    
+                    // Força o título da janela para sugerir o nome no Chrome/Edge
+                    printWindow.document.title = fileName;
+                    
                     printWindow.onload = () => {
+                        setTimeout(() => { if(printWindow.document) printWindow.document.title = fileName; }, 100);
                         printWindow.print();
                     };
                 }
@@ -511,14 +522,14 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
       switch (action) {
         case 'print':
-          const printUrl = orderPdfService.generateOrderPDF([order] as any, 'print');
+          const printUrl = await orderPdfService.generateOrderPDF([order] as any, 'print', { user, establishment: currentEstablishment });
           const printWindow = window.open(printUrl, '_blank');
           if (printWindow) {
             printWindow.onload = () => printWindow.print();
           }
           break;
         case 'download':
-          orderPdfService.generateOrderPDF([order] as any, 'download');
+          await orderPdfService.generateOrderPDF([order] as any, 'download', { user, establishment: currentEstablishment });
           break;
         case 'delete':
           setConfirmDialog({

@@ -54,16 +54,7 @@ export const PickupsActions: React.FC<PickupsActionsProps> = ({ selectedCount, o
           className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
         >
           <Download size={16} />
-          <span>{t('pickups.actions.export')}</span>
-        </button>
-
-        <button
-          onClick={() => onAction('cancelar')}
-          disabled={selectedCount === 0 || isLoading}
-          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
-        >
-          <XCircle size={16} />
-          <span>{t('pickups.actions.cancel')}</span>
+          <span>Download</span>
         </button>
       </div>
     </div>

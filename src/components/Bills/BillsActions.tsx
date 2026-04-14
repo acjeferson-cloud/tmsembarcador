@@ -16,16 +16,6 @@ export const BillsActions: React.FC<BillsActionsProps> = ({ selectedCount, onAct
         </span>
         
         <div className="flex-1"></div>
-        
-        <button
-          onClick={() => onAction('print')}
-          disabled={selectedCount === 0 || isLoading}
-          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
-        >
-          <Printer size={16} />
-          <span>Imprimir DACTE</span>
-        </button>
-        
         <button
           onClick={() => onAction('recalculate')}
           disabled={selectedCount === 0 || isLoading}
@@ -63,12 +53,12 @@ export const BillsActions: React.FC<BillsActionsProps> = ({ selectedCount, onAct
         </button>
 
         <button
-          onClick={() => onAction('cancel')}
+          onClick={() => onAction('print')}
           disabled={selectedCount === 0 || isLoading}
-          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
         >
-          <XCircle size={16} />
-          <span>Cancelar Fatura</span>
+          <Printer size={16} />
+          <span>Imprimir</span>
         </button>
         
         <button
@@ -77,7 +67,7 @@ export const BillsActions: React.FC<BillsActionsProps> = ({ selectedCount, onAct
           className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
         >
           <Download size={16} />
-          <span>Download XMLs</span>
+          <span>Download</span>
         </button>
       </div>
     </div>

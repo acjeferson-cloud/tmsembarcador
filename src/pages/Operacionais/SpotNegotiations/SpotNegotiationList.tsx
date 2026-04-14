@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
-import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt, Search, Filter } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt, Search, Filter, Printer, Download } from 'lucide-react';
 import Breadcrumbs from '../../../components/Layout/Breadcrumbs';
 import { RelationshipMapModal } from '../../../components/RelationshipMap';
 import { Toast, ToastType } from '../../../components/common/Toast';
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
+import { useAuth } from '../../../hooks/useAuth';
+import { spotPdfService } from '../../../services/spotPdfService';
 
 export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: string) => void; onView?: (id: string) => void }> = ({ onNew, onEdit, onView }) => {
   const { t } = useTranslation();
+  const { user, currentEstablishment } = useAuth();
   const [data, setData] = useState<SpotNegotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSpots, setSelectedSpots] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Search and Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,6 +146,53 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
     return matchesSearch && matchesStatus;
   });
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedSpots(filteredData.map(q => q.id!));
+    } else {
+      setSelectedSpots([]);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedSpots(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkAction = async (action: 'print' | 'download') => {
+    if (selectedSpots.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const selectedData = data.filter(q => selectedSpots.includes(q.id!));
+      if (action === 'download') {
+        await spotPdfService.generateSpotPDF(selectedData, 'download', { user, establishment: currentEstablishment });
+      } else {
+        const pdfUrl = await spotPdfService.generateSpotPDF(selectedData, 'print', { user, establishment: currentEstablishment });
+        const printWindow = window.open(pdfUrl, '_blank');
+        if (printWindow) {
+          let fileName = 'Cotações Manuais (Spot)';
+          if (selectedData.length === 1 && selectedData[0].code) {
+              fileName = `Cotação Manual (SPOT) - ${selectedData[0].code}`;
+          }
+          // Força o título da janela para o navegador sugerir no "Salvar como PDF"
+          printWindow.document.title = fileName;
+          
+          printWindow.onload = () => {
+            // Tenta reatribuir o título após a quebra de contexto do PDF Viewer
+            setTimeout(() => { if(printWindow.document) printWindow.document.title = fileName; }, 100);
+            printWindow.print();
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error generating spot PDF", error);
+      setToast({ message: 'Erro ao gerar documento de cotação.', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <Breadcrumbs items={[{ label: 'Cotações Spot', current: true }]} />
@@ -166,13 +218,15 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cotações Manuais (Spot)</h1>
            <p className="text-sm text-gray-600 dark:text-gray-400">Hub de negociações avulsas para auditoria de CT-es e Faturas fora da tabela.</p>
         </div>
-        <button 
-           onClick={onNew}
-           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus size={20}/>
-          <span>Nova Negociação Spot</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+             onClick={onNew}
+             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus size={20}/>
+            <span>Nova Negociação Spot</span>
+          </button>
+        </div>
       </div>
 
       {/* Dashboard Cards */}
@@ -275,6 +329,35 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
         )}
       </div>
 
+      {/* Bulk Actions */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {selectedSpots.length} {selectedSpots.length === 1 ? 'selecionado' : 'selecionados'}
+          </span>
+          
+          <div className="flex-1"></div>
+          
+          <button
+            onClick={() => handleBulkAction('print')}
+            disabled={selectedSpots.length === 0 || isProcessing}
+            className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm shadow-sm"
+          >
+            <Printer size={16} />
+            <span>{isProcessing ? 'Processando...' : 'Imprimir'}</span>
+          </button>
+          
+          <button
+            onClick={() => handleBulkAction('download')}
+            disabled={selectedSpots.length === 0 || isProcessing}
+            className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm shadow-sm"
+          >
+            <Download size={16} />
+            <span>{isProcessing ? 'Processando...' : 'Download'}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Grid */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-visible" ref={menuRef}>
         {loading ? (
@@ -292,6 +375,14 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
              <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-6 py-3 w-10 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={filteredData.length > 0 && selectedSpots.length === filteredData.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
                   <th className="px-6 py-3 w-16 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Ações</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Nº Cotação</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
@@ -304,6 +395,14 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredData.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/20 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedSpots.includes(item.id!)}
+                        onChange={() => handleSelectRow(item.id!)}
+                      />
+                    </td>
                     <td className="px-3 py-4 whitespace-nowrap">
                        <div className="flex items-center space-x-2">
                           {/* Consulta */}

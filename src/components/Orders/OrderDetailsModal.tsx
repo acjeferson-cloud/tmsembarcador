@@ -4,6 +4,7 @@ import { X, FileText, Download, Printer, Calendar, Truck, DollarSign, CheckCircl
 import { QuoteResultsTable } from '../FreightQuote/QuoteResultsTable';
 import { orderPdfService } from '../../services/orderPdfService';
 import { ordersService } from '../../services/ordersService';
+import { useAuth } from '../../hooks/useAuth';
 import { UnifiedTrackingTimeline } from '../Shared/UnifiedTrackingTimeline';
 
 interface Order {
@@ -36,6 +37,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order
 }) => {
   const { t } = useTranslation();
+  const { user, currentEstablishment } = useAuth();
   const [activeTab, setActiveTab] = useState<'details' | 'items' | 'freight'>('details');
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -105,9 +107,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
       if (!fullOrderData) throw new Error('Falha ao obter dados completos do pedido.');
 
       if (action === 'download') {
-        orderPdfService.generateOrderPDF([fullOrderData] as any[], 'download');
+        await orderPdfService.generateOrderPDF([fullOrderData] as any[], 'download', { user, establishment: currentEstablishment });
       } else {
-        const pdfUrl = orderPdfService.generateOrderPDF([fullOrderData] as any[], 'print');
+        const pdfUrl = await orderPdfService.generateOrderPDF([fullOrderData] as any[], 'print', { user, establishment: currentEstablishment });
         const printWindow = window.open(pdfUrl, '_blank');
         if (printWindow) {
           printWindow.onload = () => {

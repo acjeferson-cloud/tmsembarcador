@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
-import { Order } from './ordersService';
 import { formatCurrency, formatPhone } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
+import { billsService } from './billsService';
 
 // Função para formatar CNPJ/CPF com a máscara correta
 const formatCnpjCpf = (value: string | undefined): string => {
@@ -38,10 +38,19 @@ const formatDateTime = (dateString: string | undefined) => {
   }
 };
 
+interface CTeItem {
+    cte_number: string;
+    cte_series: string;
+    issue_date?: string;
+    total_value?: number;
+    weight?: number;
+    status?: string;
+}
+
 // Service principal
-export const orderPdfService = {
-  generateOrderPDF: async (orders: Order[], action: 'print' | 'download' = 'download', context?: { user?: any; establishment?: any; filters?: any }): Promise<string> => {
-    // Cria instância do jsPDF em Portrait (Exigência do SKILL para pedidos)
+export const billPdfService = {
+  generateBillPDF: async (bills: any[], action: 'print' | 'download' = 'download', context?: { user?: any; establishment?: any; filters?: any }): Promise<string> => {
+    // Cria instância do jsPDF em Portrait (Exigência do SKILL para pedidos/faturas relizados em 1 por página)
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -124,10 +133,12 @@ export const orderPdfService = {
     const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
 
-    const drawHeader = (order: any) => {
+    let totalPages = 0;
+
+    const drawHeader = (bill: any) => {
       let currentX = margin;
       
-      // Draw Logo Se existir (Obrigatório segundo SKILL)
+      // Draw Logo Se existir
       if (logoBase64) {
         try {
           pdf.addImage(logoBase64, margin, margin, 40, 15);
@@ -148,12 +159,12 @@ export const orderPdfService = {
       // Top Right: Title
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text("PEDIDO", pageWidth - margin, margin + 10, { align: 'right' });
+      pdf.text("FATURA", pageWidth - margin, margin + 10, { align: 'right' });
       
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`Nº: ${order.order_number || order.numero || 'S/N'}`, pageWidth - margin, margin + 15, { align: 'right' });
-      pdf.text(`Emitido em: ${formatDate(order.issue_date || order.dataEmissao)}`, pageWidth - margin, margin + 19, { align: 'right' });
+      pdf.text(`Nº: ${bill.numero || 'S/N'}`, pageWidth - margin, margin + 15, { align: 'right' });
+      pdf.text(`Emitida em: ${formatDate(bill.dataEmissao)}`, pageWidth - margin, margin + 19, { align: 'right' });
       
       // Line separator
       pdf.setDrawColor(200, 200, 200);
@@ -162,7 +173,6 @@ export const orderPdfService = {
       return margin + 28;
     };
 
-    // Helper p/ Caixa
     const drawSectionBox = (title: string, startY: number, height: number, filled = true) => {
       if (filled) {
         pdf.setFillColor(243, 244, 246);
@@ -178,99 +188,61 @@ export const orderPdfService = {
       return startY + 7;
     };
 
-    const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number, align: 'left' | 'center' | 'right' = 'left') => {
-      pdf.setFontSize(fontSize);
-      const textLines = pdf.splitTextToSize(text, maxWidth);
-      
-      if (align === 'center') {
-        textLines.forEach((line: string, index: number) => {
-          pdf.text(line, x, y + (index * (fontSize * 0.352)), { align: 'center' });
-        });
-      } else if (align === 'right') {
-        textLines.forEach((line: string, index: number) => {
-          pdf.text(line, x, y + (index * (fontSize * 0.352)), { align: 'right' });
-        });
-      } else {
-        textLines.forEach((line: string, index: number) => {
-          pdf.text(line, x, y + (index * (fontSize * 0.352)));
-        });
-      }
-      
-      return y + (textLines.length * (fontSize * 0.352));
-    };
-
-    let totalPages = 1;
-
-    orders.forEach((order: any, index) => {
-      // Quebra de página obrigatória por pedido no SKILL
+    // Iterate over bills
+    for (const [index, bill] of bills.entries()) {
       if (index > 0) {
-        pdf.addPage();
-        totalPages++;
+          pdf.addPage();
       }
-
-      let yPos = drawHeader(order);
+      totalPages++;
+      let yPos = drawHeader(bill);
 
       // -- INFORMAÇÕES INICIAIS --
-      let contentY = drawSectionBox('INFORMAÇÕES INICIAIS', yPos, 20);
+      let contentY = drawSectionBox('INFORMAÇÕES INICIAIS', yPos, 16);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       
-      pdf.text(`Emissão: ${formatDate(order.issue_date || order.dataEmissao)}`, margin + 5, contentY + 6);
-      pdf.text(`Prev. Entrega: ${formatDate(order.expected_delivery || order.dataPrevisaoEntrega)}`, margin + 45, contentY + 6);
-      pdf.text(`Valor Merc.: ${formatCurrency(Number(order.order_value || order.valorPedido || 0))}`, margin + 95, contentY + 6);
-      pdf.text(`Rastreio: ${order.tracking_code || order.chaveAcesso || 'Não informado'}`, margin + 140, contentY + 6);
-
-      yPos += 25;
-
-      // -- DESTINO E CLIENTE --
-      contentY = drawSectionBox('DESTINO (CLIENTE / RECEBEDOR)', yPos, 40);
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`${order.customer_name || order.cliente || 'Não informado'}`, margin + 5, contentY + 6);
+      pdf.text(`Emissão: ${formatDate(bill.dataEmissao)}`, margin + 5, contentY + 6);
+      pdf.text(`Vencimento: ${formatDate(bill.dataVencimento)}`, margin + 50, contentY + 6);
+      pdf.text(`Status: ${bill.status || '-'}`, margin + 100, contentY + 6);
+      pdf.text(`Valor da Fatura: ${formatCurrency(Number(bill.valorCTes || 0))}`, margin + 150, contentY + 6);
       
-      pdf.setFont('helvetica', 'normal');
-      let subY = contentY + 12;
-      
-      if (order.recipient_phone) {
-        pdf.text(`Telefone: ${formatPhone(order.recipient_phone)}`, margin + 5, subY);
-        subY += 6;
-      }
-      
-      let fullAddress = `${order.destination_street || ''}`;
-      if (order.destination_number) fullAddress += `, ${order.destination_number}`;
-      if (order.destination_complement) fullAddress += ` - ${order.destination_complement}`;
-      
-      if (fullAddress.trim() === ',' || !fullAddress.trim()) fullAddress = 'Não informado';
-
-      pdf.text(`Endereço: ${fullAddress}`, margin + 5, subY);
-      subY += 6;
-      pdf.text(`Bairro: ${order.destination_neighborhood || ''}`, margin + 5, subY);
-      subY += 6;
-      const cid = order.destination_city || order.cidadeDestino || '';
-      const uf = order.destination_state || order.ufDestino || '';
-      pdf.text(`Cidade/UF: ${cid} - ${uf}  |  CEP: ${formatCnpjCpf(order.destination_zip_code || '')}`, margin + 5, subY);
-      
-      yPos += 45;
+      yPos += 20;
 
       // -- TRANSPORTADORA APLICADA --
-      const transpName = order.carrier_name || order.transportador;
+      const transpName = bill.transportador;
       if (transpName) {
-        contentY = drawSectionBox('TRANSPORTADORA APLICADA', yPos, 20);
+        contentY = drawSectionBox('TRANSPORTADORA ASSOCIADA', yPos, 20);
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Empresa: ${transpName}`, margin + 5, contentY + 6);
-        pdf.text(`Frete Pactuado: ${formatCurrency(Number(order.freight_value || order.valorFrete || 0))}`, margin + 135, contentY + 6);
+        pdf.text(`Custo TMS Auditado: ${formatCurrency(Number(bill.valorCusto || 0))}`, margin + 135, contentY + 6);
         
         yPos += 25;
       }
 
-      // -- ITENS DO PEDIDO (PRODUTOS) E TOTALIZADORES --
-      // A tabela precisa ser minimalista com "zebra stripes"
-      const maxTableHeight = pageHeight - yPos - 60; // Leave space for totals and footer
-      let tableHeight = 20; // Base height just for headers
+      // Fetch Items Async (Linked CTes)
+      let items: CTeItem[] = [];
+      try {
+        const ctesData = await billsService.getLinkedCtes(bill.id);
+        items = ctesData.map((ct: any) => ({
+             cte_number: ct.cte_number || ct.ctes_complete?.number,
+             cte_series: ct.cte_series || ct.ctes_complete?.series,
+             issue_date: ct.ctes_complete?.issue_date,
+             total_value: ct.ctes_complete?.total_value,
+             weight: ct.ctes_complete?.weight_kg || 0,
+             status: ct.ctes_complete?.status || 'N/A'
+        }));
+      } catch (err) {
+        console.error('Error fetching bill ctes for PDF', err);
+      }
+
+      if (items.length > 0) {
+         // Sort by number as standard practice
+         items = items.sort((a,b) => (Number(a.cte_number) || 0) - (Number(b.cte_number) || 0));
+      }
+
       const rowHeight = 6;
-      
-      let items = order.items || [];
+      let tableHeight = 20; 
       if (items.length > 0) {
           tableHeight = 8 + (items.length * rowHeight) + 10;
       }
@@ -279,29 +251,24 @@ export const orderPdfService = {
       pdf.rect(margin, yPos, contentWidth, 7, 'F');
       pdf.setDrawColor(200, 200, 200);
       
-      // Header Table
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('ITENS (CUBAGEM E PESAGEM)', margin + 2, yPos + 5);
+      pdf.text('CONTEÚDO DA FATURA (CT-es VINCULADOS)', margin + 2, yPos + 5);
       
       pdf.setFontSize(8);
       let tY = yPos + 12;
       
-      const colCod = margin + 2;
-      const colDesc = margin + 25;
-      const colQtd = margin + 100;
-      const colPes = margin + 115;
-      const colCub = margin + 135;
-      const colUni = margin + 155;
-      const colTot = margin + 175;
+      const colNum = margin + 2;
+      const colSer = margin + 35;
+      const colEmi = margin + 65;
+      const colSit = margin + 115;
+      const colVal = margin + 165;
 
-      pdf.text('Cód.', colCod, tY);
-      pdf.text('Descrição Produto', colDesc, tY);
-      pdf.text('Qtd.', colQtd, tY);
-      pdf.text('Peso (KG)', colPes, tY); // "KG" as per skill
-      pdf.text('M³', colCub, tY);
-      pdf.text('V. Unit.', colUni, tY);
-      pdf.text('V. Total', colTot, tY);
+      pdf.text('Número', colNum, tY);
+      pdf.text('Série', colSer, tY);
+      pdf.text('Emissão', colEmi, tY);
+      pdf.text('Situação', colSit, tY);
+      pdf.text('V. Total', colVal, tY);
       
       tY += 2;
       pdf.line(margin, tY, margin + contentWidth, tY);
@@ -310,83 +277,81 @@ export const orderPdfService = {
       pdf.setFont('helvetica', 'normal');
       
       if (items.length > 0) {
-        items.forEach((item: any, idx: number) => {
+        for (const [idx, item] of items.entries()) {
+          // Check page bounds
+          if (tY > pageHeight - 40) {
+             pdf.rect(margin, yPos, contentWidth, (tY - yPos)); // close box
+             pdf.addPage();
+             totalPages++;
+             yPos = 20; 
+             tY = yPos + 12;
+             
+              pdf.setFillColor(243, 244, 246);
+              pdf.rect(margin, yPos, contentWidth, 7, 'F');
+              pdf.setDrawColor(200, 200, 200);
+              pdf.setFontSize(10);
+              pdf.setFont('helvetica', 'bold');
+              pdf.text('CONTEÚDO DA FATURA (CONTINUAÇÃO)', margin + 2, yPos + 5);
+              pdf.setFontSize(8);
+              
+              pdf.text('Número', colNum, tY);
+              pdf.text('Série', colSer, tY);
+              pdf.text('Emissão', colEmi, tY);
+              pdf.text('Situação', colSit, tY);
+              pdf.text('V. Total', colVal, tY);
+              
+              tY += 2;
+              pdf.line(margin, tY, margin + contentWidth, tY);
+              tY += 4;
+          }
+
           // Zebra Stripes
           if (idx % 2 === 0) {
              pdf.setFillColor(248, 249, 250);
              pdf.rect(margin, tY - 3, contentWidth, 6, 'F');
           }
 
-          pdf.text(item.product_code || '-', colCod, tY);
-          
-          let desc = item.product_description || '-';
-          if (desc.length > 45) desc = desc.substring(0, 42) + '...';
-          pdf.text(desc, colDesc, tY);
-          
-          pdf.text(String(item.quantity) || '1', colQtd, tY);
-          pdf.text(String(item.weight || '0'), colPes, tY);
-          pdf.text(String(item.cubic_meters || '0'), colCub, tY);
-          pdf.text(formatCurrency(Number(item.unit_price || 0)), colUni, tY);
-          pdf.text(formatCurrency(Number(item.total_price || 0)), colTot, tY);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(String(item.cte_number || '-'), colNum, tY);
+          pdf.text(String(item.cte_series || '0'), colSer, tY);
+          pdf.text(formatDate(item.issue_date), colEmi, tY);
+          pdf.text(item.status || '-', colSit, tY);
+          pdf.text(formatCurrency(Number(item.total_value || 0)), colVal, tY);
           
           tY += rowHeight;
-        });
+        }
       } else {
-        pdf.text('Nenhum item discriminado no pedido.', margin + 5, tY);
+        pdf.text('Nenhum CT-e vinculado à Fatura.', margin + 5, tY);
         tY += rowHeight;
       }
       
-      // Totalizadores do Pedido!
+      // Totalizadores !!
       pdf.line(margin, tY - 2, margin + contentWidth, tY - 2);
       pdf.setFillColor(240, 240, 240);
       pdf.rect(margin, tY - 2, contentWidth, 10, 'F');
       
       tY += 2;
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Totalizações da Carga:', margin + 5, tY);
+      pdf.text('Totalizações da Fatura:', margin + 5, tY);
       
       pdf.setFont('helvetica', 'normal');
       
-      // Linha 1 de Totais
-      const totPes = items.reduce((acc: number, item: any) => acc + (Number(item.weight) || 0), 0) || order.weight || 0;
-      pdf.text(`Peso (KG): ${Number(totPes).toFixed(2)}`, margin + 50, tY);
+      const totVal = items.reduce((acc: number, item: any) => acc + (Number(item.total_value) || 0), 0) || bill.valorCTes || 0;
+      pdf.text(`R$ Total CT-es: ${formatCurrency(Number(totVal))}`, margin + 50, tY);
       
-      const totVal = items.reduce((acc: number, item: any) => acc + (Number(item.total_price) || 0), 0) || order.order_value || order.valorPedido || 0;
-      pdf.text(`Valor Total: ${formatCurrency(Number(totVal))}`, margin + 120, tY);
+      const totQtd = items.length || bill.cteCount || 0;
+      pdf.text(`Ctes Auditados: ${totQtd}`, margin + 120, tY);
       
       tY += 4.5;
       
-      // Linha 2 de Totais
-      const totQtd = items.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0) || order.volume_qty || 1;
-      pdf.text(`Volumes: ${totQtd}`, margin + 50, tY);
-      
-      const totCub = items.reduce((acc: number, item: any) => acc + (Number(item.cubic_meters) || 0), 0) || order.cubic_meters || 0;
-      pdf.text(`Cubagem (m³): ${Number(totCub).toFixed(4)}`, margin + 120, tY);
-      
       pdf.rect(margin, yPos, contentWidth, (tY - yPos) + 3.5); // box externa da table
-      
-      yPos = tY + 10;
+    }
 
-      // -- OBSERVAÇÕES --
-      if (order.observations) {
-        if (yPos > pageHeight - 50) {
-            pdf.addPage();
-            totalPages++;
-            yPos = drawHeader(order);
-        }
-        contentY = drawSectionBox('OBSERVAÇÕES DO PEDIDO', yPos, 30, false);
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'italic');
-        addWrappedText(order.observations, margin + 5, contentY + 6, contentWidth - 10, 8);
-        yPos += 35;
-      }
-    });
-
+    // Paging
     for (let i = 1; i <= pdf.getNumberOfPages(); i++) {
         pdf.setPage(i);
         const footerY = pageHeight - 12;
         
-        // Wipe small area for safety
         pdf.setFillColor(255, 255, 255);
         pdf.rect(0, footerY - 5, pageWidth, 20, 'F');
         
@@ -412,10 +377,10 @@ export const orderPdfService = {
       const blob = pdf.output('blob');
       return URL.createObjectURL(blob);
     } else {
-      let fileName = 'Pedidos.pdf';
-      if (orders.length === 1) {
-          const num = orders[0].order_number || orders[0].numero || 'Sem_Numero';
-          fileName = `Pedido - ${num}.pdf`;
+      let fileName = 'Faturas.pdf';
+      if (bills.length === 1) {
+          const num = bills[0].numero || 'S-N';
+          fileName = `Fatura - ${num}.pdf`;
       }
       pdf.save(fileName);
       return '';
