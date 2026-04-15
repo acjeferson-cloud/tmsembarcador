@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
+import { supabase } from '../../lib/supabase';
 import { Search, Filter, Download, FileText, CheckCircle, XCircle, AlertCircle, Clock, Truck, MapPin, DollarSign, FileCheck, Printer, RefreshCw, Eye, Clock as ArrowClockwise, ThumbsUp, ThumbsDown, Plus, Upload, Bug, User } from 'lucide-react';
 import { CTesFilters } from './CTesFilters';
 import { CTesTable } from './CTesTable';
