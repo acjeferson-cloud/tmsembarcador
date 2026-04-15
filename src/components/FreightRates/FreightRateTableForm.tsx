@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Plus, Trash2, DollarSign, Info, MapPin, User, Package, Edit, Settings, Map, Receipt, AlertTriangle, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, DollarSign, Info, MapPin, User, Package, Edit, Settings, Map, Receipt, AlertTriangle, Copy, RefreshCcw } from 'lucide-react';
 import { freightRatesService, FreightRateTable, FreightRate } from '../../services/freightRatesService';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { FreightRateValuesForm } from './FreightRateValuesForm';
 import { FreightRateCitiesModal } from './FreightRateCitiesModal';
 import { AdditionalFeesModal } from './AdditionalFeesModal';
 import RestrictedItemsModal from './RestrictedItemsModal';
+import { ReturnsRedeliveriesModal } from './ReturnsRedeliveriesModal';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { supabase } from '../../lib/supabase';
 
 interface FreightRateTableFormProps {
   onBack: () => void;
@@ -37,7 +39,11 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table_type: (table as any)?.table_type || 'Saída' as 'Entrada' | 'Saída',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    modal: (table as any)?.modal || ''
+    modal: (table as any)?.modal || '',
+    devolucao_tipo_cobranca: table?.devolucao_tipo_cobranca || ('' as any),
+    devolucao_valor: table?.devolucao_valor ?? '',
+    reentrega_tipo_cobranca: table?.reentrega_tipo_cobranca || ('' as any),
+    reentrega_valor: table?.reentrega_valor ?? ''
   });
 
   const [tarifas, setTarifas] = useState<FreightRate[]>([]);
@@ -50,6 +56,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   const [selectedRateForCities, setSelectedRateForCities] = useState<FreightRate | null>(null);
   const [showFeesModal, setShowFeesModal] = useState(false);
   const [showRestrictedItemsModal, setShowRestrictedItemsModal] = useState(false);
+  const [showReturnsModal, setShowReturnsModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -370,6 +377,10 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         data_fim: formData.data_fim,
         status: formData.status,
         table_type: formData.table_type,
+        devolucao_tipo_cobranca: formData.devolucao_tipo_cobranca,
+        devolucao_valor: formData.devolucao_valor,
+        reentrega_tipo_cobranca: formData.reentrega_tipo_cobranca,
+        reentrega_valor: formData.reentrega_valor,
         tarifas
       };
 
@@ -475,6 +486,14 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           </div>
           {table && (
             <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowReturnsModal(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              >
+                <RefreshCcw size={20} />
+                <span>Devoluções e Reentregas</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setShowFeesModal(true)}
@@ -736,8 +755,8 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="cidade">{t('carriers.freightRates.form.byCity')}</option>
-                    <option value="cidade">{t('carriers.freightRates.form.byClient')}</option>
-                    <option value="cidade">{t('carriers.freightRates.form.byProduct')}</option>
+                    <option value="cliente">{t('carriers.freightRates.form.byClient')}</option>
+                    <option value="produto">{t('carriers.freightRates.form.byProduct')}</option>
                   </select>
                 </div>
 
@@ -991,6 +1010,48 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           freightRateTableId={table.id.toString()}
           freightRateTableName={table.nome}
           onClose={() => setShowRestrictedItemsModal(false)}
+        />
+      )}
+
+      {showReturnsModal && (
+        <ReturnsRedeliveriesModal
+          onClose={() => setShowReturnsModal(false)}
+          initialData={{
+            devolucao_tipo_cobranca: formData.devolucao_tipo_cobranca,
+            devolucao_valor: formData.devolucao_valor,
+            reentrega_tipo_cobranca: formData.reentrega_tipo_cobranca,
+            reentrega_valor: formData.reentrega_valor
+          }}
+          onSave={async (data) => {
+            // 1. Atualiza o estado em memória para a tela não desincronizar
+            setFormData(prev => ({
+              ...prev,
+              ...data
+            }));
+
+            // 2. Se a tabela já existir no banco, salva imediatamente as regras
+            if (table?.id) {
+              try {
+                const { error } = await supabase
+                  .from('freight_rate_tables')
+                  .update({
+                    devolucao_tipo_cobranca: data.devolucao_tipo_cobranca || null,
+                    devolucao_valor: data.devolucao_valor ? parseFloat(data.devolucao_valor) : null,
+                    reentrega_tipo_cobranca: data.reentrega_tipo_cobranca || null,
+                    reentrega_valor: data.reentrega_valor ? parseFloat(data.reentrega_valor) : null
+                  })
+                  .eq('id', table.id);
+
+                if (error) throw error;
+                setToast({ message: 'Regras de Automação de Devolução/Reentrega salvas com sucesso no banco de dados!', type: 'success' });
+              } catch (err: any) {
+                setToast({ message: `Erro ao salvar automação: ${err.message}`, type: 'error' });
+              }
+            } else {
+               // 3. Se for uma tabela nova ainda não criada, só avisa
+               setToast({ message: 'Regras aplicadas na memória (salve a tabela de frete para efetivar no banco)', type: 'warning' });
+            }
+          }}
         />
       )}
 

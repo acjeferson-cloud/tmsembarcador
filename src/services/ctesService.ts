@@ -43,16 +43,22 @@ export const ctesService = {
         await TenantContextHelper.setSessionContext(ctx);
       }
       
-      let query = supabase.from('ctes').select('*');
+      let query = supabase.from('ctes').select(`
+        *,
+        carrier:carriers(id, razao_social, codigo)
+      `);
 
       if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query.order('issue_date', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map((cte: any) => ({
+        ...cte,
+        carrier_name: cte.carrier ? `${cte.carrier.codigo ? cte.carrier.codigo + ' - ' : ''}${cte.carrier.razao_social}` : cte.carrier_name
+      }));
     } catch (error) {
 
       return [];
@@ -68,12 +74,21 @@ export const ctesService = {
 
       const { data, error } = await supabase
         .from('ctes')
-        .select('*')
+        .select(`
+          *,
+          carrier:carriers(id, razao_social, codigo)
+        `)
         .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (data) {
+        return {
+          ...data,
+          carrier_name: (data as any).carrier ? `${(data as any).carrier.codigo ? (data as any).carrier.codigo + ' - ' : ''}${(data as any).carrier.razao_social}` : (data as any).carrier_name
+        } as any;
+      }
+      return null;
     } catch (error) {
 
       return null;

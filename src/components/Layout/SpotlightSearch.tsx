@@ -34,7 +34,7 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ onNavigate }) 
     { id: 'ctes', label: t('spotlight.items.ctes'), icon: Truck, color: 'text-orange-500', category: t('spotlight.categories.Operações'), keywords: t('spotlight.keywords.ctes').split(', ') },
     { id: 'bills', label: t('spotlight.items.bills'), icon: Receipt, color: 'text-purple-500', category: t('spotlight.categories.Operações'), keywords: t('spotlight.keywords.bills').split(', ') },
     { id: 'pickups', label: t('spotlight.items.pickups'), icon: Package, color: 'text-cyan-500', category: t('spotlight.categories.Operações'), keywords: t('spotlight.keywords.pickups').split(', ') },
-    { id: 'shipments', label: t('spotlight.items.shipments'), icon: Truck, color: 'text-blue-600', category: t('spotlight.categories.Operações'), keywords: t('spotlight.keywords.shipments').split(', ') },
+    { id: 'delivery-tracking', label: t('spotlight.items.shipments'), icon: Truck, color: 'text-blue-600', category: t('spotlight.categories.Operações'), keywords: t('spotlight.keywords.shipments').split(', ') },
     { id: 'reverse-logistics', label: t('spotlight.items.reverseLogistics'), icon: RotateCcw, color: 'text-red-500', category: t('spotlight.categories.Operações'), keywords: t('spotlight.keywords.reverseLogistics').split(', ') },
 
     { id: 'business-partners', label: t('spotlight.items.businessPartners'), icon: Users, color: 'text-blue-500', category: t('spotlight.categories.Cadastros'), keywords: t('spotlight.keywords.businessPartners').split(', ') },
@@ -49,15 +49,15 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ onNavigate }) 
     { id: 'cities', label: t('spotlight.items.cities'), icon: MapPin, color: 'text-orange-500', category: t('spotlight.categories.Cadastros'), keywords: t('spotlight.keywords.cities').split(', ') },
 
     { id: 'calculator', label: t('spotlight.items.calculator'), icon: Calculator, color: 'text-blue-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.calculator').split(', ') },
-    { id: 'edi', label: t('spotlight.items.edi'), icon: FileDigit, color: 'text-green-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.edi').split(', ') },
-    { id: 'documents', label: t('spotlight.items.documents'), icon: FileCheck, color: 'text-purple-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.documents').split(', ') },
+    { id: 'edi-input', label: t('spotlight.items.edi'), icon: FileDigit, color: 'text-green-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.edi').split(', ') },
+    { id: 'electronic-docs', label: t('spotlight.items.documents'), icon: FileCheck, color: 'text-purple-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.documents').split(', ') },
     { id: 'logistics-simulator', label: t('spotlight.items.logisticsSimulator'), icon: Activity, color: 'text-cyan-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.logisticsSimulator').split(', ') },
-    { id: 'implementation', label: t('spotlight.items.implementation'), icon: Clock, color: 'text-orange-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.implementation').split(', ') },
+    { id: 'implementation-center', label: t('spotlight.items.implementation'), icon: Clock, color: 'text-orange-500', category: t('spotlight.categories.Ferramentas'), keywords: t('spotlight.keywords.implementation').split(', ') },
 
-    { id: 'licenses', label: t('spotlight.items.licenses'), icon: Key, color: 'text-yellow-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.licenses').split(', ') },
-    { id: 'whatsapp', label: t('spotlight.items.whatsapp'), icon: Settings, color: 'text-green-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.whatsapp').split(', ') },
-    { id: 'google-maps', label: t('spotlight.items.googleMaps'), icon: MapPin, color: 'text-red-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.googleMaps').split(', ') },
-    { id: 'openai', label: t('spotlight.items.openai'), icon: Database, color: 'text-purple-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.openai').split(', ') },
+    { id: 'license-management', label: t('spotlight.items.licenses'), icon: Key, color: 'text-yellow-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.licenses').split(', ') },
+    { id: 'whatsapp-config', label: t('spotlight.items.whatsapp'), icon: Settings, color: 'text-green-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.whatsapp').split(', ') },
+    { id: 'google-maps-config', label: t('spotlight.items.googleMaps'), icon: MapPin, color: 'text-red-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.googleMaps').split(', ') },
+    { id: 'openai-config', label: t('spotlight.items.openai'), icon: Database, color: 'text-purple-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.openai').split(', ') },
   ];
 
   useEffect(() => {

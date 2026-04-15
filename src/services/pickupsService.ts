@@ -70,7 +70,7 @@ export const pickupsService = {
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query.order('data_solicitacao', { ascending: false });
 
       if (error) throw error;
       

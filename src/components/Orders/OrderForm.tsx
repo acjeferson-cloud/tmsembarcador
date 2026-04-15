@@ -9,6 +9,7 @@ import { orderNotificationService } from '../../services/orderNotificationServic
 import { useAuth } from '../../hooks/useAuth';
 import { freightQuoteService } from '../../services/freightQuoteService';
 import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 
 interface OrderFormProps {
   onClose: () => void;
@@ -777,42 +778,20 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onClose, onSave, userId, o
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="col-span-3 relative customer-search-container">
+                    <div className="col-span-3">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('orders.form.selectCustomerBtn')}</label>
-                      <input
-                        type="text"
-                        value={customerSearchTerm}
-                        onChange={(e) => handleCustomerSearch(e.target.value)}
-                        onFocus={() => setShowCustomerDropdown(true)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      <AutocompleteSelect
+                        options={customers.map(customer => ({
+                          value: customer.id || '',
+                          label: `${customer.codigo} - ${customer.name} ${customer.document ? `(CNPJ: ${customer.document})` : ''}`
+                        }))}
+                        value={formData.customer_id || ''}
+                        onChange={(value) => {
+                          const selected = customers.find(c => c.id === value);
+                          if (selected) selectCustomer(selected);
+                        }}
                         placeholder={t("orders.form.customerSearchPlaceholder")}
                       />
-                      {showCustomerDropdown && filteredCustomers.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {filteredCustomers.map((customer) => {
-                            const primaryAddress = customer.addresses?.find((a: any) => a.is_primary) || customer.addresses?.[0];
-                            return (
-                              <button
-                                key={customer.id}
-                                type="button"
-                                onClick={() => selectCustomer(customer)}
-                                className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors"
-                              >
-                                <div className="font-medium text-gray-900 dark:text-white">{customer.name}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                  {customer.document && <span>CNPJ: {customer.document}</span>}
-                                  {primaryAddress?.city && primaryAddress?.state && (
-                                    <span className="ml-3">{primaryAddress.city} - {primaryAddress.state}</span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {showCustomerDropdown && filteredCustomers.length === 0 && customerSearchTerm && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">{t('orders.form.noCustomersFound')}</div>
-                      )}
                     </div>
 
                     <div className="col-span-2">

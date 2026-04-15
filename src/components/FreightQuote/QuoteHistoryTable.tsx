@@ -10,7 +10,7 @@ type ExtendedHistory = FreightQuoteHistory & {
   quote_number?: number;
   user_display_name?: string;
   users?: { nome: string };
-  business_partners?: { nome_fantasia: string };
+  business_partners?: { nome_fantasia: string; cpf_cnpj: string };
   origin_city?: { nome: string; states?: { sigla: string } };
   destination_city?: { nome: string; states?: { sigla: string } };
 };
@@ -215,6 +215,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <Users className="w-4 h-4 mr-2 text-gray-400" />
+                      {(quote as ExtendedHistory).business_partners?.cpf_cnpj && `${(quote as ExtendedHistory).business_partners?.cpf_cnpj} - `}
                       {(quote as ExtendedHistory).business_partners?.nome_fantasia || '-'}
                     </div>
                   </td>
@@ -377,6 +378,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('freightQuote.history.columns.partner')}</label>
                   <p className="text-sm text-gray-900 dark:text-white">
+                    {(selectedQuote as ExtendedHistory).business_partners?.cpf_cnpj && `${(selectedQuote as ExtendedHistory).business_partners?.cpf_cnpj} - `}
                     {(selectedQuote as ExtendedHistory).business_partners?.nome_fantasia || '-'}
                   </p>
                 </div>

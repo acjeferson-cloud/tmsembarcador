@@ -988,9 +988,12 @@ export const processFreightRatesFile = (file: File): Promise<FlatFreightRateTemp
 interface FreightRateCityTemplate {
   transportador_codigo: string;
   tabela_nome: string;
+  validade_inicio: string;
+  validade_fim: string;
   tarifa_codigo: string;
-  cidade_nome: string;
-  estado_sigla: string;
+  cidade_ibge: string | number;
+  cidade_nome?: string; // Mantido apenas para referência visual no excel
+  estado_sigla?: string; // Mantido apenas para referência visual no excel
   prazo_entrega_dias: number;
 }
 
@@ -1001,25 +1004,34 @@ export const generateFreightRateCitiesTemplate = (): void => {
   // ABA 1: Cidades
   const cidadesData: FreightRateCityTemplate[] = [
     {
-      transportador_codigo: 'TRANSP001',
-      tabela_nome: 'Tabela Nacional 2025',
-      tarifa_codigo: 'TAR001',
+      transportador_codigo: '0001',
+      tabela_nome: 'Tabela Nacional 2026', // ID Natural (A descrição exata deve existir)
+      validade_inicio: '01/01/2026',
+      validade_fim: '31/12/2026',
+      tarifa_codigo: 'TAR0001',
+      cidade_ibge: '3550308',
       cidade_nome: 'São Paulo',
       estado_sigla: 'SP',
       prazo_entrega_dias: 5
     },
     {
-      transportador_codigo: 'TRANSP001',
-      tabela_nome: 'Tabela Nacional 2025',
-      tarifa_codigo: 'TAR001',
+      transportador_codigo: '0001',
+      tabela_nome: 'Tabela Nacional 2026',
+      validade_inicio: '01/01/2026',
+      validade_fim: '31/12/2026',
+      tarifa_codigo: 'TAR0001',
+      cidade_ibge: '3509502',
       cidade_nome: 'Campinas',
       estado_sigla: 'SP',
       prazo_entrega_dias: 5
     },
     {
-      transportador_codigo: 'TRANSP001',
-      tabela_nome: 'Tabela Nacional 2025',
-      tarifa_codigo: 'TAR001',
+      transportador_codigo: '0001',
+      tabela_nome: 'Tabela Nacional 2026',
+      validade_inicio: '01/01/2026',
+      validade_fim: '31/12/2026',
+      tarifa_codigo: 'TAR0001',
+      cidade_ibge: '3548500',
       cidade_nome: 'Santos',
       estado_sigla: 'SP',
       prazo_entrega_dias: 6
@@ -1030,7 +1042,10 @@ export const generateFreightRateCitiesTemplate = (): void => {
   wsCidades['!cols'] = [
     { wch: 22 },  // transportador_codigo
     { wch: 30 },  // tabela_nome
+    { wch: 15 },  // validade_inicio
+    { wch: 15 },  // validade_fim
     { wch: 15 },  // tarifa_codigo
+    { wch: 15 },  // cidade_ibge
     { wch: 30 },  // cidade_nome
     { wch: 15 },  // estado_sigla
     { wch: 20 }   // prazo_entrega_dias
@@ -1039,16 +1054,19 @@ export const generateFreightRateCitiesTemplate = (): void => {
 
   // ABA 2: Instruções
   const instructionsData = [
-    { Campo: 'transportador_codigo', Descrição: 'Código da transportadora (deve existir no sistema)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'TRANSP001' },
-    { Campo: 'tabela_nome', Descrição: 'Nome da tabela de frete (deve existir no sistema)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'Tabela Nacional 2025' },
-    { Campo: 'tarifa_codigo', Descrição: 'Código da tarifa (deve existir na tabela)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'TAR001' },
-    { Campo: 'cidade_nome', Descrição: 'Nome da cidade (deve existir no sistema)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'São Paulo' },
-    { Campo: 'estado_sigla', Descrição: 'Sigla do estado (UF)', Obrigatório: 'Sim', Formato: 'XX', Exemplo: 'SP' },
+    { Campo: 'transportador_codigo', Descrição: 'Código da transportadora (deve existir no sistema)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: '0001' },
+    { Campo: 'tabela_nome', Descrição: 'Nome Exato da Configuração Principal (Sem IDs, certifique-se da correspondência exata de letras e espaços)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'Tabela Nacional 2026' },
+    { Campo: 'validade_inicio', Descrição: 'Data de início de vigência da tabela (Ajudará no match exato se houver multiplas com mesmo nome)', Obrigatório: 'Sim', Formato: 'DD/MM/YYYY', Exemplo: '01/01/2026' },
+    { Campo: 'validade_fim', Descrição: 'Data do fim da vigência da tabela', Obrigatório: 'Sim', Formato: 'DD/MM/YYYY', Exemplo: '31/12/2026' },
+    { Campo: 'tarifa_codigo', Descrição: 'Código da tarifa (deve existir na tabela)', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'TAR0001' },
+    { Campo: 'cidade_ibge', Descrição: 'Código IBGE da cidade (usado como Chave Única de vínculo real)', Obrigatório: 'Sim', Formato: 'Número (7 dígitos)', Exemplo: '3550308' },
+    { Campo: 'cidade_nome', Descrição: 'Nome da cidade (Apenas para sua referência humana nesta planilha, ignorado pelo integrador)', Obrigatório: 'Não', Formato: 'Texto', Exemplo: 'São Paulo' },
+    { Campo: 'estado_sigla', Descrição: 'Sigla do estado (UF) (Apenas referência visual)', Obrigatório: 'Não', Formato: 'XX', Exemplo: 'SP' },
     { Campo: 'prazo_entrega_dias', Descrição: 'Prazo de entrega em dias úteis', Obrigatório: 'Não', Formato: 'Número', Exemplo: '5' },
     { Campo: '', Descrição: '', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'OBSERVAÇÕES', Descrição: 'Uma cidade só pode estar vinculada a UMA tarifa por tabela', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'OBSERVAÇÕES', Descrição: 'O sistema validará se a cidade já está em uso na tabela', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'OBSERVAÇÕES', Descrição: 'A cidade deve existir no cadastro de cidades do sistema', Obrigatório: '', Formato: '', Exemplo: '' }
+    { Campo: 'OBSERVAÇÕES', Descrição: 'Uma cidade (IBGE) só pode estar vinculada a UMA tarifa por tabela', Obrigatório: '', Formato: '', Exemplo: '' },
+    { Campo: 'OBSERVAÇÕES', Descrição: 'O sistema validará se o IBGE informado já está em uso nesta configuração', Obrigatório: '', Formato: '', Exemplo: '' },
+    { Campo: 'OBSERVAÇÕES', Descrição: 'A tabela de frete não tem ID numérico. O vínculo é feito através de Match Perfeito da Descrição/Nome + Validade do Contrato. Não abrevie o nome da tabela aqui.', Obrigatório: '', Formato: '', Exemplo: '' }
   ];
 
   const wsInstructions = XLSX.utils.json_to_sheet(instructionsData);
@@ -1069,7 +1087,7 @@ export const generateFreightRateCitiesTemplate = (): void => {
   }
 };
 
-const processFreightRateCitiesFile = (file: File): Promise<FreightRateCityTemplate[]> => {
+export const processFreightRateCitiesFile = (file: File): Promise<FreightRateCityTemplate[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -1096,116 +1114,7 @@ const processFreightRateCitiesFile = (file: File): Promise<FreightRateCityTempla
   });
 };
 
-// ===== ADDITIONAL FEES TEMPLATE =====
-
-interface AdditionalFeeTemplate {
-  transportador_codigo: string;
-  tabela_nome: string;
-  tarifa_codigo: string;
-  tipo_taxa: string;
-  parceiro_negocio_documento: string;
-  considerar_raiz_cnpj: string;
-  estado_sigla: string;
-  cidade_nome: string;
-  valor_taxa: number;
-  tipo_valor: string;
-  valor_minimo: number;
-}
-
-export const generateAdditionalFeesTemplate = (): void => {
-  try {
-    const wb = XLSX.utils.book_new();
-
-  // ABA 1: Taxas Adicionais
-  const taxasData: AdditionalFeeTemplate[] = [
-    {
-      transportador_codigo: 'TRANSP001',
-      tabela_nome: 'Tabela Nacional 2025',
-      tarifa_codigo: 'TAR001',
-      tipo_taxa: 'TDA',
-      parceiro_negocio_documento: '',
-      considerar_raiz_cnpj: 'Não',
-      estado_sigla: 'SP',
-      cidade_nome: 'São Paulo',
-      valor_taxa: 50.00,
-      tipo_valor: 'Fixo',
-      valor_minimo: 0
-    },
-    {
-      transportador_codigo: 'TRANSP001',
-      tabela_nome: 'Tabela Nacional 2025',
-      tarifa_codigo: 'TAR001',
-      tipo_taxa: 'TDE',
-      parceiro_negocio_documento: '',
-      considerar_raiz_cnpj: 'Não',
-      estado_sigla: 'RJ',
-      cidade_nome: 'Rio de Janeiro',
-      valor_taxa: 2.5,
-      tipo_valor: 'Percentual sobre Peso',
-      valor_minimo: 30.00
-    }
-  ];
-
-  const wsTaxas = XLSX.utils.json_to_sheet(taxasData);
-  wsTaxas['!cols'] = [
-    { wch: 22 },  // transportador_codigo
-    { wch: 30 },  // tabela_nome
-    { wch: 15 },  // tarifa_codigo
-    { wch: 12 },  // tipo_taxa
-    { wch: 28 },  // parceiro_negocio_documento
-    { wch: 22 },  // considerar_raiz_cnpj
-    { wch: 15 },  // estado_sigla
-    { wch: 30 },  // cidade_nome
-    { wch: 15 },  // valor_taxa
-    { wch: 28 },  // tipo_valor
-    { wch: 15 }   // valor_minimo
-  ];
-  XLSX.utils.book_append_sheet(wb, wsTaxas, 'Taxas Adicionais');
-
-  // ABA 2: Instruções
-  const instructionsData = [
-    { Campo: 'transportador_codigo', Descrição: 'Código da transportadora', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'TRANSP001' },
-    { Campo: 'tabela_nome', Descrição: 'Nome da tabela de frete', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'Tabela Nacional 2025' },
-    { Campo: 'tarifa_codigo', Descrição: 'Código da tarifa (deixe em branco para tabela toda)', Obrigatório: 'Não', Formato: 'Texto', Exemplo: 'TAR001' },
-    { Campo: 'tipo_taxa', Descrição: 'Tipo da taxa adicional', Obrigatório: 'Sim', Formato: 'TDA, TDE ou TRT', Exemplo: 'TDA' },
-    { Campo: 'parceiro_negocio_documento', Descrição: 'CNPJ do parceiro (deixe em branco para todos)', Obrigatório: 'Não', Formato: 'XX.XXX.XXX/XXXX-XX', Exemplo: '12.345.678/0001-90' },
-    { Campo: 'considerar_raiz_cnpj', Descrição: 'Considerar raiz do CNPJ', Obrigatório: 'Não', Formato: 'Sim ou Não', Exemplo: 'Sim' },
-    { Campo: 'estado_sigla', Descrição: 'Sigla do estado (deixe em branco para todos)', Obrigatório: 'Não', Formato: 'XX', Exemplo: 'SP' },
-    { Campo: 'cidade_nome', Descrição: 'Nome da cidade (deixe em branco para todas)', Obrigatório: 'Não', Formato: 'Texto', Exemplo: 'São Paulo' },
-    { Campo: 'valor_taxa', Descrição: 'Valor da taxa', Obrigatório: 'Sim', Formato: 'Número decimal', Exemplo: '50.00' },
-    { Campo: 'tipo_valor', Descrição: 'Tipo de valor da taxa', Obrigatório: 'Sim', Formato: 'Ver tipos abaixo', Exemplo: 'Fixo' },
-    { Campo: 'valor_minimo', Descrição: 'Valor mínimo da taxa', Obrigatório: 'Não', Formato: 'Número decimal', Exemplo: '30.00' },
-    { Campo: '', Descrição: '', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE TAXA', Descrição: 'TDA = Taxa de Armazenagem', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE TAXA', Descrição: 'TDE = Taxa de Entrega', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE TAXA', Descrição: 'TRT = Taxa de Reentrega', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: '', Descrição: '', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE VALOR', Descrição: 'Fixo', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre Peso', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre Valor', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre Peso e Valor', Obrigatório: '', Formato: '', Exemplo: '' },
-    { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre CT-e', Obrigatório: '', Formato: '', Exemplo: '' }
-  ];
-
-  const wsInstructions = XLSX.utils.json_to_sheet(instructionsData);
-  wsInstructions['!cols'] = [
-    { wch: 30 },  // Campo
-    { wch: 50 },  // Descrição
-    { wch: 15 },  // Obrigatório
-    { wch: 25 },  // Formato
-    { wch: 30 }   // Exemplo
-  ];
-    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Instruções');
-
-    // Gerar arquivo e fazer download
-    XLSX.writeFile(wb, 'Template_Taxas_Adicionais.xlsx');
-  } catch (error) {
-
-    throw new Error('Não foi possível gerar o template de taxas adicionais. Verifique se o navegador permite downloads.');
-  }
-};
-
-const processAdditionalFeesFile = (file: File): Promise<AdditionalFeeTemplate[]> => {
+export const processAdditionalFeesFile = (file: File): Promise<AdditionalFeeTemplate[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -1215,10 +1124,11 @@ const processAdditionalFeesFile = (file: File): Promise<AdditionalFeeTemplate[]>
         const workbook = XLSX.read(data, { type: 'array' });
 
         // Ler aba Taxas Adicionais
-        const taxasSheet = workbook.Sheets['Taxas Adicionais'];
-        const taxas = taxasSheet ? XLSX.utils.sheet_to_json(taxasSheet) as AdditionalFeeTemplate[] : [];
+        const sheetName = 'Taxas Adicionais';
+        const sheet = workbook.Sheets[sheetName];
+        const rows = sheet ? XLSX.utils.sheet_to_json(sheet) as AdditionalFeeTemplate[] : [];
 
-        resolve(taxas);
+        resolve(rows);
       } catch (error) {
         reject(new Error('Erro ao processar arquivo: ' + (error as Error).message));
       }
@@ -1230,4 +1140,155 @@ const processAdditionalFeesFile = (file: File): Promise<AdditionalFeeTemplate[]>
 
     reader.readAsArrayBuffer(file);
   });
+};
+
+// ===== ADDITIONAL FEES TEMPLATE =====
+
+interface AdditionalFeeTemplate {
+  transportador_codigo: string;
+  tabela_nome: string;
+  validade_inicio: string;
+  validade_fim: string;
+  tipo_taxa: string;
+  parceiro_negocio_documento: string;
+  considerar_raiz_cnpj: string;
+  cidade_ibge: string;
+  valor_taxa: number;
+  tipo_valor: string;
+  valor_minimo: number;
+}
+
+export const generateAdditionalFeesTemplate = (): void => {
+  try {
+    const wb = XLSX.utils.book_new();
+
+    // ABA 1: Taxas Adicionais
+    const taxasData: AdditionalFeeTemplate[] = [
+      {
+        transportador_codigo: '0001',
+        tabela_nome: 'Tabela de frete (Rodoviário)',
+        validade_inicio: '01/01/2025',
+        validade_fim: '31/12/2026',
+        tipo_taxa: 'TDA',
+        parceiro_negocio_documento: '',
+        considerar_raiz_cnpj: 'Não',
+        cidade_ibge: '3550308',
+        valor_taxa: 50.00,
+        tipo_valor: 'Fixo',
+        valor_minimo: 0
+      },
+      {
+        transportador_codigo: '0001',
+        tabela_nome: 'Tabela de frete (Rodoviário)',
+        validade_inicio: '01/01/2025',
+        validade_fim: '31/12/2026',
+        tipo_taxa: 'TDA',
+        parceiro_negocio_documento: '',
+        considerar_raiz_cnpj: 'Não',
+        cidade_ibge: '3550308',
+        valor_taxa: 50.00,
+        tipo_valor: 'Fixo',
+        valor_minimo: 0
+      },
+      {
+        transportador_codigo: '0001',
+        tabela_nome: 'Tabela de frete (Rodoviário)',
+        validade_inicio: '01/01/2025',
+        validade_fim: '31/12/2026',
+        tipo_taxa: 'TDE',
+        parceiro_negocio_documento: '12.345.678/0001-90',
+        considerar_raiz_cnpj: 'Não',
+        cidade_ibge: '3304557',
+        valor_taxa: 2.00,
+        tipo_valor: 'Percentual sobre Valor',
+        valor_minimo: 30.00
+      },
+      {
+        transportador_codigo: '0001',
+        tabela_nome: 'Tabela de frete (Rodoviário)',
+        validade_inicio: '01/01/2025',
+        validade_fim: '31/12/2026',
+        tipo_taxa: 'TEC',
+        parceiro_negocio_documento: '',
+        considerar_raiz_cnpj: 'Não',
+        cidade_ibge: '',
+        valor_taxa: 5.50,
+        tipo_valor: 'Percentual sobre CT-e',
+        valor_minimo: 0
+      }
+    ];
+
+    // Forçamos o cabeçalho para garantir que NENHUMA outra coluna apareça (como tarifa_codigo)
+    const headers = [
+      'transportador_codigo',
+      'tabela_nome',
+      'validade_inicio',
+      'validade_fim',
+      'tipo_taxa',
+      'parceiro_negocio_documento',
+      'considerar_raiz_cnpj',
+      'cidade_ibge',
+      'valor_taxa',
+      'tipo_valor',
+      'valor_minimo'
+    ];
+
+    const wsTaxas = XLSX.utils.json_to_sheet(taxasData, { header: headers });
+    
+    wsTaxas['!cols'] = [
+      { wch: 22 },  // transportador_codigo
+      { wch: 30 },  // tabela_nome
+      { wch: 15 },  // validade_inicio
+      { wch: 15 },  // validade_fim
+      { wch: 12 },  // tipo_taxa
+      { wch: 28 },  // parceiro_negocio_documento
+      { wch: 22 },  // considerar_raiz_cnpj
+      { wch: 15 },  // cidade_ibge
+      { wch: 15 },  // valor_taxa
+      { wch: 28 },  // tipo_valor
+      { wch: 15 }   // valor_minimo
+    ];
+    XLSX.utils.book_append_sheet(wb, wsTaxas, 'Taxas Adicionais');
+
+    // ABA 2: Instruções
+    const instructionsData = [
+      { Campo: 'transportador_codigo', Descrição: 'Código da transportadora', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: '0001' },
+      { Campo: 'tabela_nome', Descrição: 'Nome da tabela de frete', Obrigatório: 'Sim', Formato: 'Texto', Exemplo: 'Tabela de frete (Rodoviário)' },
+      { Campo: 'validade_inicio', Descrição: 'Data de início da vigência da tabela', Obrigatório: 'Sim', Formato: 'DD/MM/AAAA', Exemplo: '01/01/2025' },
+      { Campo: 'validade_fim', Descrição: 'Data de fim da vigência da tabela', Obrigatório: 'Sim', Formato: 'DD/MM/AAAA', Exemplo: '31/12/2026' },
+      { Campo: 'tipo_taxa', Descrição: 'Tipo da taxa adicional', Obrigatório: 'Sim', Formato: 'TDA, TDE, TRT ou TEC', Exemplo: 'TDA' },
+      { Campo: 'parceiro_negocio_documento', Descrição: 'CNPJ do parceiro (deixe em branco para todos)', Obrigatório: 'Não', Formato: 'XX.XXX.XXX/XXXX-XX', Exemplo: '12.345.678/0001-90' },
+      { Campo: 'considerar_raiz_cnpj', Descrição: 'Considerar raiz do CNPJ', Obrigatório: 'Não', Formato: 'Sim ou Não', Exemplo: 'Sim' },
+      { Campo: 'cidade_ibge', Descrição: 'Código IBGE da cidade (deixe em branco para aplicar à tabela toda)', Obrigatório: 'Não', Formato: 'Texto numérico', Exemplo: '3550308' },
+      { Campo: 'valor_taxa', Descrição: 'Valor da taxa', Obrigatório: 'Sim', Formato: 'Número decimal', Exemplo: '50.00' },
+      { Campo: 'tipo_valor', Descrição: 'Tipo de valor da taxa', Obrigatório: 'Sim', Formato: 'Ver tipos abaixo', Exemplo: 'Fixo' },
+      { Campo: 'valor_minimo', Descrição: 'Valor mínimo da taxa', Obrigatório: 'Não', Formato: 'Número decimal', Exemplo: '30.00' },
+      { Campo: '', Descrição: '', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE TAXA', Descrição: 'TDA – Taxa de Dificuldade de Acesso', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE TAXA', Descrição: 'TDE – Taxa de Dificuldade de Entrega', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE TAXA', Descrição: 'TRT – Taxa de Restrição de Trânsito', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE TAXA', Descrição: 'TEC – Taxa de Emergência de Combustível', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: '', Descrição: '', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE VALOR', Descrição: 'Fixo', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre Peso', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre Valor', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre Peso e Valor', Obrigatório: '', Formato: '', Exemplo: '' },
+      { Campo: 'TIPOS DE VALOR', Descrição: 'Percentual sobre CT-e', Obrigatório: '', Formato: '', Exemplo: '' }
+    ];
+
+    const wsInstructions = XLSX.utils.json_to_sheet(instructionsData);
+    wsInstructions['!cols'] = [
+      { wch: 30 },  // Campo
+      { wch: 50 },  // Descrição
+      { wch: 15 },  // Obrigatório
+      { wch: 25 },  // Formato
+      { wch: 30 }   // Exemplo
+    ];
+    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Instruções');
+
+    // Gerar arquivo e fazer download
+    XLSX.writeFile(wb, 'Template_Taxas_Adicionais.xlsx');
+  } catch (error) {
+    throw new Error('Não foi possível gerar o template de taxas adicionais. Verifique se o navegador permite downloads.');
+  }
 };

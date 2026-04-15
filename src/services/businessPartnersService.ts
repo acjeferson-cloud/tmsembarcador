@@ -49,6 +49,7 @@ export const businessPartnersService = {
       // Mapear campos do banco (português) para interface (inglês)
       const mapped = (data || []).map(item => ({
         id: item.id,
+        codigo: item.codigo || '',
         name: item.razao_social || item.nome_fantasia || '',
         document: item.cpf_cnpj || '',
         documentType: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
@@ -122,6 +123,7 @@ export const businessPartnersService = {
       // Mapear campos do banco (português) para interface (inglês)
       return {
         id: data.id,
+        codigo: data.codigo || '',
         name: data.razao_social || data.nome_fantasia || '',
         document: data.cpf_cnpj || '',
         documentType: data.tipo_pessoa === 'juridica' ? 'cnpj' : 'cpf',
@@ -756,6 +758,7 @@ export const businessPartnersService = {
       // Mapear campos do banco (português) para interface (inglês)
       const mapped = (data || []).map(item => ({
         id: item.id,
+        codigo: item.codigo || '',
         name: item.razao_social || item.nome_fantasia || '',
         document: item.cpf_cnpj || '',
         documentType: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,
@@ -825,6 +828,7 @@ export const businessPartnersService = {
       // Mapear campos do banco (português) para interface (inglês)
       const mapped = (data || []).map(item => ({
         id: item.id,
+        codigo: item.codigo || '',
         name: item.razao_social || item.nome_fantasia || '',
         document: item.cpf_cnpj || '',
         documentType: item.tipo_pessoa === 'juridica' ? 'cnpj' as const : 'cpf' as const,

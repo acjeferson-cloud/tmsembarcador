@@ -109,7 +109,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                     autoComplete="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
                     className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder={t('login.emailPlaceholder')}
                   />

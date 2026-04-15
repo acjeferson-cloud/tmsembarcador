@@ -69,10 +69,10 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
     const applyFilters = () => {
       let result = [...pickups];
 
-      // Filter by transportador
+      // Filter by transportador (using carrier_id from select)
       if (filters.transportador) {
         result = result.filter(pickup =>
-          pickup.transportador.toLowerCase().includes(filters.transportador.toLowerCase())
+          pickup.carrier_id === filters.transportador
         );
       }
 
@@ -354,7 +354,8 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         id: pickup.id,
         numeroColeta: pickup.pickup_number || `COL-${pickup.id}`,
         status: pickup.status,
-        transportador: pickup.carrier_name || 'N/A',
+        transportador: pickup.transportador || pickup.carrier_name || 'N/A',
+        carrier_id: pickup.carrier_id,
         quantidadeNotas: pickup.packages_quantity || 0,
         dataCriacao: pickup.created_at,
         usuarioResponsavel: pickup.usuarioResponsavel || pickup.customer_name || pickup.contact_name || 'N/A',

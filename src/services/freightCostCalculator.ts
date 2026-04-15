@@ -115,11 +115,14 @@ export const freightCostCalculator = {
     let tariff = null;
     let matchedTableId = null;
 
+    let matchedTable = null;
+
     for (const table of freightTables) {
       const cityTariff = await this.findTariffByCity(table.id, destinationCity, destinationState);
       if (cityTariff) {
         tariff = cityTariff;
         matchedTableId = table.id;
+        matchedTable = table;
         break;
       }
     }
@@ -159,19 +162,95 @@ export const freightCostCalculator = {
       }
     }
 
-    // 7. Calcular todas as taxas
-    return this.performCalculation(tariff, invoiceData, cte, additionalFees);
+    // 7. Calcular todas as taxas (Isto representa o Fallback base da Rota Origem x Destino)
+    const baseResult = this.performCalculation(tariff, invoiceData, cte, additionalFees);
+
+    // 8. INTEGRAÇÃO: Identificar se o Processo é Especial (Devolução ou Reentrega)
+    const xmlData = typeof cte.xml_data === 'string' ? JSON.parse(cte.xml_data || '{}') : (cte.xml_data || {});
+    let operationType = null;
+
+    // 8.1 Fallback no Dicionário Dinâmico se houver natOp preenchida
+    if (xmlData.natOp) {
+      const { data: dicts } = await supabase
+        .from('freight_nature_dict')
+        .select('*')
+        .or(`carrier_id.eq.${carrierId},carrier_id.is.null`);
+
+      if (dicts) {
+        for (const d of dicts) {
+          if (xmlData.natOp.toUpperCase().includes(d.search_string.toUpperCase())) {
+            operationType = d.operation_type; // 'DEVOLUCAO' ou 'REENTREGA'
+            break;
+          }
+        }
+      }
+    }
+
+    // 8.2 Se for CT-e 4.0 pode vir a refCTe explícita. Assumimos Devolução por padrão de mercado.
+    // O analista pode auditar e alterar para Reentrega se for o caso!
+    if (!operationType && xmlData.refCTe) {
+      operationType = 'DEVOLUCAO';
+    }
+
+    // 9. Aplicar a Matemática da Tabela p/ Devolução ou Reentrega
+    if (operationType === 'DEVOLUCAO' && matchedTable?.devolucao_tipo_cobranca) {
+      let originalValue = baseResult.valorTotal;
+
+      if (xmlData.refCTe) {
+        // Tentar ancorar o ouro: O valor do CTE referenciado já processado!
+        const { data: originalCte } = await supabase
+          .from('ctes_complete')
+          .select('total_value')
+          .eq('access_key', xmlData.refCTe)
+          .maybeSingle();
+
+        if (originalCte && originalCte.total_value > 0) {
+          originalValue = parseFloat(originalCte.total_value);
+        }
+      }
+
+      const calcValue = matchedTable.devolucao_tipo_cobranca === 'PERCENTUAL'
+        ? originalValue * (parseFloat(matchedTable.devolucao_valor || '100') / 100)
+        : parseFloat(matchedTable.devolucao_valor || '0');
+
+      return this.buildFixedCostResult(calcValue, baseResult.tarifaUtilizada, baseResult.faixaUtilizada);
+    }
+
+    if (operationType === 'REENTREGA' && matchedTable?.reentrega_tipo_cobranca) {
+      let originalValue = baseResult.valorTotal;
+
+      if (xmlData.refCTe) {
+        const { data: originalCte } = await supabase
+          .from('ctes_complete')
+          .select('total_value')
+          .eq('access_key', xmlData.refCTe)
+          .maybeSingle();
+
+        if (originalCte && originalCte.total_value > 0) {
+          originalValue = parseFloat(originalCte.total_value);
+        }
+      }
+
+      const calcValue = matchedTable.reentrega_tipo_cobranca === 'PERCENTUAL'
+        ? originalValue * (parseFloat(matchedTable.reentrega_valor || '50') / 100)
+        : parseFloat(matchedTable.reentrega_valor || '0');
+
+      return this.buildFixedCostResult(calcValue, baseResult.tarifaUtilizada, baseResult.faixaUtilizada);
+    }
+
+    // Retorna a Rota Normal Padrão
+    return baseResult;
   },
 
   /**
    * Busca as tabelas de frete ativas para o transportador na data especificada
    */
-  async findActiveFreightTables(carrierId: string, issueDate?: string): Promise<{ id: string }[] | null> {
+  async findActiveFreightTables(carrierId: string, issueDate?: string): Promise<any[] | null> {
     const dateToCheck = issueDate ? new Date(issueDate).toISOString() : new Date().toISOString();
 
     const { data, error } = await supabase
       .from('freight_rate_tables')
-      .select('id, nome, data_inicio, data_fim')
+      .select('id, nome, data_inicio, data_fim, devolucao_tipo_cobranca, devolucao_valor, reentrega_tipo_cobranca, reentrega_valor')
       .eq('transportador_id', carrierId)
       .eq('status', 'ativo')
       .lte('data_inicio', dateToCheck)
@@ -205,6 +284,34 @@ export const freightCostCalculator = {
       icmsAliquota: 0,
       icmsValor: 0,
       valorTotal: agreedValue
+    };
+  },
+
+  /**
+   * Constrói o resultado de Custo para Operações Fixas (Devolução/Reentrega)
+   */
+  buildFixedCostResult(fixedValue: number, tarifaUtilizada?: FreightRate, faixaUtilizada?: FreightRateDetail): CalculationResult {
+    return {
+      fretePeso: fixedValue, // Aloca todo valor na rubrica principal
+      freteValor: 0,
+      gris: 0,
+      pedagio: 0,
+      tas: 0,
+      seccat: 0,
+      despacho: 0,
+      itr: 0,
+      coletaEntrega: 0,
+      tda: 0,
+      tde: 0,
+      trt: 0,
+      tec: 0,
+      outrosValores: 0,
+      icmsBase: 0,
+      icmsAliquota: 0,
+      icmsValor: 0,
+      valorTotal: fixedValue,
+      tarifaUtilizada,
+      faixaUtilizada
     };
   },
 

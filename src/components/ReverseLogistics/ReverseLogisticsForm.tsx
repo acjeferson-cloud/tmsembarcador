@@ -3,6 +3,9 @@ import { ArrowLeft, Plus, Trash2, Search } from 'lucide-react';
 import { ReverseLogistics, ReverseLogisticsItem } from '../../types';
 import { reverseLogisticsReasons, reverseLogisticsTypes, itemConditions, itemActions } from '../../data/reverseLogisticsData';
 import { ordersData } from '../../data/mockData';
+import { carriersService, Carrier } from '../../services/carriersService';
+import { businessPartnersService, BusinessPartner } from '../../services/businessPartnersService';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 
 interface ReverseLogisticsFormProps {
   order?: ReverseLogistics | null;
@@ -53,6 +56,31 @@ const ReverseLogisticsForm: React.FC<ReverseLogisticsFormProps> = ({
 
   const [showOrderSearch, setShowOrderSearch] = useState(false);
   const [orderSearchTerm, setOrderSearchTerm] = useState('');
+  const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
+
+  useEffect(() => {
+    loadCarriers();
+    loadBusinessPartners();
+  }, []);
+
+  const loadBusinessPartners = async () => {
+    try {
+      const data = await businessPartnersService.getAll();
+      setBusinessPartners(data || []);
+    } catch (error) {
+      console.error('Error loading business partners:', error);
+    }
+  };
+
+  const loadCarriers = async () => {
+    try {
+      const data = await carriersService.getAll();
+      setCarriers(data);
+    } catch (error) {
+      console.error('Error loading carriers:', error);
+    }
+  };
 
   useEffect(() => {
     if (order) {
@@ -272,12 +300,23 @@ const ReverseLogisticsForm: React.FC<ReverseLogisticsFormProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Cliente
               </label>
-              <input
-                type="text"
-                value={formData.customerName}
-                onChange={(e) => handleInputChange('customerName', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
+              <AutocompleteSelect
+                options={businessPartners.map(bp => ({
+                  value: bp.id || '',
+                  label: `${bp.codigo} - ${bp.name}`
+                }))}
+                value={formData.customerId || ''}
+                onChange={(value) => {
+                  const selected = businessPartners.find(p => p.id === value);
+                  if (selected) {
+                    setFormData(prev => ({
+                      ...prev,
+                      customerId: selected.id,
+                      customerName: selected.name
+                    }));
+                  }
+                }}
+                placeholder="Pesquisar cliente..."
               />
             </div>
             <div>
@@ -661,13 +700,18 @@ const ReverseLogisticsForm: React.FC<ReverseLogisticsFormProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Transportadora
               </label>
-              <input
-                type="text"
+              <select
                 value={formData.carrier}
                 onChange={(e) => handleInputChange('carrier', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Nome da transportadora"
-              />
+              >
+                <option value="">Selecione a transportadora</option>
+                {carriers.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.codigo} - {c.razao_social}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

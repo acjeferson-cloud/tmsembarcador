@@ -145,7 +145,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onBack, onSave, user }) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name.includes('email') ? value.toLowerCase() : value
     }));
 
     // Clear specific field errors when user starts typing

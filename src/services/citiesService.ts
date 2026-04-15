@@ -235,7 +235,7 @@ export const fetchCityByIbgeCode = async (ibgeCode: string) => {
     const { data, error } = await supabase
       .from('cities')
       .select('*')
-      .eq('ibge_code', ibgeCode)
+      .eq('codigo_ibge', ibgeCode)
       .maybeSingle();
 
     if (error) throw error;

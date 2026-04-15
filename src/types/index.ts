@@ -102,6 +102,7 @@ interface FreightRate {
 
 export interface BusinessPartner {
   id: string;
+  codigo?: string;
   name: string;
   document: string;
   documentType: 'cpf' | 'cnpj';

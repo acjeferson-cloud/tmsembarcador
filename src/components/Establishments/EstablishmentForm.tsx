@@ -104,7 +104,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
 
     const formattedValue = titleCaseFields.includes(name)
       ? formatTitleCase(value)
-      : value;
+      : name.includes('email') ? value.toLowerCase() : value;
 
     setFormData(prev => ({
       ...prev,

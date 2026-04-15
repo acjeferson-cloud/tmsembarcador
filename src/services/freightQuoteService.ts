@@ -583,7 +583,8 @@ export const freightQuoteService = {
         *,
         business_partners (
           id,
-          nome_fantasia
+          nome_fantasia,
+          cpf_cnpj
         ),
         users (
           id,

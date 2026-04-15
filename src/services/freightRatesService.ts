@@ -38,6 +38,10 @@ export interface FreightRateTable {
   status: 'ativo' | 'inativo';
   table_type?: 'Entrada' | 'Saída';
   modal?: 'rodoviario' | 'aereo' | 'aquaviario' | 'ferroviario';
+  devolucao_tipo_cobranca?: 'PERCENTUAL' | 'VALOR_FIXO';
+  devolucao_valor?: number;
+  reentrega_tipo_cobranca?: 'PERCENTUAL' | 'VALOR_FIXO';
+  reentrega_valor?: number;
   tarifas?: FreightRate[];
   created_at?: string;
   updated_at?: string;
@@ -382,7 +386,7 @@ export const freightRatesService = {
 
     // Criar objeto apenas com campos válidos para update
     const validUpdates: any = {};
-    const validFields = ['nome', 'transportador_id', 'data_inicio', 'data_fim', 'status', 'table_type', 'modal'];
+    const validFields = ['nome', 'transportador_id', 'data_inicio', 'data_fim', 'status', 'table_type', 'modal', 'devolucao_tipo_cobranca', 'devolucao_valor', 'reentrega_tipo_cobranca', 'reentrega_valor'];
 
     validFields.forEach(field => {
       if (tableUpdates[field] !== undefined && tableUpdates[field] !== '') {

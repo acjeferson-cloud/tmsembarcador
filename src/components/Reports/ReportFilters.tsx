@@ -6,6 +6,8 @@ import { occurrences } from '../../data/occurrencesData';
 import { rejectionReasons } from '../../data/rejectionReasonsData';
 import { Search as SearchIcon, Calendar as CalendarIcon, Filter, FileText } from 'lucide-react';
 import { carriersService, Carrier } from '../../services/carriersService';
+import { businessPartnersService, BusinessPartner } from '../../services/businessPartnersService';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 
 interface ReportFiltersProps {
   reportId: string;
@@ -16,10 +18,21 @@ interface ReportFiltersProps {
 export const ReportFilters: React.FC<ReportFiltersProps> = ({ reportId, filters, onApplyFilters }) => {
   const [formState, setFormState] = useState<Record<string, any>>({});
   const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
 
   useEffect(() => {
     loadCarriers();
+    loadBusinessPartners();
   }, []);
+
+  const loadBusinessPartners = async () => {
+    try {
+      const data = await businessPartnersService.getAll();
+      setBusinessPartners(data || []);
+    } catch (error) {
+      console.error('Error loading business partners:', error);
+    }
+  };
 
   const loadCarriers = async () => {
     try {
@@ -172,7 +185,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({ reportId, filters,
               <option value="">Todos os Transportadores</option>
               {carriers.map(carrier => (
                 <option key={carrier.id} value={carrier.id}>
-                  {carrier.codigo} {carrier.razao_social}
+                  {carrier.codigo} - {carrier.razao_social}
                 </option>
               ))}
             </select>
@@ -332,13 +345,14 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({ reportId, filters,
               <User size={16} />
               <span>Cliente</span>
             </label>
-            <input
-              type="text"
-              name="cliente"
+            <AutocompleteSelect
+              options={businessPartners.map(partner => ({
+                value: partner.codigo || '',
+                label: partner.document ? `${partner.document} - ${partner.name}` : `${partner.codigo} - ${partner.name}`
+              }))}
               value={formState.cliente || ''}
-              onChange={handleInputChange}
-              placeholder="Digite o nome do cliente"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              onChange={(value) => setFormState(prev => ({ ...prev, cliente: value }))}
+              placeholder="Pesquisar cliente..."
             />
           </div>
         )}

@@ -686,23 +686,154 @@ export const implementationService = {
         return { success: false, message: 'Erro ao criar log de importação' };
       }
 
-      // Simular processamento
-      const recordsProcessed = 100;
-      const recordsSuccess = 100;
-      const recordsError = 0;
+      // Import loader dynamically to avoid circular dependencies
+      const { processFreightRateCitiesFile } = await import('./templateService');
+      const { supabase } = await import('../lib/supabase');
+      const { TenantContextHelper } = await import('../utils/tenantContext');
+      const citiesData = await processFreightRateCitiesFile(file);
+      const ctx = await TenantContextHelper.getCurrentContext();
+
+      let recordsSuccess = 0;
+      let recordsError = 0;
+      const errors: string[] = [];
+      const rateCitiesToInsert: any[] = [];
+
+      // Maps to cache DB calls during loop
+      const carrierMap = new Map<string, string>();
+      const tableMap = new Map<string, string>();
+      const rateMap = new Map<string, string>();
+      const cityMap = new Map<string, string>();
+
+      const parseDateStr = (d: any) => {
+        if (!d) return null;
+        // Excel often returns dates as numerical serial dates (days since 1900)
+        if (typeof d === 'number') {
+          const date = new Date(Math.round((d - 25569) * 86400 * 1000));
+          const y = date.getUTCFullYear();
+          const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        }
+        if (typeof d === 'string') {
+          const parts = d.split('/');
+          if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return String(d);
+      };
+
+      for (let i = 0; i < citiesData.length; i++) {
+        const row = citiesData[i];
+        const lineNumber = i + 2;
+
+        try {
+          // 1. Resolve Transportador
+          const carrierCodeStr = String(row.transportador_codigo).trim().padStart(4, '0');
+          let carrierId = carrierMap.get(carrierCodeStr);
+          if (!carrierId) {
+             let query = supabase.from('carriers').select('id').eq('codigo', carrierCodeStr);
+             if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+             const { data: carrierData } = await query.limit(1);
+             const carrier = carrierData?.[0];
+             if (!carrier) throw new Error(`Transportadora (código ${carrierCodeStr}) não encontrada no sistema`);
+             carrierId = carrier.id;
+             carrierMap.set(carrierCodeStr, carrier.id);
+          }
+
+          // 2. Resolve Tabela
+          const tableCacheKey = `${carrierId}_${row.tabela_nome}_${row.validade_inicio}_${row.validade_fim}`;
+          let tableId = tableMap.get(tableCacheKey);
+          if (!tableId) {
+             let query = supabase.from('freight_rate_tables')
+               .select('id')
+               .eq('transportador_id', carrierId)
+               .eq('nome', row.tabela_nome)
+               .eq('data_inicio', parseDateStr(row.validade_inicio))
+               .eq('data_fim', parseDateStr(row.validade_fim));
+             if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+             const { data: tableData } = await query.limit(1);
+             const table = tableData?.[0];
+             if (!table) throw new Error(`Tabela "${row.tabela_nome}" não encontrada no período informado`);
+             tableId = table.id;
+             tableMap.set(tableCacheKey, table.id);
+          }
+
+          // 3. Resolve Tarifa
+          const rateCacheKey = `${tableId}_${row.tarifa_codigo}`;
+          let rateId = rateMap.get(rateCacheKey);
+          if (!rateId) {
+             let query = supabase.from('freight_rates')
+               .select('id')
+               .eq('freight_rate_table_id', tableId)
+               .eq('codigo', row.tarifa_codigo);
+             if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+             const { data: rateData } = await query.limit(1);
+             const rate = rateData?.[0];
+             if (!rate) throw new Error(`Tarifa (código ${row.tarifa_codigo}) não encontrada nesta tabela`);
+             rateId = rate.id;
+             rateMap.set(rateCacheKey, rate.id);
+          }
+
+          // 4. Resolve Cidade IBGE
+          const ibgeStr = String(row.cidade_ibge).trim();
+          let cityId = cityMap.get(ibgeStr);
+          if (!cityId) {
+             const { data: cityData } = await supabase.from('cities')
+               .select('id')
+               .eq('codigo_ibge', ibgeStr)
+               .limit(1);
+             const city = cityData?.[0];
+             if (!city) throw new Error(`Cidade IBGE (${ibgeStr}) não consta no sistema`);
+             cityId = city.id;
+             cityMap.set(ibgeStr, city.id);
+          }
+
+          rateCitiesToInsert.push({
+             freight_rate_table_id: tableId,
+             freight_rate_id: rateId,
+             city_id: cityId,
+             delivery_days: row.prazo_entrega_dias || 0
+          });
+
+          recordsSuccess++;
+        } catch (error: any) {
+          recordsError++;
+          errors.push(`Linha ${lineNumber}: ${error.message}`);
+        }
+      }
+
+      // Batch Insert records
+      if (rateCitiesToInsert.length > 0) {
+        // Primeiro verificamos se essa cidade/rate já existem antes do insert para evitar erros PK se não houver upsert nativo livre
+        for (let i = 0; i < rateCitiesToInsert.length; i += 500) {
+           const batch = rateCitiesToInsert.slice(i, i + 500);
+           const { error: insertError } = await supabase.from('freight_rate_cities').upsert(batch, { onConflict: 'freight_rate_id, city_id', ignoreDuplicates: true });
+           if (insertError) {
+             console.error("Erro inserindo lote:", insertError);
+             // Caso nao exisa unique spec, faremos o basic insert 
+             const { error: pureInsertError } = await supabase.from('freight_rate_cities').insert(batch);
+             if (pureInsertError && !pureInsertError.message.includes('duplicate key')) {
+               throw pureInsertError;
+             }
+           }
+        }
+      }
+
+      const recordsProcessed = citiesData.length;
 
       await this.updateImportLog(logResult.id, {
         records_processed: recordsProcessed,
         records_success: recordsSuccess,
         records_error: recordsError,
-        status: 'completed'
+        status: errors.length > 0 ? 'failed' : 'completed',
+        errors: errors.length > 0 ? errors : undefined
       });
 
       return {
-        success: true,
+        success: errors.length === 0,
         logId: logResult.id,
-        message: 'Importação concluída com sucesso',
-        recordsProcessed
+        message: errors.length === 0 ? 'Importação concluída com sucesso' : 'Falha na validação ou gravação',
+        recordsProcessed,
+        errors: errors.length > 0 ? errors : undefined
       };
     } catch (error) {
 
@@ -852,40 +983,313 @@ export const implementationService = {
     performedBy: string
   ): Promise<{ success: boolean; logId?: string; message: string; recordsProcessed?: number; errors?: string[] }> {
     try {
-      const logResult = await this.createImportLog({
+      const { processAdditionalFeesFile } = await import('./templateService');
+      const { additionalFeesService } = await import('./additionalFeesService');
+      const { businessPartnersService } = await import('./businessPartnersService');
+      const { statesService } = await import('./statesService');
+      const { getCitiesByState } = await import('./citiesService');
+      const { TenantContextHelper } = await import('../utils/tenantContext');
+      const { supabase } = await import('../lib/supabase');
+
+      const feesData = await processAdditionalFeesFile(file);
+      const ctx = await TenantContextHelper.getCurrentContext();
+
+      // Criar log inicial
+      const logPayload: ImportLog = {
         import_type: 'fees',
         file_name: file.name,
         records_processed: 0,
         records_success: 0,
         records_error: 0,
-        status: 'processing',
-        performed_by: performedBy
-      });
+        status: 'processing'
+      };
+
+      if (isValidUUID(performedBy)) {
+        logPayload.performed_by = performedBy;
+      }
+
+      const logResult = await this.createImportLog(logPayload);
 
       if (!logResult.success || !logResult.id) {
         return { success: false, message: 'Erro ao criar log de importação' };
       }
 
-      const recordsProcessed = 100;
-      const recordsSuccess = 100;
-      const recordsError = 0;
+      let recordsSuccess = 0;
+      let recordsError = 0;
+      const errorsList: string[] = [];
+      const feesToInsert: any[] = [];
+      const feesToUpdate: any[] = [];
+
+      // Cache maps to avoid redundant DB calls
+      const carrierMap = new Map<string, string>();
+      const tableMap = new Map<string, string>();
+      const rateMap = new Map<string, string>();
+      const partnerMap = new Map<string, string>();
+      const stateMap = new Map<string, string>();
+      const cityMap = new Map<string, any>();
+      const existingFeesPerTable = new Map<string, any[]>();
+
+      const parseDateStr = (d: any) => {
+        if (!d) return null;
+        if (typeof d === 'number') {
+          const date = new Date(Math.round((d - 25569) * 86400 * 1000));
+          const y = date.getUTCFullYear();
+          const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        }
+        if (typeof d === 'string') {
+          const parts = d.split('/');
+          if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return String(d);
+      };
+
+      const valueTypeMap: Record<string, string> = {
+        'Fixo': 'fixed',
+        'Percentual sobre Peso': 'percent_weight',
+        'Percentual sobre Valor': 'percent_value',
+        'Percentual sobre Peso e Valor': 'percent_weight_value',
+        'Percentual sobre CT-e': 'percent_cte'
+      };
+
+      for (let i = 0; i < feesData.length; i++) {
+        const row = feesData[i];
+        const lineNumber = i + 2;
+
+        try {
+          // 1. Resolve Transportador
+          const carrierCodeStr = String(row.transportador_codigo).trim().padStart(4, '0');
+          let carrierId = carrierMap.get(carrierCodeStr);
+          if (!carrierId) {
+            let query = supabase.from('carriers').select('id').eq('codigo', carrierCodeStr);
+            if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+            const { data: carrierData } = await query.limit(1);
+            if (!carrierData?.[0]) throw new Error(`Transportadora ${carrierCodeStr} não encontrada`);
+            carrierId = carrierData[0].id;
+            carrierMap.set(carrierCodeStr, carrierId);
+          }
+
+          // 2. Resolve Tabela
+          const tableCacheKey = `${carrierId}_${row.tabela_nome}_${row.validade_inicio}_${row.validade_fim}`;
+          let tableId = tableMap.get(tableCacheKey);
+          if (!tableId) {
+            let query = supabase.from('freight_rate_tables')
+              .select('id')
+              .eq('transportador_id', carrierId)
+              .eq('nome', row.tabela_nome)
+              .eq('data_inicio', parseDateStr(row.validade_inicio))
+              .eq('data_fim', parseDateStr(row.validade_fim));
+            if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+            const { data: tableData } = await query.limit(1);
+            if (!tableData?.[0]) throw new Error(`Tabela "${row.tabela_nome}" não encontrada no período informado`);
+            tableId = tableData[0].id;
+            tableMap.set(tableCacheKey, tableId);
+          }
+
+          // 3. Resolve Tarifa (Removido: Taxas adicionais agora são apenas por tabela)
+          const rateId = null;
+
+          // 4. Resolve Parceiro de Negócio (Opcional)
+          let partnerId = null;
+          if (row.parceiro_negocio_documento) {
+            const docClean = row.parceiro_negocio_documento.replace(/\D/g, '');
+            partnerId = partnerMap.get(docClean);
+            if (!partnerId) {
+              const query = supabase.from('business_partners').select('id').ilike('documento', docClean);
+              const { data: partnerData } = await query.limit(1);
+              partnerId = partnerData?.[0]?.id || null;
+              if (partnerId) partnerMap.set(docClean, partnerId);
+            }
+          }
+
+          // 5. Resolve Estado (Opcional)
+          let stateId = null;
+          if (row.estado_sigla) {
+            const sigla = row.estado_sigla.toUpperCase();
+            stateId = stateMap.get(sigla);
+            if (!stateId) {
+              const { data: stateData } = await supabase.from('states').select('id').eq('sigla', sigla).limit(1);
+              stateId = stateData?.[0]?.id || null;
+              if (stateId) stateMap.set(sigla, stateId);
+            }
+          }
+
+          // 6. Resolve Cidade IBGE (Opcional)
+          let cityId = null;
+          if (row.cidade_ibge) {
+            const ibge = String(row.cidade_ibge).trim();
+            let cityInfo = cityMap.get(ibge);
+            if (!cityInfo) {
+              const { data: cityData } = await supabase.from('cities').select('id, state_id').eq('codigo_ibge', ibge).limit(1);
+              if (!cityData?.[0]) throw new Error(`Cidade com IBGE ${ibge} não encontrada`);
+              cityInfo = cityData[0];
+              cityMap.set(ibge, cityInfo);
+            }
+            
+            cityId = ibge; // Store IBGE Code as string (matches UI expectation)
+            if (!stateId && cityInfo.state_id) {
+              stateId = cityInfo.state_id; // Auto-populate state if found via city
+            }
+          }
+
+          const mappedValueType = valueTypeMap[row.tipo_valor] || 'fixed';
+          const feeValue = Number(row.valor_taxa) || 0;
+          const minValue = Number(row.valor_minimo) || 0;
+
+          // 7. Check for Duplicates
+          let existingFees = existingFeesPerTable.get(tableId);
+          if (existingFees === undefined) {
+            // First time seeing this table, fetch its fees
+            const { data: fetchedFees } = await supabase
+              .from('freight_rate_additional_fees')
+              .select('*')
+              .eq('freight_rate_table_id', tableId);
+            existingFees = fetchedFees || [];
+            existingFeesPerTable.set(tableId, existingFees);
+          }
+
+          const isDuplicate = existingFees.find(ef => {
+            const efPartner = ef.business_partner_id || null;
+            const rowPartner = partnerId || null;
+            const efState = ef.state_id || null;
+            const rowState = stateId || null;
+            const efCity = ef.city_id || null;
+            const rowCity = cityId || null;
+
+            return ef.fee_type === row.tipo_taxa &&
+                   efPartner === rowPartner &&
+                   efState === rowState &&
+                   efCity === rowCity;
+          });
+
+          if (isDuplicate) {
+            // Check if values are identical. If yes, skip to avoid "duplicating exactly same"
+            if (
+              Number(isDuplicate.fee_value) === feeValue &&
+              isDuplicate.value_type === mappedValueType &&
+              Number(isDuplicate.minimum_value) === minValue &&
+              isDuplicate.consider_cnpj_root === (String(row.considerar_raiz_cnpj).toLowerCase() === 'sim')
+            ) {
+              recordsSuccess++; // Mark as success but don't insert
+              continue; 
+            }
+
+            // If some values changed, we update (handled via upsert if possible)
+            if (
+              Number(isDuplicate.fee_value) !== feeValue ||
+              isDuplicate.value_type !== mappedValueType ||
+              Number(isDuplicate.minimum_value) !== minValue ||
+              isDuplicate.consider_cnpj_root !== (String(row.considerar_raiz_cnpj).toLowerCase() === 'sim')
+            ) {
+              feesToUpdate.push({
+                id: isDuplicate.id,
+                freight_rate_table_id: tableId,
+                freight_rate_id: rateId,
+                fee_type: row.tipo_taxa,
+                business_partner_id: partnerId,
+                consider_cnpj_root: String(row.considerar_raiz_cnpj).toLowerCase() === 'sim',
+                state_id: stateId,
+                city_id: cityId,
+                fee_value: feeValue,
+                value_type: mappedValueType,
+                minimum_value: minValue,
+                organization_id: ctx?.organizationId,
+                environment_id: ctx?.environmentId,
+                updated_by: performedBy,
+                updated_at: new Date().toISOString()
+              });
+            }
+
+            recordsSuccess++;
+            continue;
+          }
+
+          feesToInsert.push({
+            freight_rate_table_id: tableId,
+            freight_rate_id: rateId,
+            fee_type: row.tipo_taxa, // TDA, TDE, TRT, TEC
+            business_partner_id: partnerId,
+            consider_cnpj_root: String(row.considerar_raiz_cnpj).toLowerCase() === 'sim',
+            state_id: stateId,
+            city_id: cityId,
+            fee_value: feeValue,
+            value_type: mappedValueType,
+            minimum_value: minValue,
+            organization_id: ctx?.organizationId,
+            environment_id: ctx?.environmentId,
+            created_by: performedBy,
+            updated_by: performedBy
+          });
+
+          recordsSuccess++;
+        } catch (error: any) {
+          recordsError++;
+          errorsList.push(`Linha ${lineNumber}: ${error.message}`);
+        }
+      }
+
+      // Batch Insert
+      if (feesToInsert.length > 0) {
+        // Deduplicate within the same batch (keep last occurrence)
+        const uniqueInserts = Array.from(
+          feesToInsert.reduce((map, item) => {
+            const partner = item.business_partner_id || 'null';
+            const state = item.state_id || 'null';
+            const city = item.city_id || 'null';
+            const key = `${item.freight_rate_table_id}_${item.fee_type}_${partner}_${state}_${city}`;
+            return map.set(key, item);
+          }, new Map()).values()
+        );
+
+        for (let j = 0; j < uniqueInserts.length; j += 100) {
+          const batch = uniqueInserts.slice(j, j + 100);
+          const { error: insertError } = await supabase.from('freight_rate_additional_fees').insert(batch);
+          if (insertError) {
+            errorsList.push(`Erro ao gravar lote de inserção ${j/100 + 1}: ${insertError.message}`);
+            recordsSuccess -= batch.length;
+            recordsError += batch.length;
+          }
+        }
+      }
+
+      // Batch Update
+      if (feesToUpdate.length > 0) {
+        // Deduplicate within the same batch (keep last occurrence) to avoid PG error
+        const uniqueUpdates = Array.from(
+          feesToUpdate.reduce((map, item) => map.set(item.id, item), new Map()).values()
+        );
+
+        for (let j = 0; j < uniqueUpdates.length; j += 100) {
+          const batch = uniqueUpdates.slice(j, j + 100);
+          const { error: updateError } = await supabase.from('freight_rate_additional_fees').upsert(batch);
+          if (updateError) {
+            errorsList.push(`Erro ao gravar lote de atualização ${j/100 + 1}: ${updateError.message}`);
+            // We don't decrement recordsSuccess here as they were already counted
+            recordsError += batch.length;
+          }
+        }
+      }
+
+      const recordsProcessed = feesData.length;
 
       await this.updateImportLog(logResult.id, {
         records_processed: recordsProcessed,
         records_success: recordsSuccess,
         records_error: recordsError,
-        status: 'completed'
+        status: errorsList.length > 0 && recordsSuccess === 0 ? 'failed' : 'completed',
+        errors: errorsList.length > 0 ? errorsList : undefined
       });
 
       return {
-        success: true,
+        success: recordsSuccess > 0,
         logId: logResult.id,
-        message: 'Importação concluída com sucesso',
-        recordsProcessed
+        message: recordsSuccess > 0 ? 'Importação concluída com sucesso' : 'Falha na importação',
+        recordsProcessed,
+        errors: errorsList.length > 0 ? errorsList : undefined
       };
-    } catch (error) {
-
-      return { success: false, message: 'Erro ao processar arquivo' };
+    } catch (error: any) {
+      return { success: false, message: 'Erro interno ao processar: ' + error.message };
     }
   },
 

@@ -183,7 +183,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     autoComplete="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
                     className="block w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500"
                     placeholder={t('login.email')}
                   />
@@ -319,7 +319,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           {/* Version */}
           <div className="text-center pt-1">
-            <p className="text-xs text-gray-400 dark:text-gray-600">V1.12</p>
+            <p className="text-xs text-gray-400 dark:text-gray-600">V1.13</p>
           </div>
         </div>
       </div>

@@ -5,6 +5,8 @@ import { CTeWithRelations } from '../../services/ctesCompleteService';
 interface CTeValuesComparisonModalProps {
   cte: CTeWithRelations;
   onClose: () => void;
+  onApproveDivergence?: (cteId: string) => void;
+  onBlockDivergence?: (cteId: string) => void;
 }
 
 interface TaxComparison {
@@ -267,7 +269,25 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
+          <div>
+            {cte.status === 'auditoria' && (
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => onBlockDivergence?.(cte.id.toString())}
+                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  Bloquear / Refutar Documento
+                </button>
+                <button
+                  onClick={() => onApproveDivergence?.(cte.id.toString())}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Forçar Aprovação
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"

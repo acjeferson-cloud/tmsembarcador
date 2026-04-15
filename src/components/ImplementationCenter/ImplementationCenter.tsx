@@ -86,9 +86,11 @@ const ImplementationCenter: React.FC = () => {
   const loadCarriers = async () => {
     try {
       const data = await carriersService.getAll();
-      setCarriers(data.filter(c => c.status === 'ativo'));
+      const activeCarriers = data.filter(c => c.status === 'ativo');
+      // Ensure they are sorted by code (carriersService already does this, but being explicit)
+      setCarriers(activeCarriers.sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '')));
     } catch (err) {
-
+      console.error('Error loading carriers:', err);
     }
   };
 
@@ -232,7 +234,7 @@ const ImplementationCenter: React.FC = () => {
           break;
         case 'table-fees':
           generateAdditionalFeesTemplate();
-          setToast({ type: 'success', message: t('implementationCenter.imports.fees.title') + ' - ' + t('implementationCenter.messages.saveSuccess') });
+          setToast({ type: 'success', message: 'Template de Taxas Adicionais baixado com sucesso!' });
           break;
         default:
           setToast({ type: 'error', message: t('implementationCenter.messages.unsupportedTemplate') });
@@ -525,7 +527,7 @@ const ImplementationCenter: React.FC = () => {
             >
               <option value="">Selecione uma transportadora...</option>
               {carriers.map(c => (
-                <option key={c.id} value={c.id}>{c.razao_social} {c.fantasia ? `(${c.fantasia})` : ''}</option>
+                <option key={c.id} value={c.id}>{c.codigo} - {c.razao_social}</option>
               ))}
             </select>
           </div>
@@ -813,12 +815,11 @@ const ImplementationCenter: React.FC = () => {
       icon: Settings,
       description: t('implementationCenter.tabs.erpIntegration')
     },
-    { id: 'carriers', label: 'Transportadoras', icon: Truck },
-    { id: 'freight', label: 'Tabelas de Frete', icon: DollarSign },
-    { id: 'cities', label: 'Cidades', icon: MapPin },
-    { id: 'table-fees', label: 'Taxas da Tabela', icon: FileSpreadsheet },
-    { id: 'restricted-ceps', label: 'CEPs Restritos', icon: Shield },
-    { id: 'adjust-tables', label: 'Reajustar Tabelas', icon: Percent }
+    { id: 'carriers', label: t('implementationCenter.tabs.carriers'), icon: Truck },
+    { id: 'freight', label: t('implementationCenter.tabs.freightTables'), icon: DollarSign },
+    { id: 'cities', label: t('implementationCenter.tabs.cities'), icon: MapPin },
+    { id: 'table-fees', label: t('implementationCenter.tabs.tableFees'), icon: FileSpreadsheet },
+    { id: 'adjust-tables', label: t('implementationCenter.tabs.adjustTables'), icon: Percent }
   ];
 
   return (
@@ -1409,17 +1410,7 @@ const ImplementationCenter: React.FC = () => {
             title={t('implementationCenter.imports.tableFees.title')}
             description={t('implementationCenter.imports.tableFees.description')}
             icon={FileSpreadsheet}
-            templateName="template_taxas_tabela.xlsx"
-          />
-        )}
-
-        {activeTab === 'restricted-ceps' && (
-          <ImportSection
-            type="restricted-ceps"
-            title={t('implementationCenter.imports.restrictedCeps.title')}
-            description={t('implementationCenter.imports.restrictedCeps.description')}
-            icon={Shield}
-            templateName="template_ceps_restritos.xlsx"
+            templateName="template_taxas_adicionais.xlsx"
           />
         )}
 

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, DollarSign } from 'lucide-react';
 import { brazilianStates } from '../../data/statesData';
 import { carriersService, Carrier } from '../../services/carriersService';
+import { businessPartnersService, BusinessPartner } from '../../services/businessPartnersService';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 import { useFilterCache } from '../../hooks/useFilterCache';
 
 interface InvoicesFiltersProps {
@@ -27,19 +29,34 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
   const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
 
   useFilterCache('invoices-filters', localFilters, setLocalFilters);
 
   useEffect(() => {
     loadCarriers();
+    loadBusinessPartners();
   }, []);
+
+  const loadBusinessPartners = async () => {
+    try {
+      const data = await businessPartnersService.getAll();
+      setBusinessPartners(data || []);
+    } catch (error) {
+      console.error('Error loading business partners:', error);
+    }
+  };
 
   const loadCarriers = async () => {
     try {
       const data = await carriersService.getAll();
-      setCarriers(data);
+      const sortedCarriers = [...data].sort((a, b) => {
+        const codeA = a.codigo || '';
+        const codeB = b.codigo || '';
+        return codeA.localeCompare(codeB);
+      });
+      setCarriers(sortedCarriers);
     } catch (error) {
-// null
     }
   };
 
@@ -169,7 +186,7 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 <option value="">{t('invoices.filters.allCarriers')}</option>
                 {carriers.map(carrier => (
                   <option key={carrier.id} value={carrier.id}>
-                    {carrier.codigo} {carrier.razao_social}
+                    {carrier.codigo} - {carrier.razao_social}
                   </option>
                 ))}
               </select>
@@ -181,12 +198,13 @@ export const InvoicesFilters: React.FC<InvoicesFiltersProps> = ({ onFilterChange
                 <User size={16} />
                 <span>{t('invoices.filters.customer')}</span>
               </label>
-              <input
-                type="text"
-                name="cliente"
+              <AutocompleteSelect
+                options={businessPartners.map(partner => ({
+                  value: `${partner.document} - ${partner.name}`,
+                  label: `${partner.document} - ${partner.name}`
+                }))}
                 value={localFilters.cliente}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(value) => setLocalFilters(prev => ({ ...prev, cliente: value }))}
                 placeholder={t('invoices.filters.customerPlaceholder')}
               />
             </div>

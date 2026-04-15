@@ -57,7 +57,11 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
     tipoFrete: cte.freight_type,
     transportador: cte.carrier && cte.carrier.codigo ? `${String(cte.carrier.codigo).padStart(4, '0')} - ${cte.carrier.razao_social}` : (cte.carrier?.razao_social || ''),
     previsaoEntrega: (cte as any).estimated_delivery_date || (cte as any).previsao_entrega || '',
-    cliente: cte.recipient_name || cte.sender_name || '',
+    cliente: cte.recipient_name 
+      ? (cte.recipient_document ? `${cte.recipient_document} - ${cte.recipient_name}` : cte.recipient_name)
+      : (cte.sender_name 
+          ? (cte.sender_document ? `${cte.sender_document} - ${cte.sender_name}` : cte.sender_name)
+          : ''),
     cidadeDestino: cte.recipient_city || '',
     ufDestino: cte.recipient_state || '',
     valorCTe: parseFloat(cte.total_value.toString()),
@@ -1229,6 +1233,18 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           onClose={() => {
             setShowComparisonModal(false);
             setSelectedCTeForComparison(null);
+          }}
+          onApproveDivergence={(cteId) => {
+            setShowComparisonModal(false);
+            setSelectedCTeForComparison(null);
+            handleSingleAction(cteId, 'approve');
+          }}
+          onBlockDivergence={(cteId) => {
+            setShowComparisonModal(false);
+            setSelectedCTeForComparison(null);
+            // Select the CT-e and fire the bulk action that triggers the report UI
+            setSelectedCTes([cteId] as any);
+            handleBulkAction('reportDivergence');
           }}
         />
       )}

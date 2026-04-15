@@ -7,6 +7,7 @@ import { statesService } from '../../services/statesService';
 import { fetchCities } from '../../services/citiesService';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 
 interface AdditionalFeesModalProps {
   freightRateTableId: string;
@@ -321,22 +322,15 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('carriers.freightRates.additionalFees.businessPartner')} <span className="text-gray-400 text-xs">{t('carriers.freightRates.additionalFees.optional')}</span>
                   </label>
-                  <select
+                  <AutocompleteSelect
+                    options={businessPartners.map((bp) => ({
+                      value: bp.id || '',
+                      label: `${bp.codigo || ''} - ${bp.name}`
+                    }))}
                     value={formData.business_partner_id}
-                    onChange={(e) => setFormData({ ...formData, business_partner_id: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">{t('carriers.freightRates.additionalFees.allPartners')}</option>
-                    {businessPartners.length === 0 ? (
-                      <option value="" disabled>{t('carriers.freightRates.additionalFees.noPartners')}</option>
-                    ) : (
-                      businessPartners.map((bp) => (
-                        <option key={bp.id} value={bp.id}>
-                          {bp.name} - {bp.document}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, business_partner_id: value })}
+                    placeholder={t('carriers.freightRates.additionalFees.allPartners')}
+                  />
                 </div>
 
                 {formData.business_partner_id && (

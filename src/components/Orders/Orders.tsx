@@ -140,7 +140,7 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
         dataPrevisaoEntrega: order.expected_delivery || '',
         transportador: order.carrier_name,
         valorFrete: order.freight_value,
-        cliente: order.customer_name,
+        cliente: `${order.customer_document ? order.customer_document + ' - ' : ''}${order.customer_name}`,
         cidadeDestino: order.destination_city,
         ufDestino: order.destination_state,
         valorPedido: order.order_value,

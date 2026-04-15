@@ -110,6 +110,10 @@ export const cteXmlService = {
       const serie = getElementText(ide || xmlDoc, 'serie');
       const dhEmi = getElementText(ide || xmlDoc, 'dhEmi');
       const tpCTe = getElementText(ide || xmlDoc, 'tpCTe');
+      const natOp = getElementText(ide || xmlDoc, 'natOp');
+
+      // Buscar possível CTe referenciado (CT-e 4.0 Devolução/Reentrega)
+      const refCTe = getElementText(infCte, 'refCTE') || getElementText(infCte, 'refCte') || '';
 
       // Tipo de serviço e frete
       const tpServ = getElementText(ide || xmlDoc, 'tpServ');
@@ -410,7 +414,9 @@ export const cteXmlService = {
         xml_data: {
           original: xmlString,
           parsed: new Date().toISOString(),
-          tpCTe: tpCTe
+          tpCTe: tpCTe,
+          natOp: natOp,
+          refCTe: refCTe
         },
         invoices: notasFiscais
       };
@@ -621,6 +627,20 @@ export const cteXmlService = {
         if (fullCTe) {
           const calculation = await freightCostCalculator.calculateCTeCost(fullCTe);
           await freightCostCalculator.saveCostsToCTe(cteData.id, calculation);
+
+          // ----------------------------------------------------
+          // Auditoria Loop: Disparar painel de discrepância
+          // ----------------------------------------------------
+          const cobrado = Number(fullCTe.total_value || 0);
+          const calculado = Number(calculation.valorTotal || 0);
+          
+          // Tolerância global básica de R$ 2,00. Pode ser aprimorada por tabela no futuro.
+          if (Math.abs(cobrado - calculado) > 2.00) {
+            await (supabase as any)
+              .from('ctes_complete')
+              .update({ status: 'auditoria' })
+              .eq('id', cteData.id);
+          }
         }
       } catch (calcError) {
         console.warn('Erro ao calcular o frete durante a importação automática:', calcError);

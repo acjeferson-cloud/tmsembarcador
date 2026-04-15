@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
-import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt, Search, Filter, Printer, Download } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt, Search, Filter, Printer, Download, Calendar, Truck, DollarSign } from 'lucide-react';
 import Breadcrumbs from '../../../components/Layout/Breadcrumbs';
 import { RelationshipMapModal } from '../../../components/RelationshipMap';
 import { Toast, ToastType } from '../../../components/common/Toast';
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 import { useAuth } from '../../../hooks/useAuth';
 import { spotPdfService } from '../../../services/spotPdfService';
+import { carriersService, Carrier } from '../../../services/carriersService';
 
 export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: string) => void; onView?: (id: string) => void }> = ({ onNew, onEdit, onView }) => {
   const { t } = useTranslation();
@@ -20,7 +21,14 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
   // Search and Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [filters, setFilters] = useState({
+    status: '',
+    carrierId: '',
+    dateRange: { start: '', end: '' },
+    validityRange: { start: '', end: '' },
+    valueRange: { min: '', max: '' }
+  });
 
   // States para Menu de Contexto
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
@@ -47,7 +55,17 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
 
   useEffect(() => {
     fetchData();
+    loadCarriers();
   }, []);
+
+  const loadCarriers = async () => {
+    try {
+      const carriersData = await carriersService.getAll();
+      setCarriers(carriersData);
+    } catch (error) {
+      console.error('Error loading carriers:', error);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -62,7 +80,8 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
   const fetchData = async () => {
     setLoading(true);
     const res = await spotNegotiationService.getActiveNegotiations();
-    setData(res);
+    const sorted = [...res].sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
+    setData(sorted);
     setLoading(false);
   };
 
@@ -138,13 +157,71 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
 
   // Filtered Data
   const filteredData = data.filter(item => {
+    // Busca rápida por transportadora ou código
     const matchesSearch = searchTerm === '' || 
-      item.carrier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.carrier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.code?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === '' || item.status === statusFilter;
+    // Status
+    const matchesStatus = filters.status === '' || item.status === filters.status;
+
+    // Transportador específico
+    const matchesCarrier = filters.carrierId === '' || item.carrier_id === filters.carrierId;
+
+    // Faixa de Valor
+    const val = Number(item.agreed_value) || 0;
+    const minVal = filters.valueRange.min !== '' ? Number(filters.valueRange.min) : -Infinity;
+    const maxVal = filters.valueRange.max !== '' ? Number(filters.valueRange.max) : Infinity;
+    const matchesValue = val >= minVal && val <= maxVal;
+
+    // Data de Criação
+    const createdAt = item.created_at ? new Date(item.created_at) : null;
+    const startCreate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
+    const endCreate = filters.dateRange.end ? new Date(filters.dateRange.end) : null;
+    if (endCreate) endCreate.setHours(23, 59, 59, 999);
     
-    return matchesSearch && matchesStatus;
+    const matchesCreationDate = (!startCreate || (createdAt && createdAt >= startCreate)) &&
+                                (!endCreate || (createdAt && createdAt <= endCreate));
+
+    // Data de Validade
+    const validTo = item.valid_to ? new Date(item.valid_to) : null;
+    const startValid = filters.validityRange.start ? new Date(filters.validityRange.start) : null;
+    const endValid = filters.validityRange.end ? new Date(filters.validityRange.end) : null;
+    if (endValid) endValid.setHours(23, 59, 59, 999);
+
+    const matchesValidityDate = (!startValid || (validTo && validTo >= startValid)) &&
+                                (!endValid || (validTo && validTo <= endValid));
+    
+    return matchesSearch && matchesStatus && matchesCarrier && matchesValue && matchesCreationDate && matchesValidityDate;
   });
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleRangeChange = (rangeKey: 'dateRange' | 'validityRange' | 'valueRange', field: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [rangeKey]: {
+        ...prev[rangeKey as keyof typeof prev] as any,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      status: '',
+      carrierId: '',
+      dateRange: { start: '', end: '' },
+      validityRange: { start: '', end: '' },
+      valueRange: { min: '', max: '' }
+    });
+  };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -293,19 +370,50 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
             <Filter size={18} />
             <span>Filtros Avançados</span>
             <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-              {statusFilter ? 1 : 0}
+              {[
+                filters.status,
+                filters.carrierId,
+                filters.dateRange.start,
+                filters.dateRange.end,
+                filters.validityRange.start,
+                filters.validityRange.end,
+                filters.valueRange.min,
+                filters.valueRange.max
+              ].filter(Boolean).length}
             </span>
           </button>
         </div>
 
         {isFiltersExpanded && (
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status da Cotação</label>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Transportador */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <Truck size={14}/> Transportador
+                  </label>
                   <select 
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    value={filters.carrierId}
+                    onChange={(e) => handleFilterChange('carrierId', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                     <option value="">Todos os Transportadores</option>
+                     {carriers.map(carrier => (
+                       <option key={carrier.id} value={carrier.id}>
+                         {carrier.codigo} - {carrier.razao_social}
+                       </option>
+                     ))}
+                  </select>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <CheckCircle size={14}/> Status da Cotação
+                  </label>
+                  <select 
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                      <option value="">Todos os Status</option>
@@ -315,14 +423,88 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                      <option value="cancelado">Cancelado</option>
                   </select>
                 </div>
+
+                {/* Período de Criação */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <Calendar size={14}/> Período de Criação
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="date"
+                      value={filters.dateRange.start}
+                      onChange={(e) => handleRangeChange('dateRange', 'start', e.target.value)}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <span className="text-gray-400">a</span>
+                    <input 
+                      type="date"
+                      value={filters.dateRange.end}
+                      onChange={(e) => handleRangeChange('dateRange', 'end', e.target.value)}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Período de Validade */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <Calendar size={14}/> Período de Validade
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="date"
+                      value={filters.validityRange.start}
+                      onChange={(e) => handleRangeChange('validityRange', 'start', e.target.value)}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <span className="text-gray-400">a</span>
+                    <input 
+                      type="date"
+                      value={filters.validityRange.end}
+                      onChange={(e) => handleRangeChange('validityRange', 'end', e.target.value)}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Faixa de Valor */}
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <DollarSign size={14}/> Faixa de Valor (Mín / Máx)
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <div className="relative w-full">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                      <input 
+                        type="number"
+                        placeholder="Mín"
+                        value={filters.valueRange.min}
+                        onChange={(e) => handleRangeChange('valueRange', 'min', e.target.value)}
+                        className="w-full pl-7 pr-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+                    <span className="text-gray-400">a</span>
+                    <div className="relative w-full">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                      <input 
+                        type="number"
+                        placeholder="Máx"
+                        value={filters.valueRange.max}
+                        onChange={(e) => handleRangeChange('valueRange', 'max', e.target.value)}
+                        className="w-full pl-7 pr-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
              </div>
              
-             <div className="flex justify-end mt-4">
+             <div className="flex justify-end mt-6">
                <button 
-                 onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
-                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                 onClick={handleClearFilters}
+                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center gap-1"
                >
-                 Limpar Filtros
+                 <Trash2 size={14}/> Limpar Filtros
                </button>
              </div>
           </div>
@@ -383,9 +565,10 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th className="px-6 py-3 w-16 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Ações</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Nº Cotação</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-center">Ações</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Nº Cotação</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Data Criação</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Transportador</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Valor Prometido</th>
                   <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Validade</th>
@@ -474,6 +657,9 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {item.code ? item.code : '-'}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-white">

@@ -145,7 +145,7 @@ const dataBlock = {
   "implementationCenter.imports.restrictedCeps.description": "Faixa de CEPS não entregues",
   "implementationCenter.imports.restrictedCeps.title": "Ceps Restritos",
   "implementationCenter.imports.tableFees.description": "Taxas adicionais padrão",
-  "implementationCenter.imports.tableFees.title": "Taxas da Tabela",
+  "implementationCenter.imports.tableFees.title": "Taxas Adicionais",
   "implementationCenter.imports.templateExcel": "Formatação Excel",
   "implementationCenter.messages.adjustError": "Falha no disparo do Reajuste de Tabela",
   "implementationCenter.messages.approveSuggestionError": "Erro ao aprovar a sugestão.",

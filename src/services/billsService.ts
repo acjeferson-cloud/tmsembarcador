@@ -42,6 +42,7 @@ export const billsService = {
         .from('bills')
         .select(`
           *,
+          carrier:carriers(id, razao_social, codigo),
           bill_ctes (
             id,
             ctes_complete (
@@ -55,7 +56,7 @@ export const billsService = {
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query.order('issue_date', { ascending: false });
 
       if (error) throw error;
 
@@ -94,6 +95,7 @@ export const billsService = {
 
         return {
           ...b,
+          customer_name: b.carrier ? `${b.carrier.codigo ? b.carrier.codigo + ' - ' : ''}${b.carrier.razao_social}` : b.customer_name,
           calculated_cost: totalCost,
           cteCount: b.bill_ctes && b.bill_ctes[0] && b.bill_ctes[0].count !== undefined ? b.bill_ctes[0].count : cteCount,
           tolerancia_valor_fatura: tolVal,

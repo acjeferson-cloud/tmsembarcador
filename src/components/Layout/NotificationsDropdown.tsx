@@ -63,14 +63,14 @@ export const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+    <div className="absolute right-0 mt-2 w-[420px] bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Bell size={16} className="text-blue-600" />
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notificações</h3>
           {unreadCount > 0 && (
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap">
               {unreadCount} nova{unreadCount !== 1 ? 's' : ''}
             </span>
           )}

@@ -91,6 +91,13 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
 
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return 'N/A';
+    
+    // Se for formato ISO simples (YYYY-MM-DD), processar manualmente para evitar deslocamento de fuso horário
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString.split('T')[0])) {
+      const parts = dateString.split('T')[0].split('-');
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('pt-BR');
   };

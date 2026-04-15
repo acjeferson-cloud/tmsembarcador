@@ -111,17 +111,24 @@ export const CTesTable = React.memo<CTesTableProps>(({
 
   // Get status color
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Importado':
+    switch (status?.toLowerCase()) {
+      case 'importado':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100'; // Like Emitido
-      case 'Auditado e aprovado':
+      case 'auditado e aprovado':
+      case 'liberado':
+      case 'aprovado':
         return 'bg-green-600 text-white dark:bg-green-700 dark:text-green-50'; // Like Entregue
-      case 'Auditado e reprovado':
+      case 'auditado e reprovado':
+      case 'em contestação':
+      case 'em_contestacao':
         return 'bg-orange-600 text-white dark:bg-orange-700 dark:text-orange-50';
-      case 'Com NF-e Referenciada':
+      case 'com nf-e referenciada':
         return 'bg-indigo-600 text-white dark:bg-indigo-700 dark:text-indigo-50'; // Strong tonal
-      case 'Cancelado':
-        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50'; // Like Cancelado
+      case 'auditoria':
+      case 'em_auditoria':
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50'; // The strong red alert for Auditoria Divergente
+      case 'cancelado':
+        return 'bg-red-900 text-white dark:bg-red-950 dark:text-red-50'; // Darker red for canceled
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -129,7 +136,9 @@ export const CTesTable = React.memo<CTesTableProps>(({
 
   // Get status label
   const getStatusLabel = (status: string) => {
-    return status;
+    if (!status) return 'N/A';
+    if (status.toLowerCase() === 'auditoria') return 'Auditoria Necessária';
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   // Get Tipo CT-e label

@@ -7,6 +7,7 @@ export interface Order {
   order_number: string;
   customer_id?: string;
   customer_name?: string;
+  customer_document?: string;
   issue_date: string;
   entry_date: string;
   expected_delivery?: string;
@@ -79,11 +80,12 @@ const mapOrderFromDb = (dbOrder: any): Order => {
     order_number: dbOrder.numero_pedido || dbOrder.numero || '',
     customer_id: dbOrder.business_partner_id,
     customer_name: dbOrder.business_partner_name || dbOrder.business_partners?.razao_social || dbOrder.metadata?.customer_name || 'Cliente não informado',
+    customer_document: dbOrder.business_partners?.cpf_cnpj || dbOrder.metadata?.customer_document || '',
     issue_date: dbOrder.data_pedido || new Date().toISOString().split('T')[0],
     entry_date: dbOrder.data_entrada || dbOrder.data_pedido || new Date().toISOString().split('T')[0],
     expected_delivery: dbOrder.data_prevista_entrega,
     carrier_id: dbOrder.carrier_id,
-    carrier_name: dbOrder.carrier_name || dbOrder.carriers?.razao_social || 'Transportadora não informada',
+    carrier_name: dbOrder.carriers ? `${dbOrder.carriers.codigo ? dbOrder.carriers.codigo + ' - ' : ''}${dbOrder.carriers.razao_social}` : (dbOrder.carrier_name || 'Transportadora não informada'),
     freight_value: parseFloat(dbOrder.valor_frete || '0'),
     order_value: parseFloat(dbOrder.valor_mercadoria || '0'),
     destination_city: dbOrder.destino_cidade || '',
@@ -132,8 +134,8 @@ export const ordersService = {
         .from('orders')
         .select(`
           *,
-          business_partners (razao_social),
-          carriers (razao_social)
+          business_partners (razao_social, cpf_cnpj),
+          carriers (razao_social, codigo)
         `);
 
       if (ctx?.organizationId) {

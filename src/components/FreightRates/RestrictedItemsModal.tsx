@@ -197,21 +197,19 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-red-50">
+          <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
-              </div>
+              <AlertTriangle className="text-white" size={24} />
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.restrictedItems.title')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{freightRateTableName}</p>
+                <h2 className="text-xl font-bold text-white">{t('carriers.freightRates.restrictedItems.title')}</h2>
+                <p className="text-red-100 text-sm">{freightRateTableName}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-700 rounded-lg transition-colors"
+              className="text-white hover:bg-red-800 rounded-lg p-2 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X size={24} />
             </button>
           </div>
 

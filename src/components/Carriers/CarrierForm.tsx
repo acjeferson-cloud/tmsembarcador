@@ -175,7 +175,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'email' ? value.toLowerCase() : value
     }));
 
     if (name === 'estado') {
@@ -394,9 +394,17 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
     const value = e.target.value.replace(/\D/g, '');
+    if (!value) {
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+      return;
+    }
+    const floatValue = Number(value) / 100;
     setFormData(prev => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: floatValue
     }));
   };
 
@@ -413,11 +421,12 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
     const value = e.target.value.replace(/\D/g, '');
+    if (!value) {
+      setFormData(prev => ({ ...prev, [fieldName]: '' }));
+      return;
+    }
     if (parseInt(value) <= 100) {
-      setFormData(prev => ({
-        ...prev,
-        [fieldName]: value
-      }));
+      setFormData(prev => ({ ...prev, [fieldName]: value }));
     }
   };
 

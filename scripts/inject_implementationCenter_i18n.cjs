@@ -15,7 +15,7 @@ const implementationCenterTranslations = {
         carriers: "Transportadoras",
         freightTables: "Tabelas de Frete",
         cities: "Cidades",
-        tableFees: "Taxas da Tabela",
+        tableFees: "Taxas Adicionais",
         restrictedCeps: "CEPs Restritos",
         adjustTables: "Reajustar Tabelas",
       },
@@ -101,7 +101,7 @@ const implementationCenterTranslations = {
           templateName: "template_cidades.xlsx"
         },
         fees: {
-          title: "Importar Taxas da Tabela",
+          title: "Importar Taxas Adicionais",
           description: "Faça upload do arquivo Excel com as taxas (pedágio, coleta/entrega, etc.) das tabelas de frete.",
           templateName: "template_taxas_tabela.xlsx"
         },
@@ -262,7 +262,7 @@ const implementationCenterTranslations = {
             carriers: "Transportadoras",
             freightTables: "Tabelas de Fretes",
             cities: "Cidades",
-            fees: "Taxas da Tabela",
+            fees: "Taxas Adicionais",
             restrictedZips: "CEPs Restritos",
             tableAdjustments: "Reajustar Tabela"
           },
@@ -313,7 +313,7 @@ const implementationCenterTranslations = {
         carriers: "Carriers",
         freightTables: "Freight Tables",
         cities: "Cities",
-        tableFees: "Table Fees",
+        tableFees: "Additional Fees",
         restrictedCeps: "Restricted Zips",
         adjustTables: "Adjust Tables",
       },
@@ -399,7 +399,7 @@ const implementationCenterTranslations = {
           templateName: "template_cities.xlsx"
         },
         fees: {
-          title: "Import Table Fees",
+          title: "Import Additional Fees",
           description: "Upload Excel file with fees (toll, collection/delivery, etc.) of freight tables.",
           templateName: "template_table_fees.xlsx"
         },
@@ -560,7 +560,7 @@ const implementationCenterTranslations = {
             carriers: "Carriers",
             freightTables: "Freight Tables",
             cities: "Cities",
-            fees: "Table Fees",
+            fees: "Additional Fees",
             restrictedZips: "Restricted Zips",
             tableAdjustments: "Adjust Table"
           },
@@ -611,7 +611,7 @@ const implementationCenterTranslations = {
         carriers: "Transportistas",
         freightTables: "Tablas de Flete",
         cities: "Ciudades",
-        tableFees: "Tasas de la Tabla",
+        tableFees: "Tasas Adicionales",
         restrictedCeps: "Códigos Postales Restringidos",
         adjustTables: "Reajustar Tablas",
       },
@@ -697,7 +697,7 @@ const implementationCenterTranslations = {
           templateName: "plantilla_ciudades.xlsx"
         },
         fees: {
-          title: "Importar Tasas de Tabla",
+          title: "Importar Tasas Adicionales",
           description: "Cargue un Excel con las tasas (peaje, colección, etc) de las tablas.",
           templateName: "plantilla_tasas_tabla.xlsx"
         },
@@ -858,7 +858,7 @@ const implementationCenterTranslations = {
             carriers: "Transportistas",
             freightTables: "Tablas de Flete",
             cities: "Ciudades",
-            fees: "Tasas de Tablas",
+            fees: "Tasas Adicionales",
             restrictedZips: "CPs Restringidos",
             tableAdjustments: "Ajustar Tabla"
           },

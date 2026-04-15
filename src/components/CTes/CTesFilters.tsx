@@ -31,9 +31,13 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
   const loadCarriers = async () => {
     try {
       const data = await carriersService.getAll();
-      setCarriers(data);
+      const sortedCarriers = [...data].sort((a, b) => {
+        const codeA = a.codigo || '';
+        const codeB = b.codigo || '';
+        return codeA.localeCompare(codeB);
+      });
+      setCarriers(sortedCarriers);
     } catch (error) {
-// null
     }
   };
 
@@ -157,7 +161,7 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
                 <option value="">Todos os Transportadores</option>
                 {carriers.map(carrier => (
                   <option key={carrier.id} value={carrier.id}>
-                    {carrier.codigo} {carrier.razao_social}
+                    {carrier.codigo} - {carrier.razao_social}
                   </option>
                 ))}
               </select>

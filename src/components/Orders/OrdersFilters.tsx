@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, ShoppingCart } from 'lucide-react';
 import { brazilianStates } from '../../data/statesData';
 import { carriersService, Carrier } from '../../services/carriersService';
+import { businessPartnersService, BusinessPartner } from '../../services/businessPartnersService';
+import { AutocompleteSelect } from '../common/AutocompleteSelect';
 import { useFilterCache } from '../../hooks/useFilterCache';
 
 interface OrdersFiltersProps {
@@ -25,19 +27,34 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
   const [carriers, setCarriers] = useState<Carrier[]>([]);
+  const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
 
   useFilterCache('orders-filters', localFilters, setLocalFilters);
 
   useEffect(() => {
     loadCarriers();
+    loadBusinessPartners();
   }, []);
+
+  const loadBusinessPartners = async () => {
+    try {
+      const data = await businessPartnersService.getAll();
+      setBusinessPartners(data || []);
+    } catch (error) {
+      console.error('Error loading business partners:', error);
+    }
+  };
 
   const loadCarriers = async () => {
     try {
       const data = await carriersService.getAll();
-      setCarriers(data);
+      const sortedCarriers = [...data].sort((a, b) => {
+        const codeA = a.codigo || '';
+        const codeB = b.codigo || '';
+        return codeA.localeCompare(codeB);
+      });
+      setCarriers(sortedCarriers);
     } catch (error) {
-
     }
   };
 
@@ -166,7 +183,7 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 <option value="">{t('orders.filters.carrier')}</option>
                 {carriers.map(carrier => (
                   <option key={carrier.id} value={carrier.id}>
-                    {carrier.codigo} {carrier.razao_social}
+                    {carrier.codigo} - {carrier.razao_social}
                   </option>
                 ))}
               </select>
@@ -178,12 +195,13 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 <User size={16} />
                 <span>{t('orders.filters.customer')}</span>
               </label>
-              <input
-                type="text"
-                name="cliente"
+              <AutocompleteSelect
+                options={businessPartners.map(partner => ({
+                  value: `${partner.document} - ${partner.name}`,
+                  label: `${partner.document} - ${partner.name}`
+                }))}
                 value={localFilters.cliente}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(value) => setLocalFilters(prev => ({ ...prev, cliente: value }))}
                 placeholder={t('orders.filters.customerPlaceholder')}
               />
             </div>

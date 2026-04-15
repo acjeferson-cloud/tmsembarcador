@@ -174,7 +174,7 @@ export const spotNegotiationService = {
       }
       
       const mapped = (data || []).map(r => {
-        let carrierNameStr = (r.carriers as any)?.nome_fantasia || (r.carriers as any)?.razao_social || 'Desconhecido';
+        let carrierNameStr = (r.carriers as any)?.razao_social || (r.carriers as any)?.nome_fantasia || 'Desconhecido';
         const codigo = (r.carriers as any)?.codigo;
         if (codigo) carrierNameStr = `${codigo} - ${carrierNameStr}`;
         

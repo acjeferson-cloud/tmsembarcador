@@ -43,7 +43,7 @@ const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   valorCusto: Array.isArray(nfe.freight_results) && nfe.freight_results.length > 0
     ? parseFloat(nfe.freight_results[0].totalValue.toString())
     : 0,
-  cliente: nfe.customer?.razao_social || 'Cliente não especificado',
+  cliente: `${nfe.customer?.cnpj_cpf ? nfe.customer.cnpj_cpf + ' - ' : ''}${nfe.customer?.razao_social || 'Cliente não especificado'}`,
   cidadeDestino: nfe.customer?.cidade || '',
   ufDestino: nfe.customer?.estado || '',
   pesoTotal: (nfe as any).weight || 0,

@@ -648,18 +648,15 @@ const FreightQuote: React.FC = () => {
                     <Users className="w-4 h-4 inline mr-1 text-gray-500" />
                     {t('freightQuote.form.partner')}
                   </label>
-                  <select
+                  <AutocompleteSelect
+                    options={businessPartners.map(partner => ({
+                      value: partner.id || '',
+                      label: `${partner.codigo} - ${partner.name}`
+                    }))}
                     value={formData.businessPartnerId || ''}
-                    onChange={(e) => setFormData({ ...formData, businessPartnerId: e.target.value || undefined })}
-                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="">{t('freightQuote.form.partnerOptional')}</option>
-                    {businessPartners.map(partner => (
-                      <option key={partner.id} value={partner.id}>
-                        {partner.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, businessPartnerId: val || undefined })}
+                    placeholder={t('freightQuote.form.partnerOptional')}
+                  />
                 </div>
 
                 {/* Valor NF */}

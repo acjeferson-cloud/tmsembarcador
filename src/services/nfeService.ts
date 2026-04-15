@@ -85,7 +85,7 @@ export const nfeService = {
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
-      const { data: invoices, error } = await query.order('created_at', { ascending: false });
+      const { data: invoices, error } = await query.order('data_emissao', { ascending: false });
 
       if (error) {
 
@@ -156,9 +156,9 @@ export const nfeService = {
           customer:invoices_nfe_customers(*),
           carrier:carriers(
             id,
+            codigo,
             razao_social,
             cnpj,
-            codigo,
             metadata
           ),
           products:invoices_nfe_products(*)
@@ -269,7 +269,7 @@ export const nfeService = {
       if (ctx?.environmentId) query = query.eq('environment_id', ctx.environmentId);
       if (ctx?.establishmentId) query = query.eq('establishment_id', ctx.establishmentId);
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query.order('data_emissao', { ascending: false });
 
       if (error) {
 

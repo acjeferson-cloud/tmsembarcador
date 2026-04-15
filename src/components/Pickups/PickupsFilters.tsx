@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, Package } from 'lucide-react';
+import { carriersService, Carrier } from '../../services/carriersService';
 
 interface PickupsFiltersProps {
   onFilterChange: (filters: any) => void;
@@ -19,6 +20,25 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
+  const [carriers, setCarriers] = useState<Carrier[]>([]);
+
+  useEffect(() => {
+    loadCarriers();
+  }, []);
+
+  const loadCarriers = async () => {
+    try {
+      const data = await carriersService.getAll();
+      const sortedCarriers = [...data].sort((a, b) => {
+        const codeA = a.codigo || '';
+        const codeB = b.codigo || '';
+        return codeA.localeCompare(codeB);
+      });
+      setCarriers(sortedCarriers);
+    } catch (error) {
+      console.error('Error loading carriers:', error);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -127,14 +147,19 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
                 <Truck size={16} />
                 <span>{t('pickups.filters.carrier')}</span>
               </label>
-              <input
-                type="text"
+              <select
                 name="transportador"
                 value={localFilters.transportador}
                 onChange={handleInputChange}
-                placeholder={t('pickups.filters.carrierPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
+              >
+                <option value="">{t('pickups.filters.carrierPlaceholder')}</option>
+                {carriers.map(carrier => (
+                  <option key={carrier.id} value={carrier.id}>
+                    {carrier.codigo} - {carrier.razao_social}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Usuário Responsável Filter */}

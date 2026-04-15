@@ -100,7 +100,7 @@ export const FreightRates: React.FC = () => {
 
   const loadCarriers = async () => {
     try {
-      const data = await carriersService.getAllCarriers();
+      const data = await carriersService.getAll();
       setCarriersList(data);
     } catch (err: any) {
 
@@ -193,7 +193,17 @@ export const FreightRates: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    if (!dateString) return '';
+    
+    // Se for formato ISO simples (YYYY-MM-DD), processar manualmente para evitar deslocamento de fuso horário
+    // O split('T')[0] garante que pegamos apenas a data mesmo que venha com timestamp
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString.split('T')[0])) {
+      const parts = dateString.split('T')[0].split('-');
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? '' : date.toLocaleDateString('pt-BR');
   };
 
   const isTableActive = (table: any) => {
@@ -357,7 +367,7 @@ export const FreightRates: React.FC = () => {
             <option value="Todos">Todos os Transportadores</option>
             {carriersList.map(carrier => (
               <option key={carrier.id} value={carrier.id}>
-                {carrier.codigo} - {carrier.name}
+                {carrier.codigo} - {carrier.razao_social}
               </option>
             ))}
           </select>

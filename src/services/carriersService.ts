@@ -464,6 +464,7 @@ export const carriersService = {
       if (carrier.bairro !== undefined) updateData.bairro = carrier.bairro;
       if (carrier.cep !== undefined) updateData.cep = carrier.cep;
       if (carrier.phone !== undefined) updateData.telefone = carrier.phone;
+      if (carrier.email !== undefined) updateData.email = carrier.email;
       if (carrier.status !== undefined) updateData.ativo = carrier.status === 'ativo';
       if (carrier.nps_interno !== undefined) updateData.nps_interno = carrier.nps_interno;
       if (carrier.scope !== undefined) updateData.scope = carrier.scope;

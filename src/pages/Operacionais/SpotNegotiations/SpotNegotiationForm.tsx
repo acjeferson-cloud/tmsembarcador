@@ -213,7 +213,7 @@ export const SpotNegotiationForm: React.FC<{ onBack: () => void; initialId?: str
                 <option value="">Selecione...</option>
                 {carriers.map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.codigo ? `${c.codigo} - ` : ''}{c.nome_fantasia || c.razao_social}
+                    {c.codigo} - {c.razao_social}
                   </option>
                 ))}
               </select>
