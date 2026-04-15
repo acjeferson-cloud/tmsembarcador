@@ -655,9 +655,8 @@ const ImplementationCenter: React.FC = () => {
         auto_sync_enabled: erpConfig.autoSyncEnabled,
         sync_interval_minutes: erpConfig.syncIntervalMinutes,
         cte_xml_network_address: erpConfig.cteXmlNetworkAddress,
-        is_active: true,
-        created_by: user.id
-      });
+        is_active: true
+      }, user.id, user.name);
 
       if (!saveResult.success) {
         setToast({ type: 'error', message: 'Falha ao salvar as configurações no banco. Teste abortado. Verifique os logs.' });
@@ -725,9 +724,8 @@ const ImplementationCenter: React.FC = () => {
         fiscal_module: erpConfig.fiscalModule,
         auto_sync_enabled: erpConfig.autoSyncEnabled,
         sync_interval_minutes: erpConfig.syncIntervalMinutes,
-        is_active: true,
-        created_by: user.id
-      });
+        is_active: true
+      }, user.id, user.name);
 
       if (result.success) {
         setToast({ type: 'success', message: t('implementationCenter.messages.saveSuccess') });

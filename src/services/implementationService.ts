@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { normalizarCNPJ } from '../utils/cnpj';
+import * as logsService from './logsService';
 
 interface ERPIntegrationConfig {
   id?: string;
@@ -93,8 +94,15 @@ export const implementationService = {
     }
   },
 
-  async saveERPConfig(config: ERPIntegrationConfig): Promise<{ success: boolean; error?: string }> {
+  async saveERPConfig(config: ERPIntegrationConfig, userId: string | number, userName: string): Promise<{ success: boolean; error?: string }> {
     try {
+      // 1. Obter configuração atual para comparação (audit log)
+      const currentConfig = await this.getERPConfig(
+        config.organization_id,
+        config.environment_id,
+        config.establishment_id
+      );
+
       // Remover colunas para evitar conflitos na serialização, mas mantemos as de RLS
       const payloadToSave = {
         ...config,
@@ -104,8 +112,7 @@ export const implementationService = {
       delete payloadToSave.created_by;
       delete payloadToSave.updated_by;
 
-      // Usar The Security Definer RPC para salvar atomicamente, contornando a dropagem do JWT 
-      // nos pools sem estado nativos do PostgREST.
+      // Usar The Security Definer RPC para salvar atomicamente
       const { data, error } = await supabase.rpc('save_erp_integration_config', {
         p_payload: payloadToSave
       });
@@ -119,9 +126,39 @@ export const implementationService = {
           return { success: false, error: resData.error || 'Erro interno na transação' };
       }
 
+      // 2. Registrar Log de Auditoria
+      if (currentConfig && currentConfig.id) {
+        // É um UPDATE
+        await logsService.logUpdate(
+          'erp_integration_config',
+          currentConfig.id,
+          currentConfig,
+          payloadToSave,
+          userId,
+          userName
+        );
+      } else {
+        // É um CREATE (precisamos buscar o ID do novo registro ou usar um placeholder se vier nulo do RPC)
+        // Como o RPC agora retorna success, vamos buscar o config recém criado/atualizado
+        const newConfig = await this.getERPConfig(
+          config.organization_id,
+          config.environment_id,
+          config.establishment_id
+        );
+        
+        if (newConfig && newConfig.id) {
+          await logsService.logCreate(
+            'erp_integration_config',
+            newConfig.id,
+            payloadToSave,
+            userId,
+            userName
+          );
+        }
+      }
+
       return { success: true };
     } catch (error) {
-
       return { success: false, error: 'Erro ao salvar configuração' };
     }
   },

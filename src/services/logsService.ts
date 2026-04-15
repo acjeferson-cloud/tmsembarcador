@@ -403,7 +403,36 @@ export function getFieldLabel(fieldName: string): string {
     observacoes: 'Observações',
     observations: 'Observações',
     ativo: 'Ativo',
-    active: 'Ativo'
+    active: 'Ativo',
+    // Configuração ERP
+    erp_system: 'Sistema ERP',
+    erp_name: 'Nome do ERP',
+    api_url: 'URL da API',
+    service_layer_address: 'Endereço Service Layer',
+    port: 'Porta TCP/IP',
+    username: 'Usuário',
+    password: 'Senha',
+    api_key: 'Chave de API',
+    database: 'Banco de Dados',
+    sap_bpl_id: 'SAP BPL ID',
+    cte_integration_type: 'Tipo Integração CT-e',
+    cte_model: 'Modelo CT-e',
+    invoice_model: 'Modelo NF-e',
+    invoice_default_item: 'Item Padrão NF-e',
+    billing_nfe_item: 'Item Faturamento NF-e',
+    billing_usage: 'Utilização Faturamento',
+    billing_control_account: 'Conta Controle Faturamento',
+    outbound_nf_item: 'Item NF Saída',
+    cte_without_nf_item: 'Item CT-e sem NF',
+    cte_usage: 'Utilização CT-e',
+    inbound_nf_control_account: 'Conta Controle NF Entrada',
+    invoice_transitory_account: 'Conta Transitória NF-e',
+    nfe_xml_network_address: 'Caminho Rede XML NF-e',
+    cte_xml_network_address: 'Caminho Rede XML CT-e',
+    fiscal_module: 'Módulo Fiscal',
+    auto_sync_enabled: 'Sincronização Automática',
+    sync_interval_minutes: 'Intervalo Sincronização (min)',
+    is_active: 'Ativo'
   };
 
   return fieldLabels[fieldName] || fieldName;
