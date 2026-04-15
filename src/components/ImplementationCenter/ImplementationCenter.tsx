@@ -1121,6 +1121,18 @@ const ImplementationCenter: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Código do Imposto (TaxCode)
+                        </label>
+                        <input
+                          type="text"
+                          value={erpConfig.metadata?.cte_tax_code || ''}
+                          onChange={(e) => handleErpConfigChange('cte_tax_code', e.target.value, true)}
+                          placeholder="Ex: C020, I010..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Conta Controle de CT-e
                         </label>
                         <input

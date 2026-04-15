@@ -617,5 +617,64 @@ export const sapIntegrationService = {
 
       return { success: false, error: 'Ocorreu um erro interno ao processar a importação da última Nota Fiscal do SAP B1. Tente novamente mais tarde.' };
     }
+  },
+  /**
+   * Centralized ERP configuration fetching for SAP Business One.
+   */
+  async getConfig(): Promise<any> {
+    const context = await TenantContextHelper.getCurrentContext();
+    const config = await implementationService.getERPConfig(
+      context?.organizationId || undefined,
+      context?.environmentId || undefined,
+      context?.establishmentId || undefined
+    );
+
+    if (!config || !config.service_layer_address) {
+      throw new Error('Sistemas ERP não configurado ou endereço do Service Layer ausente.');
+    }
+
+    return {
+      endpointSystem: config.service_layer_address,
+      port: config.port,
+      username: config.username,
+      password: config.password,
+      companyDb: config.database,
+      billing_nfe_item: config.billing_nfe_item,
+      cte_usage: config.cte_usage,
+      cte_tax_code: config.metadata?.cte_tax_code,
+      sap_bpl_id: config.sap_bpl_id
+    };
+  },
+
+  /**
+   * Sends CT-e integration data to the SAP B1 Proxy.
+   */
+  async integrateCTe(payload: any): Promise<{ success: boolean; sap_doc_entry?: number; sap_doc_num?: string; error?: string }> {
+    try {
+      const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      
+      const response = await fetch(`${proxyUrl}/api/integrate-cte`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        return { 
+          success: false, 
+          error: data.error || `Erro na comunicação com o Proxy SAP (${response.status})` 
+        };
+      }
+
+      return {
+        success: true,
+        sap_doc_entry: data.sap_doc_entry,
+        sap_doc_num: data.sap_doc_num
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Falha ao conectar com o Proxy de Integração SAP.' };
+    }
   }
 };

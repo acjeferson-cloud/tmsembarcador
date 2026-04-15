@@ -19,11 +19,13 @@ import { AutoImportDebugModal } from '../common/AutoImportDebugModal';
 import { ctesCompleteService, CTeWithRelations } from '../../services/ctesCompleteService';
 import { DivergenceReportData } from '../../services/cteDivergenceReportService';
 import { establishmentsService } from '../../services/establishmentsService';
+import { userActivitiesService } from '../../services/userActivitiesService';
 import { useAuth } from '../../hooks/useAuth';
 import { freightCostCalculator } from '../../services/freightCostCalculator';
 import { freightRatesService, FreightRate } from '../../services/freightRatesService';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { sapIntegrationService } from '../../services/sapService';
 import { ElectronicDocument } from '../../data/electronicDocumentsData';
 import { formatCurrency } from '../../utils/formatters';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
@@ -833,6 +835,72 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     // Simulate API call
     setTimeout(() => {
       switch (action) {
+        case 'approve':
+          (async () => {
+            try {
+              const fullCTe = await ctesCompleteService.getById(cteId.toString());
+              if (!fullCTe) throw new Error('CT-e não encontrado');
+
+              const { error: updateError } = await (supabase as any)
+                .from('ctes')
+                .update({ 
+                  status: 'auditado_aprovado',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', cteId);
+
+              if (updateError) throw updateError;
+
+              try {
+                const sapConfig = await sapIntegrationService.getConfig();
+                
+                const integrationPayload = {
+                  ...sapConfig,
+                  cte_data: {
+                    number: fullCTe.number,
+                    series: fullCTe.series,
+                    access_key: fullCTe.access_key,
+                    issue_date: fullCTe.issue_date,
+                    value: fullCTe.total_value,
+                    carrier_cnpj: fullCTe.carrier?.cnpj,
+                    xml: fullCTe.xml_data?.original
+                  }
+                };
+
+                const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
+
+                if (integrationResult.success) {
+                  await userActivitiesService.logActivity(
+                    'CT-es',
+                    'Integração SAP',
+                    `CT-e ${fullCTe.number} aprovado e integrado ao SAP (DocEntry: ${integrationResult.sap_doc_entry})`
+                  );
+
+                  setToast({
+                    message: `Integrado via Log Axis (TMS Embarcador) - CT-e: ${fullCTe.number} | Chave: ${fullCTe.access_key}`,
+                    type: 'success'
+                  });
+                } else {
+                  setToast({
+                    message: `Aprovado no TMS, mas falhou no SAP: ${integrationResult.error}`,
+                    type: 'warning'
+                  });
+                }
+              } catch (sapErr: any) {
+                setToast({
+                  message: `Aprovado no TMS. Note: ${sapErr.message}`,
+                  type: 'info'
+                });
+              }
+
+              refreshData();
+              setIsLoading(false);
+            } catch (error: any) {
+              setToast({ message: `Erro ao aprovar CT-e: ${error.message}`, type: 'error' });
+              setIsLoading(false);
+            }
+          })();
+          break;
         case 'print':
           (async () => {
              // Handle single-action print essentially like a bulk of 1
@@ -858,23 +926,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 // null
               setToast({ message: `Erro ao recalcular CT-e: ${error instanceof Error ? error.message : 'Erro desconhecido'}.`, type: 'error' });
             }
-          })();
-          break;
-        case 'approve':
-          (async () => {
-             try {
-               const result = await ctesCompleteService.update(cteId.toString(), { 
-                 status: 'Auditado e aprovado'
-               });
-               if (result.success) {
-                 setToast({ message: `CT-e ${cte.numero} aprovado com sucesso!`, type: 'success' });
-                 await refreshData();
-               } else {
-                 setToast({ message: `Erro ao aprovar CT-e: ${result.error}`, type: 'error' });
-               }
-             } catch (error) {
-               setToast({ message: 'Erro ao aprovar CT-e.', type: 'error' });
-             }
           })();
           break;
         case 'reject':

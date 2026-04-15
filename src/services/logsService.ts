@@ -414,7 +414,6 @@ export function getFieldLabel(fieldName: string): string {
     password: 'Senha',
     api_key: 'Chave de API',
     database: 'Banco de Dados',
-    sap_bpl_id: 'SAP BPL ID',
     cte_integration_type: 'Tipo Integração CT-e',
     cte_model: 'Modelo CT-e',
     invoice_model: 'Modelo NF-e',
@@ -432,7 +431,15 @@ export function getFieldLabel(fieldName: string): string {
     fiscal_module: 'Módulo Fiscal',
     auto_sync_enabled: 'Sincronização Automática',
     sync_interval_minutes: 'Intervalo Sincronização (min)',
-    is_active: 'Ativo'
+    is_active: 'Ativo',
+    sap_cardcode: 'SAP CardCode',
+    sap_due_days: 'Dias para Vencimento',
+    sap_bpl_id: 'ID da Filial SAP (BPL)',
+    erp_sync_status: 'Status Sincronização ERP',
+    erp_doc_entry: 'DocEntry SAP',
+    erp_doc_num: 'Número Documento SAP',
+    erp_error_log: 'Log de Erro ERP',
+    erp_sync_date: 'Data Sincronização ERP'
   };
 
   return fieldLabels[fieldName] || fieldName;
