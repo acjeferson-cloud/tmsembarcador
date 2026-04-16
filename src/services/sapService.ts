@@ -634,15 +634,21 @@ export const sapIntegrationService = {
     }
 
     return {
-      endpointSystem: config.service_layer_address,
-      port: config.port,
       username: config.username,
       password: config.password,
+      service_layer_address: config.service_layer_address,
+      endpointSystem: config.service_layer_address,
+      company_db: config.database,
       companyDb: config.database,
       billing_nfe_item: config.billing_nfe_item,
       cte_usage: config.cte_usage,
-      cte_tax_code: config.metadata?.cte_tax_code,
-      sap_bpl_id: config.sap_bpl_id
+      cte_tax_code: config.metadata?.cte_tax_code || config.metadata?.cteTaxCode,
+      sap_bpl_id: config.sap_bpl_id,
+      cte_integration_type: config.cte_integration_type,
+      cte_model: config.cte_model,
+      fiscal_module: config.fiscal_module,
+      organization_id: context?.organizationId,
+      environment_id: context?.environmentId
     };
   },
 

@@ -523,7 +523,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                   if (updateError) throw updateError;
                   successCount++;
 
-                  if (sapConfig && sapConfig.service_layer_address) {
+                  if (sapConfig && (sapConfig.endpointSystem || sapConfig.service_layer_address)) {
                       try {
                         const integrationPayload = {
                           ...sapConfig,
@@ -539,9 +539,17 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                             item_service_code: sapConfig.billing_nfe_item,
                             xml: fullCTe.xml_data?.original
                           },
-                          sap_bpl_id: fullCTe.carrier?.sap_bpl_id || sapConfig.sap_bpl_id
+                          sap_bpl_id: (fullCTe.carrier as any)?.sap_bpl_id || sapConfig.sap_bpl_id,
+                          organization_id: user?.organization_id,
+                          cte_tax_code: sapConfig.cte_tax_code,
+                          cte_usage: sapConfig.cte_usage,
+                          cte_model: sapConfig.cte_model,
+                          cte_integration_type: sapConfig.cte_integration_type,
+                          fiscal_module: sapConfig.fiscal_module
                         };
 
+                        // Enviar para integração SAP
+                        
                         const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
 
                         if (integrationResult.success) {
@@ -973,20 +981,27 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                     item_service_code: sapConfig.billing_nfe_item,
                     xml: fullCTe.xml_data?.original
                   },
-                  sap_bpl_id: fullCTe.carrier?.sap_bpl_id || sapConfig.sap_bpl_id
+                  sap_bpl_id: fullCTe.carrier?.sap_bpl_id || sapConfig.sap_bpl_id,
+                  organization_id: user?.organization_id,
+                  cte_tax_code: sapConfig.cte_tax_code,
+                  cte_usage: sapConfig.cte_usage,
+                  cte_model: sapConfig.cte_model,
+                  cte_integration_type: sapConfig.cte_integration_type,
+                  fiscal_module: sapConfig.fiscal_module
                 };
 
                 const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
 
                 if (integrationResult.success) {
+                  // Logar atividade e mostrar Toast
                   await userActivitiesService.logActivity(
                     'CT-es',
                     'Integração SAP',
-                    `CT-e ${fullCTe.number} aprovado e integrado ao SAP (DocEntry: ${integrationResult.sap_doc_entry})`
+                    `CT-e ${fullCTe.number} aprovado e integrado ao SAP (DocEntry: ${integrationResult.sap_doc_entry || integrationResult.docEntry})`
                   );
 
                   setToast({
-                    message: 'CT-e integrado ao SAP com sucesso!',
+                    message: `CT-e integrado ao SAP com sucesso! (DocEntry: ${integrationResult.sap_doc_entry || integrationResult.docEntry})`,
                     type: 'success'
                   });
                 } else {
@@ -1212,6 +1227,13 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           <p className="text-gray-600 dark:text-gray-400">Visualize, audite e gerencie todos os CT-es importados no sistema</p>
         </div>
         <div className="flex items-center space-x-3">
+              <button
+                onClick={() => handleBulkAction('approve')}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Aprovar CT-e
+              </button>
           <button
             onClick={() => setShowForm(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"

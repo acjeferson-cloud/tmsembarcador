@@ -93,6 +93,7 @@ export interface CTeWithRelations extends CTe {
     metadata?: any;
     sap_cardcode?: string;
     sap_bpl_id?: string;
+    sap_due_days?: number;
   };
   establishment?: {
     id: string;
@@ -115,7 +116,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id),
+          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `);
 
@@ -155,7 +156,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id),
+          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `)
         .eq('id', id)
@@ -185,7 +186,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id),
+          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `)
         .or(`number.ilike.%${cleanTerm}%,access_key.ilike.%${cleanTerm}%`);
@@ -227,7 +228,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id),
+          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `)
         .ilike('access_key', cleanKey);

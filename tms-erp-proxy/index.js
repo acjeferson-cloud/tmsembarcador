@@ -12,7 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8081;
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'tms-erp-proxy', time: new Date() });
@@ -655,12 +655,19 @@ app.post('/api/integrate-cte', async (req, res) => {
       companyDb, 
       cte_data,
       cte_tax_code,
-      sap_bpl_id 
+      sap_bpl_id,
+      organization_id,
+      cte_usage,
+      cte_model,
+      cte_integration_type,
+      fiscal_module 
     } = req.body;
 
     if (!endpointSystem || !username || !companyDb || !cte_data) {
       return res.status(400).json({ success: false, error: 'Parâmetros de conexão ou dados do CT-e ausentes.' });
     }
+
+    console.log(`[Proxy] Recebido pedido de integração. TaxCode Bruto: "${cte_tax_code}"`);
 
     let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
     let serviceLayerUrl = cleanEndpoint;
@@ -713,12 +720,13 @@ app.post('/api/integrate-cte', async (req, res) => {
     const cookieString = cookiesMatch.join('; ');
 
     // 2. Identify BP (if needed)
+    console.log(`[Proxy] Buscando BP pelo CNPJ: ${cte_data.carrier_cnpj}`);
     let cardCode = cte_data.carrier_cardcode;
-    if (!cardCode && cte_data.carrier_cnpj) {
-      const cleanCnpj = cte_data.carrier_cnpj.replace(/\D/g, '');
-      console.log(`[Proxy] Buscando BP pelo CNPJ: ${cleanCnpj}`);
+    const cleanCarrierCnpj = cte_data.carrier_cnpj?.replace(/\D/g, '');
+
+    if (!cardCode && cleanCarrierCnpj) {
       try {
-        const bpRes = await fetch(`${serviceLayerUrl}/BusinessPartners?$filter=LicTradNum eq '${cleanCnpj}'&$select=CardCode`, {
+        const bpRes = await fetch(`${serviceLayerUrl}/BusinessPartners?$filter=LicTradNum eq '${cleanCarrierCnpj}'&$select=CardCode`, {
           method: 'GET',
           headers: { 'Cookie': cookieString, 'Accept': 'application/json' }
         });
@@ -733,36 +741,81 @@ app.post('/api/integrate-cte', async (req, res) => {
       }
     }
 
+    // FETCH FRESH sap_due_days from the carriers table in the database
+    let sapDueDays = parseInt(cte_data.carrier_sap_due_days) || 0;
+    if (supabase && cleanCarrierCnpj) {
+      try {
+        let carrierQuery = supabase.from('carriers').select('sap_due_days').eq('cnpj', cleanCarrierCnpj);
+        // Ensure same organization context if provided from the frontend
+        const orgContext = organization_id || req.body.organization_id;
+        if (orgContext) carrierQuery = carrierQuery.eq('organization_id', orgContext);
+        
+        const { data: carrierData } = await carrierQuery.maybeSingle();
+        if (carrierData && carrierData.sap_due_days !== undefined && carrierData.sap_due_days !== null) {
+          console.log(`[Proxy] Recuperado sap_due_days (${carrierData.sap_due_days}) da tabela carriers para o transportador CNPJ ${cleanCarrierCnpj}`);
+          sapDueDays = carrierData.sap_due_days;
+        }
+      } catch (e) {
+        console.error('[Proxy] Erro ao consultar transportador no banco:', e);
+      }
+    }
+
     if (!cardCode) {
       return res.status(200).json({ success: false, error: `Não foi possível localizar o fornecedor no SAP com o CNPJ ${cte_data.carrier_cnpj}. Verifique o cadastro no SAP.` });
     }
 
     // 3. Create A/P Invoice (OPCH / PurchaseInvoices)
-    console.log(`[Proxy] Criando Nota de Entrada para CT-e ${cte_data.number || cte_data.numero}`);
+    const isDraft = (cte_integration_type || '').toLowerCase().includes('draft');
+    const endpointPath = isDraft ? '/Drafts' : '/PurchaseInvoices';
+    
+    console.log(`[Proxy] Criando ${isDraft ? 'Esboço' : 'Nota de Entrada'} para CT-e ${cte_data.number || cte_data.numero}`);
     
     // Preparar payload da nota
     const invoicePayload = {
+      // Se for Draft, precisa do DocObjectCode
+      ...(isDraft ? { DocObjectCode: 'oPurchaseInvoices' } : {}),
       CardCode: cardCode,
       DocDate: cte_data.emissao?.split('T')[0] || new Date().toISOString().split('T')[0],
-      DocDueDate: cte_data.emissao 
-        ? (() => { const d = new Date(cte_data.emissao.split('T')[0]); d.setDate(d.getDate() + (parseInt(cte_data.carrier_sap_due_days) || 0)); return d.toISOString().split('T')[0]; })() 
-        : new Date(new Date().setDate(new Date().getDate() + (parseInt(cte_data.carrier_sap_due_days) || 0))).toISOString().split('T')[0],
+      DocDueDate: (() => { 
+        // Lógica solicitada: Data atual do processamento + sap_due_days
+        const d = new Date(); 
+        d.setDate(d.getDate() + (parseInt(sapDueDays) || 0)); 
+        return d.toISOString().split('T')[0]; 
+      })(),
       TaxDate: cte_data.emissao?.split('T')[0] || new Date().toISOString().split('T')[0],
       Comments: `Integrado via Log Axis (TMS Embarcador) - CT-e: ${cte_data.number || cte_data.numero} | Chave: ${cte_data.access_key || cte_data.chave}`,
       BPL_IDAssignedToInvoice: sap_bpl_id || cte_data.sap_bpl_id || undefined,
+      
+      // Brazilian Localization Fields
+      Usage: parseInt(cte_usage) || undefined,
+      SequenceModel: String(cte_model || '57'),
+      SequenceSerial: parseInt(cte_data.number || cte_data.numero) || undefined,
+      Series: cte_data.series || undefined,
+      
+      // Skill Module Flag (if configured)
+      ...(fiscal_module === 'skill' ? { U_SKL25NFE: '1' } : {}),
+
       DocumentLines: [
         {
           ItemCode: cte_data.item_service_code || 'SERV001',
           Quantity: 1,
           Price: cte_data.valor || cte_data.value || 0,
-          TaxCode: cte_tax_code || 'C020',
+          Usage: parseInt(cte_usage) || undefined,
+          TaxCode: (() => {
+            const tc = String(cte_tax_code || '').trim();
+            // Mantém hífens e pontos que são comuns em códigos de imposto brasileiros (ex: 1101-001)
+            const cleanTc = tc.replace(/[^a-zA-Z0-9.\-_]/g, '');
+            return cleanTc || 'C020';
+          })(),
           LineTotal: cte_data.valor || cte_data.value || 0,
           AccountCode: cte_data.account_code || undefined
         }
       ]
     };
 
-    const createRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices`, {
+    console.log(`[Proxy] Enviando Payload para SAP (${endpointPath}):`, JSON.stringify(invoicePayload, null, 2));
+
+    const createRes = await fetch(`${serviceLayerUrl}${endpointPath}`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json', 
@@ -780,6 +833,7 @@ app.post('/api/integrate-cte', async (req, res) => {
     }
 
     const result = await createRes.json();
+    console.log(`[Proxy] Documento criado com SUCESSO. DocEntry: ${result.DocEntry}, DocNum: ${result.DocNum}`);
     
     // Logout
     fetch(`${serviceLayerUrl}/Logout`, { method: 'POST', headers: { 'Cookie': cookieString } }).catch(() => {});
