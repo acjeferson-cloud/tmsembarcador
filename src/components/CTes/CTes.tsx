@@ -950,6 +950,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       switch (action) {
         case 'approve':
           (async () => {
+            setIsLoading(true);
             try {
               const fullCTe = await ctesCompleteService.getById(cteId.toString());
               if (!fullCTe) throw new Error('CT-e não encontrado');
