@@ -91,6 +91,8 @@ export interface CTeWithRelations extends CTe {
     codigo: string;
     razao_social: string;
     metadata?: any;
+    sap_cardcode?: string;
+    sap_bpl_id?: string;
   };
   establishment?: {
     id: string;
@@ -113,7 +115,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, metadata),
+          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id),
           establishment:establishments(id, codigo, razao_social)
         `);
 
@@ -147,13 +149,13 @@ export const ctesCompleteService = {
         await TenantContextHelper.setSessionContext(ctx);
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('ctes_complete')
         .select(`
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, metadata),
+          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id),
           establishment:establishments(id, codigo, razao_social)
         `)
         .eq('id', id)
@@ -183,7 +185,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social),
+          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id),
           establishment:establishments(id, codigo, razao_social)
         `)
         .or(`number.ilike.%${cleanTerm}%,access_key.ilike.%${cleanTerm}%`);
@@ -225,7 +227,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social),
+          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id),
           establishment:establishments(id, codigo, razao_social)
         `)
         .ilike('access_key', cleanKey);
@@ -291,7 +293,7 @@ export const ctesCompleteService = {
         updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('ctes_complete')
         .insert(cleanedCte)
         .select()
@@ -399,7 +401,7 @@ export const ctesCompleteService = {
         cleanedCte.series = cte.series?.trim() || null;
       }
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('ctes_complete')
         .update(cleanedCte)
         .eq('id', id);
@@ -455,7 +457,7 @@ export const ctesCompleteService = {
       }
 
       // 3. Apagar CT-e
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('ctes_complete')
         .delete()
         .eq('id', id);
@@ -478,7 +480,7 @@ export const ctesCompleteService = {
 
   async addInvoice(invoice: CTeInvoice): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('ctes_invoices')
         .insert(invoice);
 
@@ -492,7 +494,7 @@ export const ctesCompleteService = {
 
   async removeInvoice(id: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('ctes_invoices')
         .delete()
         .eq('id', id);
@@ -507,7 +509,7 @@ export const ctesCompleteService = {
 
   async addCarrierCost(cost: CTeCarrierCost): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('ctes_carrier_costs')
         .insert(cost);
 

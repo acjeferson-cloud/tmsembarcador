@@ -45,6 +45,8 @@ export interface Carrier {
   scope?: 'ESTABLISHMENT' | 'ENVIRONMENT' | 'ORGANIZATION';
   exige_seguro_obrigatorio?: boolean;
   tipos_seguro_exigidos?: string[];
+  sap_cardcode?: string;
+  sap_bpl_id?: string;
 }
 
 export const carriersService = {
@@ -96,7 +98,10 @@ export const carriersService = {
       updated_at: carrier.updated_at,
       created_by: carrier.created_by,
       updated_by: carrier.updated_by,
-      scope: carrier.scope || 'ESTABLISHMENT'
+      scope: carrier.scope || 'ESTABLISHMENT',
+      sap_cardcode: carrier.sap_cardcode,
+      sap_bpl_id: carrier.sap_bpl_id,
+      sap_due_days: carrier.sap_due_days || 0
     };
   },
 
@@ -368,6 +373,9 @@ export const carriersService = {
         nps_interno: carrier.nps_interno || null,
         ativo: carrier.status === 'ativo',
         scope: (carrier.scope === 'ESTABLISHMENT' && !userData.establishment_id) ? 'ENVIRONMENT' : (carrier.scope || 'ESTABLISHMENT'),
+        sap_cardcode: carrier.sap_cardcode,
+        sap_bpl_id: carrier.sap_bpl_id,
+        sap_due_days: carrier.sap_due_days,
         metadata: metadata
       };
       const { data, error } = await supabase
@@ -467,6 +475,9 @@ export const carriersService = {
       if (carrier.email !== undefined) updateData.email = carrier.email;
       if (carrier.status !== undefined) updateData.ativo = carrier.status === 'ativo';
       if (carrier.nps_interno !== undefined) updateData.nps_interno = carrier.nps_interno;
+      if (carrier.sap_cardcode !== undefined) updateData.sap_cardcode = carrier.sap_cardcode;
+      if (carrier.sap_bpl_id !== undefined) updateData.sap_bpl_id = carrier.sap_bpl_id;
+      if (carrier.sap_due_days !== undefined) updateData.sap_due_days = carrier.sap_due_days;
       if (carrier.scope !== undefined) updateData.scope = carrier.scope;
       const { data, error } = await supabase
         .from('carriers')

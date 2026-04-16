@@ -644,6 +644,160 @@ app.post('/api/erp-sync-logs', async (req, res) => {
   }
 });
 
+// Endpoint 5: Integrate CT-e to SAP (Create A/P Invoice)
+app.post('/api/integrate-cte', async (req, res) => {
+  try {
+    const { 
+      endpointSystem, 
+      port, 
+      username, 
+      password, 
+      companyDb, 
+      cte_data,
+      cte_tax_code,
+      sap_bpl_id 
+    } = req.body;
+
+    if (!endpointSystem || !username || !companyDb || !cte_data) {
+      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ou dados do CT-e ausentes.' });
+    }
+
+    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
+    let serviceLayerUrl = cleanEndpoint;
+    
+    if (port && !cleanEndpoint.includes(`:${port}`)) {
+      try {
+        const urlParts = new URL(cleanEndpoint);
+        urlParts.port = port.toString();
+        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
+      } catch (e) {
+        serviceLayerUrl = `${cleanEndpoint}:${port}`;
+      }
+    }
+    
+    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
+    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+
+    // 1. Login
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); 
+
+    let loginResponse;
+    try {
+      console.log(`[Proxy] Login no SAP para Integração CT-e: ${serviceLayerUrl}/Login`);
+      loginResponse = await fetch(`${serviceLayerUrl}/Login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          CompanyDB: companyDb,
+          UserName: username,
+          Password: password || ''
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!loginResponse.ok) {
+        let errorData = null;
+        try { errorData = await loginResponse.json(); } catch (e) {}
+        const sapErrorMsg = errorData?.error?.message?.value || loginResponse.statusText;
+        return res.status(200).json({ success: false, error: `Falha na conexão de Login SAP (${loginResponse.status}): ${sapErrorMsg}` });
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      return res.status(200).json({ success: false, error: `Falha de Rede/SSL ao autenticar no SAP: ${fetchError.message}` });
+    }
+
+    const setCookieHeader = loginResponse.headers.get('set-cookie');
+    const cookiesMatch = setCookieHeader?.match(/(B1SESSION=[^;]+)|(ROUTEID=[^;]+)/g) || [];
+    const cookieString = cookiesMatch.join('; ');
+
+    // 2. Identify BP (if needed)
+    let cardCode = cte_data.carrier_cardcode;
+    if (!cardCode && cte_data.carrier_cnpj) {
+      const cleanCnpj = cte_data.carrier_cnpj.replace(/\D/g, '');
+      console.log(`[Proxy] Buscando BP pelo CNPJ: ${cleanCnpj}`);
+      try {
+        const bpRes = await fetch(`${serviceLayerUrl}/BusinessPartners?$filter=LicTradNum eq '${cleanCnpj}'&$select=CardCode`, {
+          method: 'GET',
+          headers: { 'Cookie': cookieString, 'Accept': 'application/json' }
+        });
+        if (bpRes.ok) {
+          const bpData = await bpRes.json();
+          if (bpData && bpData.value && bpData.value.length > 0) {
+            cardCode = bpData.value[0].CardCode;
+          }
+        }
+      } catch (e) {
+        console.error('[Proxy] Erro ao buscar BP:', e);
+      }
+    }
+
+    if (!cardCode) {
+      return res.status(200).json({ success: false, error: `Não foi possível localizar o fornecedor no SAP com o CNPJ ${cte_data.carrier_cnpj}. Verifique o cadastro no SAP.` });
+    }
+
+    // 3. Create A/P Invoice (OPCH / PurchaseInvoices)
+    console.log(`[Proxy] Criando Nota de Entrada para CT-e ${cte_data.number || cte_data.numero}`);
+    
+    // Preparar payload da nota
+    const invoicePayload = {
+      CardCode: cardCode,
+      DocDate: cte_data.emissao?.split('T')[0] || new Date().toISOString().split('T')[0],
+      DocDueDate: cte_data.emissao 
+        ? (() => { const d = new Date(cte_data.emissao.split('T')[0]); d.setDate(d.getDate() + (parseInt(cte_data.carrier_sap_due_days) || 0)); return d.toISOString().split('T')[0]; })() 
+        : new Date(new Date().setDate(new Date().getDate() + (parseInt(cte_data.carrier_sap_due_days) || 0))).toISOString().split('T')[0],
+      TaxDate: cte_data.emissao?.split('T')[0] || new Date().toISOString().split('T')[0],
+      Comments: `Integrado via Log Axis (TMS Embarcador) - CT-e: ${cte_data.number || cte_data.numero} | Chave: ${cte_data.access_key || cte_data.chave}`,
+      BPL_IDAssignedToInvoice: sap_bpl_id || cte_data.sap_bpl_id || undefined,
+      DocumentLines: [
+        {
+          ItemCode: cte_data.item_service_code || 'SERV001',
+          Quantity: 1,
+          Price: cte_data.valor || cte_data.value || 0,
+          TaxCode: cte_tax_code || 'C020',
+          LineTotal: cte_data.valor || cte_data.value || 0,
+          AccountCode: cte_data.account_code || undefined
+        }
+      ]
+    };
+
+    const createRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Accept': 'application/json',
+        'Cookie': cookieString
+      },
+      body: JSON.stringify(invoicePayload)
+    });
+
+    if (!createRes.ok) {
+      let createErr = null;
+      try { createErr = await createRes.json(); } catch (e) {}
+      const sapMsg = createErr?.error?.message?.value || createRes.statusText;
+      return res.status(200).json({ success: false, error: `Erro no SAP Service Layer: ${sapMsg}` });
+    }
+
+    const result = await createRes.json();
+    
+    // Logout
+    fetch(`${serviceLayerUrl}/Logout`, { method: 'POST', headers: { 'Cookie': cookieString } }).catch(() => {});
+
+    return res.status(200).json({ 
+      success: true, 
+      docEntry: result.DocEntry, 
+      docNum: result.DocNum,
+      sap_doc_entry: result.DocEntry, 
+      sap_doc_num: result.DocNum,
+      message: `Integrado via Log Axis (TMS Embarcador) - CT-e: ${cte_data.number || cte_data.numero} | Chave: ${cte_data.access_key || cte_data.chave}`
+    });
+
+  } catch (error) {
+    return res.status(200).json({ success: false, error: `Erro interno no Proxy: ${error.message}` });
+  }
+});
+
 // Endpoint: Cron Sync Scheduler (Call this from GCP Scheduler)
 app.post('/api/cron-sync', async (req, res) => {
   try {

@@ -202,6 +202,9 @@ export const Carriers: React.FC = () => {
         exige_seguro_obrigatorio: carrierData.exige_seguro_obrigatorio || false,
         tipos_seguro_exigidos: carrierData.tipos_seguro_exigidos || [],
         scope: carrierData.scope || 'ESTABLISHMENT',
+        sap_cardcode: carrierData.sapCardCode || null,
+        sap_bpl_id: carrierData.sapBplId || null,
+        sap_due_days: carrierData.sapDueDays ? parseInt(carrierData.sapDueDays.toString(), 10) : 0,
       };
       if (editingCarrier) {
         const updated = await carriersService.update(editingCarrier.id, {

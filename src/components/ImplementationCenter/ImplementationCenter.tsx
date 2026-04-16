@@ -48,6 +48,7 @@ const ImplementationCenter: React.FC = () => {
     password: '',
     database: '',
     sapBplId: '',
+    cteTaxCode: '',
     cteIntegrationType: 'draft',
     cteModel: '',
     invoiceModel: '',
@@ -136,6 +137,7 @@ const ImplementationCenter: React.FC = () => {
         password: config.password || '',
         database: config.database || '',
         sapBplId: config.sap_bpl_id || '',
+        cteTaxCode: config.metadata?.cte_tax_code || '',
         cteIntegrationType: config.cte_integration_type || 'draft',
         cteModel: config.cte_model || '',
         invoiceModel: config.invoice_model || '',
@@ -707,6 +709,7 @@ const ImplementationCenter: React.FC = () => {
         password: erpConfig.password,
         database: erpConfig.database,
         sap_bpl_id: erpConfig.sapBplId,
+        metadata: { cte_tax_code: erpConfig.cteTaxCode },
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         invoice_model: erpConfig.invoiceModel,
@@ -1125,8 +1128,8 @@ const ImplementationCenter: React.FC = () => {
                         </label>
                         <input
                           type="text"
-                          value={erpConfig.metadata?.cte_tax_code || ''}
-                          onChange={(e) => handleErpConfigChange('cte_tax_code', e.target.value, true)}
+                          value={erpConfig.cteTaxCode}
+                          onChange={(e) => handleErpConfigChange('cteTaxCode', e.target.value)}
                           placeholder="Ex: C020, I010..."
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />

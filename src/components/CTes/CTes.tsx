@@ -495,48 +495,152 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           })();
           break;
         case 'approve':
-        case 'reject':
-          setToast({ 
-            message: `${selectedCTes.length} CT-e(s) ${action === 'approve' ? 'aprovado(s)' : 'reprovado(s)'} com sucesso!`, 
-            type: 'success' 
-          });
-          
-          let aprovadosCounter = 0;
-          let reprovadosCounter = 0;
+          (async () => {
+            try {
+              let successCount = 0;
+              let sapCount = 0;
+              let sapErrorCount = 0;
+              let errorCount = 0;
+              
+              let sapConfig = null;
+              try {
+                  sapConfig = await sapIntegrationService.getConfig();
+              } catch(e) {}
 
-          // Update local state
-          setCTes(prev => prev.map(cte => {
-            if (selectedCTes.includes(cte.id)) {
-              if (action === 'approve') {
-                 aprovadosCounter++;
-                 return { ...cte, status: 'Auditado e aprovado' };
+              for (const cteId of selectedCTes) {
+                try {
+                  const fullCTe = await ctesCompleteService.getById(cteId.toString());
+                  if (!fullCTe) throw new Error('CT-e não encontrado');
+
+                  const { error: updateError } = await (supabase as any)
+                    .from('ctes')
+                    .update({ 
+                      status: 'auditado_aprovado',
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', cteId);
+
+                  if (updateError) throw updateError;
+                  successCount++;
+
+                  if (sapConfig && sapConfig.service_layer_address) {
+                      try {
+                        const integrationPayload = {
+                          ...sapConfig,
+                          cte_data: {
+                            number: fullCTe.number,
+                            series: fullCTe.series,
+                            access_key: fullCTe.access_key,
+                            issue_date: fullCTe.issue_date,
+                            valor: fullCTe.total_value,
+                            carrier_cnpj: fullCTe.carrier?.cnpj,
+                            carrier_cardcode: fullCTe.carrier?.sap_cardcode,
+                            carrier_sap_due_days: fullCTe.carrier?.sap_due_days,
+                            item_service_code: sapConfig.billing_nfe_item,
+                            xml: fullCTe.xml_data?.original
+                          },
+                          sap_bpl_id: fullCTe.carrier?.sap_bpl_id || sapConfig.sap_bpl_id
+                        };
+
+                        const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
+
+                        if (integrationResult.success) {
+                          sapCount++;
+                          await userActivitiesService.logActivity(
+                            'CT-es',
+                            'Integração SAP',
+                            `CT-e ${fullCTe.number} aprovado e integrado ao SAP (DocEntry: ${integrationResult.sap_doc_entry})`
+                          );
+                        } else {
+                          sapErrorCount++;
+                        }
+                      } catch (sapErr) {
+                        sapErrorCount++;
+                      }
+                  }
+
+                } catch (error) {
+                  errorCount++;
+                }
               }
-              if (action === 'reject') {
-                 reprovadosCounter++;
-                 return { ...cte, status: 'Auditado e reprovado' };
+
+              await refreshData();
+              setSelectedCTes([]);
+              
+              if (errorCount === 0 && sapErrorCount === 0) {
+                setToast({ message: `${successCount} CT-e(s) aprovado(s) e integrado(s) com sucesso!`, type: 'success' });
+              } else {
+                setToast({ 
+                  message: `Aprovação: ${successCount} sucesso(s), ${errorCount} erro(s). SAP: ${sapCount} integrado(s), ${sapErrorCount} falha(s).`, 
+                  type: 'warning' 
+                });
               }
+            } catch (error) {
+              setToast({ message: `Erro geral ao aprovar: ${error}`, type: 'error' });
+            } finally {
+              setIsLoading(false);
             }
-            return cte;
-          }));
+          })();
+          return;
           
-          if (aprovadosCounter > 0) {
-            userActivitiesService.logActivity('CT-es', 'aprovacao', `Aprovação de ${aprovadosCounter} ${aprovadosCounter > 1 ? 'conhecimentos de transporte' : 'conhecimento de transporte'}`);
-          }
-          if (reprovadosCounter > 0) {
-            userActivitiesService.logActivity('CT-es', 'reprovacao', `Reprovação de ${reprovadosCounter} ${reprovadosCounter > 1 ? 'conhecimentos de transporte' : 'conhecimento de transporte'}`);
-          }
+        case 'reject':
+          (async () => {
+            try {
+               let successCount = 0;
+               let errorCount = 0;
+               for (const cteId of selectedCTes) {
+                 try {
+                   const { error: updateError } = await (supabase as any)
+                    .from('ctes')
+                    .update({ 
+                      status: 'auditado_reprovado',
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', cteId);
+                   if (updateError) throw updateError;
+                   successCount++;
+                 } catch (e) {
+                   errorCount++;
+                 }
+               }
+               await refreshData();
+               setSelectedCTes([]);
+               
+               if (errorCount === 0) {
+                 setToast({ message: `${successCount} CT-e(s) reprovado(s) com sucesso!`, type: 'success' });
+               } else {
+                 setToast({ message: `Reprovação: ${successCount} sucesso(s), ${errorCount} erro(s).`, type: 'warning' });
+               }
+            } catch (error) {
+                 setToast({ message: `Erro ao reprovar: ${error}`, type: 'error' });
+            } finally {
+                 setIsLoading(false);
+            }
+          })();
+          return;
 
-          setSelectedCTes([]);
-          break;
         case 'revert':
-          setToast({ message: `${selectedCTes.length} CT-e(s) estornado(s) com sucesso!`, type: 'success' });
-          // Update CT-es status in the mock data
-          setCTes(prev => prev.map(cte =>
-            selectedCTes.includes(cte.id)
-              ? { ...cte, status: 'somente_importado', dataAprovacao: null }
-              : cte
-          ));
-          break;
+          (async () => {
+             try {
+                let successCount = 0;
+                let errorCount = 0;
+                for (const cteId of selectedCTes) {
+                  const result = await ctesCompleteService.update(cteId.toString(), { 
+                    status: 'Importado'
+                  });
+                  if (result.success) successCount++;
+                  else errorCount++;
+                }
+                await refreshData();
+                setSelectedCTes([]);
+                setToast({ message: `Estorno: ${successCount} sucesso(s), ${errorCount} erro(s).`, type: 'success' });
+             } catch (error) {
+                setToast({ message: `Erro ao estornar: ${error}`, type: 'error' });
+             } finally {
+                setIsLoading(false);
+             }
+          })();
+          return;
         case 'download':
           (async () => {
             try {
@@ -862,10 +966,14 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                     series: fullCTe.series,
                     access_key: fullCTe.access_key,
                     issue_date: fullCTe.issue_date,
-                    value: fullCTe.total_value,
+                    valor: fullCTe.total_value,
                     carrier_cnpj: fullCTe.carrier?.cnpj,
+                    carrier_cardcode: fullCTe.carrier?.sap_cardcode,
+                    carrier_sap_due_days: fullCTe.carrier?.sap_due_days,
+                    item_service_code: sapConfig.billing_nfe_item,
                     xml: fullCTe.xml_data?.original
-                  }
+                  },
+                  sap_bpl_id: fullCTe.carrier?.sap_bpl_id || sapConfig.sap_bpl_id
                 };
 
                 const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
@@ -878,7 +986,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                   );
 
                   setToast({
-                    message: `Integrado via Log Axis (TMS Embarcador) - CT-e: ${fullCTe.number} | Chave: ${fullCTe.access_key}`,
+                    message: 'CT-e integrado ao SAP com sucesso!',
                     type: 'success'
                   });
                 } else {

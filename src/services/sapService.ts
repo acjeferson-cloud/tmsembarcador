@@ -651,7 +651,10 @@ export const sapIntegrationService = {
    */
   async integrateCTe(payload: any): Promise<{ success: boolean; sap_doc_entry?: number; sap_doc_num?: string; error?: string }> {
     try {
-      const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      
+      // Limpar trailing slash
+      proxyUrl = proxyUrl.replace(/\/$/, '');
       
       const response = await fetch(`${proxyUrl}/api/integrate-cte`, {
         method: 'POST',
@@ -659,7 +662,15 @@ export const sapIntegrationService = {
         body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        return { 
+          success: false, 
+          error: `Resposta inválida do Proxy SAP (Não é JSON). Status: ${response.status} ${response.statusText}` 
+        };
+      }
       
       if (!response.ok || !data.success) {
         return { 
@@ -670,8 +681,8 @@ export const sapIntegrationService = {
 
       return {
         success: true,
-        sap_doc_entry: data.sap_doc_entry,
-        sap_doc_num: data.sap_doc_num
+        sap_doc_entry: data.sap_doc_entry || data.docEntry,
+        sap_doc_num: data.sap_doc_num || data.docNum
       };
     } catch (error: any) {
       return { success: false, error: error.message || 'Falha ao conectar com o Proxy de Integração SAP.' };

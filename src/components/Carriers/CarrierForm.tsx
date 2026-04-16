@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Upload, X, Info, Hash, MapPin, Settings, Truck, Search, Loader, Shield } from 'lucide-react';
+import { ArrowLeft, Upload, X, Info, Hash, MapPin, Settings, Truck, Search, Loader, Shield, Plug } from 'lucide-react';
 import { carriersService } from '../../services/carriersService';
 import { countriesService } from '../../services/countriesService';
 import { statesService } from '../../services/statesService';
@@ -14,6 +14,7 @@ import { CarrierInsurancesTab } from './CarrierInsurancesTab';
 
 import { carrierInsuranceService } from '../../services/carrierInsuranceService';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { implementationService } from '../../services/implementationService';
 
 interface CarrierFormProps {
   onBack: () => void;
@@ -60,12 +61,16 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     consideraFeriados: carrier?.considera_feriados !== undefined ? carrier.considera_feriados : true,
     exigeSeguroObrigatorio: carrier?.exige_seguro_obrigatorio || false,
     tiposSeguroExigidos: carrier?.tipos_seguro_exigidos || [],
-    scope: carrier?.scope || 'ESTABLISHMENT'
+    scope: carrier?.scope || 'ESTABLISHMENT',
+    sapCardCode: carrier?.sap_cardcode || '',
+    sapBplId: carrier?.sap_bpl_id || '',
+    sapDueDays: carrier?.sap_due_days || ''
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(carrier?.logotipo || null);
   const [codeError, setCodeError] = useState('');
-  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'tolerance' | 'insurances'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'tolerance' | 'insurances' | 'erp'>('basic');
+  const [erpActive, setErpActive] = useState(false);
   const [countries, setCountries] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
@@ -78,6 +83,28 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (user?.organization_id) {
+      checkERPStatus();
+    }
+  }, [user?.organization_id, user?.environment_id, user?.establishment_id]);
+
+  const checkERPStatus = async () => {
+    if (!user || !user.organization_id || !user.environment_id) return;
+    try {
+      const config = await implementationService.getERPConfig(
+        user.organization_id,
+        user.environment_id,
+        user.establishment_id
+      );
+      if (config && config.service_layer_address) {
+        setErpActive(true);
+      }
+    } catch (error) {
+      console.error('Error checking ERP status:', error);
+    }
+  };
 
   useEffect(() => {
     if (!carrier && !formData.codigo) {
@@ -348,7 +375,10 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       consideraFeriados: formData.consideraFeriados,
       exige_seguro_obrigatorio: formData.exigeSeguroObrigatorio,
       tipos_seguro_exigidos: formData.tiposSeguroExigidos,
-      scope: formData.scope
+      scope: formData.scope,
+      sapCardCode: formData.sapCardCode,
+      sapBplId: formData.sapBplId,
+      sapDueDays: formData.sapDueDays
     };
 
     if (formData.exigeSeguroObrigatorio && formData.tiposSeguroExigidos.length > 0) {
@@ -760,6 +790,21 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
                 <span>Gestão de Risco e Seguros</span>
               </div>
             </button>
+            {erpActive && (
+              <button
+                onClick={() => setActiveTab('erp')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'erp'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Plug size={16} />
+                  <span>Integração ERP</span>
+                </div>
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -1464,6 +1509,66 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
           </div>
         )}
 
+        {activeTab === 'erp' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configurações de Integração ERP</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6"> Configure os dados necessários para que o TMS possa se comunicar com o seu ERP SAP Business One.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Código do Fornecedor no SAP (CardCode)
+                </label>
+                <input
+                  type="text"
+                  name="sapCardCode"
+                  value={formData.sapCardCode}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: V0001"
+                />
+                <p className="mt-1 text-xs text-gray-500">O código da transportadora conforme cadastrado no Cadastro de Parceiros de Negócios do SAP.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID da Filial no SAP (BPLid)
+                </label>
+                <input
+                  type="text"
+                  name="sapBplId"
+                  value={formData.sapBplId}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: 1"
+                />
+                <p className="mt-1 text-xs text-gray-500">ID numérico da Filial correspondente no SAP (apenas se utilizar multi-filiais).</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Dias Adicionais para Vencimento
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.sapDueDays}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sapDueDays: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: 30"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Dias somados à data de emissão do CT-e para definir a data de vencimento (DocDueDate) da nota no SAP.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex items-center justify-end space-x-4">
           {codeError && (
@@ -1487,6 +1592,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
             {carrier ? t('carriers.form.update') : t('carriers.form.save')} {t('carriers.form.carrierTerm')}
           </button>
         </div>
+
       </form>
 
       {/* Renders outside the main form to prevent nested form submissions */}

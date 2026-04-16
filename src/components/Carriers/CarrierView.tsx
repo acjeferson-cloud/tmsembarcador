@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield } from 'lucide-react';
+import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield, Plug } from 'lucide-react';
 import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
 import { CarrierVision360 } from './CarrierVision360';
 import { CarrierInsurancesTab } from './CarrierInsurancesTab';
@@ -263,6 +263,34 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               </div>
             </div>
           </div>
+
+          {/* Integração ERP (SAP) */}
+          {(carrier.sap_cardcode || carrier.sap_bpl_id) && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configurações de Integração ERP</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Plug className="text-blue-600" size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Código do Fornecedor no SAP (CardCode)</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.sap_cardcode || t('carriers.view.notInformed')}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Building className="text-blue-600" size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">ID da Filial no SAP (BPLid)</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{carrier.sap_bpl_id || t('carriers.view.notInformed')}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tolerance Settings */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">

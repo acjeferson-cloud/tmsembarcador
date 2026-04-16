@@ -36,6 +36,7 @@ interface ERPIntegrationConfig {
   updated_at?: string;
   created_by?: string;
   updated_by?: string;
+  metadata?: any;
 }
 
 interface ImportLog {
