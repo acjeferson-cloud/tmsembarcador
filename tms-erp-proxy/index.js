@@ -852,6 +852,98 @@ app.post('/api/integrate-cte', async (req, res) => {
   }
 });
 
+// Endpoint: Cancelar/Estornar CT-e no SAP
+app.post('/api/cancel-cte', async (req, res) => {
+  try {
+    const { 
+      endpointSystem, 
+      username, 
+      password, 
+      companyDb, 
+      docEntry,
+      isDraft,
+      port = 34154
+    } = req.body;
+
+    if (!endpointSystem || !username || !docEntry) {
+      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ou DocEntry ausentes.' });
+    }
+
+    console.log(`[Proxy] Recebido pedido de ESTORNO/CANCELAMENTO. DocEntry: ${docEntry}, Tipo: ${isDraft ? 'Esboço' : 'Firme'}`);
+
+    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
+    let serviceLayerUrl = cleanEndpoint;
+    
+    if (port && !cleanEndpoint.includes(`:${port}`)) {
+      serviceLayerUrl = `${cleanEndpoint}:${port}/b1s/v1`;
+    } else if (!cleanEndpoint.endsWith('/b1s/v1')) {
+      serviceLayerUrl = `${cleanEndpoint}/b1s/v1`;
+    }
+
+    // 1. Login
+    const loginRes = await fetch(`${serviceLayerUrl}/Login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ CompanyDB: companyDb, UserName: username, Password: password })
+    });
+
+    if (!loginRes.ok) {
+      const err = await loginRes.json();
+      return res.status(200).json({ success: false, error: `Falha no login SAP: ${err.error?.message?.value || loginRes.statusText}` });
+    }
+
+    const cookieString = loginRes.headers.get('set-cookie');
+
+    // 2. Cancelar/Deletar
+    let cancelUrl = "";
+    let cancelMethod = "POST";
+
+    if (isDraft) {
+      // Esboços são deletados no Service Layer
+      cancelUrl = `${serviceLayerUrl}/Drafts(${docEntry})`;
+      cancelMethod = "DELETE";
+    } else {
+      // Notas Fiscais são canceladas via endpoint /Cancel
+      cancelUrl = `${serviceLayerUrl}/PurchaseInvoices(${docEntry})/Cancel`;
+      cancelMethod = "POST";
+    }
+
+    console.log(`[Proxy] Executando ${cancelMethod} em ${cancelUrl}`);
+
+    const cancelRes = await fetch(cancelUrl, {
+      method: cancelMethod,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieString
+      }
+    });
+
+    if (!cancelRes.ok && cancelRes.status !== 204) {
+      let cancelErr = {};
+      try { cancelErr = await cancelRes.json(); } catch (e) {}
+      const sapMsg = cancelErr?.error?.message?.value || cancelRes.statusText;
+      
+      // Logout
+      fetch(`${serviceLayerUrl}/Logout`, { method: 'POST', headers: { 'Cookie': cookieString } }).catch(() => {});
+      
+      return res.status(200).json({ success: false, error: `Erro ao cancelar no SAP: ${sapMsg}` });
+    }
+
+    console.log(`[Proxy] Documento ${docEntry} cancelado/removido com SUCESSO.`);
+    
+    // Logout
+    fetch(`${serviceLayerUrl}/Logout`, { method: 'POST', headers: { 'Cookie': cookieString } }).catch(() => {});
+
+    return res.status(200).json({ 
+      success: true, 
+      message: `Documento ${docEntry} estornado com sucesso no SAP.`
+    });
+
+  } catch (error) {
+    return res.status(200).json({ success: false, error: `Erro interno no Proxy: ${error.message}` });
+  }
+});
+
 // Endpoint: Cron Sync Scheduler (Call this from GCP Scheduler)
 app.post('/api/cron-sync', async (req, res) => {
   try {

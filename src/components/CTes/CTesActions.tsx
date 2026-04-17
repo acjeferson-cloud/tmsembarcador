@@ -1,13 +1,21 @@
 import React from 'react';
-import { Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, FileText } from 'lucide-react';
+import { Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, FileText, AlertTriangle } from 'lucide-react';
 
 interface CTesActionsProps {
   selectedCount: number;
   onAction: (action: string) => void;
   isLoading: boolean;
+  hasApproved: boolean;
+  allApproved: boolean;
 }
 
-export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onAction, isLoading }) => {
+export const CTesActions: React.FC<CTesActionsProps> = ({ 
+  selectedCount, 
+  onAction, 
+  isLoading,
+  hasApproved,
+  allApproved
+}) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -18,8 +26,9 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
         <div className="flex-1"></div>
         <button
           onClick={() => onAction('recalculate')}
-          disabled={selectedCount === 0 || isLoading}
+          disabled={selectedCount === 0 || isLoading || hasApproved}
           className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+          title={hasApproved ? 'Não é possível recalcular CT-es já aprovados' : ''}
         >
           <RefreshCw size={16} />
           <span>Recalcular CT-e</span>
@@ -27,8 +36,9 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
         
         <button
           onClick={() => onAction('approve')}
-          disabled={selectedCount === 0 || isLoading}
+          disabled={selectedCount === 0 || isLoading || hasApproved}
           className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+          title={hasApproved ? 'Estes CT-es já foram aprovados' : ''}
         >
           <ThumbsUp size={16} />
           <span>Aprovar CT-e</span>
@@ -36,8 +46,9 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
         
         <button
           onClick={() => onAction('reject')}
-          disabled={selectedCount === 0 || isLoading}
+          disabled={selectedCount === 0 || isLoading || hasApproved}
           className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
+          title={hasApproved ? 'Não é possível reprovar CT-es já aprovados' : ''}
         >
           <ThumbsDown size={16} />
           <span>Reprovar CT-e</span>
@@ -52,15 +63,7 @@ export const CTesActions: React.FC<CTesActionsProps> = ({ selectedCount, onActio
           <span>Estornar CT-e</span>
         </button>
 
-        <button
-          onClick={() => onAction('reportDivergence')}
-          disabled={selectedCount !== 1 || isLoading}
-          className="px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-sm"
-        >
-          <FileText size={16} />
-          <span>Reportar Divergência</span>
-        </button>
-        
+
         <button
           onClick={() => onAction('print')}
           disabled={selectedCount === 0 || isLoading}

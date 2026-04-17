@@ -820,7 +820,7 @@
     "reportInvoiceReconciliation": "Conciliação de Faturas",
     "reportDeliveriesOccurrences": "Entregas com Ocorrências",
     "reportNfeWithoutCte": "NF-e Não Atendida",
-    "reportRejectionHistory": "Histórico de Reprovações",
+    "reportRejectionHistory": "Histórico de Divergências",
     "reportCarrierEfficiency": "Eficiência dos Transportadores",
     "reportXmlDownloadHistory": "Download de XMLs de CT-es",
     "reportToleranceUsage": "Uso de Tolerância Contratual",
@@ -836,7 +836,7 @@
     "holidays": "Feriados",
     "catalogItems": "Catálogo de Itens",
     "occurrences": "Históricos de Ocorrências",
-    "rejectionReasons": "Motivos de Rejeições",
+    "rejectionReasons": "Motivos de Divergências",
     "implementationCenter": "Centro de Implementação",
     "changeLog": "Log de Modificações",
     "licenseManagement": "Administração de Licenças",
@@ -922,7 +922,7 @@
       "users": "Usuários",
       "freightRates": "Tabelas de Frete",
       "occurrences": "Ocorrências",
-      "rejectionReasons": "Motivos de Rejeição",
+      "rejectionReasons": "Motivos de Divergências",
       "countries": "Países",
       "states": "Estados",
       "cities": "Cidades",
@@ -953,7 +953,7 @@
       "users": "usuarios, users, pessoas",
       "freightRates": "frete, tabelas, tarifas, preco",
       "occurrences": "ocorrencias, eventos, problemas",
-      "rejectionReasons": "rejeicao, motivos, recusa",
+      "rejectionReasons": "divergencia, motivos, contestacao",
       "countries": "paises, countries, mundial",
       "states": "estados, states, uf",
       "cities": "cidades, cities, municipios",
@@ -4488,7 +4488,7 @@
   },
   "rejectionReasons": {
     "breadcrumb": "Configurações",
-    "title": "Motivos de Rejeições de Documentos",
+    "title": "Motivos de Divergências de Documentos",
     "subtitle": "Gerencie os motivos de rejeição para conferência eletrônica de documentos",
     "newReasonBtn": "Novo Motivo",
     "stats": {
@@ -4553,7 +4553,7 @@
       "cancelBtn": "Cancelar"
     },
     "form": {
-      "backBtn": "Voltar para Motivos de Rejeições",
+      "backBtn": "Voltar para Motivos de Divergências",
       "newTitle": "Novo Motivo de Rejeição",
       "editTitle": "Editar Motivo de Rejeição",
       "subtitle": "Preencha os dados do motivo de rejeição de documentos",

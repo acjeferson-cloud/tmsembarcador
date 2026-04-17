@@ -693,5 +693,42 @@ export const sapIntegrationService = {
     } catch (error: any) {
       return { success: false, error: error.message || 'Falha ao conectar com o Proxy de Integração SAP.' };
     }
+  },
+
+  /**
+   * Sends CT-e cancellation request to the SAP B1 Proxy.
+   */
+  async cancelCTe(payload: any): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      proxyUrl = proxyUrl.replace(/\/$/, '');
+      
+      const response = await fetch(`${proxyUrl}/api/cancel-cte`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        return { 
+          success: false, 
+          error: `Resposta inválida do Proxy SAP (Não é JSON). Status: ${response.status} ${response.statusText}` 
+        };
+      }
+
+      if (!response.ok || !data.success) {
+        return { 
+          success: false, 
+          error: data.error || `Erro ao cancelar no SAP (${response.status})` 
+        };
+      }
+
+      return data;
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Falha ao conectar com o Proxy de Integração SAP.' };
+    }
   }
 };

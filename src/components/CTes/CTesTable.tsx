@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale, Share2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale, Share2, AlertTriangle } from 'lucide-react';
 
 interface CTe {
   id: string;
@@ -439,6 +439,8 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       <Scale size={16} />
                     </button>
 
+
+
                     {/* Relationship Map */}
                     <button
                       onClick={() => onAction(cte.id, 'relationship-map')}
@@ -465,7 +467,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                         <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
                           <div className="py-1">
                             {/* Recalculate - Not for approved */}
-                            {cte.status !== 'aprovado' && (
+                            {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
                                   onAction(cte.id, 'recalculate');
@@ -480,7 +482,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             )}
                             
                             {/* Approve - Not for approved */}
-                            {cte.status !== 'aprovado' && (
+                            {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
                                   onAction(cte.id, 'approve');
@@ -495,7 +497,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             )}
                             
                             {/* Reject - Not for approved */}
-                            {cte.status !== 'aprovado' && (
+                            {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
                                   onAction(cte.id, 'reject');
@@ -510,7 +512,9 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             )}
                             
                             {/* Revert - Only for approved or rejected */}
-                            {(cte.status === 'aprovado' || cte.status === 'reprovado') && (
+                            {(cte.status?.toLowerCase() === 'aprovado' || 
+                              cte.status?.toLowerCase() === 'auditado e aprovado' || 
+                              cte.status?.toLowerCase() === 'reprovado') && (
                               <button
                                 onClick={() => {
                                   onAction(cte.id, 'revert');
@@ -524,17 +528,34 @@ export const CTesTable = React.memo<CTesTableProps>(({
                               </button>
                             )}
                             
-                            {/* Delete - Available for all */}
+
+
+                            {/* Delete - Not for approved */}
+                            {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
+                              <button
+                                onClick={() => {
+                                  onAction(cte.id, 'delete');
+                                  setOpenActionMenu(null);
+                                }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                              >
+                                <Trash2 size={14} />
+                                <span>Excluir CT-e</span>
+                              </button>
+                            )}
+
+                            {/* Print DACTE - Available for all statuses */}
                             <button
                               onClick={() => {
-                                onAction(cte.id, 'delete');
+                                onAction(cte.id, 'print');
                                 setOpenActionMenu(null);
                               }}
                               disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                              className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
                             >
-                              <Trash2 size={14} />
-                              <span>Excluir CT-e</span>
+                              <Printer size={14} />
+                              <span>Imprimir DACTE</span>
                             </button>
 
                             {/* Download XML - Available for all statuses */}
@@ -549,6 +570,8 @@ export const CTesTable = React.memo<CTesTableProps>(({
                               <Download size={14} />
                               <span>Download XML</span>
                             </button>
+
+
                           </div>
                         </div>
                       )}

@@ -168,7 +168,7 @@ export const RejectionReasons: React.FC = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'motivos_rejeicao.csv';
+    a.download = 'motivos_divergencia.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };

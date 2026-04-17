@@ -196,7 +196,7 @@ export const menuConfig: MenuItem[] = [
       { id: 'holidays', labelKey: 'menu.holidays', icon: Calendar, color: 'bg-pink-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'catalog-items', labelKey: 'menu.catalogItems', icon: Tag, color: 'bg-indigo-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'occurrences', labelKey: 'menu.occurrences', icon: AlertTriangle, color: 'bg-amber-600', categoryKey: 'menu.categories.configuracoes' },
-      { id: 'rejection-reasons', labelKey: 'menu.rejectionReasons', icon: XCircle, color: 'bg-red-600', categoryKey: 'menu.categories.configuracoes' },
+      { id: 'rejection-reasons', labelKey: 'menu.rejectionReasons', icon: AlertTriangle, color: 'bg-red-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'implementation-center', labelKey: 'menu.implementationCenter', icon: Upload, color: 'bg-blue-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'change-log', labelKey: 'menu.changeLog', icon: FileText, color: 'bg-indigo-600', categoryKey: 'menu.categories.configuracoes' },
       { id: 'license-management', labelKey: 'menu.licenseManagement', icon: Key, color: 'bg-purple-600', categoryKey: 'menu.categories.configuracoes' },

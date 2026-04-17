@@ -6,7 +6,7 @@ import { Toast, ToastType } from '../common/Toast';
 interface CTesRejectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (reasonId: number, observation: string) => void;
+  onConfirm: (reasonId: number, observation: string, reasonDescription?: string) => void;
   cteId?: number | string;
   cteNumber?: string;
 }
@@ -61,11 +61,12 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
   
   const handleConfirm = () => {
     if (!selectedReasonId) {
-      setToast({ message: 'Por favor, selecione um motivo de reprovação.', type: 'warning' });
+      setToast({ message: 'Por favor, selecione um motivo de divergência.', type: 'warning' });
       return;
     }
     
-    onConfirm(selectedReasonId, observation);
+    const reason = reasons.find(r => r.id === selectedReasonId);
+    onConfirm(selectedReasonId, observation, reason?.descricao);
   };
   
   return (
@@ -74,7 +75,7 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10">
           <div className="flex items-center space-x-2">
             <AlertCircle size={24} className="text-red-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Reprovar CT-e</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Divergência de CT-e</h2>
           </div>
           <button
             onClick={onClose}
@@ -88,7 +89,7 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
           {/* CTe Info */}
           <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Você está reprovando o CT-e: <span className="font-semibold text-gray-900 dark:text-white">{cteNumber}</span>
+              Você está contestando o CT-e: <span className="font-semibold text-gray-900 dark:text-white">{cteNumber}</span>
             </p>
           </div>
           
@@ -98,7 +99,7 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Buscar motivo de reprovação..."
+                placeholder="Buscar motivo de divergência..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
@@ -153,7 +154,7 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
               </div>
             ) : (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                Nenhum motivo de reprovação encontrado.
+                Nenhum motivo de divergência encontrado.
               </div>
             )}
           </div>
@@ -168,7 +169,7 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
               onChange={(e) => setObservation(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Informe detalhes adicionais sobre a reprovação..."
+              placeholder="Informe detalhes adicionais sobre a divergência..."
             />
           </div>
           
@@ -185,7 +186,7 @@ export const CTesRejectModal: React.FC<CTesRejectModalProps> = ({
               disabled={!selectedReasonId}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Confirmar Reprovação
+              Confirmar Divergência
             </button>
           </div>
         </div>

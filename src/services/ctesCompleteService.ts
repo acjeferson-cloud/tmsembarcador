@@ -58,6 +58,9 @@ export interface CTe {
   observations?: string;
   organization_id?: string;
   environment_id?: string;
+  sap_doc_entry?: number;
+  sap_doc_num?: string;
+  sap_integration_type?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
@@ -116,7 +119,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id, sap_due_days),
+          carrier:carriers(id, codigo, razao_social, cnpj, metadata, email, telefone, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `);
 
@@ -156,7 +159,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, metadata, sap_cardcode, sap_bpl_id, sap_due_days),
+          carrier:carriers(id, codigo, razao_social, cnpj, metadata, email, telefone, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `)
         .eq('id', id)
@@ -186,7 +189,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id, sap_due_days),
+          carrier:carriers(id, codigo, razao_social, cnpj, metadata, email, telefone, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `)
         .or(`number.ilike.%${cleanTerm}%,access_key.ilike.%${cleanTerm}%`);
@@ -228,7 +231,7 @@ export const ctesCompleteService = {
           *,
           invoices:ctes_invoices(*),
           carrier_costs:ctes_carrier_costs(*),
-          carrier:carriers(id, codigo, razao_social, sap_cardcode, sap_bpl_id, sap_due_days),
+          carrier:carriers(id, codigo, razao_social, cnpj, metadata, email, telefone, sap_cardcode, sap_bpl_id, sap_due_days),
           establishment:establishments(id, codigo, razao_social)
         `)
         .ilike('access_key', cleanKey);

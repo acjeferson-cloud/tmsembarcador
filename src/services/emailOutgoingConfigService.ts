@@ -69,7 +69,7 @@ const emailOutgoingConfigService = {
 
     return {
       ...data,
-      smtp_secure: data.smtp_secure ? 'TLS' : 'NONE'
+      smtp_secure: data.smtp_secure ? (data.smtp_port === 465 ? 'SSL' : 'TLS') : 'NONE'
     } as any as EmailOutgoingConfig;
   },
 
@@ -86,7 +86,7 @@ const emailOutgoingConfigService = {
 
     return {
       ...data,
-      smtp_secure: data.smtp_secure ? 'TLS' : 'NONE'
+      smtp_secure: data.smtp_secure ? (data.smtp_port === 465 ? 'SSL' : 'TLS') : 'NONE'
     } as any as EmailOutgoingConfig;
   },
 
@@ -106,7 +106,7 @@ const emailOutgoingConfigService = {
 
     return {
       ...data,
-      smtp_secure: data.smtp_secure ? 'TLS' : 'NONE'
+      smtp_secure: data.smtp_secure ? (data.smtp_port === 465 ? 'SSL' : 'TLS') : 'NONE'
     } as any as EmailOutgoingConfig;
   },
 
@@ -127,7 +127,7 @@ const emailOutgoingConfigService = {
 
     return {
       ...data,
-      smtp_secure: data.smtp_secure ? 'TLS' : 'NONE'
+      smtp_secure: data.smtp_secure ? (data.smtp_port === 465 ? 'SSL' : 'TLS') : 'NONE'
     } as any as EmailOutgoingConfig;
   },
 
@@ -256,7 +256,7 @@ const emailOutgoingConfigService = {
       if (error.message?.includes('Username and Password not accepted') || error.message?.includes('BadCredentials')) {
         userMessage = 'Usuário ou senha incorretos. Para Gmail, use uma "Senha de App" ao invés da sua senha normal.';
       } else if (error.message?.includes('535')) {
-        userMessage = 'Falha na autenticação. Verifique usuário e senha.';
+        userMessage = `Falha na autenticação. Verifique usuário e senha. Detalhe do servidor: ${error.message}`; 
       } else if (error.message?.includes('Failed to fetch')) {
 
         

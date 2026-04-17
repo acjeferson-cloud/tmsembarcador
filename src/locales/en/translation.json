@@ -820,7 +820,7 @@
     "reportInvoiceReconciliation": "Invoice Reconciliation",
     "reportDeliveriesOccurrences": "Deliveries with Occurrences",
     "reportNfeWithoutCte": "NF-e Not Served",
-    "reportRejectionHistory": "Rejection History",
+    "reportDivergenceHistory": "Divergence History",
     "reportCarrierEfficiency": "Carrier Efficiency",
     "reportXmlDownloadHistory": "CT-e XML Downloads",
     "reportToleranceUsage": "Contractual Tolerance Usage",
@@ -836,7 +836,7 @@
     "holidays": "Holidays",
     "catalogItems": "Catalog Items",
     "occurrences": "Occurrence History",
-    "rejectionReasons": "Rejection Reasons",
+    "divergenceReasons": "Divergence Reasons",
     "implementationCenter": "Implementation Center",
     "changeLog": "Change Log",
     "licenseManagement": "License Management",
@@ -920,7 +920,7 @@
       "users": "Users",
       "freightRates": "Freight Tables",
       "occurrences": "Occurrences",
-      "rejectionReasons": "Rejection Reasons",
+      "divergenceReasons": "Divergence Reasons",
       "countries": "Countries",
       "states": "States",
       "cities": "Cities",
@@ -951,7 +951,7 @@
       "users": "users, people",
       "freightRates": "freight, tables, rates, price",
       "occurrences": "occurrences, events, issues",
-      "rejectionReasons": "rejection, reasons",
+      "divergenceReasons": "divergence, reasons, contestation",
       "countries": "countries, worldwide",
       "states": "states",
       "cities": "cities, municipalities",
@@ -4450,10 +4450,10 @@
       "next": "Next"
     }
   },
-  "rejectionReasons": {
+  "divergenceReasons": {
     "breadcrumb": "Settings",
-    "title": "Document Rejection Reasons",
-    "subtitle": "Manage rejection reasons for electronic document conference",
+    "title": "Document Divergence Reasons",
+    "subtitle": "Manage divergence reasons for electronic document conference",
     "newReasonBtn": "New Reason",
     "stats": {
       "total": "Total Reasons",
@@ -4476,14 +4476,14 @@
       "next": "Next"
     },
     "emptyState": {
-      "title": "No rejection reason found",
-      "description": "Try adjusting the filters or registering a new rejection reason."
+      "title": "No divergence reason found",
+      "description": "Try adjusting the filters or registering a new divergence reason."
     },
     "infoBox": {
-      "title": "About Rejection Reasons",
-      "description1": "Rejection reasons are used to standardize the electronic conference process of tax documents.",
-      "description2": "When an inconsistency is identified, the system associates a standardized rejection reason to the document.",
-      "description3": "This rejection reason is used in the electronic tax document conference process. When an inconsistency is identified, the system associates this standardized reason with the document, facilitating communication with the carrier and report generation.",
+      "title": "About Divergence Reasons",
+      "description1": "Divergence reasons are used to standardize the electronic conference process of tax documents.",
+      "description2": "When an inconsistency is identified, the system associates a standardized divergence reason to the document.",
+      "description3": "This divergence reason is used in the electronic tax document conference process. When an inconsistency is identified, the system associates this standardized reason with the document, facilitating communication with the carrier and report generation.",
       "features": {
         "audit": {
           "title": "Automatic Audit",
@@ -4505,22 +4505,22 @@
     },
     "messages": {
       "loadError": "Error loading data.",
-      "deleteSuccess": "Rejection reason successfully deleted!",
-      "deleteError": "Error deleting rejection reason.",
-      "updateSuccess": "Rejection reason successfully updated!",
-      "updateError": "Error updating rejection reason.",
-      "createSuccess": "Rejection reason successfully created!",
-      "saveError": "Error saving rejection reason. Please try again.",
+      "deleteSuccess": "Divergence reason successfully deleted!",
+      "deleteError": "Error deleting divergence reason.",
+      "updateSuccess": "Divergence reason successfully updated!",
+      "updateError": "Error updating divergence reason.",
+      "createSuccess": "Divergence reason successfully created!",
+      "saveError": "Error saving divergence reason. Please try again.",
       "confirmDeleteTitle": "Confirm Deletion",
-      "confirmDeleteMessage": "Are you sure you want to delete this rejection reason? This action cannot be undone.",
+      "confirmDeleteMessage": "Are you sure you want to delete this divergence reason? This action cannot be undone.",
       "deleteConfirmBtn": "Delete",
       "cancelBtn": "Cancel"
     },
     "form": {
-      "backBtn": "Back to Rejection Reasons",
-      "newTitle": "New Rejection Reason",
-      "editTitle": "Edit Rejection Reason",
-      "subtitle": "Fill in the details for the document rejection reason",
+      "backBtn": "Back to Divergence Reasons",
+      "newTitle": "New Divergence Reason",
+      "editTitle": "Edit Divergence Reason",
+      "subtitle": "Fill in the details for the document divergence reason",
       "infoSection": {
         "title": "Reason Information"
       },
@@ -4533,9 +4533,9 @@
       "newCategoryPlaceholder": "New category",
       "addBtn": "Add",
       "categoryGuideTitle": "Categories",
-      "categoryGuideDesc": "Categories help group rejection reasons by problem type, making analysis and reporting easier.",
-      "descriptionLabel": "Rejection Description *",
-      "descriptionPlaceholder": "Enter the detailed description of the rejection reason",
+      "categoryGuideDesc": "Categories help group divergence reasons by problem type, making analysis and reporting easier.",
+      "descriptionLabel": "Divergence Description *",
+      "descriptionPlaceholder": "Enter the detailed description of the divergence reason",
       "descriptionLimit": "Maximum 200 characters. Remaining: {{count}}",
       "activeLabel": "Active",
       "activeDesc": "Inactive reasons will not be displayed in integrations and validation screens.",
@@ -4545,16 +4545,16 @@
       "validations": {
         "codeRequired": "Code is required",
         "codeFormat": "Code must have exactly 3 numeric digits (e.g. 001)",
-        "codeUnique": "This code is already being used by another rejection reason",
+        "codeUnique": "This code is already being used by another divergence reason",
         "newCategoryRequired": "Please enter the name of the new category.",
-        "descriptionRequired": "Please provide the description of the rejection reason.",
+        "descriptionRequired": "Please provide the description of the divergence reason.",
         "descriptionMaxLength": "The description must have a maximum of 200 characters.",
         "categoryRequired": "Please select or inform a category."
       }
     },
     "view": {
-      "title": "View Rejection Reason",
-      "subtitle": "Complete details of the rejection reason",
+      "title": "View Divergence Reason",
+      "subtitle": "Complete details of the divergence reason",
       "editBtn": "Edit",
       "statusActive": "Active",
       "statusInactive": "Inactive",

@@ -328,7 +328,11 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
               </label>
               <select
                 value={formData.smtp_secure}
-                onChange={(e) => setFormData({ ...formData, smtp_secure: e.target.value as 'TLS' | 'SSL' | 'NONE' })}
+                onChange={(e) => {
+                  const newSecure = e.target.value as 'TLS' | 'SSL' | 'NONE';
+                  const newPort = newSecure === 'SSL' ? 465 : newSecure === 'TLS' ? 587 : formData.smtp_port;
+                  setFormData({ ...formData, smtp_secure: newSecure, smtp_port: newPort });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="TLS">{t('establishments.form.emailOutgoing.securityOptions.tls')}</option>

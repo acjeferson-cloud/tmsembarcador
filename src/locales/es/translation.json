@@ -820,7 +820,7 @@
     "reportInvoiceReconciliation": "Conciliación de Facturas",
     "reportDeliveriesOccurrences": "Entregas con Ocurrencias",
     "reportNfeWithoutCte": "NF-e No Atendida",
-    "reportRejectionHistory": "Historial de Rechazos",
+    "reportRejectionHistory": "Historial de Divergencias",
     "reportCarrierEfficiency": "Eficiencia de Transportistas",
     "reportXmlDownloadHistory": "Descarga de XMLs de CT-e",
     "reportToleranceUsage": "Uso de Tolerancia Contractual",
@@ -836,7 +836,7 @@
     "holidays": "Días Festivos",
     "catalogItems": "Catálogo de Artículos",
     "occurrences": "Historial de Ocurrencias",
-    "rejectionReasons": "Motivos de Rechazo",
+    "rejectionReasons": "Motivos de Divergencia",
     "implementationCenter": "Centro de Implementación",
     "changeLog": "Registro de Cambios",
     "licenseManagement": "Gestión de Licencias",
@@ -920,7 +920,7 @@
       "users": "Usuarios",
       "freightRates": "Tablas de Flete",
       "occurrences": "Ocurrencias",
-      "rejectionReasons": "Motivos de Rechazo",
+      "rejectionReasons": "Motivos de Divergencia",
       "countries": "Países",
       "states": "Estados",
       "cities": "Ciudades",
@@ -951,7 +951,7 @@
       "users": "usuarios, personas",
       "freightRates": "flete, tablas, tarifas, precio",
       "occurrences": "ocurrencias, eventos, problemas",
-      "rejectionReasons": "rechazo, motivos",
+      "rejectionReasons": "divergencia, motivos, contestación",
       "countries": "países, mundial",
       "states": "estados",
       "cities": "ciudades, municipios",
@@ -4452,8 +4452,8 @@
   },
   "rejectionReasons": {
     "breadcrumb": "Configuración",
-    "title": "Motivos de Rechazo de Documentos",
-    "subtitle": "Administre los motivos de rechazo para la conferencia electrónica de documentos",
+    "title": "Motivos de Divergencia de Documentos",
+    "subtitle": "Administre los motivos de divergencia para la conferencia electrónica de documentos",
     "newReasonBtn": "Nuevo Motivo",
     "stats": {
       "total": "Total de Motivos",
@@ -4476,14 +4476,14 @@
       "next": "Siguiente"
     },
     "emptyState": {
-      "title": "No se encontró ningún motivo de rechazo",
-      "description": "Intente ajustar los filtros o registrar un nuevo motivo de rechazo."
+      "title": "No se encontró ningún motivo de divergencia",
+      "description": "Intente ajustar los filtros o registrar un nuevo motivo de divergencia."
     },
     "infoBox": {
-      "title": "Acerca de los Motivos de Rechazo",
-      "description1": "Los motivos de rechazo se utilizan para estandarizar el proceso de conferencia electrónica de documentos fiscales.",
-      "description2": "Cuando se identifica una inconsistencia, el sistema asocia un motivo de rechazo estandarizado al documento.",
-      "description3": "Este motivo de rechazo se utiliza en el proceso de conferencia electrónica de documentos fiscales. Cuando se identifica una inconsistencia, el sistema asocia este motivo estandarizado al documento, facilitando la comunicación con el transportista y la generación de informes.",
+      "title": "Acerca de los Motivos de Divergencia",
+      "description1": "Los motivos de divergencia se utilizan para estandarizar el proceso de conferencia electrónica de documentos fiscales.",
+      "description2": "Cuando se identifica una inconsistencia, el sistema asocia un motivo de divergencia estandarizado al documento.",
+      "description3": "Este motivo de divergencia se utiliza en el proceso de conferencia electrónica de documentos fiscales. Cuando se identifica una inconsistencia, el sistema asocia este motivo estandarizado al documento, facilitando la comunicación con el transportista y la generación de informes.",
       "features": {
         "audit": {
           "title": "Auditoría Automática",
@@ -4505,22 +4505,22 @@
     },
     "messages": {
       "loadError": "Error al cargar los datos.",
-      "deleteSuccess": "¡Motivo de rechazo eliminado con éxito!",
-      "deleteError": "Error al eliminar el motivo de rechazo.",
-      "updateSuccess": "¡Motivo de rechazo actualizado con éxito!",
-      "updateError": "Error al actualizar el motivo de rechazo.",
-      "createSuccess": "¡Motivo de rechazo creado con éxito!",
-      "saveError": "Error al guardar el motivo de rechazo. Inténtelo de nuevo.",
+      "deleteSuccess": "¡Motivo de divergencia eliminado con éxito!",
+      "deleteError": "Error al eliminar el motivo de divergencia.",
+      "updateSuccess": "¡Motivo de divergencia actualizado con éxito!",
+      "updateError": "Error al actualizar el motivo de divergencia.",
+      "createSuccess": "¡Motivo de divergencia creado con éxito!",
+      "saveError": "Error al guardar el motivo de divergencia. Inténtelo de nuevo.",
       "confirmDeleteTitle": "Confirmar Eliminación",
-      "confirmDeleteMessage": "¿Está seguro de que desea eliminar este motivo de rechazo? Esta acción no se puede deshacer.",
+      "confirmDeleteMessage": "¿Está seguro de que desea eliminar este motivo de divergencia? Esta acción no se puede deshacer.",
       "deleteConfirmBtn": "Eliminar",
       "cancelBtn": "Cancelar"
     },
     "form": {
-      "backBtn": "Volver a Motivos de Rechazo",
-      "newTitle": "Nuevo Motivo de Rechazo",
-      "editTitle": "Editar Motivo de Rechazo",
-      "subtitle": "Complete los datos del motivo de rechazo de documentos",
+      "backBtn": "Volver a Motivos de Divergencia",
+      "newTitle": "Nuevo Motivo de Divergencia",
+      "editTitle": "Editar Motivo de Divergencia",
+      "subtitle": "Complete los datos del motivo de divergencia de documentos",
       "infoSection": {
         "title": "Información del Motivo"
       },
@@ -4533,9 +4533,9 @@
       "newCategoryPlaceholder": "Nueva categoría",
       "addBtn": "Añadir",
       "categoryGuideTitle": "Categorías",
-      "categoryGuideDesc": "Las categorías ayudan a agrupar los motivos de rechazo por tipo de problema, facilitando el análisis y la generación de informes.",
-      "descriptionLabel": "Descripción del Rechazo *",
-      "descriptionPlaceholder": "Escriba la descripción detallada del motivo de rechazo",
+      "categoryGuideDesc": "Las categorías ayudan a agrupar los motivos de divergencia por tipo de problema, facilitando el análisis y la generación de informes.",
+      "descriptionLabel": "Descripción del Divergencia *",
+      "descriptionPlaceholder": "Escriba la descripción detallada del motivo de divergencia",
       "descriptionLimit": "Máximo 200 caracteres. Restantes: {{count}}",
       "activeLabel": "Activo",
       "activeDesc": "Los motivos inactivos no se mostrarán en integraciones ni en las pantallas de validación.",
@@ -4545,16 +4545,16 @@
       "validations": {
         "codeRequired": "El código es obligatorio",
         "codeFormat": "El código debe tener exactamente 3 dígitos numéricos (ej: 001)",
-        "codeUnique": "Este código ya está siendo utilizado por otro motivo de rechazo",
+        "codeUnique": "Este código ya está siendo utilizado por otro motivo de divergencia",
         "newCategoryRequired": "Por favor, introduzca el nombre de la nueva categoría.",
-        "descriptionRequired": "Por favor, proporcione la descripción del motivo de rechazo.",
+        "descriptionRequired": "Por favor, proporcione la descripción del motivo de divergencia.",
         "descriptionMaxLength": "La descripción debe tener un máximo de 200 caracteres.",
         "categoryRequired": "Por favor, seleccione o informe una categoría."
       }
     },
     "view": {
-      "title": "Ver Motivo de Rechazo",
-      "subtitle": "Detalles completos del motivo de rechazo",
+      "title": "Ver Motivo de Divergencia",
+      "subtitle": "Detalles completos del motivo de divergencia",
       "editBtn": "Editar",
       "statusActive": "Activo",
       "statusInactive": "Inactivo",

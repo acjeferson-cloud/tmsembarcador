@@ -13,9 +13,9 @@ serve(async (req)=>{
     });
   }
   try {
-    const { estabelecimentoId, to, subject, html } = await req.json();
+    const { estabelecimentoId, to, subject, html, attachments } = await req.json();
     console.log('--- [ENVIAR-EMAIL-NPS] INÍCIO DA REQUISIÇÃO ---');
-    console.log('Dados recebidos:', { estabelecimentoId, to, subject, htmlPreview: html?.substring(0, 50) });
+    console.log('Dados recebidos:', { estabelecimentoId, to, subject, htmlPreview: html?.substring(0, 50), attachmentsCount: attachments?.length || 0 });
 
     if (!estabelecimentoId || !to || !subject || !html) {
       throw new Error('Faltam parâmetros obrigatórios no corpo da requisição (estabelecimentoId, to, subject, html).');
@@ -92,6 +92,7 @@ serve(async (req)=>{
     const sendFrom = config.from_name ? `"${config.from_name}" <${config.from_email || config.smtp_user}>` : config.from_email || config.smtp_user;
     // Shoot the email
     const info = await transporter.sendMail({
+      attachments,
       from: sendFrom,
       to,
       subject,

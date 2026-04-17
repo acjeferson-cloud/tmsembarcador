@@ -211,6 +211,11 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     cteId?: string;
     cteNumber?: string;
     action?: string;
+    title?: string;
+    message?: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'danger' | 'warning' | 'info' | 'error';
   }>({ isOpen: false });
   const [filters, setFilters] = useState({
     transportador: '',
@@ -501,6 +506,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               let sapCount = 0;
               let sapErrorCount = 0;
               let errorCount = 0;
+              setToast({ message: 'Iniciando processamento em lote...', type: 'info' });
               
               let sapConfig = null;
               try {
@@ -553,6 +559,14 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                         const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
 
                         if (integrationResult.success) {
+                          // Atualizar o registro com os IDs do SAP usando o serviço completo
+                          await ctesCompleteService.update(cteId.toString(), { 
+                            sap_doc_entry: integrationResult.sap_doc_entry || (integrationResult as any).docEntry,
+                            sap_doc_num: integrationResult.sap_doc_num || (integrationResult as any).docNum,
+                            sap_integration_type: sapConfig.cte_integration_type,
+                            status: 'auditado_aprovado'
+                          });
+
                           sapCount++;
                           await userActivitiesService.logActivity(
                             'CT-es',
@@ -625,28 +639,85 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                  setIsLoading(false);
             }
           })();
-          return;
-
+          break;
         case 'revert':
           (async () => {
-             try {
-                let successCount = 0;
-                let errorCount = 0;
-                for (const cteId of selectedCTes) {
-                  const result = await ctesCompleteService.update(cteId.toString(), { 
-                    status: 'Importado'
+            setIsLoading(true);
+            setToast({ message: 'Processando estorno em lote...', type: 'info' });
+            try {
+              let successCount = 0;
+              let errorCount = 0;
+              
+              const sapConfig = await sapIntegrationService.getConfig();
+
+              for (const cteId of selectedCTes) {
+                try {
+                  console.log(`[Storno Lote] Iniciando estorno para o CT-e ID: ${cteId}`);
+                  const fullCTe = await ctesCompleteService.getById(cteId.toString());
+                  if (!fullCTe) throw new Error('CT-e não encontrado');
+
+                  console.log(`[Storno Lote] Dados do CT-e ${fullCTe.number}:`, fullCTe);
+
+                  // Se houver integração SAP, tentar estornar no SAP primeiro
+                  if (fullCTe.sap_doc_entry) {
+                    const cancelPayload = {
+                      ...sapConfig,
+                      docEntry: fullCTe.sap_doc_entry,
+                      isDraft: fullCTe.sap_integration_type?.toLowerCase().includes('esboço') || 
+                               fullCTe.sap_integration_type?.toLowerCase().includes('draft')
+                    };
+
+                    console.log(`[Storno Lote] Enviando cancelamento para SAP (DocEntry: ${fullCTe.sap_doc_entry}):`, cancelPayload);
+                    const cancelResult = await sapIntegrationService.cancelCTe(cancelPayload);
+                    console.log(`[Storno Lote] Resultado do cancelamento SAP para ${fullCTe.number}:`, cancelResult);
+
+                    if (!cancelResult.success) {
+                      setToast({ 
+                        message: `Atenção (CT-e ${fullCTe.number}): Estorno local concluído, mas o SAP retornou erro: ${cancelResult.error}`, 
+                        type: 'warning' 
+                      });
+                    }
+                  } else {
+                    console.log(`[Storno Lote] CT-e ${fullCTe.number} não possui sap_doc_entry vinculado. Estorno será apenas local.`);
+                  }
+
+                  // Resetar status no banco local e limpar campos SAP usando o serviço completo
+                  const { success: updateSuccess } = await ctesCompleteService.update(cteId.toString(), { 
+                    status: 'importado',
+                    sap_doc_entry: null,
+                    sap_doc_num: null,
+                    sap_integration_type: null
                   });
-                  if (result.success) successCount++;
-                  else errorCount++;
+
+                  if (!updateSuccess) throw new Error('Erro ao atualizar status do CT-e');
+                  successCount++;
+
+                } catch (error: any) {
+                  console.error(`[Storno Lote] Erro ao processar CT-e ${cteId}:`, error);
+                  errorCount++;
                 }
-                await refreshData();
-                setSelectedCTes([]);
-                setToast({ message: `Estorno: ${successCount} sucesso(s), ${errorCount} erro(s).`, type: 'success' });
-             } catch (error) {
-                setToast({ message: `Erro ao estornar: ${error}`, type: 'error' });
-             } finally {
-                setIsLoading(false);
-             }
+              }
+
+              await refreshData();
+              setSelectedCTes([]);
+
+              if (errorCount === 0) {
+                setToast({ 
+                  message: `${successCount} CT-e(s) estornado(s) com sucesso!`, 
+                  type: 'success' 
+                });
+              } else {
+                setToast({ 
+                  message: `Estorno concluído: ${successCount} sucesso(s), ${errorCount} erro(s). Verifique o console para detalhes.`, 
+                  type: 'warning' 
+                });
+              }
+            } catch (error) {
+              console.error("[Storno Lote] Erro geral no estorno:", error);
+              setToast({ message: 'Erro ao estornar CT-es em lote.', type: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
           })();
           return;
         case 'download':
@@ -749,126 +820,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             }
           })();
           return; // Retorna aqui para não executar setIsLoading(false) prematuramente
-        case 'reportDivergence':
-          if (selectedCTes.length !== 1) {
-            setToast({ message: 'Selecione apenas um CT-e para reportar divergência.', type: 'warning' });
-            setIsLoading(false);
-            return;
-          }
 
-          (async () => {
-            try {
-              const cteId = selectedCTes[0];
-              const fullCTe = await ctesCompleteService.getById(cteId);
-
-              if (!fullCTe) {
-                setToast({ message: 'CT-e não encontrado.', type: 'error' });
-                setIsLoading(false);
-                return;
-              }
-
-              if (!fullCTe.carrier_id) {
-                setToast({ message: 'CT-e sem transportador associado. Não é possível gerar o relatório.', type: 'error' });
-                setIsLoading(false);
-                return;
-              }
-
-              let calculation;
-              try {
-                calculation = await freightCostCalculator.calculateCTeCost(fullCTe);
-              } catch (calcError: any) {
-                const errorMsg = calcError?.message || 'Erro no cálculo de custos';
-                setToast({
-                  message: `Não foi possível calcular custos: ${errorMsg}`,
-                  type: 'warning'
-                });
-                setIsLoading(false);
-                return;
-              }
-
-              const costMapping = [
-                { key: 'fretePeso', code: 'FRETE_PESO', name: 'Frete Peso' },
-                { key: 'freteValor', code: 'FRETE_VALOR', name: 'Frete Valor' },
-                { key: 'gris', code: 'GRIS', name: 'GRIS' },
-                { key: 'pedagio', code: 'PEDAGIO', name: 'Pedágio' },
-                { key: 'tas', code: 'TAS', name: 'TAS' },
-                { key: 'seccat', code: 'SECCAT', name: 'SECCAT' },
-                { key: 'despacho', code: 'DESPACHO', name: 'Despacho' },
-                { key: 'itr', code: 'ITR', name: 'ITR' },
-                { key: 'coletaEntrega', code: 'COLETA_ENTREGA', name: 'Coleta/Entrega' },
-                { key: 'icmsValor', code: 'ICMS', name: 'ICMS' },
-                { key: 'outrosValores', code: 'OUTROS', name: 'Outros Valores' }
-              ];
-
-              const comparisonData = costMapping.map(cost => {
-                const tmsValue = calculation[cost.key as keyof typeof calculation] as number || 0;
-                const cteCost = fullCTe.carrier_costs?.find(cc =>
-                  cc.cost_type_code === cost.code
-                );
-                const cteValue = cteCost ? parseFloat(cteCost.cost_value.toString()) : 0;
-                const difference = cteValue - tmsValue;
-                const percentDifference = tmsValue !== 0 ? (difference / tmsValue) * 100 : 0;
-
-                let formula = 'Cálculo padrão';
-                let baseValue = 0;
-                let rate = 0;
-
-                if (cost.code === 'GRIS') {
-                  const totalMercadoria = fullCTe.invoices?.reduce((sum, inv) =>
-                    sum + parseFloat(inv.valor_nota?.toString() || '0'), 0
-                  ) || 0;
-                  formula = 'Valor da Mercadoria × % GRIS';
-                  baseValue = totalMercadoria;
-                  rate = calculation.tarifaUtilizada?.gris_percentage || 0;
-                } else if (cost.code === 'ICMS') {
-                  formula = 'Base ICMS × Alíquota';
-                  baseValue = calculation.icmsBase || 0;
-                  rate = calculation.icmsAliquota || 0;
-                }
-
-                return {
-                  taxName: cost.name,
-                  tmsValue,
-                  cteValue,
-                  difference,
-                  percentDifference,
-                  status: Math.abs(difference) < 0.01 ? 'correct' as const : 'divergent' as const,
-                  calculation: {
-                    formula,
-                    baseValue,
-                    rate,
-                    result: tmsValue
-                  }
-                };
-              }).filter(item => item.tmsValue > 0 || item.cteValue > 0);
-
-              const reportData: DivergenceReportData = {
-                cteId: fullCTe.id,
-                cteNumber: fullCTe.number,
-                serie: fullCTe.series || '',
-                chave: fullCTe.access_key || '',
-                carrierId: fullCTe.carrier_id || '',
-                carrierName: fullCTe.carrier?.razao_social || '',
-                carrierCnpj: fullCTe.carrier?.cnpj || '',
-                carrierEmail: fullCTe.carrier?.email,
-                carrierPhone: fullCTe.carrier?.telefone,
-                emissionDate: fullCTe.issue_date || '',
-                totalValue: parseFloat(fullCTe.total_value.toString()),
-                status: fullCTe.status,
-                comparisonData
-              };
-
-              setDivergenceReportData(reportData);
-              setShowReportDivergenceModal(true);
-              setIsLoading(false);
-            } catch (error: any) {
-// null
-              const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';
-              setToast({ message: errorMessage, type: 'error' });
-              setIsLoading(false);
-            }
-          })();
-          return;
         default:
           break;
       }
@@ -951,6 +903,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         case 'approve':
           (async () => {
             setIsLoading(true);
+            setToast({ message: `Processando integração do CT-e...`, type: 'info' });
             try {
               const fullCTe = await ctesCompleteService.getById(cteId.toString());
               if (!fullCTe) throw new Error('CT-e não encontrado');
@@ -994,6 +947,14 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                 const integrationResult = await sapIntegrationService.integrateCTe(integrationPayload);
 
                 if (integrationResult.success) {
+                  // Atualizar o registro com os IDs do SAP usando o serviço completo
+                  await ctesCompleteService.update(cteId.toString(), { 
+                    sap_doc_entry: integrationResult.sap_doc_entry || integrationResult.docEntry,
+                    sap_doc_num: integrationResult.sap_doc_num || integrationResult.docNum,
+                    sap_integration_type: sapConfig.cte_integration_type,
+                    status: 'auditado_aprovado'
+                  });
+
                   // Logar atividade e mostrar Toast
                   await userActivitiesService.logActivity(
                     'CT-es',
@@ -1026,6 +987,61 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             }
           })();
           break;
+        case 'revert':
+          (async () => {
+            setIsLoading(true);
+            setToast({ message: `Processando estorno do CT-e...`, type: 'info' });
+            try {
+              console.log(`[Storno] Iniciando estorno para o CT-e ID: ${cteId}`);
+              const fullCTe = await ctesCompleteService.getById(cteId.toString());
+              if (!fullCTe) throw new Error('CT-e não encontrado');
+
+              console.log(`[Storno] Dados do CT-e ${fullCTe.number}:`, fullCTe);
+
+              const sapConfig = await sapIntegrationService.getConfig();
+
+              // Se houver integração SAP, tentar estornar no SAP primeiro
+              if (fullCTe.sap_doc_entry) {
+                const cancelPayload = {
+                  ...sapConfig,
+                  docEntry: fullCTe.sap_doc_entry,
+                  isDraft: fullCTe.sap_integration_type?.toLowerCase().includes('esboço') || 
+                           fullCTe.sap_integration_type?.toLowerCase().includes('draft')
+                };
+
+                console.log(`[Storno] Enviando cancelamento para SAP (DocEntry: ${fullCTe.sap_doc_entry}):`, cancelPayload);
+                const cancelResult = await sapIntegrationService.cancelCTe(cancelPayload);
+                console.log(`[Storno] Resultado do cancelamento SAP:`, cancelResult);
+
+                if (!cancelResult.success) {
+                  setToast({ 
+                    message: `Atenção: Estorno local concluído, mas o SAP retornou erro: ${cancelResult.error}`, 
+                    type: 'warning' 
+                  });
+                }
+              } else {
+                console.log(`[Storno] CT-e ${fullCTe.number} não possui sap_doc_entry vinculado. Estorno será apenas local.`);
+              }
+
+              // Resetar status no banco local e limpar campos SAP usando o serviço completo
+              const { success: updateSuccess } = await ctesCompleteService.update(cteId.toString(), { 
+                status: 'importado',
+                sap_doc_entry: null,
+                sap_doc_num: null,
+                sap_integration_type: null
+              });
+
+              if (!updateSuccess) throw new Error('Erro ao atualizar status local');
+
+              setToast({ message: 'CT-e estornado com sucesso!', type: 'success' });
+              refreshData();
+            } catch (error: any) {
+              setToast({ message: `Erro ao estornar CT-e: ${error.message}`, type: 'error' });
+            } finally {
+              setIsLoading(false);
+            }
+          })();
+          break;
         case 'print':
           (async () => {
              // Handle single-action print essentially like a bulk of 1
@@ -1035,6 +1051,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
              setTimeout(() => setSelectedCTes(prevSelected), 1000);
           })();
           break;
+
         case 'recalculate':
           (async () => {
             try {
@@ -1054,25 +1071,13 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           })();
           break;
         case 'reject':
+          // Se houver divergência de valor (Vermelho), redirecionar para o relatório detalhado
+          const diffAmount = cte.valorCTe - cte.valorCusto;
+          const maxVal = Number(cte.tolerancia_valor_cte || 0);
+          const maxPct = Number(cte.tolerancia_percentual_cte || 0);
+          
           setSelectedCTeForReject(cte);
           setShowRejectModal(true);
-          break;
-        case 'revert':
-          (async () => {
-             try {
-               const result = await ctesCompleteService.update(cteId.toString(), { 
-                 status: 'Importado'
-               });
-               if (result.success) {
-                 setToast({ message: `CT-e ${cte.numero} estornado com sucesso!`, type: 'success' });
-                 await refreshData();
-               } else {
-                 setToast({ message: `Erro ao estornar CT-e: ${result.error}`, type: 'error' });
-               }
-             } catch (error) {
-               setToast({ message: 'Erro ao estornar CT-e.', type: 'error' });
-             }
-          })();
           break;
         case 'download':
           (async () => {
@@ -1155,28 +1160,102 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     setConfirmDialog({ isOpen: false });
   };
 
-  const handleRejectConfirm = async (reasonId: number, observation: string) => {
+  const openDivergenceReport = async (cteId: string) => {    setIsLoading(true);    try {      const fullCTe = await ctesCompleteService.getById(cteId);      if (!fullCTe) {        setToast({ message: 'CT-e não encontrado.', type: 'error' });        setIsLoading(false);        return;      }      if (!fullCTe.carrier_id) {        setToast({ message: 'CT-e sem transportador associado. Não é possível gerar o relatório.', type: 'error' });        setIsLoading(false);        return;      }      let calculation;      try {        calculation = await freightCostCalculator.calculateCTeCost(fullCTe);      } catch (calcError: any) {        const errorMsg = calcError?.message || 'Erro no cálculo de custos';        setToast({          message: `Não foi possível calcular custos: ${errorMsg}`,          type: 'warning'        });        setIsLoading(false);        return;      }      const costMapping = [
+        { key: 'fretePeso', xmlField: 'freight_weight_value', name: 'Frete Peso' },
+        { key: 'freteValor', xmlField: 'freight_value_value', name: 'Frete Valor' },
+        { key: 'gris', xmlField: 'ademe_gris_value', name: 'GRIS' },
+        { key: 'pedagio', xmlField: 'toll_value', name: 'Pedágio' },
+        { key: 'tas', xmlField: 'tas_value', name: 'TAS' },
+        { key: 'seccat', xmlField: 'seccat_value', name: 'SECCAT' },
+        { key: 'despacho', xmlField: 'dispatch_value', name: 'Despacho' },
+        { key: 'itr', xmlField: 'itr_value', name: 'ITR' },
+        { key: 'coletaEntrega', xmlField: 'collection_delivery_value', name: 'Coleta/Entrega' },
+        { key: 'icmsValor', xmlField: 'icms_value', name: 'ICMS' },
+        { key: 'outrosValores', xmlField: 'other_value', name: 'Outros Valores' }
+      ];
+      
+      const comparisonData = costMapping.map(cost => {
+        const tmsValue = calculation[cost.key] || 0;
+        const cteValueRaw = fullCTe[cost.xmlField];
+        const cteValue = cteValueRaw ? parseFloat(cteValueRaw.toString()) : 0;
+        
+        const difference = cteValue - tmsValue;
+        const percentDifference = tmsValue !== 0 ? (difference / tmsValue) * 100 : 0;
+        
+        let formula = 'Cálculo padrão';
+        let baseValue = 0;
+        let rate = 0;
+        
+        if (cost.key === 'gris') {
+          const totalMercadoria = fullCTe.invoices?.reduce((sum, inv) => 
+            sum + parseFloat(inv.valor_nota?.toString() || '0'), 0
+          ) || 0;
+          formula = 'Valor da Mercadoria x % GRIS';
+          baseValue = totalMercadoria;
+          rate = calculation.tarifaUtilizada?.gris_percentage || 0;
+        } else if (cost.key === 'icmsValor') {
+          formula = 'Base ICMS x Alíquota';
+          baseValue = calculation.icmsBase || 0;
+          rate = calculation.icmsAliquota || 0;
+        }
+
+        return {
+          taxName: cost.name,
+          tmsValue,
+          cteValue,
+          difference,
+          percentDifference,
+          status: Math.abs(difference) < 0.01 ? 'correct' : 'divergent',
+          calculation: {
+            formula,
+            baseValue,
+            rate,
+            result: tmsValue
+          }
+        };
+      }).filter(item => item.tmsValue > 0 || item.cteValue > 0);      const reportData: DivergenceReportData = {        cteId: fullCTe.id,        cteNumber: fullCTe.number,        serie: fullCTe.series || '',        chave: fullCTe.access_key || '',        carrierId: fullCTe.carrier_id || '',        carrierName: fullCTe.carrier?.razao_social || '',        carrierCnpj: fullCTe.carrier?.cnpj || '',        carrierEmail: fullCTe.carrier?.email,        carrierPhone: fullCTe.carrier?.telefone,        emissionDate: fullCTe.issue_date || '',        totalValue: parseFloat(fullCTe.total_value.toString()),        status: fullCTe.status,        comparisonData      };      setDivergenceReportData(reportData);      setShowReportDivergenceModal(true);    } catch (error: any) {      const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';      setToast({ message: errorMessage, type: 'error' });    } finally {      setIsLoading(false);    }  };
+    const handleRejectConfirm = async (reasonId: number, observation: string, reasonDescription?: string) => {
     if (!selectedCTeForReject) return;
     
     setIsLoading(true);
+    let promptReport = false;
+    let rejectedId = selectedCTeForReject.id.toString();
+    let rejectedNumber = selectedCTeForReject.numero;
+
     try {
-      const result = await ctesCompleteService.update(selectedCTeForReject.id.toString(), {
+      const result = await ctesCompleteService.update(rejectedId, {
         status: 'Auditado e reprovado'
       });
       
       if (result.success) {
-        setToast({ message: `CT-e ${selectedCTeForReject.numero} reprovado com sucesso! Motivo ID: ${reasonId}`, type: 'success' });
+        setToast({ message: `CT-e ${rejectedNumber} reprovado com sucesso!`, type: 'success' });
         await refreshData();
+        promptReport = true;
       } else {
         setToast({ message: `Erro ao reprovar CT-e: ${result.error}`, type: 'error' });
       }
     } catch (error) {
-// null
       setToast({ message: 'Erro ao reprovar CT-e.', type: 'error' });
     } finally {
       setIsLoading(false);
       setShowRejectModal(false);
       setSelectedCTeForReject(null);
+    }
+
+    if (promptReport) {
+      setTimeout(() => {
+        setConfirmDialog({
+           isOpen: true,
+           cteId: rejectedId,
+           cteNumber: rejectedNumber,
+           action: 'report_divergence_prompt',
+           title: 'CT-e Reprovado',
+           message: `Motivo: ${reasonDescription || 'Divergência identificada'}.\n\nDeseja reportar essa divergência ao transportador agora?`,
+           confirmText: 'Sim, Reportar',
+           cancelText: 'Não, Apenas Reprovar',
+           type: 'info'
+        });
+      }, 50);
     }
   };
 
@@ -1197,7 +1276,9 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         onBack={() => setShowForm(false)}
         onSave={handleSaveCTe}
         establishmentId={currentEstablishment.id}
-        establishmentName={currentEstablishment.name}
+          establishmentCnpj={currentEstablishment.cnpj}
+          establishmentName={currentEstablishment.name}
+          logoBase64={(authEstablishment as any)?.metadata?.logo_light_base64 || (authEstablishment as any)?.logo_light_base64 || (authEstablishment as any)?.logo_url || (authEstablishment as any)?.metadata?.logo_url}
       />
     );
   }
@@ -1228,13 +1309,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           <p className="text-gray-600 dark:text-gray-400">Visualize, audite e gerencie todos os CT-es importados no sistema</p>
         </div>
         <div className="flex items-center space-x-3">
-              <button
-                onClick={() => handleBulkAction('approve')}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Aprovar CT-e
-              </button>
+
           <button
             onClick={() => setShowForm(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
@@ -1360,6 +1435,8 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         selectedCount={selectedCTes.length}
         onAction={handleBulkAction}
         isLoading={isLoading}
+        hasApproved={filteredCTes.some(c => selectedCTes.includes(c.id) && (c.status?.toLowerCase() === 'aprovado' || c.status?.toLowerCase() === 'auditado e aprovado'))}
+        allApproved={selectedCTes.length > 0 && filteredCTes.filter(c => selectedCTes.includes(c.id)).every(c => c.status?.toLowerCase() === 'aprovado' || c.status?.toLowerCase() === 'auditado e aprovado')}
       />
 
       {/* CT-es Table */}
@@ -1442,8 +1519,11 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           }}
           cteData={divergenceReportData}
           establishmentId={currentEstablishment.id}
+          establishmentCnpj={currentEstablishment.cnpj}
           establishmentName={currentEstablishment.name}
+          logoBase64={(currentEstablishment as any).metadata?.logo_light_base64 || (currentEstablishment as any).logo_light_base64 || (currentEstablishment as any).logo_url || (currentEstablishment as any).metadata?.logo_light_url || (currentEstablishment as any).metadata?.logo_url}
           userId={user.id.toString()}
+          onStatusUpdated={refreshData}
         />
       )}
 
@@ -1503,9 +1583,18 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       {confirmDialog.isOpen && confirmDialog.cteNumber && (
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
-          title="Confirmar Exclusão"
-          message={`Tem certeza que deseja excluir o CT-e ${confirmDialog.cteNumber}? Esta ação não pode ser desfeita.`}
-          onConfirm={confirmDelete}
+          title={confirmDialog.title || "Confirmar Exclusão"}
+          message={confirmDialog.message || `Tem certeza que deseja excluir o CT-e ${confirmDialog.cteNumber}? Esta ação não pode ser desfeita.`}
+          onConfirm={confirmDialog.action === 'report_divergence_prompt' ? 
+            () => {
+              setConfirmDialog({ isOpen: false });
+              if (confirmDialog.cteId) {
+                openDivergenceReport(confirmDialog.cteId);
+              }
+            } : confirmDelete}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText}
+          type={confirmDialog.type}
           onCancel={() => setConfirmDialog({ isOpen: false })}
         />
       )}
