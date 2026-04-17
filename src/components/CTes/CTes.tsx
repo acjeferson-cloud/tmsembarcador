@@ -216,6 +216,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     confirmText?: string;
     cancelText?: string;
     type?: 'danger' | 'warning' | 'info' | 'error';
+      rejectionReason?: string;
   }>({ isOpen: false });
   const [filters, setFilters] = useState({
     transportador: '',
@@ -1160,7 +1161,23 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     setConfirmDialog({ isOpen: false });
   };
 
-  const openDivergenceReport = async (cteId: string) => {    setIsLoading(true);    try {      const fullCTe = await ctesCompleteService.getById(cteId);      if (!fullCTe) {        setToast({ message: 'CT-e não encontrado.', type: 'error' });        setIsLoading(false);        return;      }      if (!fullCTe.carrier_id) {        setToast({ message: 'CT-e sem transportador associado. Não é possível gerar o relatório.', type: 'error' });        setIsLoading(false);        return;      }      let calculation;      try {        calculation = await freightCostCalculator.calculateCTeCost(fullCTe);      } catch (calcError: any) {        const errorMsg = calcError?.message || 'Erro no cálculo de custos';        setToast({          message: `Não foi possível calcular custos: ${errorMsg}`,          type: 'warning'        });        setIsLoading(false);        return;      }      const costMapping = [
+  const openDivergenceReport = async (cteId: string, passedRejectionReason?: string) => {    setIsLoading(true);    try {      const fullCTe = await ctesCompleteService.getById(cteId);      if (!fullCTe) {        setToast({ message: 'CT-e não encontrado.', type: 'error' });        setIsLoading(false);        return;      }      if (!fullCTe.carrier_id) {        setToast({ message: 'CT-e sem transportador associado. Não é possível gerar o relatório.', type: 'error' });        setIsLoading(false);        return;      }      const getPersistCost = (key: string) => {
+          return parseFloat(fullCTe.carrier_costs?.find((c: any) => c.cost_type === key)?.cost_value?.toString() || '0');
+      };
+      
+      const calculation: any = {
+          fretePeso: getPersistCost('freight_weight'),
+          freteValor: getPersistCost('freight_value'),
+          gris: getPersistCost('gris'),
+          pedagio: getPersistCost('toll'),
+          tas: getPersistCost('tas'),
+          seccat: getPersistCost('seccat'),
+          despacho: getPersistCost('dispatch'),
+          itr: getPersistCost('itr'),
+          coletaEntrega: getPersistCost('collection_delivery'),
+          icmsValor: getPersistCost('icms_value'),
+          outrosValores: getPersistCost('other_value')
+      };      const costMapping = [
         { key: 'fretePeso', xmlField: 'freight_weight_value', name: 'Frete Peso' },
         { key: 'freteValor', xmlField: 'freight_value_value', name: 'Frete Valor' },
         { key: 'gris', xmlField: 'ademe_gris_value', name: 'GRIS' },
@@ -1192,11 +1209,11 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           ) || 0;
           formula = 'Valor da Mercadoria x % GRIS';
           baseValue = totalMercadoria;
-          rate = calculation.tarifaUtilizada?.gris_percentage || 0;
+          rate = fullCTe.carrier_costs?.find((c: any) => c.cost_type === "gris_percentage")?.cost_value || 0;
         } else if (cost.key === 'icmsValor') {
           formula = 'Base ICMS x Alíquota';
-          baseValue = calculation.icmsBase || 0;
-          rate = calculation.icmsAliquota || 0;
+          baseValue = parseFloat(fullCTe.carrier_costs?.find((c: any) => c.cost_type === "icms_base")?.cost_value?.toString() || "0");
+          rate = parseFloat(fullCTe.carrier_costs?.find((c: any) => c.cost_type === "icms_rate")?.cost_value?.toString() || "0");
         }
 
         return {
@@ -1213,7 +1230,9 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             result: tmsValue
           }
         };
-      }).filter(item => item.tmsValue > 0 || item.cteValue > 0);      const reportData: DivergenceReportData = {        cteId: fullCTe.id,        cteNumber: fullCTe.number,        serie: fullCTe.series || '',        chave: fullCTe.access_key || '',        carrierId: fullCTe.carrier_id || '',        carrierName: fullCTe.carrier?.razao_social || '',        carrierCnpj: fullCTe.carrier?.cnpj || '',        carrierEmail: fullCTe.carrier?.email,        carrierPhone: fullCTe.carrier?.telefone,        emissionDate: fullCTe.issue_date || '',        totalValue: parseFloat(fullCTe.total_value.toString()),        status: fullCTe.status,        comparisonData      };      setDivergenceReportData(reportData);      setShowReportDivergenceModal(true);    } catch (error: any) {      const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';      setToast({ message: errorMessage, type: 'error' });    } finally {      setIsLoading(false);    }  };
+      }).filter(item => item.tmsValue > 0 || item.cteValue > 0);      const reportData: DivergenceReportData = {        cteId: fullCTe.id,        cteNumber: fullCTe.number,        serie: fullCTe.series || '',        chave: fullCTe.access_key || '',        carrierId: fullCTe.carrier_id || '',        carrierName: fullCTe.carrier?.razao_social || '',        carrierCnpj: fullCTe.carrier?.cnpj || '',        carrierEmail: fullCTe.carrier?.email,        carrierPhone: fullCTe.carrier?.telefone,        emissionDate: fullCTe.issue_date || '',        totalValue: parseFloat(fullCTe.total_value.toString()),
+        tmsTotalValue: parseFloat(fullCTe.carrier_costs?.find((c: any) => c.cost_type === 'total_value')?.cost_value?.toString() || '0'),
+        status: fullCTe.status,        comparisonData, rejectionReason: passedRejectionReason     };      setDivergenceReportData(reportData);      setShowReportDivergenceModal(true);    } catch (error: any) {      const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';      setToast({ message: errorMessage, type: 'error' });    } finally {      setIsLoading(false);    }  };
     const handleRejectConfirm = async (reasonId: number, observation: string, reasonDescription?: string) => {
     if (!selectedCTeForReject) return;
     
@@ -1249,6 +1268,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
            cteId: rejectedId,
            cteNumber: rejectedNumber,
            action: 'report_divergence_prompt',
+             rejectionReason: reasonDescription,
            title: 'CT-e Reprovado',
            message: `Motivo: ${reasonDescription || 'Divergência identificada'}.\n\nDeseja reportar essa divergência ao transportador agora?`,
            confirmText: 'Sim, Reportar',
@@ -1589,7 +1609,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             () => {
               setConfirmDialog({ isOpen: false });
               if (confirmDialog.cteId) {
-                openDivergenceReport(confirmDialog.cteId);
+                openDivergenceReport(confirmDialog.cteId, confirmDialog.rejectionReason);
               }
             } : confirmDelete}
           confirmText={confirmDialog.confirmText}
