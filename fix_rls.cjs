@@ -1,1 +1,0 @@
-﻿const fs = require('fs'); let content = fs.readFileSync('cte_divergence_reports.sql', 'utf8'); content = content.replace("FOR ALL USING (auth.role() = 'authenticated');", "FOR ALL USING (true) WITH CHECK (true);"); fs.writeFileSync('cte_divergence_reports.sql', content); console.log('RLS fixed');

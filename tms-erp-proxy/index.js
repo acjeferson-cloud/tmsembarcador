@@ -958,6 +958,409 @@ app.post('/api/cron-sync', async (req, res) => {
   }
 });
 
+﻿
+// Endpoint 6: Integrate Fatura (Bill) to SAP as Vendor Payment
+app.post('/api/integrate-bill', async (req, res) => {
+  console.log('\n[INTEGRATE-BILL] =======================================');
+  console.log('[INTEGRATE-BILL] Nova requisição recebida em /api/integrate-bill');
+  try {
+    const {
+      endpointSystem,
+      port,
+      username,
+      password,
+      companyDb,
+      billId
+    } = req.body;
+
+    console.log('[INTEGRATE-BILL] Payload Body Recebido:', JSON.stringify({
+       endpointSystem, port, username, companyDb, billId
+    }, null, 2));
+
+    if (!endpointSystem || !username || !companyDb || !billId) {
+      console.log('[INTEGRATE-BILL] ERRO: Parâmetros ausentes na requisição.');
+      return res.status(400).json({ success: false, error: 'Parâmetros ausentes na requisição.' });
+    }
+
+    // 1. Authenticate with SAP
+    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
+    let serviceLayerUrl = cleanEndpoint;
+    if (port && !cleanEndpoint.includes(`:${port}`)) {
+      try {
+        const urlParts = new URL(cleanEndpoint);
+        urlParts.port = port.toString();
+        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
+      } catch (e) {
+        serviceLayerUrl = `${cleanEndpoint}:${port}`;
+      }
+    }
+    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
+    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+
+    console.log(`[INTEGRATE-BILL] Autenticando com SAP B1 Service Layer em: ${serviceLayerUrl}/Login`);
+
+    const loginRes = await fetch(`${serviceLayerUrl}/Login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ CompanyDB: companyDb, UserName: username, Password: password || '' })
+    });
+
+    if (!loginRes.ok) {
+      let errTxt = await loginRes.text();
+      console.error('[INTEGRATE-BILL] ERRO na Autenticação SAP:', loginRes.status, errTxt);
+      return res.status(loginRes.status).json({ success: false, error: `Falha na autênticação SAP (${loginRes.status})` });
+    }
+
+    const loginData = await loginRes.json();
+    const sessionId = loginData.SessionId;
+    const cookieHeader = `B1SESSION=${sessionId}; ROUTEID=.node1`;
+    console.log('[INTEGRATE-BILL] Autenticação SAP bem sucedida. SessionId:', sessionId);
+
+    // 2. Fetch Bill Data and CTEs from Supabase
+    console.log(`[INTEGRATE-BILL] Buscando dados da Fatura ${billId} no banco Supabase...`);
+    const { data: billData, error: billError } = await supabase
+      .from('bills')
+      .select(`
+        *,
+        bill_ctes (
+          ctes_complete (
+            id,
+            status,
+            sap_doc_entry,
+            number,
+            total_value
+          )
+        )
+      `)
+      .eq('id', billId)
+      .single();
+
+    if (billError || !billData) {
+      console.error('[INTEGRATE-BILL] ERRO: Fatura não encontrada no banco do TMS.', billError);
+      return res.status(404).json({ success: false, error: 'Fatura não encontrada no banco do TMS.' });
+    }
+    
+    console.log(`[INTEGRATE-BILL] Fatura encontrada: Número ${billData.bill_number}, Valor Total: ${billData.total_value}`);
+    console.log(`[INTEGRATE-BILL] CT-es Associados encontrados na Fatura: ${billData.bill_ctes?.length || 0} CT-es vinculados`);
+
+    // 3. Validações de pré-requisitos (Pre-flight Checks)
+    console.log('[INTEGRATE-BILL] Iniciando Validações de Pré-requisitos...');
+    if (billData.status === 'aprovada' || billData.status === 'auditada_aprovada') {
+      console.log('[INTEGRATE-BILL] REJEITADO: Fatura já consta como aprovada e integrada.');
+      return res.status(409).json({ success: false, error: 'Falha: Fatura já consta como aprovada e integrada.' });
+    }
+
+    console.log(`[INTEGRATE-BILL] Buscando CardCode do Fornecedor/Transportador: ${billData.customer_document}`);
+    const { data: carrierData } = await supabase
+      .from('carriers')
+      .select('sap_cardcode')
+      .eq('cnpj', billData.customer_document || '')
+      .not('sap_cardcode', 'is', null)
+      .limit(1);
+
+    const cardCode = carrierData && carrierData.length > 0 ? carrierData[0].sap_cardcode : null;
+    const finalCardCode = cardCode || billData.metadata?.sap_card_code;
+    
+    if (!finalCardCode) {
+      console.error(`[INTEGRATE-BILL] REJEITADO: Transportador (Doc: ${billData.customer_document}) não possui CardCode mapeado no banco.`);
+      return res.status(400).json({ success: false, error: `Falha: Transportador (Doc: ${billData.customer_document}) não possui CardCode mapeado. Sincronize primeiramente.` });
+    }
+    
+    console.log(`[INTEGRATE-BILL] Fornecedor Validado. CardCode associado: ${finalCardCode}`);
+
+    console.log(`[INTEGRATE-BILL] Validando Status e DocEntry de cada CT-e atrelado à fatura...`);
+    let sumAppliedCalculated = 0;
+    const paymentInvoices = [];
+    let ctesArray = billData.bill_ctes || [];
+    let cteNumbersList = [];
+
+    if (ctesArray.length === 0) {
+      console.error('[INTEGRATE-BILL] REJEITADO: Fatura não possui CT-es associados na estrutura relacional (bill_ctes).');
+      return res.status(400).json({ success: false, error: 'Falha: Fatura não possui nenhum CT-e associado.' });
+    }
+
+    for (let i = 0; i < ctesArray.length; i++) {
+        const cte = ctesArray[i].ctes_complete;
+        if (!cte) {
+           console.log(`[INTEGRATE-BILL] Aviso: Relação ${i} não encontrou ctes_complete aninhado. Ignorando linha.`);
+           continue;
+        }
+
+        if (!cte.sap_doc_entry) {
+            console.error(`[INTEGRATE-BILL] REJEITADO: CT-e número ${cte.number} (ID: ${cte.id}) NÃO possui sap_doc_entry gravado.`);
+            return res.status(400).json({ 
+                success: false, 
+                error: `Falha: O CT-e número ${cte.number} ainda não foi aprovado no SAP. Não é possível gerar a integração da Fatura.` 
+            });
+        }
+        
+        const cValue = parseFloat(cte.total_value || 0);
+        sumAppliedCalculated += cValue;
+        if (cte.number) cteNumbersList.push(cte.number);
+        
+        paymentInvoices.push({
+            LineNum: paymentInvoices.length,
+            DocEntry: parseInt(cte.sap_doc_entry, 10),
+            SumApplied: cValue,
+            InvoiceType: "it_PurchaseInvoice"
+        });
+        console.log(`[INTEGRATE-BILL] CT-e ${cte.number} | DocEntry: ${cte.sap_doc_entry} | Validado. Valor do documento no C/P: ${cValue}`);
+    }
+
+    
+    console.log('[INTEGRATE-BILL] Buscando uma conta contábil (CashAccount) padrão no SAP para a transferência...');
+    let defaultTransferAccount = '';
+    try {
+      const accRes = await fetch(`${serviceLayerUrl}/ChartOfAccounts?$filter=CashAccount eq 'tYES'&$top=1`, {
+        method: 'GET',
+        headers: {
+          'Cookie': cookieHeader,
+          'Accept': 'application/json'
+        }
+      });
+      if (accRes.ok) {
+        const accData = await accRes.json();
+        if (accData && accData.value && accData.value.length > 0) {
+          defaultTransferAccount = accData.value[0].Code;
+          console.log(`[INTEGRATE-BILL] Conta contábil padrão encontrada: ${defaultTransferAccount}`);
+        }
+      }
+    } catch (e) {
+      console.log('[INTEGRATE-BILL] Aviso: Não foi possível buscar CashAccount no SAP:', e.message);
+    }
+
+    console.log(`[INTEGRATE-BILL] Somatório Total Calculado (SumApplied Geral): ${sumAppliedCalculated}`);
+    // 4. Montar Payload JSON Dynamic
+    const todayStr = new Date().toISOString().split('T')[0];
+    const ctesJoined = cteNumbersList.join(', ');
+    const carrierName = billData.customer_name || billData.metadata?.carrier_name || '';
+    // Formato: "CT-e(s) 1234, 5678 0001-ALFA Transportes LTDA"
+    const journalRemarksStr = `CT-e(s) ${ctesJoined} ${carrierName}`.trim().substring(0, 250);
+
+    const payloadVendor = {
+        CardCode: finalCardCode,
+        DocType: "rSupplier",
+        DocDate: todayStr,
+        JournalRemarks: journalRemarksStr,
+        Remarks: `Integrado via Log Axis (TMS Embarcador) - Fatura: ${billData.bill_number || billId.slice(0, 8)}`,
+        PaymentInvoices: paymentInvoices,
+        TransferSum: sumAppliedCalculated,
+        TransferDate: todayStr
+    };
+
+    if (defaultTransferAccount) {
+        payloadVendor.TransferAccount = defaultTransferAccount;
+    }
+
+
+    console.log('[INTEGRATE-BILL] Payload preparado para /VendorPayments:');
+    console.log(JSON.stringify(payloadVendor, null, 2));
+
+    // 5. Postar na Service Layer
+    console.log(`[INTEGRATE-BILL] Disparando requisição POST para ${serviceLayerUrl}/VendorPayments ...`);
+    const paymentRes = await fetch(`${serviceLayerUrl}/VendorPayments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader
+      },
+      body: JSON.stringify(payloadVendor)
+    });
+
+    if (!paymentRes.ok) {
+        let errJSON = null;
+        let sapErrorMsg = paymentRes.statusText;
+        try { 
+           errJSON = await paymentRes.json(); 
+           sapErrorMsg = errJSON?.error?.message?.value || sapErrorMsg;
+        } catch(e) {
+           const errRaw = await paymentRes.text();
+           sapErrorMsg = errRaw;
+        }
+        
+        console.error('[INTEGRATE-BILL] SAP Service Layer REJEITOU VendorPayments!');
+        console.error('[INTEGRATE-BILL] Erro SAP:', sapErrorMsg);
+        if (errJSON) console.error(JSON.stringify(errJSON, null, 2));
+        
+        return res.status(400).json({ success: false, error: sapErrorMsg, payload: payloadVendor });
+    }
+
+    const sapPayment = await paymentRes.json();
+    const paymentEntry = sapPayment.DocEntry;
+    console.log(`[INTEGRATE-BILL] SUCESSO! VendorPayments criado no SAP. DocEntry Financeiro: ${paymentEntry}`);
+
+    // 6. Tratar Retorno (Atualizar Fatura)
+    console.log(`[INTEGRATE-BILL] Atualizando status da Fatura ${billId} no TMS para 'aprovada'...`);
+    const { error: updateError } = await supabase
+        .from('bills')
+        .update({
+            status: 'aprovada',
+            metadata: {
+                ...(billData.metadata || {}),
+                sap_payment_entry: paymentEntry,
+                sap_payment_sync_at: new Date().toISOString()
+            }
+        })
+        .eq('id', billId);
+
+    if (updateError) {
+        console.error('[INTEGRATE-BILL] AVISO: Fatura aprovada no SAP, porém falhou ao atualizar tabela no TMS:', updateError);
+        return res.status(500).json({
+            success: true,
+            warning: 'Integrado ao SAP, mas falhou ao atualizar TMS',
+            paymentEntry
+        });
+    }
+
+    console.log('[INTEGRATE-BILL] Fluxo Concluído com Sucesso Total.');
+    console.log('[INTEGRATE-BILL] =======================================\n');
+    return res.status(200).json({
+        success: true,
+        sap_payment_entry: paymentEntry,
+        message: 'Fatura aprovada e integrada com sucesso no SAP.'
+    });
+
+  } catch (error) {
+    console.error('[INTEGRATE-BILL] Exceção Interna Grave:', error);
+    return res.status(500).json({ success: false, error: `Erro Interno: ${error.message}` });
+  }
+});
+
+
+// Endpoint 7: Cancel/Revert Bill in SAP (VendorPayment)
+app.post('/api/cancel-bill', async (req, res) => {
+  console.log('\n[CANCEL-BILL] =======================================');
+  console.log('[CANCEL-BILL] Nova requisição recebida em /api/cancel-bill');
+  try {
+    const { endpointSystem, port, username, password, companyDb, billId } = req.body;
+
+    if (!endpointSystem || !username || !companyDb || !billId) {
+      return res.status(400).json({ success: false, error: 'Parâmetros ausentes na requisição.' });
+    }
+
+    // 1. Authenticate with SAP
+    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
+    let serviceLayerUrl = cleanEndpoint;
+    if (port && !cleanEndpoint.includes(`:${port}`)) {
+      try {
+        const urlParts = new URL(cleanEndpoint);
+        urlParts.port = port.toString();
+        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
+      } catch (e) {
+        serviceLayerUrl = `${cleanEndpoint}:${port}`;
+      }
+    }
+    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
+    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+
+    const loginRes = await fetch(`${serviceLayerUrl}/Login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ CompanyDB: companyDb, UserName: username, Password: password || '' })
+    });
+
+    if (!loginRes.ok) {
+      return res.status(loginRes.status).json({ success: false, error: `Falha na autenticação SAP (${loginRes.status})` });
+    }
+
+    const { SessionId } = await loginRes.json();
+    const cookieHeader = `B1SESSION=${SessionId}; ROUTEID=.node1`;
+
+    // 2. Fetch Bill to find SAP Payment DocEntry
+    const { data: billData, error: billError } = await supabase
+      .from('bills')
+      .select('id, metadata, status')
+      .eq('id', billId)
+      .single();
+
+    if (billError || !billData) {
+      return res.status(404).json({ success: false, error: 'Fatura não encontrada.' });
+    }
+
+    const docEntry = billData.metadata?.sap_payment_entry;
+    if (!docEntry) {
+      return res.status(400).json({ success: false, error: 'Fatura não possui Documento de Pagamento (VendorPayment) vinculado no SAP.' });
+    }
+
+    console.log(`[CANCEL-BILL] Solicitando cancelamento do VendorPayment DocEntry: ${docEntry}`);
+    
+    // Pegar o CardCode do VendorPayment original
+    let cardCode = '';
+    try {
+      const origRes = await fetch(`${serviceLayerUrl}/VendorPayments(${docEntry})?$select=CardCode`, {
+        headers: { 'Cookie': cookieHeader }
+      });
+      if (origRes.ok) {
+        const origData = await origRes.json();
+        cardCode = origData.CardCode;
+      }
+    } catch(e) {}
+
+    // 3. Cancel VendorPayment in SAP
+    const cancelRes = await fetch(`${serviceLayerUrl}/VendorPayments(${docEntry})/Cancel`, {
+      method: 'POST',
+      headers: { 
+        'Cookie': cookieHeader,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ JournalRemarks: "Cancelado via Log Axis (TMS)" })
+    });
+    
+    // Tentar atualizar a observação do diário do estorno
+    if (cardCode && (cancelRes.ok || cancelRes.status === 204)) {
+       try {
+         // esperar 1 segundo para o B1 commitar
+         await new Promise(r => setTimeout(r, 1000));
+         const cDocsRes = await fetch(`${serviceLayerUrl}/VendorPayments?$filter=CardCode eq '${cardCode}' and CancelStatus eq 'csCancellation'&$orderby=DocEntry desc&$top=1`, {
+            headers: { 'Cookie': cookieHeader }
+         });
+         const cDocs = await cDocsRes.json();
+         if (cDocs.value && cDocs.value.length > 0) {
+            const cancelDocEntry = cDocs.value[0].DocEntry;
+            console.log(`[CANCEL-BILL] CANCELLATION DOC ENTRY ENCONTRADO: ${cancelDocEntry}. Aplicando PATCH de JournalRemarks...`);
+            await fetch(`${serviceLayerUrl}/VendorPayments(${cancelDocEntry})`, {
+               method: 'PATCH',
+               headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/json' },
+               body: JSON.stringify({ JournalRemarks: "Cancelado via Log Axis (TMS)" })
+            });
+         }
+       } catch (ex) {
+         console.error('[CANCEL-BILL] Não foi possível atualizar JournalRemarks do documento de estorno.', ex);
+       }
+    }
+
+    if (!cancelRes.ok && cancelRes.status !== 204) {
+      let errJSON;
+      try { errJSON = await cancelRes.json(); } catch(e){}
+      const sapMsg = errJSON?.error?.message?.value || cancelRes.statusText || '';
+      console.error('[CANCEL-BILL] Resposta SAP:', errJSON || cancelRes.statusText);
+      
+      // Se a resposta indicar que já está cancelado, podemos prosseguir com a limpeza local
+      if (sapMsg.toLowerCase().includes('cancel') || sapMsg.toLowerCase().includes('closed')) {
+        console.log('[CANCEL-BILL] SAP indica que o documento já foi cancelado/fechado. Limpando vínculo local de qualquer forma...');
+      } else {
+        return res.status(400).json({ success: false, error: sapMsg || 'Falha ao estornar pagamento no SAP.' });
+      }
+    }
+
+    // 4. Update TMS Bill Status back to "importada"
+    console.log(`[CANCEL-BILL] Sucesso no SAP. Estornando status no TMS...`);
+    const newMetadata = { ...billData.metadata };
+    delete newMetadata.sap_payment_entry;
+
+    await supabase.from('bills').update({
+       status: 'importada',
+       metadata: newMetadata
+    }).eq('id', billId);
+
+    console.log('[CANCEL-BILL] Operação Finalizada com Sucesso.');
+    return res.status(200).json({ success: true, message: 'Fatura estornada com sucesso.' });
+
+  } catch (error) {
+    console.error('[CANCEL-BILL] Grave:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 TMS ERP Proxy Server running on port ${PORT}`);
   

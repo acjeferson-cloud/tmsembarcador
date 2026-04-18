@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; 
+import { SmartDateInput } from '../../../components/common/SmartDateInput';
 import { useTranslation } from 'react-i18next';
 import { spotNegotiationService, SpotNegotiation } from '../../../services/spotNegotiationService';
 import { Plus, FileText, CheckCircle, Clock, MoreHorizontal, Eye, Share2, Edit2, Trash2, XCircle, FilePlus2, Receipt, Search, Filter, Printer, Download, Calendar, Truck, DollarSign } from 'lucide-react';
@@ -9,6 +10,9 @@ import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 import { useAuth } from '../../../hooks/useAuth';
 import { spotPdfService } from '../../../services/spotPdfService';
 import { carriersService, Carrier } from '../../../services/carriersService';
+
+
+
 
 export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: string) => void; onView?: (id: string) => void }> = ({ onNew, onEdit, onView }) => {
   const { t } = useTranslation();
@@ -430,19 +434,9 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                     <Calendar size={14}/> Período de Criação
                   </label>
                   <div className="flex gap-2 items-center">
-                    <input 
-                      type="date"
-                      value={filters.dateRange.start}
-                      onChange={(e) => handleRangeChange('dateRange', 'start', e.target.value)}
-                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
+                    <SmartDateInput value={filters.dateRange.start} onChange={(val) => handleRangeChange('dateRange', 'start', val)} />
                     <span className="text-gray-400">a</span>
-                    <input 
-                      type="date"
-                      value={filters.dateRange.end}
-                      onChange={(e) => handleRangeChange('dateRange', 'end', e.target.value)}
-                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
+                    <SmartDateInput value={filters.dateRange.end} onChange={(val) => handleRangeChange('dateRange', 'end', val)} />
                   </div>
                 </div>
 
@@ -452,19 +446,9 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                     <Calendar size={14}/> Período de Validade
                   </label>
                   <div className="flex gap-2 items-center">
-                    <input 
-                      type="date"
-                      value={filters.validityRange.start}
-                      onChange={(e) => handleRangeChange('validityRange', 'start', e.target.value)}
-                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
+                    <SmartDateInput value={filters.validityRange.start} onChange={(val) => handleRangeChange('validityRange', 'start', val)} />
                     <span className="text-gray-400">a</span>
-                    <input 
-                      type="date"
-                      value={filters.validityRange.end}
-                      onChange={(e) => handleRangeChange('validityRange', 'end', e.target.value)}
-                      className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
+                    <SmartDateInput value={filters.validityRange.end} onChange={(val) => handleRangeChange('validityRange', 'end', val)} />
                   </div>
                 </div>
 

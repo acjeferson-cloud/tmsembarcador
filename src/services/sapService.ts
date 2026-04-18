@@ -730,5 +730,112 @@ export const sapIntegrationService = {
     } catch (error: any) {
       return { success: false, error: error.message || 'Falha ao conectar com o Proxy de Integração SAP.' };
     }
+  },
+
+  /**
+   * Sends Bill (Fatura) integration data to the SAP B1 Proxy to create a VendorPayment.
+   */
+  async integrateBill(billId: string): Promise<{ success: boolean; sap_payment_entry?: number; message?: string; error?: string }> {
+    try {
+      const config = await this.getConfig();
+      
+      const payload = {
+        endpointSystem: config.endpointSystem,
+        port: config.port,
+        username: config.username,
+        password: config.password,
+        companyDb: config.companyDb,
+        sap_bpl_id: config.sap_bpl_id,
+        billId: billId
+      };
+
+      let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      proxyUrl = proxyUrl.replace(/\/$/, '');
+      
+      const response = await fetch(`${proxyUrl}/api/integrate-bill`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        return { 
+          success: false, 
+          error: `Resposta inválida do Proxy SAP (Não é JSON). Status: ${response.status}` 
+        };
+      }
+      
+      if (!response.ok || !data.success) {
+        return { 
+          success: false, 
+          error: data.error || `Erro na comunicação com o Proxy SAP (${response.status})` 
+        };
+      }
+
+      return {
+        success: true,
+        sap_payment_entry: data.sap_payment_entry,
+        message: data.message
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Falha ao conectar com o Proxy de Integração SAP.' };
+    }
+  },
+
+  async cancelBill(billId: string): Promise<{ success: boolean; message?: string; error?: string }> {
+      try {
+        const config = await this.getConfig();
+        if (!config || !config.endpointSystem) {
+          return { success: false, error: 'Configuração não encontrada.' };
+        }
+        
+        const payload = {
+          endpointSystem: config.endpointSystem,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          companyDb: config.companyDb,
+          sap_bpl_id: config.sap_bpl_id, // keep it safe
+          billId: billId
+        };
+  
+        let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+        proxyUrl = proxyUrl.replace(/\/$/, '');
+        
+        const response = await fetch(`${proxyUrl}/api/cancel-bill`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+  
+        let data;
+        try {
+          data = await response.json();
+        } catch (jsonErr) {
+          return { 
+            success: false, 
+            error: `Resposta inválida do Proxy SAP ao estornar fatura. Status: ${response.status}` 
+          };
+        }
+        
+        if (!response.ok || !data.success) {
+          return { 
+            success: false, 
+            error: data.error || `Erro na comunicação com o Proxy SAP (${response.status})` 
+          };
+        }
+  
+        return {
+          success: true,
+          message: data.message
+        };
+      } catch (error: any) {
+        console.error('[SAP Service] Erro na requisição de estorno da fatura:', error);
+        return { success: false, error: error.message };
+      }
   }
+
 };

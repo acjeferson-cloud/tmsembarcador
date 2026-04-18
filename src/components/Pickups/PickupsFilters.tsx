@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
+import { SmartDateInput } from '../../components/common/SmartDateInput';
 import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, Package } from 'lucide-react';
 import { carriersService, Carrier } from '../../services/carriersService';
@@ -14,6 +15,9 @@ interface PickupsFiltersProps {
     enderecoColeta: string;
   };
 }
+
+
+
 
 export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, filters }) => {
   const { t } = useTranslation();
@@ -202,20 +206,8 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
               <span>{t('pickups.filters.creationPeriod')}</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="date"
-                value={localFilters.dataCriacao.start}
-                onChange={(e) => handleDateRangeChange('start', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder={t('pickups.filters.startDate')}
-              />
-              <input
-                type="date"
-                value={localFilters.dataCriacao.end}
-                onChange={(e) => handleDateRangeChange('end', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder={t('pickups.filters.endDate')}
-              />
+              <SmartDateInput value={localFilters.dataCriacao.start} onChange={(val) => handleDateRangeChange('start', val)} />
+              <SmartDateInput value={localFilters.dataCriacao.end} onChange={(val) => handleDateRangeChange('end', val)} />
             </div>
           </div>
 

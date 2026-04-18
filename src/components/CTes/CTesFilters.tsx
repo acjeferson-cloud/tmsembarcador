@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
+import { SmartDateInput } from '../../components/common/SmartDateInput';
 import { Search, Filter, Calendar, Truck, MapPin, FileText } from 'lucide-react';
 import { brazilianStates } from '../../data/statesData';
 import { carriersService, Carrier } from '../../services/carriersService';
@@ -16,6 +17,9 @@ interface CTesFiltersProps {
     numeroOuChave: string;
   };
 }
+
+
+
 
 export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filters }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -174,21 +178,9 @@ export const CTesFilters: React.FC<CTesFiltersProps> = ({ onFilterChange, filter
                 <span>Período de Emissão</span>
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="date"
-                  name="periodoInicio"
-                  value={localFilters.periodoInicio}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoInicio} onChange={(val) => handleInputChange({ target: { name: 'periodoInicio', value: val } } as any)} />
                 <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
-                <input
-                  type="date"
-                  name="periodoFim"
-                  value={localFilters.periodoFim}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoFim} onChange={(val) => handleInputChange({ target: { name: 'periodoFim', value: val } } as any)} />
               </div>
             </div>
 

@@ -653,11 +653,40 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
               for (const cteId of selectedCTes) {
                 try {
-                  console.log(`[Storno Lote] Iniciando estorno para o CT-e ID: ${cteId}`);
+                  
+                  // Validação de segurança suprema em Lote via Desmembramento
+                  const { data: billCtes, error: checkError1 } = await (supabase as any)
+                    .from('bill_ctes')
+                    .select('bill_id')
+                    .eq('cte_id', cteId.toString());
+                    
+                  if (checkError1) throw new Error(`Erro ao verificar vínculos do CT-e: ${checkError1.message}`);
+                  
+                  if (billCtes && billCtes.length > 0) {
+                     const billIds = billCtes.map((bc: any) => bc.bill_id);
+                     
+                     const { data: linkedBills, error: checkError2 } = await (supabase as any)
+                       .from('bills')
+                       .select('status, bill_number')
+                       .in('id', billIds);
+                       
+                     if (checkError2) throw new Error(`Erro ao verificar status das faturas: ${checkError2.message}`);
+                     
+                     
+                     
+                     const isApprovedBill = linkedBills?.find((b: any) => {
+                       const billStatus = b.status?.toLowerCase();
+                       return billStatus === 'auditada_aprovada' || billStatus === 'aprovada' || billStatus === 'auditada_reprovada' || billStatus === 'integrada';
+                     });
+                     
+                     if (isApprovedBill) {
+                       throw new Error(`CT-e ${fullCTe?.number || cteId} travado: Pertence à Fatura ${isApprovedBill.bill_number || ''} já integrada.`);
+                     }
+                  }
+
                   const fullCTe = await ctesCompleteService.getById(cteId.toString());
                   if (!fullCTe) throw new Error('CT-e não encontrado');
 
-                  console.log(`[Storno Lote] Dados do CT-e ${fullCTe.number}:`, fullCTe);
 
                   // Se houver integração SAP, tentar estornar no SAP primeiro
                   if (fullCTe.sap_doc_entry) {
@@ -668,9 +697,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                                fullCTe.sap_integration_type?.toLowerCase().includes('draft')
                     };
 
-                    console.log(`[Storno Lote] Enviando cancelamento para SAP (DocEntry: ${fullCTe.sap_doc_entry}):`, cancelPayload);
                     const cancelResult = await sapIntegrationService.cancelCTe(cancelPayload);
-                    console.log(`[Storno Lote] Resultado do cancelamento SAP para ${fullCTe.number}:`, cancelResult);
 
                     if (!cancelResult.success) {
                       setToast({ 
@@ -679,7 +706,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                       });
                     }
                   } else {
-                    console.log(`[Storno Lote] CT-e ${fullCTe.number} não possui sap_doc_entry vinculado. Estorno será apenas local.`);
                   }
 
                   // Resetar status no banco local e limpar campos SAP usando o serviço completo
@@ -993,11 +1019,40 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             setIsLoading(true);
             setToast({ message: `Processando estorno do CT-e...`, type: 'info' });
             try {
-              console.log(`[Storno] Iniciando estorno para o CT-e ID: ${cteId}`);
+              
+              // Validação de segurança suprema: Consulta DESMEMBRADA para evadir RLS em JOINS
+              const { data: billCtes, error: checkError1 } = await (supabase as any)
+                .from('bill_ctes')
+                .select('bill_id')
+                .eq('cte_id', cteId.toString());
+                
+              if (checkError1) throw new Error(`Erro ao verificar vínculos do CT-e: ${checkError1.message}`);
+              
+              if (billCtes && billCtes.length > 0) {
+                 const billIds = billCtes.map((bc: any) => bc.bill_id);
+                 
+                 const { data: linkedBills, error: checkError2 } = await (supabase as any)
+                   .from('bills')
+                   .select('status, bill_number')
+                   .in('id', billIds);
+                   
+                 if (checkError2) throw new Error(`Erro ao verificar status das faturas: ${checkError2.message}`);
+                 
+                 
+                   
+                 const isApprovedBill = linkedBills?.find((b: any) => {
+                   const billStatus = b.status?.toLowerCase();
+                   return billStatus === 'auditada_aprovada' || billStatus === 'aprovada' || billStatus === 'auditada_reprovada' || billStatus === 'integrada';
+                 });
+                 
+                 if (isApprovedBill) {
+                   throw new Error(`O CT-e pertence à Fatura ${isApprovedBill.bill_number || ''} que já está Integrada/Aprovada. Não é permitido estornar a origem se o C/P já existe no SAP.`);
+                 }
+              }
+
               const fullCTe = await ctesCompleteService.getById(cteId.toString());
               if (!fullCTe) throw new Error('CT-e não encontrado');
 
-              console.log(`[Storno] Dados do CT-e ${fullCTe.number}:`, fullCTe);
 
               const sapConfig = await sapIntegrationService.getConfig();
 
@@ -1010,9 +1065,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                            fullCTe.sap_integration_type?.toLowerCase().includes('draft')
                 };
 
-                console.log(`[Storno] Enviando cancelamento para SAP (DocEntry: ${fullCTe.sap_doc_entry}):`, cancelPayload);
                 const cancelResult = await sapIntegrationService.cancelCTe(cancelPayload);
-                console.log(`[Storno] Resultado do cancelamento SAP:`, cancelResult);
 
                 if (!cancelResult.success) {
                   setToast({ 
@@ -1021,7 +1074,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                   });
                 }
               } else {
-                console.log(`[Storno] CT-e ${fullCTe.number} não possui sap_doc_entry vinculado. Estorno será apenas local.`);
               }
 
               // Resetar status no banco local e limpar campos SAP usando o serviço completo

@@ -370,8 +370,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                     </button>
 
                     {/* Recalcular Fatura */}
-                    {bill.status !== 'auditada_aprovada' && (
-                      <button
+                    <button
                         onClick={() => onAction(bill.id, 'recalculate')}
                         disabled={isLoading}
                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -379,7 +378,6 @@ export const BillsTable = React.memo<BillsTableProps>(({
                       >
                         <RefreshCw size={16} />
                       </button>
-                    )}
 
                     {/* View Map */}
                     <button
@@ -405,62 +403,64 @@ export const BillsTable = React.memo<BillsTableProps>(({
                       {/* Dropdown menu */}
                       {openActionMenu === bill.id && (
                         <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
-                          <div className="py-1">
-                            
-                            {bill.status !== 'auditada_aprovada' && (
+                            <div className="py-1">
+                              
+                              {bill.status !== 'Auditada e aprovada' && (
+                                <button
+                                    onClick={() => { onAction(bill.id, 'recalculate'); setOpenActionMenu(null); }}
+                                    disabled={isLoading}
+                                    className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center space-x-2"
+                                  >
+                                    <RefreshCw size={14} /><span>Recalcular Fatura</span>
+                                  </button>
+                              )}
+                              
+                              {bill.status !== 'Auditada e aprovada' && (
+                                <button
+                                    onClick={() => { onAction(bill.id, 'approve'); setOpenActionMenu(null); }}
+                                    disabled={isLoading}
+                                    className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                                  >
+                                    <ThumbsUp size={14} /><span>Aprovar Fatura</span>
+                                  </button>
+                              )}
+                              
+                              {bill.status !== 'Auditada e aprovada' && (
+                                <button
+                                    onClick={() => { onAction(bill.id, 'reject'); setOpenActionMenu(null); }}
+                                    disabled={isLoading}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2"
+                                  >
+                                    <ThumbsDown size={14} /><span>Reprovar Fatura</span>
+                                  </button>
+                              )}
+                              
+                              {(bill.status === 'Auditada e aprovada' || bill.status === 'Auditada e reprovada') && (
+                                <button
+                                    onClick={() => { onAction(bill.id, 'revert'); setOpenActionMenu(null); }}
+                                    disabled={isLoading}
+                                    className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                                  >
+                                    <ArrowClockwise size={14} /><span>Estornar Fatura</span>
+                                  </button>
+                              )}
+                              
                               <button
-                                onClick={() => { onAction(bill.id, 'approve'); setOpenActionMenu(null); }}
+                                onClick={() => { onAction(bill.id, 'print'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center space-x-2"
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                               >
-                                <ThumbsUp size={14} /><span>Aprovar Fatura</span>
+                                <Printer size={14} /><span>Imprimir</span>
                               </button>
-                            )}
-                            
-                            {bill.status !== 'auditada_aprovada' && (
-                              <button
-                                onClick={() => { onAction(bill.id, 'reject'); setOpenActionMenu(null); }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2"
-                              >
-                                <ThumbsDown size={14} /><span>Reprovar Fatura</span>
-                              </button>
-                            )}
-                            
-                            {(bill.status === 'auditada_aprovada' || bill.status === 'auditada_reprovada') && (
-                              <button
-                                onClick={() => { onAction(bill.id, 'revert'); setOpenActionMenu(null); }}
-                                disabled={isLoading}
-                                className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 flex items-center space-x-2"
-                              >
-                                <ArrowClockwise size={14} /><span>Estornar Fatura</span>
-                              </button>
-                            )}
-                            
-                            <button
-                              onClick={() => { onAction(bill.id, 'cancel'); setOpenActionMenu(null); }}
-                              disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
-                            >
-                              <XCircle size={14} /><span>Cancelar Fatura</span>
-                            </button>
 
-                            <button
-                              onClick={() => { onAction(bill.id, 'delete'); setOpenActionMenu(null); }}
-                              disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2"
-                            >
-                              <Trash2 size={14} /><span>Excluir Fatura</span>
-                            </button>
-
-                            <button
-                              onClick={() => { onAction(bill.id, 'download'); setOpenActionMenu(null); }}
-                              disabled={isLoading}
-                              className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
-                            >
-                              <Download size={14} /><span>Download XML</span>
-                            </button>
-                          </div>
+                              <button
+                                onClick={() => { onAction(bill.id, 'download'); setOpenActionMenu(null); }}
+                                disabled={isLoading}
+                                className="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
+                              >
+                                <Download size={14} /><span>Download</span>
+                              </button>
+                            </div>
                         </div>
                       )}
                     </div>

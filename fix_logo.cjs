@@ -1,1 +1,0 @@
-﻿const fs = require('fs'); let c = fs.readFileSync('src/services/cteDivergenceReportService.ts', 'utf8'); c = c.replace(/if \\(estId && estId !== '1'\\) \\{/, 'if (estId) {'); fs.writeFileSync('src/services/cteDivergenceReportService.ts', c);

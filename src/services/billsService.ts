@@ -42,7 +42,6 @@ export const billsService = {
         .from('bills')
         .select(`
           *,
-          carrier:carriers(id, razao_social, codigo),
           bill_ctes (
             id,
             ctes_complete (

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
+import { SmartDateInput } from '../../components/common/SmartDateInput';
 import { useTranslation } from 'react-i18next';
 import { Search, Filter, Calendar, Truck, MapPin, User, FileText, ShoppingCart } from 'lucide-react';
 import { brazilianStates } from '../../data/statesData';
@@ -21,6 +22,7 @@ interface OrdersFiltersProps {
     numeroPedido: string;
   };
 }
+
 
 export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, filters }) => {
   const { t } = useTranslation();
@@ -213,19 +215,9 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 <span>{t('orders.filters.issueDate')}</span>
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="date"
-                  value={localFilters.periodoEmissao.start}
-                  onChange={(e) => handleDateRangeChange('periodoEmissao', 'start', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoEmissao.start} onChange={(val) => handleDateRangeChange('periodoEmissao', 'start', val)} />
                 <span className="flex items-center text-gray-500 dark:text-gray-400">{t('orders.filters.to')}</span>
-                <input
-                  type="date"
-                  value={localFilters.periodoEmissao.end}
-                  onChange={(e) => handleDateRangeChange('periodoEmissao', 'end', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoEmissao.end} onChange={(val) => handleDateRangeChange('periodoEmissao', 'end', val)} />
               </div>
             </div>
 
@@ -236,19 +228,9 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 <span>{t('orders.filters.entryDate')}</span>
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="date"
-                  value={localFilters.periodoEntrada.start}
-                  onChange={(e) => handleDateRangeChange('periodoEntrada', 'start', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoEntrada.start} onChange={(val) => handleDateRangeChange('periodoEntrada', 'start', val)} />
                 <span className="flex items-center text-gray-500 dark:text-gray-400">{t('orders.filters.to')}</span>
-                <input
-                  type="date"
-                  value={localFilters.periodoEntrada.end}
-                  onChange={(e) => handleDateRangeChange('periodoEntrada', 'end', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoEntrada.end} onChange={(val) => handleDateRangeChange('periodoEntrada', 'end', val)} />
               </div>
             </div>
 
@@ -259,19 +241,9 @@ export const OrdersFilters: React.FC<OrdersFiltersProps> = ({ onFilterChange, fi
                 <span>{t('orders.filters.expectedDate')}</span>
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="date"
-                  value={localFilters.periodoPrevisao.start}
-                  onChange={(e) => handleDateRangeChange('periodoPrevisao', 'start', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoPrevisao.start} onChange={(val) => handleDateRangeChange('periodoPrevisao', 'start', val)} />
                 <span className="flex items-center text-gray-500 dark:text-gray-400">{t('orders.filters.to')}</span>
-                <input
-                  type="date"
-                  value={localFilters.periodoPrevisao.end}
-                  onChange={(e) => handleDateRangeChange('periodoPrevisao', 'end', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoPrevisao.end} onChange={(val) => handleDateRangeChange('periodoPrevisao', 'end', val)} />
               </div>
             </div>
 

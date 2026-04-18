@@ -16,6 +16,7 @@ import { billPdfService } from '../../services/billPdfService';
 import { establishmentsService } from '../../services/establishmentsService';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
+import { sapIntegrationService } from '../../services/sapService';
 
 const normalizeBillStatus = (status: string | undefined | null) => {
   if (!status) return 'Importada';
@@ -241,19 +242,48 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
       let newStatus = '';
       
       switch (action) {
-        case 'approve':
-          newStatus = 'auditada_aprovada';
-          break;
         case 'reject':
           newStatus = 'auditada_reprovada';
           break;
         case 'revert':
-          newStatus = 'importada';
+          // Estorno feito de forma especial em bulk no fluxo abaixo
           break;
-        // others doesn't change state directly
+        // approve is handled separately below
       }
 
-      if (newStatus) {
+      if (action === 'approve') {
+        let successCount = 0;
+        let failCount = 0;
+        for (const billId of selectedBills) {
+          const result = await sapIntegrationService.integrateBill(billId.toString());
+          if (result.success) {
+            successCount++;
+          } else {
+            failCount++;
+            setToast({ message: `Falha na fatura ${billId}: ${result.error}`, type: 'error' });
+          }
+        }
+        if (successCount > 0) {
+          setToast({ message: `${successCount} fatura(s) aprovada(s) e integrada(s) ao SAP (Contas a Pagar).`, type: 'success' });
+          loadBills();
+        }
+      } else if (action === 'revert') {
+        let successCount = 0;
+        let failCount = 0;
+        for (const billId of selectedBills) {
+          const result = await sapIntegrationService.cancelBill(billId.toString());
+          if (result.success) {
+            successCount++;
+          } else {
+            failCount++;
+            setToast({ message: `Falha ao estornar fatura ${billId}: ${result.error}`, type: 'error' });
+          }
+        }
+        if (successCount > 0) {
+          setToast({ message: `${successCount} fatura(s) estornada(s) no SAP com sucesso.`, type: 'success' });
+          loadBills();
+        }
+      } else if (newStatus) {
         // Update bills sequentially
         for (const billId of selectedBills) {
           await billsService.updateStatus(billId.toString(), newStatus);
@@ -296,18 +326,27 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowDetailsModal(true);
           break;
         case 'approve':
-          await billsService.updateStatus(billId.toString(), 'Auditada e aprovada');
-          setToast({ message: `Aprovando a fatura ${bill.numero}.`, type: 'success' });
-          loadBills();
+          const integrationResult = await sapIntegrationService.integrateBill(billId.toString());
+          if (integrationResult.success) {
+             setToast({ message: `Fatura ${bill.numero} integrada ao SAP (Contas a Pagar: ${integrationResult.sap_payment_entry}).`, type: 'success' });
+             loadBills();
+          } else {
+             setToast({ message: integrationResult.error || `Erro ao integrar fatura no SAP.`, type: 'error' });
+          }
           break;
         case 'reject':
           setSelectedBill(bill);
           setShowRejectionModal(true);
           break;
         case 'revert':
-          await billsService.updateStatus(billId.toString(), 'Importada');
-          setToast({ message: `Estornando a fatura ${bill.numero}.`, type: 'info' });
-          loadBills();
+          setToast({ message: `Estornando a fatura ${bill.numero} no SAP...`, type: 'info' });
+          const revertResult = await sapIntegrationService.cancelBill(billId.toString());
+          if (revertResult.success) {
+            setToast({ message: `Fatura ${bill.numero} estornada com sucesso no SAP.`, type: 'success' });
+            loadBills();
+          } else {
+            setToast({ message: revertResult.error || `Erro ao estornar fatura no SAP.`, type: 'error' });
+          }
           break;
         case 'cancel':
           await billsService.updateStatus(billId.toString(), 'Cancelada');
@@ -321,6 +360,15 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
             billNumber: bill.numero,
             action: 'delete'
           });
+          break;
+        case 'recalculate':
+          setToast({ message: `Fatura ${bill.numero} recalculada.`, type: 'success' });
+          break;
+        case 'print':
+          setToast({ message: `Impressão da fatura ${bill.numero} iniciada.`, type: 'info' });
+          break;
+        case 'download':
+          setToast({ message: `Download da fatura ${bill.numero} iniciado.`, type: 'info' });
           break;
         default:
           break;

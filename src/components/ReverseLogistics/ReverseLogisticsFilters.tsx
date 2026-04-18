@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
+import { SmartDateInput } from '../common/SmartDateInput';
 import { reverseLogisticsStatuses, reverseLogisticsTypes } from '../../data/reverseLogisticsData';
 
 interface ReverseLogisticsFiltersProps {
@@ -99,12 +100,7 @@ const ReverseLogisticsFilters: React.FC<ReverseLogisticsFiltersProps> = ({ onFil
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Data Início
         </label>
-        <input
-          type="date"
-          value={filters.dateRange.start}
-          onChange={(e) => handleDateRangeChange('start', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+        <SmartDateInput value={filters.dateRange.start} onChange={(val) => handleDateRangeChange('start', val)} />
       </div>
 
       <div>
@@ -112,12 +108,7 @@ const ReverseLogisticsFilters: React.FC<ReverseLogisticsFiltersProps> = ({ onFil
           Data Fim
         </label>
         <div className="flex space-x-2">
-          <input
-            type="date"
-            value={filters.dateRange.end}
-            onChange={(e) => handleDateRangeChange('end', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <SmartDateInput value={filters.dateRange.end} onChange={(val) => handleDateRangeChange('end', val)} />
           <button
             onClick={clearFilters}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

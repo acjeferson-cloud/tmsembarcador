@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
+import { SmartDateInput } from '../../components/common/SmartDateInput';
 import { Search, Filter, Calendar, Truck, FileText } from 'lucide-react';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { useFilterCache } from '../../hooks/useFilterCache';
@@ -13,6 +14,9 @@ interface BillsFiltersProps {
     numeroFatura: string;
   };
 }
+
+
+
 
 export const BillsFilters: React.FC<BillsFiltersProps> = ({ onFilterChange, filters }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -166,19 +170,9 @@ export const BillsFilters: React.FC<BillsFiltersProps> = ({ onFilterChange, filt
                 <span>Período de Emissão</span>
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="date"
-                  value={localFilters.periodoEmissao.start}
-                  onChange={(e) => handleDateRangeChange('periodoEmissao', 'start', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoEmissao.start} onChange={(val) => handleDateRangeChange('periodoEmissao', 'start', val)} />
                 <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
-                <input
-                  type="date"
-                  value={localFilters.periodoEmissao.end}
-                  onChange={(e) => handleDateRangeChange('periodoEmissao', 'end', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoEmissao.end} onChange={(val) => handleDateRangeChange('periodoEmissao', 'end', val)} />
               </div>
             </div>
 
@@ -189,19 +183,9 @@ export const BillsFilters: React.FC<BillsFiltersProps> = ({ onFilterChange, filt
                 <span>Período de Vencimento</span>
               </label>
               <div className="flex space-x-2">
-                <input
-                  type="date"
-                  value={localFilters.periodoVencimento.start}
-                  onChange={(e) => handleDateRangeChange('periodoVencimento', 'start', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoVencimento.start} onChange={(val) => handleDateRangeChange('periodoVencimento', 'start', val)} />
                 <span className="flex items-center text-gray-500 dark:text-gray-400">a</span>
-                <input
-                  type="date"
-                  value={localFilters.periodoVencimento.end}
-                  onChange={(e) => handleDateRangeChange('periodoVencimento', 'end', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <SmartDateInput value={localFilters.periodoVencimento.end} onChange={(val) => handleDateRangeChange('periodoVencimento', 'end', val)} />
               </div>
             </div>
           </div>
