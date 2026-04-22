@@ -198,7 +198,7 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
     });
 
     // 7. Entrega realizada
-    const deliveryOcc = data.occurrences?.find(o => o.codigo === '001' || o.codigo === '002');
+    const deliveryOcc = data.occurrences?.find(o => o.codigo === '001' || o.codigo === '002' || o.codigo === '01' || o.codigo === '02');
     const isDelivered = !!deliveryOcc || 
       data.invoice?.status?.toLowerCase().includes('entregue') || 
       data.order?.status?.toLowerCase().includes('entregue') ||
@@ -219,7 +219,7 @@ export const UnifiedTrackingTimeline: React.FC<UnifiedTrackingTimelineProps> = (
     if (data.occurrences && data.occurrences.length > 0) {
       data.occurrences.forEach((occ, idx) => {
         // Pula ocorrências de "saiu para entrega" ou "entregue" pois elas já fecham os status 6 e 7 puramente
-        if (occ.codigo === '100' || occ.codigo === '001' || occ.codigo === '002') return;
+        if (occ.codigo === '100' || occ.codigo === '001' || occ.codigo === '002' || occ.codigo === '01' || occ.codigo === '02') return;
 
         occurrencesSteps.push({
           id: `occ_${idx}`,
