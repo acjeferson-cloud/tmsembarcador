@@ -802,10 +802,10 @@ app.post('/api/integrate-cte', async (req, res) => {
           Price: cte_data.valor || cte_data.value || 0,
           Usage: parseInt(cte_usage) || undefined,
           TaxCode: (() => {
-            const tc = String(cte_tax_code || '').trim();
-            // Mantém hífens e pontos que são comuns em códigos de imposto brasileiros (ex: 1101-001)
+            if (!cte_tax_code || cte_tax_code === 'undefined' || cte_tax_code === 'null') return undefined;
+            const tc = String(cte_tax_code).trim();
             const cleanTc = tc.replace(/[^a-zA-Z0-9.\-_]/g, '');
-            return cleanTc || 'C020';
+            return cleanTc || undefined;
           })(),
           LineTotal: cte_data.valor || cte_data.value || 0,
           AccountCode: cte_data.account_code || undefined
