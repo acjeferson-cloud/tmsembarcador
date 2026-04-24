@@ -63,9 +63,9 @@ export const DashboardExecutive: React.FC<Props> = ({ filters }) => {
     },
     {
       title: t('dashboard.executive.sla'),
-      value: kpis ? `${kpis.slaOtif.toFixed(1)}%` : '0%',
+      value: kpis ? `${(kpis.totalEmbarques === 0 ? 0 : kpis.slaOtif).toFixed(1)}%` : '0.0%',
       icon: Truck,
-      color: (kpis && kpis.slaOtif >= 95) ? 'green' : (kpis && kpis.slaOtif >= 90 ? 'orange' : 'red')
+      color: (kpis && kpis.totalEmbarques === 0) ? 'blue' : ((kpis && kpis.slaOtif >= 95) ? 'green' : (kpis && kpis.slaOtif >= 90 ? 'orange' : 'red'))
     },
     {
       title: t('dashboard.executive.representativity'),
