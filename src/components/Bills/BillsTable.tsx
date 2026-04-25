@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Share2, Trash2, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Share2, Trash2, XCircle, Loader2 } from 'lucide-react';
 
 interface Bill {
   id: string | number;
@@ -40,6 +40,18 @@ export const BillsTable = React.memo<BillsTableProps>(({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openActionMenu, setOpenActionMenu] = useState<string | number | null>(null);
+  const [loadingAction, setLoadingAction] = useState<{ id: string, action: string } | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      setLoadingAction(null);
+    }
+  }, [isLoading]);
+
+  const handleActionClick = (id: string | number, action: string) => {
+    setLoadingAction({ id: id.toString(), action });
+    onAction(id, action);
+  };
 
   // Handle sorting
   const handleSort = (field: keyof Bill) => {
@@ -351,42 +363,42 @@ export const BillsTable = React.memo<BillsTableProps>(({
                   <div className="flex items-center justify-start space-x-1">
                     {/* View Details */}
                     <button
-                      onClick={() => onAction(bill.id, 'view-details')}
+                      onClick={() => handleActionClick(bill.id, 'view-details')}
                       disabled={isLoading}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Visualizar Detalhes"
                     >
-                      <Eye size={16} />
+                      {loadingAction?.id === bill.id.toString() && loadingAction?.action === 'view-details' ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
                     </button>
                     
                     {/* Imprimir */}
                     <button
-                      onClick={() => onAction(bill.id, 'print')}
+                      onClick={() => handleActionClick(bill.id, 'print')}
                       disabled={isLoading}
-                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Imprimir"
                     >
-                      <Printer size={16} />
+                      {loadingAction?.id === bill.id.toString() && loadingAction?.action === 'print' ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
                     </button>
 
                     {/* Recalcular Fatura */}
                     <button
-                        onClick={() => onAction(bill.id, 'recalculate')}
+                        onClick={() => handleActionClick(bill.id, 'recalculate')}
                         disabled={isLoading}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Recalcular Fatura"
                       >
-                        <RefreshCw size={16} />
+                        {loadingAction?.id === bill.id.toString() && loadingAction?.action === 'recalculate' ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
                       </button>
 
                     {/* View Map */}
                     <button
-                      onClick={() => onAction(bill.id, 'view-map')}
+                      onClick={() => handleActionClick(bill.id, 'view-map')}
                       disabled={isLoading}
-                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/50"
+                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Mapa de Relações"
                     >
-                      <Share2 size={16} />
+                      {loadingAction?.id === bill.id.toString() && loadingAction?.action === 'view-map' ? <Loader2 className="animate-spin" size={16} /> : <Share2 size={16} />}
                     </button>
                     
                     {/* More actions button */}
@@ -394,10 +406,14 @@ export const BillsTable = React.memo<BillsTableProps>(({
                       <button
                         onClick={() => toggleActionMenu(bill.id)}
                         disabled={isLoading}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Mais ações"
                       >
-                        <MoreHorizontal size={16} />
+                        {loadingAction?.id === bill.id.toString() && ['approve', 'reject', 'revert', 'download'].includes(loadingAction.action) ? (
+                          <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                          <MoreHorizontal size={16} />
+                        )}
                       </button>
                       
                       {/* Dropdown menu */}
@@ -407,7 +423,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               
                               {bill.status !== 'Auditada e aprovada' && (
                                 <button
-                                    onClick={() => { onAction(bill.id, 'recalculate'); setOpenActionMenu(null); }}
+                                    onClick={() => { handleActionClick(bill.id, 'recalculate'); setOpenActionMenu(null); }}
                                     disabled={isLoading}
                                     className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center space-x-2"
                                   >
@@ -417,7 +433,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               
                               {bill.status !== 'Auditada e aprovada' && (
                                 <button
-                                    onClick={() => { onAction(bill.id, 'approve'); setOpenActionMenu(null); }}
+                                    onClick={() => { handleActionClick(bill.id, 'approve'); setOpenActionMenu(null); }}
                                     disabled={isLoading}
                                     className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                                   >
@@ -427,7 +443,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               
                               {bill.status !== 'Auditada e aprovada' && (
                                 <button
-                                    onClick={() => { onAction(bill.id, 'reject'); setOpenActionMenu(null); }}
+                                    onClick={() => { handleActionClick(bill.id, 'reject'); setOpenActionMenu(null); }}
                                     disabled={isLoading}
                                     className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center space-x-2"
                                   >
@@ -437,7 +453,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               
                               {(bill.status === 'Auditada e aprovada' || bill.status === 'Auditada e reprovada') && (
                                 <button
-                                    onClick={() => { onAction(bill.id, 'revert'); setOpenActionMenu(null); }}
+                                    onClick={() => { handleActionClick(bill.id, 'revert'); setOpenActionMenu(null); }}
                                     disabled={isLoading}
                                     className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                                   >
@@ -446,7 +462,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               )}
                               
                               <button
-                                onClick={() => { onAction(bill.id, 'print'); setOpenActionMenu(null); }}
+                                onClick={() => { handleActionClick(bill.id, 'print'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                               >
@@ -454,7 +470,7 @@ export const BillsTable = React.memo<BillsTableProps>(({
                               </button>
 
                               <button
-                                onClick={() => { onAction(bill.id, 'download'); setOpenActionMenu(null); }}
+                                onClick={() => { handleActionClick(bill.id, 'download'); setOpenActionMenu(null); }}
                                 disabled={isLoading}
                                 className="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
                               >

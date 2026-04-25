@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit, Calculator, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, Download, MoreHorizontal, Share2, Edit, Calculator, Trash2, Loader2 } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 import { formatCurrency } from '../../utils/formatters';
 import { generateTrackingCode } from '../../utils/trackingCodeGenerator';
@@ -56,6 +56,18 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
   const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [selectedOrderForMap, setSelectedOrderForMap] = useState<any>(null);
+  const [loadingAction, setLoadingAction] = useState<{ id: string, action: string } | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      setLoadingAction(null);
+    }
+  }, [isLoading]);
+
+  const handleActionClick = (id: number, action: string) => {
+    setLoadingAction({ id: id.toString(), action });
+    onAction(id, action);
+  };
 
   // Helper function to get tracking code for an order
   const getOrderTrackingCode = (order: Order): string => {
@@ -405,39 +417,39 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                     <div className="flex items-center justify-start space-x-1">
                       {/* View Details */}
                       <button
-                        onClick={() => onAction(order.id, 'view-details')}
+                        onClick={() => handleActionClick(order.id, 'view-details')}
                         disabled={isLoading}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('orders.table.viewDetails')}
                       >
-                        <Eye size={16} />
+                        {loadingAction?.id === order.id.toString() && loadingAction?.action === 'view-details' ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
                       </button>
                       
                       {/* Print Order */}
                       <button
-                        onClick={() => onAction(order.id, 'print')}
+                        onClick={() => handleActionClick(order.id, 'print')}
                         disabled={isLoading}
-                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20"
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1 rounded hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('orders.table.printOrder')}
                       >
-                        <Printer size={16} />
+                        {loadingAction?.id === order.id.toString() && loadingAction?.action === 'print' ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
                       </button>
                       
                       {/* Download Order */}
                       <button
-                        onClick={() => onAction(order.id, 'download')}
+                        onClick={() => handleActionClick(order.id, 'download')}
                         disabled={isLoading}
-                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('orders.table.downloadOrder')}
                       >
-                        <Download size={16} />
+                        {loadingAction?.id === order.id.toString() && loadingAction?.action === 'download' ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                       </button>
                       
                       {/* Relationship Map */}
                       <button
                         onClick={() => handleShowRelationshipMap(order)}
                         disabled={isLoading}
-                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('orders.table.relationshipMap')}
                       >
                         <Share2 size={16} />
@@ -448,10 +460,14 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                         <button
                           onClick={() => toggleActionMenu(order.id)}
                           disabled={isLoading}
-                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={t('orders.table.moreActions')}
                         >
-                          <MoreHorizontal size={16} />
+                          {loadingAction?.id === order.id.toString() && ['recalculate', 'delete'].includes(loadingAction.action) ? (
+                            <Loader2 className="animate-spin" size={16} />
+                          ) : (
+                            <MoreHorizontal size={16} />
+                          )}
                         </button>
                         
                         {/* Dropdown menu */}
@@ -478,7 +494,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                               {/* Recalcular Pedido */}
                               <button
                                 onClick={() => {
-                                  onAction(order.id, 'recalculate');
+                                  handleActionClick(order.id, 'recalculate');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -493,7 +509,7 @@ export const OrdersTable = React.memo<OrdersTableProps>(({
                               {/* Excluir Pedido */}
                               <button
                                 onClick={() => {
-                                  onAction(order.id, 'delete');
+                                  handleActionClick(order.id, 'delete');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}

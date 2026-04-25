@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Eye, MoreHorizontal, XCircle, Share2, Trash2, CheckCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, MoreHorizontal, XCircle, Share2, Trash2, CheckCircle, Printer, Download, Send, Loader2 } from 'lucide-react';
 
 interface Pickup {
   id: string;
@@ -9,6 +9,7 @@ interface Pickup {
   transportador: string;
   quantidadeNotas: number;
   dataCriacao: string;
+  dataAgendada: string;
   usuarioResponsavel: string;
   enderecoColeta: string;
   valorTotal: number;
@@ -41,6 +42,18 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<{ id: string, action: string } | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      setLoadingAction(null);
+    }
+  }, [isLoading]);
+
+  const handleActionClick = (id: string, action: string) => {
+    setLoadingAction({ id, action });
+    onAction(id, action);
+  };
 
   // Handle sorting
   const handleSort = (field: keyof Pickup) => {
@@ -89,6 +102,48 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  // Format date only (ignores timezone offsets to prevent shifting days)
+  const formatDateOnly = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const datePart = dateString.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      if (day && month && year) return `${day}/${month}/${year}`;
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    }
+  };
+
+  // Format date and time
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return '-';
+      
+      // If it's strictly a date (no time component)
+      if (dateString.length === 10 && dateString.includes('-')) {
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}, 00:00`;
+      }
+
+      // Prevent exact UTC midnight from shifting to 21:00 of the previous day
+      if (dateString.includes('T00:00:00')) {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-');
+        return `${day}/${month}/${year}, 00:00`;
+      }
+      
+      return d.toLocaleDateString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    }
+  };
+
   // Format currency
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', {
@@ -110,6 +165,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
       case 'cancelada':
       case 'coleta_cancelada':
         return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
+      case 'coleta_confirmada':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200';
+      case 'coleta_recusada':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -128,6 +187,10 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
       case 'cancelada':
       case 'coleta_cancelada':
         return t('pickups.status.cancelada');
+      case 'coleta_confirmada':
+        return t('pickups.status.coleta_confirmada');
+      case 'coleta_recusada':
+        return t('pickups.status.coleta_recusada');
       default:
         return status;
     }
@@ -200,6 +263,18 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                 <th
                   scope="col"
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('dataAgendada')}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Data Agendada</span>
+                    {sortField === 'dataAgendada' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('quantidadeNotas')}
                 >
                   <div className="flex items-center space-x-1">
@@ -260,42 +335,95 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                     />
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center space-x-3">
+                    <div className="flex items-center justify-center space-x-2">
+                      {/* Ações Visíveis */}
                       <button
-                        onClick={() => onAction(pickup.id, 'view-details')}
+                        onClick={() => handleActionClick(pickup.id, 'view-details')}
+                        disabled={isLoading}
                         title={t('pickups.table.viewDetails')}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Eye size={18} />
+                        {loadingAction?.id === pickup.id && loadingAction?.action === 'view-details' ? <Loader2 className="animate-spin" size={18} /> : <Eye size={18} />}
                       </button>
-
-                      {/* 'Confirmar Realização' movido para dentro do menu três pontinhos */}
 
                       <button
-                        onClick={() => onAction(pickup.id, 'view-relationship-map')}
-                        title={t('pickups.table.relationshipMap')}
-                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                        onClick={() => handleActionClick(pickup.id, 'print')}
+                        disabled={isLoading}
+                        title={t('pickups.actions.print')}
+                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Share2 size={18} />
+                        {loadingAction?.id === pickup.id && loadingAction?.action === 'print' ? <Loader2 className="animate-spin" size={18} /> : <Printer size={18} />}
                       </button>
 
+                      <button
+                        onClick={() => handleActionClick(pickup.id, 'download')}
+                        disabled={isLoading}
+                        title={t('pickups.actions.download')}
+                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loadingAction?.id === pickup.id && loadingAction?.action === 'download' ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+                      </button>
+
+                      <button
+                        onClick={() => handleActionClick(pickup.id, 'view-relationship-map')}
+                        disabled={isLoading}
+                        title={t('pickups.table.relationshipMap')}
+                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loadingAction?.id === pickup.id && loadingAction?.action === 'view-relationship-map' ? <Loader2 className="animate-spin" size={18} /> : <Share2 size={18} />}
+                      </button>
+
+                      {/* Menu Suspenso (Ações Extras) */}
                       <div className="relative inline-block text-left">
                         <button
                           onClick={() => toggleActionMenu(pickup.id)}
-                          title="Mais {t('pickups.table.actions')}"
-                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          disabled={isLoading}
+                          title="Mais Ações"
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <MoreHorizontal size={20} />
+                          {loadingAction?.id === pickup.id && ['solicitar-coleta', 'realizar', 'cancelar', 'delete'].includes(loadingAction.action) ? (
+                            <Loader2 className="animate-spin" size={20} />
+                          ) : (
+                            <MoreHorizontal size={20} />
+                          )}
                         </button>
 
                         {openActionMenu === pickup.id && (
-                          <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                          <div className="absolute left-auto right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
                             <div className="py-1">
-                              {/* Confirmar Realização Action */}
+                              {/* Editar Coleta */}
+                              {pickup.status !== 'cancelada' && pickup.status !== 'coleta_cancelada' && (
+                                <button
+                                  onClick={() => {
+                                    handleActionClick(pickup.id, 'edit');
+                                    setOpenActionMenu(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                  <span>Editar Coleta</span>
+                                </button>
+                              )}
+
+                              {/* Solicitar Coleta */}
+                              {pickup.status !== 'cancelada' && pickup.status !== 'coleta_cancelada' && (
+                                <button
+                                  onClick={() => {
+                                    handleActionClick(pickup.id, 'solicitar-coleta');
+                                    setOpenActionMenu(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
+                                >
+                                  <Send size={16} />
+                                  <span>{t('pickups.actions.requestPickup')}</span>
+                                </button>
+                              )}
+
+                              {/* Confirmar Realização */}
                               {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
                               <button
                                 onClick={() => {
-                                  onAction(pickup.id, 'realizar');
+                                  handleActionClick(pickup.id, 'realizar');
                                   setOpenActionMenu(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
@@ -304,10 +432,12 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                                 <span>{t('pickups.actions.markAsDone')}</span>
                               </button>
                               )}
+
+                              {/* Cancelar Coleta */}
                               {pickup.status !== 'cancelada' && pickup.status !== 'realizada' && pickup.status !== 'coleta_cancelada' && pickup.status !== 'coleta_realizada' && (
                               <button
                                 onClick={() => {
-                                  onAction(pickup.id, 'cancelar');
+                                  handleActionClick(pickup.id, 'cancelar');
                                   setOpenActionMenu(null);
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-b border-gray-200 dark:border-gray-700"
@@ -315,19 +445,19 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                                 <XCircle size={16} />
                                 <span>{t('pickups.actions.cancel')}</span>
                               </button>
-                            )}
+                              )}
                             
-                            {/* Delete Action */}
-                            <button
-                              onClick={() => {
-                                onAction(pickup.id, 'delete');
-                                setOpenActionMenu(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-200 dark:border-gray-700"
-                            >
-                              <Trash2 size={16} />
-                              <span>{t('pickups.actions.delete')}</span>
-                            </button>
+                              {/* Excluir Action */}
+                              <button
+                                onClick={() => {
+                                  handleActionClick(pickup.id, 'delete');
+                                  setOpenActionMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 border-gray-200 dark:border-gray-700"
+                              >
+                                <Trash2 size={16} />
+                                <span>{t('pickups.actions.delete')}</span>
+                              </button>
                             </div>
                           </div>
                         )}
@@ -344,6 +474,9 @@ export const PickupsTable: React.FC<PickupsTableProps> = ({
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(pickup.dataCriacao)}
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {formatDateTime(pickup.dataAgendada)}
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-center">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-semibold">

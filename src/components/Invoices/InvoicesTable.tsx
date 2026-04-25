@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2, ClipboardCheck, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Edit2, MoreHorizontal, Share2, Trash2, ClipboardCheck, RefreshCw, Loader2 } from 'lucide-react';
 import { RelationshipMapModal } from '../RelationshipMap';
 
 interface Invoice {
@@ -49,6 +49,18 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [selectedInvoiceForMap, setSelectedInvoiceForMap] = useState<any>(null);
+  const [loadingAction, setLoadingAction] = useState<{ id: string, action: string } | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      setLoadingAction(null);
+    }
+  }, [isLoading]);
+
+  const handleActionClick = (id: string, action: string) => {
+    setLoadingAction({ id, action });
+    onAction(id, action);
+  };
 
   // Handle sorting
   const handleSort = (field: keyof Invoice) => {
@@ -432,40 +444,40 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                     <div className="flex items-center justify-start space-x-1">
                       {/* View Details */}
                       <button
-                        onClick={() => onAction(invoice.id, 'view-details')}
+                        onClick={() => handleActionClick(invoice.id, 'view-details')}
                         disabled={isLoading}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('invoices.table.viewDetails')}
                       >
-                        <Eye size={16} />
+                        {loadingAction?.id === invoice.id && loadingAction?.action === 'view-details' ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
                       </button>
 
 
                       {/* Launch Occurrence */}
                       <button
-                        onClick={() => onAction(invoice.id, 'lancar-ocorrencia')}
+                        onClick={() => handleActionClick(invoice.id, 'lancar-ocorrencia')}
                         disabled={isLoading}
-                        className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 p-1 rounded hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                        className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 p-1 rounded hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('invoices.table.launchOccurrence')}
                       >
-                        <ClipboardCheck size={16} />
+                        {loadingAction?.id === invoice.id && loadingAction?.action === 'lancar-ocorrencia' ? <Loader2 className="animate-spin" size={16} /> : <ClipboardCheck size={16} />}
                       </button>
 
                       {/* Recalculate */}
                       <button
-                        onClick={() => onAction(invoice.id, 'recalculate')}
+                        onClick={() => handleActionClick(invoice.id, 'recalculate')}
                         disabled={isLoading}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('invoices.table.recalculate')}
                       >
-                        <RefreshCw size={16} />
+                        {loadingAction?.id === invoice.id && loadingAction?.action === 'recalculate' ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
                       </button>
 
                       {/* Relationship Map */}
                       <button
                         onClick={() => handleShowRelationshipMap(invoice)}
                         disabled={isLoading}
-                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={t('invoices.table.relationshipMap')}
                       >
                         <Share2 size={16} />
@@ -476,10 +488,14 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                         <button
                           onClick={() => toggleActionMenu(invoice.id)}
                           disabled={isLoading}
-                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={t('invoices.table.moreActions')}
                         >
-                          <MoreHorizontal size={16} />
+                          {loadingAction?.id === invoice.id && ['edit', 'delete'].includes(loadingAction.action) ? (
+                            <Loader2 className="animate-spin" size={16} />
+                          ) : (
+                            <MoreHorizontal size={16} />
+                          )}
                         </button>
                         
                         {/* Dropdown menu */}
@@ -489,7 +505,7 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                               {/* Edit Invoice */}
                               <button
                                 onClick={() => {
-                                  onAction(invoice.id, 'edit');
+                                  handleActionClick(invoice.id, 'edit');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -502,7 +518,7 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                               {/* Delete */}
                               <button
                                 onClick={() => {
-                                  onAction(invoice.id, 'delete');
+                                  handleActionClick(invoice.id, 'delete');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}

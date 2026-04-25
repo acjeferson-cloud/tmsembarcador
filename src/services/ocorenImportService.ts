@@ -44,16 +44,17 @@ export const ocorenImportService = {
       if (blockActive && line.startsWith('341')) {
         const cnpjStr = line.substring(3, 17);
         const cnpjDigits = cnpjStr.replace(/\D/g, '');
+        const cnpjRoot = cnpjDigits.substring(0, 8);
         
         const carrierMatch = carriers.find(c => {
            const cCnpj = c.cnpj?.replace(/\D/g, '');
-           return cCnpj && cCnpj === cnpjDigits;
+           return cCnpj && cCnpj.substring(0, 8) === cnpjRoot;
         });
         
         if (carrierMatch) {
            currentCarrierId = carrierMatch.id;
         } else {
-           errors.push(`Linha ${i + 1}: Transportador não encontrado para o CNPJ EDI '${cnpjStr}'. Ocorrências vinculadas a este CNPJ serão ignoradas.`);
+           errors.push(`Linha ${i + 1}: Transportador não encontrado para a raiz CNPJ EDI '${cnpjRoot}'. Ocorrências vinculadas a este transportador serão ignoradas.`);
            currentCarrierId = null;
         }
       }

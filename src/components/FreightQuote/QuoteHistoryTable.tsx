@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, MapPin, Package, DollarSign, RefreshCw, Eye, Users, ChevronLeft, ChevronRight, Printer, Download } from 'lucide-react';
+import { Calendar, MapPin, Package, DollarSign, RefreshCw, Eye, Users, ChevronLeft, ChevronRight, Printer, Download, Loader2 } from 'lucide-react';
 import { FreightQuoteHistory, QuoteResult } from '../../services/freightQuoteService';
 import { formatCurrency } from '../../utils/formatters';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +25,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
   const { user, currentEstablishment } = useAuth();
   const [selectedQuote, setSelectedQuote] = useState<FreightQuoteHistory | null>(null);
   const [selectedQuotes, setSelectedQuotes] = useState<string[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingAction, setProcessingAction] = useState<'print' | 'download' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -66,7 +66,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
 
   const handleBulkAction = async (action: 'print' | 'download') => {
     if (selectedQuotes.length === 0) return;
-    setIsProcessing(true);
+    setProcessingAction(action);
     try {
       const selectedData = history.filter(q => selectedQuotes.includes(q.id));
       if (action === 'download') {
@@ -84,7 +84,7 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
       console.error("Error generating quote PDF", error);
       alert('Erro ao gerar documento de cotação.');
     } finally {
-      setIsProcessing(false);
+      setProcessingAction(null);
     }
   };
 
@@ -100,19 +100,19 @@ export const QuoteHistoryTable: React.FC<QuoteHistoryTableProps> = ({ history, o
             <>
               <button
                 onClick={() => handleBulkAction('print')}
-                disabled={isProcessing}
+                disabled={processingAction !== null}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
               >
-                <Printer size={16} />
-                <span>{isProcessing ? t('freightQuote.history.processing') || 'Processando...' : t('orders.actions.print')}</span>
+                {processingAction === 'print' ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
+                <span>{processingAction === 'print' ? t('freightQuote.history.processing') || 'Processando...' : t('orders.actions.print')}</span>
               </button>
               <button
                 onClick={() => handleBulkAction('download')}
-                disabled={isProcessing}
+                disabled={processingAction !== null}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors text-sm disabled:opacity-50"
               >
-                <Download size={16} />
-                <span>{isProcessing ? t('freightQuote.history.processing') || 'Processando...' : t('orders.actions.download')}</span>
+                {processingAction === 'download' ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                <span>{processingAction === 'download' ? t('freightQuote.history.processing') || 'Processando...' : t('orders.actions.download')}</span>
               </button>
             </>
           )}

@@ -382,7 +382,9 @@
       "cancelada": "Cancelada",
       "pendente": "Pendente",
       "em_andamento": "Em Andamento",
-      "atrasada": "Atrasada"
+      "atrasada": "Atrasada",
+      "coleta_confirmada": "Coleta Confirmada",
+      "coleta_recusada": "Coleta Recusada"
     },
     "filters": {
       "searchPlaceholder": "Buscar por número, transportadora, arquivo...",
@@ -407,11 +409,14 @@
       "selectJustOne": "Selecione apenas uma coleta",
       "requestPickupTooltip": "Solicitar coleta para a transportadora",
       "requestPickupBtn": "Solicitar Coleta",
+      "requestPickup": "Solicitar Coleta",
       "markAsDone": "Confirmar Realização",
       "print": "Imprimir",
+      "download": "Download",
       "export": "Exportar",
       "cancel": "Cancelar Coleta",
       "refresh": "Atualizar",
+      "loading": "Processando...",
       "delete": "Excluir"
     },
     "messages": {

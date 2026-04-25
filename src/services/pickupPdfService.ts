@@ -236,12 +236,32 @@ export const pickupPdfService = {
       const transportador = (pickup.transportador || pickup.carrier_name || '-').toUpperCase();
       const numNotas = pickup.quantidadeNotas || pickup.packages_quantity || 0;
       
+      let dataAgendadaStr = '-';
+      const rawDate = pickup.dataAgendada || pickup.data_agendada || pickup.scheduled_date;
+      if (rawDate) {
+        try {
+          const d = new Date(rawDate);
+          if (rawDate.length === 10 && rawDate.includes('-')) {
+            const [year, month, day] = rawDate.split('-');
+            dataAgendadaStr = `${day}/${month}/${year}, 00:00`;
+          } else if (rawDate.includes('T00:00:00')) {
+            const datePart = rawDate.split('T')[0];
+            const [year, month, day] = datePart.split('-');
+            dataAgendadaStr = `${day}/${month}/${year}, 00:00`;
+          } else {
+            dataAgendadaStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          }
+        } catch {
+          dataAgendadaStr = new Date(rawDate).toLocaleDateString('pt-BR');
+        }
+      }
+
       // Pickup Header Row
       pdf.setFillColor(210, 220, 230); // Blueish gray for Pickup distinct
       pdf.rect(margin, yPos, contentWidth, 8, 'F');
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(`COLETA: ${numColeta}  -  TRANSPORTADORA: ${transportador}  -  TOTAL NFs: ${numNotas}`, margin + 2, yPos + 5.5);
+      pdf.text(`COLETA: ${numColeta}  -  TRANSPORTADORA: ${transportador}  -  DATA AGENDADA: ${dataAgendadaStr}  -  TOTAL NFs: ${numNotas}`, margin + 2, yPos + 5.5);
       yPos += 8;
 
       // Draw table headers for the NFs inside this pickup

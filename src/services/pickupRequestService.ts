@@ -153,7 +153,7 @@ export const pickupRequestService = {
         pickupZip: zip,
         contactName: contactName,
         contactPhone: contactPhone,
-        scheduledDate: pickup.scheduled_date || new Date().toISOString(),
+        scheduledDate: pickup.scheduled_date || pickup.data_agendada || pickup.dataAgendada || new Date().toISOString(),
         invoices,
         totals
       };
@@ -336,14 +336,18 @@ export const pickupRequestService = {
 
         generatedRequests.push(request.id);
 
-        await (supabase as any)
+        const { error: updateError } = await (supabase as any)
           .from('pickups')
           .update({
             status: 'solicitada',
-            requested_at: new Date().toISOString(),
+            data_solicitacao: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
           .eq('id', pId);
+
+        if (updateError) {
+          console.error(`Erro ao atualizar status da coleta ${pId}`, updateError);
+        }
       }
 
       if (generatedRequests.length === 0) {
@@ -356,14 +360,14 @@ export const pickupRequestService = {
           if (config) {
             const { romaneioData, pdfBase64: internalPdf } = await this.generateRomaneio(params.pickupIds);
 
+            // Usa sempre o PDF completo que vem da tela (params.pdfBase64), que é idêntico ao da ação "Imprimir"
             let rawBase64Content = '';
-            if (internalPdf) {
-               // internalPdf is generated as split(',')[1], so it's already raw
-               rawBase64Content = internalPdf.includes('base64,') ? internalPdf.split('base64,')[1] : internalPdf;
-            } else {
-               rawBase64Content = params.pdfBase64.includes('base64,') 
-                 ? params.pdfBase64.split('base64,')[1] 
-                 : params.pdfBase64.replace(/^data:.*?,/, '');
+
+            if (params.pdfBase64) {
+               rawBase64Content = params.pdfBase64.includes(',') ? params.pdfBase64.split(',')[1] : params.pdfBase64;
+            } else if (internalPdf) {
+               // Fallback para o PDF interno simples, caso a tela não envie o PDF
+               rawBase64Content = internalPdf.includes(',') ? internalPdf.split(',')[1] : internalPdf;
             }
 
             const establishmentObj: any = await establishmentsService.getById(params.establishmentId);
@@ -381,7 +385,24 @@ export const pickupRequestService = {
             `;
 
             if (romaneioData) {
-              const scheduledDateStr = romaneioData.scheduledDate ? new Date(romaneioData.scheduledDate).toLocaleDateString('pt-BR') : '-';
+              let scheduledDateStr = '-';
+              if (romaneioData.scheduledDate) {
+                try {
+                  const d = new Date(romaneioData.scheduledDate);
+                  if (romaneioData.scheduledDate.length === 10 && romaneioData.scheduledDate.includes('-')) {
+                    const [year, month, day] = romaneioData.scheduledDate.split('-');
+                    scheduledDateStr = `${day}/${month}/${year}, 00:00`;
+                  } else if (romaneioData.scheduledDate.includes('T00:00:00')) {
+                    const datePart = romaneioData.scheduledDate.split('T')[0];
+                    const [year, month, day] = datePart.split('-');
+                    scheduledDateStr = `${day}/${month}/${year}, 00:00`;
+                  } else {
+                    scheduledDateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                  }
+                } catch {
+                  scheduledDateStr = new Date(romaneioData.scheduledDate).toLocaleDateString('pt-BR');
+                }
+              }
               
               let invoiceHtmlRows = '';
               romaneioData.invoices.forEach((inv: any) => {
@@ -442,6 +463,19 @@ export const pickupRequestService = {
                     </tbody>
                   </table>
                 </div>
+
+                <div style="text-align: center; margin: 40px 0; padding: 20px; border-radius: 8px; background-color: #f0f9ff; border: 1px solid #bae6fd;">
+                  <h3 style="color: #0369a1; margin-top: 0; margin-bottom: 20px; font-size: 16px;">Por favor, confirme se poderá realizar a coleta nesta data:</h3>
+                  <div style="text-align: center;">
+                    <a href="${import.meta.env.VITE_SUPABASE_URL || ''}/functions/v1/confirm-pickup?id=${params.pickupIds.join(',')}&action=confirm&redirect=${encodeURIComponent(window.location.origin)}" style="background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 14px; margin: 8px;">Confirmar Agendamento</a>
+                    <a href="${import.meta.env.VITE_SUPABASE_URL || ''}/functions/v1/confirm-pickup?id=${params.pickupIds.join(',')}&action=reject&redirect=${encodeURIComponent(window.location.origin)}" style="background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 14px; margin: 8px;">Sugerir Nova Data / Recusar</a>
+                  </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px; color: #9ca3af; font-size: 12px;">
+                  <p>Este é um e-mail automático enviado pelo sistema TMS Embarcador.</p>
+                  <p>Em caso de dúvidas, entre em contato diretamente com a equipe operacional da ${signName}.</p>
+                </div>
               `;
             }
 
@@ -461,7 +495,8 @@ export const pickupRequestService = {
                 {
                    filename: `Relatorio_Coleta_${requestNumber}.pdf`,
                    content: rawBase64Content,
-                   encoding: 'base64'
+                   encoding: 'base64',
+                   contentType: 'application/pdf'
                 }
               ]
             };

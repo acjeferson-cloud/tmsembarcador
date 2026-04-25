@@ -8,9 +8,10 @@ import { useAuth } from '../../hooks/useAuth';
 interface PickupDetailsModalProps {
   pickup: any;
   onClose: () => void;
+  onUpdatePickup?: (id: string, field: string, value: any) => void;
 }
 
-export const PickupDetailsModal: React.FC<PickupDetailsModalProps> = ({ pickup, onClose }) => {
+export const PickupDetailsModal: React.FC<PickupDetailsModalProps> = ({ pickup, onClose, onUpdatePickup }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'details' | 'invoices' | 'history'>('details');
   const [showProofModal, setShowProofModal] = useState(false);
@@ -24,6 +25,46 @@ export const PickupDetailsModal: React.FC<PickupDetailsModalProps> = ({ pickup, 
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatDateOnly = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const datePart = dateString.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      if (day && month && year) return `${day}/${month}/${year}`;
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    }
+  };
+
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return '-';
+      
+      // If it's strictly a date (no time component)
+      if (dateString.length === 10 && dateString.includes('-')) {
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}, 00:00`;
+      }
+
+      // Prevent exact UTC midnight from shifting to 21:00 of the previous day
+      if (dateString.includes('T00:00:00')) {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-');
+        return `${day}/${month}/${year}, 00:00`;
+      }
+      
+      return d.toLocaleDateString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    }
   };
 
 
@@ -40,6 +81,10 @@ export const PickupDetailsModal: React.FC<PickupDetailsModalProps> = ({ pickup, 
       case 'cancelada':
       case 'coleta_cancelada':
         return 'bg-red-600 text-white dark:bg-red-700 dark:text-red-50';
+      case 'coleta_confirmada':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200';
+      case 'coleta_recusada':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
@@ -57,6 +102,10 @@ export const PickupDetailsModal: React.FC<PickupDetailsModalProps> = ({ pickup, 
       case 'cancelada':
       case 'coleta_cancelada':
         return 'Cancelada';
+      case 'coleta_confirmada':
+        return 'Coleta Confirmada';
+      case 'coleta_recusada':
+        return 'Coleta Recusada';
       default:
         return status;
     }
@@ -161,6 +210,17 @@ export const PickupDetailsModal: React.FC<PickupDetailsModalProps> = ({ pickup, 
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Data de Criação</p>
                     <p className="text-sm text-gray-900 dark:text-white mt-1">
                       {formatDate(pickup.created_at || pickup.dataCriacao)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Data Agendada */}
+                <div className="flex items-start space-x-3">
+                  <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Data Agendada</p>
+                    <p className="text-sm text-gray-900 dark:text-white mt-1">
+                      {formatDateTime(pickup.scheduled_date || pickup.data_agendada || pickup.dataAgendada)}
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale, Share2, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Printer, RefreshCw, ThumbsUp, ThumbsDown, Clock as ArrowClockwise, Download, MoreHorizontal, Trash2, Scale, Share2, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface CTe {
   id: string;
@@ -49,6 +49,18 @@ export const CTesTable = React.memo<CTesTableProps>(({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<{ id: string, action: string } | null>(null);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      setLoadingAction(null);
+    }
+  }, [isLoading]);
+
+  const handleActionClick = (id: string, action: string) => {
+    setLoadingAction({ id, action });
+    onAction(id, action);
+  };
 
   // Handle sorting
   const handleSort = (field: keyof CTe) => {
@@ -411,44 +423,44 @@ export const CTesTable = React.memo<CTesTableProps>(({
                   <div className="flex items-center justify-center space-x-1">
                     {/* View NF-es - Available for all statuses */}
                     <button
-                      onClick={() => onAction(cte.id, 'view-nfes')}
+                      onClick={() => handleActionClick(cte.id, 'view-nfes')}
                       disabled={isLoading}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                      className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title={`Consultar NF-es (${cte.nfesReferenciadas})`}
                     >
-                      <Eye size={16} />
+                      {loadingAction?.id === cte.id && loadingAction?.action === 'view-nfes' ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}
                     </button>
                     
                     {/* Print DACTE - Available for all statuses */}
                     <button
-                      onClick={() => onAction(cte.id, 'print')}
+                      onClick={() => handleActionClick(cte.id, 'print')}
                       disabled={isLoading}
-                      className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
+                      className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Imprimir DACTE"
                     >
-                      <Printer size={16} />
+                      {loadingAction?.id === cte.id && loadingAction?.action === 'print' ? <Loader2 className="animate-spin" size={16} /> : <Printer size={16} />}
                     </button>
 
                     {/* Compare Values - Available for all statuses */}
                     <button
-                      onClick={() => onAction(cte.id, 'compare-values')}
+                      onClick={() => handleActionClick(cte.id, 'compare-values')}
                       disabled={isLoading}
-                      className="text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50"
+                      className="text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Comparar Valores"
                     >
-                      <Scale size={16} />
+                      {loadingAction?.id === cte.id && loadingAction?.action === 'compare-values' ? <Loader2 className="animate-spin" size={16} /> : <Scale size={16} />}
                     </button>
 
 
 
                     {/* Relationship Map */}
                     <button
-                      onClick={() => onAction(cte.id, 'relationship-map')}
+                      onClick={() => handleActionClick(cte.id, 'relationship-map')}
                       disabled={isLoading}
-                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50"
+                      className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Mapa de Relações"
                     >
-                      <Share2 size={16} />
+                      {loadingAction?.id === cte.id && loadingAction?.action === 'relationship-map' ? <Loader2 className="animate-spin" size={16} /> : <Share2 size={16} />}
                     </button>
 
                     {/* More actions button */}
@@ -456,10 +468,14 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       <button
                         onClick={() => toggleActionMenu(cte.id)}
                         disabled={isLoading}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white p-1 rounded hover:bg-gray-50 dark:bg-gray-900"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white p-1 rounded hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Mais ações"
                       >
-                        <MoreHorizontal size={16} />
+                        {loadingAction?.id === cte.id && ['recalculate', 'approve', 'reject', 'revert', 'delete', 'download'].includes(loadingAction.action) ? (
+                          <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                          <MoreHorizontal size={16} />
+                        )}
                       </button>
                       
                       {/* Dropdown menu */}
@@ -470,7 +486,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
-                                  onAction(cte.id, 'recalculate');
+                                  handleActionClick(cte.id, 'recalculate');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -485,7 +501,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
-                                  onAction(cte.id, 'approve');
+                                  handleActionClick(cte.id, 'approve');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -500,7 +516,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
-                                  onAction(cte.id, 'reject');
+                                  handleActionClick(cte.id, 'reject');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -517,7 +533,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                               cte.status?.toLowerCase() === 'reprovado') && (
                               <button
                                 onClick={() => {
-                                  onAction(cte.id, 'revert');
+                                  handleActionClick(cte.id, 'revert');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -534,7 +550,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
                               <button
                                 onClick={() => {
-                                  onAction(cte.id, 'delete');
+                                  handleActionClick(cte.id, 'delete');
                                   setOpenActionMenu(null);
                                 }}
                                 disabled={isLoading}
@@ -548,7 +564,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             {/* Print DACTE - Available for all statuses */}
                             <button
                               onClick={() => {
-                                onAction(cte.id, 'print');
+                                handleActionClick(cte.id, 'print');
                                 setOpenActionMenu(null);
                               }}
                               disabled={isLoading}
@@ -561,7 +577,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                             {/* Download XML - Available for all statuses */}
                             <button
                               onClick={() => {
-                                onAction(cte.id, 'download');
+                                handleActionClick(cte.id, 'download');
                                 setOpenActionMenu(null);
                               }}
                               disabled={isLoading}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, XCircle, Package, RefreshCw, Send } from 'lucide-react';
+import { CheckCircle, XCircle, Package, RefreshCw, Send, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { PickupsFilters } from './PickupsFilters';
 import { PickupsTable } from './PickupsTable';
 import { PickupsActions } from './PickupsActions';
 import { PickupDetailsModal } from './PickupDetailsModal';
+import { PickupEditModal } from './PickupEditModal';
 import { PickupProofModal } from './PickupProofModal';
 import { RelationshipMapModal } from '../RelationshipMap/RelationshipMapModal';
 import Breadcrumbs from '../Layout/Breadcrumbs';
@@ -28,6 +29,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
   const [selectedPickups, setSelectedPickups] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showRelationshipMap, setShowRelationshipMap] = useState(false);
   const [showProofModal, setShowProofModal] = useState(false);
   const [pickupForProof, setPickupForProof] = useState<any | null>(null);
@@ -140,8 +142,9 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
     }
   };
 
-  const handleBulkAction = async (action: string) => {
-    if (selectedPickups.length === 0) {
+  const handleBulkAction = async (action: string, overrideIds?: string[]) => {
+    const idsToProcess = overrideIds || selectedPickups;
+    if (idsToProcess.length === 0) {
       setToast({ message: t('pickups.messages.selectAtLeastOneAction'), type: 'warning' });
       return;
     }
@@ -155,7 +158,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         
         const groups: Record<string, any[]> = {};
         
-        for (const pickupId of selectedPickups) {
+        for (const pickupId of idsToProcess) {
           const data = await pickupsService.getById(pickupId);
           if (data) {
             const carrierKey = data.carrier_id || 'manual';
@@ -228,7 +231,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
           action: 'cancelar',
           title: t('pickups.dialogs.cancelBulkTitle'),
           message: t('pickups.dialogs.cancelBulkMessage', { count: selectedPickups.length }),
-          targetIds: selectedPickups
+          targetIds: idsToProcess
         });
       } else if (action === 'realizar') {
         setConfirmDialog({
@@ -236,11 +239,11 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
           action: 'realizar',
           title: t('pickups.dialogs.doneBulkTitle'),
           message: t('pickups.dialogs.doneBulkMessage', { count: selectedPickups.length }),
-          targetIds: selectedPickups
+          targetIds: idsToProcess
         });
       } else if (action === 'print' || action === 'download') {
         const fullPickupsToPrint = await Promise.all(
-          selectedPickups.map(async (id) => {
+          idsToProcess.map(async (id) => {
             const data = await pickupsService.getById(id);
             if (data) {
                 return {
@@ -292,6 +295,11 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
   };
 
   const handleSingleAction = (pickupId: string | number, action: string) => {
+    if (['solicitar-coleta', 'print', 'download'].includes(action)) {
+      handleBulkAction(action, [pickupId.toString()]);
+      return;
+    }
+
     setIsLoading(true);
 
     setTimeout(() => {
@@ -306,6 +314,10 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         case 'view-details':
           setSelectedPickup(pickup);
           setShowDetailsModal(true);
+          break;
+        case 'edit':
+          setSelectedPickup(pickup);
+          setShowEditModal(true);
           break;
         case 'view-relationship-map':
           setSelectedPickup(pickup);
@@ -362,6 +374,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         enderecoColeta: `${pickup.pickup_city} - ${pickup.pickup_state}`,
         valorTotal: pickup.total_volume || 0,
         dataSolicitacao: pickup.requested_at || pickup.scheduled_date,
+        dataAgendada: pickup.scheduled_date || pickup.data_agendada,
         dataRealizacao: pickup.actual_pickup_date || pickup.completed_at,
         observacoes: pickup.observations || ''
       }));
@@ -445,6 +458,37 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
     }
   };
 
+  const handleUpdatePickup = async (id: string, updates: any) => {
+    try {
+      let updatePayload: any = { ...updates };
+      if (updatePayload.dataAgendada !== undefined) {
+        updatePayload.data_agendada = updatePayload.dataAgendada;
+        delete updatePayload.dataAgendada;
+      }
+      if (updatePayload.observacoes !== undefined) {
+        updatePayload.observacoes = updatePayload.observacoes;
+      }
+      
+      const res = await pickupsService.update(id, updatePayload);
+      if (res.success) {
+        setPickups(prev => prev.map(p => {
+          if (p.id === id) {
+            return { ...p, ...updates };
+          }
+          return p;
+        }));
+        if (selectedPickup && selectedPickup.id === id) {
+          setSelectedPickup({ ...selectedPickup, ...updates });
+        }
+        setToast({ message: 'Coleta atualizada com sucesso!', type: 'success' });
+      } else {
+        setToast({ message: 'Erro ao atualizar coleta.', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Erro ao atualizar coleta.', type: 'error' });
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <Breadcrumbs items={breadcrumbItems} />
@@ -467,7 +511,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
       </div>
 
       {/* Status Summary KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -511,6 +555,20 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between">
             <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Confirmada</p>
+              <p className="text-2xl font-semibold text-teal-500 dark:text-teal-400 mt-1">
+                {pickups.filter(pickup => pickup.status === 'coleta_confirmada').length}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center">
+              <CheckCircle2 size={20} className="text-teal-500 dark:text-teal-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('pickups.status.realizada')}</p>
               <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
                 {pickups.filter(pickup => pickup.status === 'realizada').length}
@@ -518,6 +576,20 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
             </div>
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
               <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Recusada</p>
+              <p className="text-2xl font-semibold text-orange-500 dark:text-orange-400 mt-1">
+                {pickups.filter(pickup => pickup.status === 'coleta_recusada').length}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <AlertTriangle size={20} className="text-orange-500 dark:text-orange-400" />
             </div>
           </div>
         </div>
@@ -551,6 +623,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         onSelectAll={handleSelectAll}
         onSelectPickup={handleSelectPickup}
         onAction={handleSingleAction}
+        onUpdatePickup={handleUpdatePickup}
         isLoading={isLoading}
       />
 
@@ -561,6 +634,18 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
             setShowDetailsModal(false);
             setSelectedPickup(null);
           }}
+          onUpdatePickup={handleUpdatePickup}
+        />
+      )}
+
+      {showEditModal && selectedPickup && (
+        <PickupEditModal
+          pickup={selectedPickup}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedPickup(null);
+          }}
+          onUpdatePickup={handleUpdatePickup}
         />
       )}
 

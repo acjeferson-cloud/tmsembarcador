@@ -51,6 +51,7 @@ const NPSConfiguration = lazy(() => import('./components/NPS/NPSConfig').then(m 
 const NPSResposta = lazy(() => import('./components/NPS/NPSResposta').then(m => ({ default: m.NPSResposta })));
 const PublicTracking = lazy(() => import('./components/PublicTracking/PublicTracking'));
 const PublicPickupScheduling = lazy(() => import('./components/PublicPickupScheduling/PublicPickupScheduling').then(m => ({ default: m.PublicPickupScheduling })));
+const PublicPickupStatus = lazy(() => import('./components/PublicPickupStatus/PublicPickupStatus').then(m => ({ default: m.PublicPickupStatus })));
 const SaasAdminConsole = lazy(() => import('./components/SaasAdmin/SaasAdminConsole').then(m => ({ default: m.SaasAdminConsole })));
 const SaasAdminApp = lazy(() => import('./components/SaasAdmin/SaasAdminApp').then(m => ({ default: m.SaasAdminApp })));
 const DeliveryTracking = lazy(() => import('./components/DeliveryTracking/DeliveryTracking').then(m => ({ default: m.DeliveryTracking })));
@@ -568,6 +569,7 @@ function App() {
   const npsMatch = urlPath.match(/\/nps-responder\/([^/?]+)/);
   const trackingMatch = urlPath.match(/\/rastrear/);
   const pickupSchedulingMatch = urlPath.match(/\/agendamento-coleta\/([^/?]+)/);
+  const pickupStatusMatch = urlPath.match(/\/coleta-resposta/);
   const diagnosticMatch = urlPath.match(/\/diagnostic/);
   const saasAdminMatch = urlPath.match(/\/SaasAdminConsole/);
 
@@ -627,6 +629,19 @@ function App() {
           <ConnectionProvider>
             <OfflineAlert />
             <PublicPickupScheduling />
+          </ConnectionProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    );
+  }
+
+  if (pickupStatusMatch) {
+    return (
+      <ThemeProvider>
+        <LanguageProvider>
+          <ConnectionProvider>
+            <OfflineAlert />
+            <PublicPickupStatus />
           </ConnectionProvider>
         </LanguageProvider>
       </ThemeProvider>
