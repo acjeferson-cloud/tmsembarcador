@@ -29,12 +29,19 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        captchaToken,
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { data, error: invokeError } = await supabase.functions.invoke('send-recovery-email', {
+        body: {
+          email,
+          captchaToken,
+          origin: window.location.origin
+        }
       });
 
-      if (error) throw error;
+      if (invokeError) throw invokeError;
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro desconhecido ao processar solicitação de recuperação.');
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -42,8 +49,12 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
       }, 3000);
     } catch (err: any) {
       console.error('Password reset error:', err);
-      if (err?.message?.includes('captcha')) {
-        setError('O sistema de segurança bloqueou o envio. Por favor, desabilite o CAPTCHA no painel do Supabase ou tente novamente mais tarde.');
+      if (err?.message?.includes('captcha') || err?.message?.includes('validação de segurança')) {
+        setError('O sistema de segurança bloqueou o envio. A verificação anti-bot falhou.');
+      } else if (err?.message?.includes('Nenhuma configuração SMTP')) {
+        setError('O sistema não possui um servidor de e-mail configurado para realizar envios.');
+      } else if (err?.message?.includes('cadastrado')) {
+        setError('Não foi possível gerar o link de recuperação. Verifique se o e-mail está cadastrado.');
       } else if (err?.status === 429) {
         setError('Muitas tentativas de envio. Por favor, aguarde alguns minutos e tente novamente.');
       } else {
