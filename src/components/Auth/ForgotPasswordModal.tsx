@@ -134,7 +134,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
 
               <div className="flex justify-center py-2 min-h-[65px] bg-gray-50 border border-dashed border-gray-300 rounded">
                 <Turnstile
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAAcWBQZiSuRibNl-J'}
+                  siteKey={'0x4AAAAAACwBQZiSuRibNl-J'}
                   injectScript={false}
                   onSuccess={(token) => {
                     console.log('Turnstile success!', token);
