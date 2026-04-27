@@ -74,28 +74,51 @@ serve(async (req) => {
       throw new Error("Nenhuma configuração SMTP ativa encontrada no banco de dados.");
     }
 
-    // 4. Gerar o Link de Recuperação de Senha Oficial do Supabase
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: email,
-      options: {
-        redirectTo: `${origin || 'http://localhost:5175'}/reset-password`
+    // 4. Buscar o usuário na tabela public.users
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, nome, email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (userError || !user) {
+      console.error("User not found or error fetching user:", userError);
+      throw new Error("Não foi possível gerar a recuperação. Verifique se o e-mail está cadastrado no sistema.");
+    }
+
+    // 5. Gerar uma senha temporária
+    const generateRandomPassword = () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$&';
+      let password = '';
+      for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-    });
+      return password;
+    };
 
-    if (linkError) {
-      // Se o usuário não existir, não expomos isso no log externo, apenas falhamos silenciosamente para evitar enumeração,
-      // mas como queremos resolver o problema, enviaremos um erro para log interno.
-      console.error("Error generating link:", linkError);
-      throw new Error("Não foi possível gerar o link de recuperação. Verifique se o e-mail está cadastrado.");
+    const tempPassword = generateRandomPassword();
+
+    // 6. Hashear a senha temporária usando SHA-256 (Padrão do TMS)
+    const msgBuffer = new TextEncoder().encode(tempPassword);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const senhaHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // 7. Atualizar o usuário no banco de dados
+    const { error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({ 
+        senha_hash: senhaHash,
+        force_password_reset: true 
+      })
+      .eq('id', user.id);
+
+    if (updateError) {
+      console.error("Error updating user password:", updateError);
+      throw new Error("Erro interno ao redefinir a senha.");
     }
 
-    const actionLink = linkData.properties?.action_link;
-    if (!actionLink) {
-      throw new Error("O link de recuperação não foi gerado pela API de Auth.");
-    }
-
-    // 5. Configurar Nodemailer e Enviar o E-mail Customizado
+    // 8. Configurar Nodemailer e Enviar o E-mail Customizado
     const transporter = nodemailer.createTransport({
       host: finalSmtpConfig.smtp_host,
       port: finalSmtpConfig.smtp_port,
@@ -107,6 +130,7 @@ serve(async (req) => {
     });
 
     const logoUrl = 'https://raw.githubusercontent.com/acjeferson-cloud/tmsembarcador/main/public/logo-logaxis.png';
+    const loginLink = origin || 'http://localhost:5175';
     
     const htmlBody = `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
@@ -114,14 +138,20 @@ serve(async (req) => {
           <img src="${logoUrl}" alt="Log Axis TMS" style="max-height: 60px; max-width: 200px; display: block; margin: 0 auto;" />
         </div>
         <h2 style="color: #2563eb; font-size: 22px; margin-bottom: 20px; text-align: center;">Recuperação de Senha</h2>
-        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">Olá,</p>
-        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">Recebemos uma solicitação para redefinir a senha da sua conta no TMS Embarcador associada a este e-mail.</p>
+        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">Olá, ${user.nome}</p>
+        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">Sua senha do TMS Embarcador foi redefinida com sucesso.</p>
+        
+        <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 20px; text-align: center; margin: 25px 0; border-radius: 6px;">
+          <p style="font-size: 14px; color: #64748b; margin-bottom: 10px; margin-top: 0;">Sua senha temporária é:</p>
+          <p style="font-size: 28px; font-weight: bold; font-family: monospace; color: #0f172a; margin: 0; letter-spacing: 2px;">${tempPassword}</p>
+        </div>
+
         <div style="text-align: center; margin: 35px 0;">
-          <a href="${actionLink}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
-            Redefinir Minha Senha
+          <a href="${loginLink}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
+            Acessar o Sistema
           </a>
         </div>
-        <p style="font-size: 14px; line-height: 1.6; color: #718096; margin-top: 30px;">Se você não solicitou esta alteração, pode ignorar com segurança este e-mail. O link expirará em 24 horas.</p>
+        <p style="font-size: 14px; line-height: 1.6; color: #718096; margin-top: 30px;"><strong>Importante:</strong> Ao fazer o login com a senha temporária, o sistema exigirá que você crie uma nova senha definitiva.</p>
         <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eeeeee; text-align: center;">
           <p style="font-size: 12px; color: #a0aec0; margin: 0;">© ${new Date().getFullYear()} TMS Embarcador Log Axis. Todos os direitos reservados.</p>
         </div>
@@ -133,7 +163,7 @@ serve(async (req) => {
     const info = await transporter.sendMail({
       from: sendFrom,
       to: email,
-      subject: 'Redefinição de Senha - TMS Embarcador',
+      subject: 'Senha Temporária - TMS Embarcador',
       html: htmlBody,
     });
 
