@@ -277,6 +277,34 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const cleanDoc = (doc?: string) => {
+    if (!doc) return '';
+    let clean = doc.replace(/\D/g, '');
+    if (clean.length > 11 && clean.length < 14) return clean.padStart(14, '0');
+    if (clean.length > 0 && clean.length < 11) return clean.padStart(11, '0');
+    return clean;
+  };
+  const getBaseCnpj = (doc: string) => cleanDoc(doc).substring(0, 8);
+
+  const findBusinessPartner = (feeId: string | null, feeDoc?: string) => {
+    return businessPartners.find(b => {
+      if (feeId && b.id === feeId) return true;
+      
+      const fDoc = cleanDoc(feeDoc);
+      const bDoc = cleanDoc(b.document);
+      
+      if (!fDoc || !bDoc) return false;
+      
+      if (fDoc === bDoc) return true;
+      
+      if (fDoc.length === 14 && bDoc.length === 14) {
+        return getBaseCnpj(fDoc) === getBaseCnpj(bDoc);
+      }
+      
+      return false;
+    });
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -337,13 +365,13 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   <AutocompleteSelect
                     options={businessPartners.map((bp) => ({
                       value: bp.id || '',
-                      label: `${bp.codigo || ''} - ${bp.name}`
+                      label: `${bp.document ? formatDocumentDisplay(bp.document) + ' - ' : ''}${bp.name}`
                     }))}
                     value={formData.business_partner_id}
                     onChange={(value) => setFormData({ ...formData, business_partner_id: value })}
                     placeholder={t('carriers.freightRates.additionalFees.allPartners')}
                   />
-                  {editingFee?.business_partner_document && !formData.business_partner_id && (
+                  {editingFee?.business_partner_document && !formData.business_partner_id && !findBusinessPartner(null, editingFee.business_partner_document) && (
                     <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
                       <strong>Documento importado:</strong> {
                         formatDocumentDisplay(editingFee.business_partner_document)
@@ -513,7 +541,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
                       {fees.map((fee) => {
-                        const bp = businessPartners.find(b => b.id === fee.business_partner_id);
+                        const bp = findBusinessPartner(fee.business_partner_id, fee.business_partner_document);
                         const state = states.find(s => s.id === fee.state_id);
 
                         return (
@@ -524,7 +552,10 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               <div>
                                 {bp?.name ? (
-                                  bp.name
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-gray-900 dark:text-gray-100">{bp.name}</span>
+                                    <span className="text-xs text-gray-500">{bp.document ? formatDocumentDisplay(bp.document) : ''}</span>
+                                  </div>
                                 ) : fee.business_partner_document ? (
                                   <span className="text-gray-500 italic">
                                     {formatDocumentDisplay(fee.business_partner_document)}

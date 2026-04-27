@@ -12,16 +12,14 @@ export const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose 
 
   if (!isOpen) return null;
 
-  const handleWhatsAppClick = () => {
-    window.open('https://wa.me/5512996489573?text=Olá, preciso de ajuda com o sistema TMS', '_blank');
-  };
+
 
   const handleEmailClick = () => {
     window.location.href = 'mailto:suporte@logaxis.com.br?subject=Solicitação de Suporte';
   };
 
   const handlePhoneClick = () => {
-    window.location.href = 'tel:+551140004000';
+    window.location.href = 'tel:+5512996489573';
   };
 
   return (
@@ -47,18 +45,7 @@ export const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose 
         </div>
 
         <div className="space-y-4">
-          <button
-            onClick={handleWhatsAppClick}
-            className="w-full flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-green-50 hover:border-green-500 transition-all group"
-          >
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-500 transition-colors">
-              <MessageCircle className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-semibold text-gray-900 dark:text-white">WhatsApp</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">(12) 99648-9573</p>
-            </div>
-          </button>
+
 
           <button
             onClick={handleEmailClick}
@@ -82,7 +69,7 @@ export const ContactUsModal: React.FC<ContactUsModalProps> = ({ isOpen, onClose 
             </div>
             <div className="flex-1 text-left">
               <p className="font-semibold text-gray-900 dark:text-white">{t('login.phone')}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">(11) 4000-4000</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">(12) 99648-9573</p>
             </div>
           </button>
         </div>
