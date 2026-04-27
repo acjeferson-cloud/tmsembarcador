@@ -132,20 +132,17 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                 </div>
               </div>
 
-              <div className="flex justify-center py-2 min-h-[65px] bg-gray-50 border border-dashed border-gray-300 rounded">
+              <div className="flex justify-center my-4">
                 <Turnstile
                   siteKey={'0x4AAAAAACwBQZiSuRibNl-J'}
-                  injectScript={false}
                   onSuccess={(token) => {
                     console.log('Turnstile success!', token);
                     setCaptchaToken(token);
                     setError(null);
                   }}
-                  onError={(err) => {
-                    console.error('Turnstile error:', err);
-                    setError('Erro ao carregar o verificador de segurança. O seu Adblocker ou Antivírus pode estar bloqueando a Cloudflare.');
+                  onError={() => {
+                    setError('A validação anti-bot falhou. Tente novamente.');
                   }}
-                  onLoad={() => console.log('Turnstile loaded')}
                   options={{
                     theme: 'light',
                     size: 'normal'
