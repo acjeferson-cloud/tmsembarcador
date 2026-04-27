@@ -132,7 +132,9 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     }
   }, [formData.estado]);
 
-  const [confirmSaveAlert, setConfirmSaveAlert] = useState<{isOpen: boolean, missing: string[], data?: any}>({isOpen: false, missing: []});
+  const [modalError, setModalError] = useState(false);
+  const [confirmSaveAlert, setConfirmSaveAlert] = useState<{isOpen: boolean, missing: string[], data?: any}>({
+isOpen: false, missing: []});
 
   const loadData = async () => {
     try {
@@ -223,6 +225,11 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       ...prev,
       cnpj: formatted
     }));
+    if (formatted.length === 18) {
+      validateCnpj(formatted);
+    } else {
+      setCnpjMessage(null);
+    }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +255,24 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         ...prev,
         [name]: formatCompanyName(value)
       }));
+    }
+  };
+
+  const validateCnpj = async (cnpj: string): Promise<boolean> => {
+    if (!cnpj) return true;
+
+    const cleanCnpj = unformatCNPJ(cnpj);
+    if (cleanCnpj.length !== 14) return true;
+
+    try {
+      const existingCarrier = await carriersService.getByExactCnpj(cleanCnpj);
+      if (existingCarrier && existingCarrier.id !== carrier?.id) {
+        setCnpjMessage({ type: 'error', text: t('carriers.form.cnpjInUse') });
+        return false;
+      }
+      return true;
+    } catch (error) {
+      return true;
     }
   };
 
@@ -334,6 +359,12 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
       return;
     }
 
+    if (!formData.modalRodoviario && !formData.modalAereo && !formData.modalAquaviario && !formData.modalFerroviario) {
+      setModalError(true);
+      return;
+    }
+    setModalError(false);
+
     // Validate code only when creating (not editing)
     if (!carrier) {
       const isValid = await validateCode(formData.codigo);
@@ -341,6 +372,11 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         return;
       }
     } else {
+    }
+
+    const isCnpjValid = await validateCnpj(formData.cnpj);
+    if (!isCnpjValid) {
+      return;
     }
 
     // Create carrier data with all required fields (remove formatting before saving)
@@ -570,10 +606,14 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
         }
       }
 
-      setCnpjMessage({
-        type: 'success',
-        text: t('carriers.form.dataImportedSuccess', { status: mensagemStatus })
-      });
+      const isCnpjValid = await validateCnpj(formatCNPJInput(dados.cnpj));
+      
+      if (isCnpjValid) {
+        setCnpjMessage({
+          type: 'success',
+          text: t('carriers.form.dataImportedSuccess', { status: mensagemStatus })
+        });
+      }
 
       setTimeout(() => {
         setCnpjMessage(null);
@@ -1093,10 +1133,20 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
             {/* Transport Modals Section */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.form.transportModalsTitle')}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('carriers.form.transportModalsHelp')}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+                <div>
+                  <h3 className="text-md font-semibold text-gray-900 dark:text-white">{t('carriers.form.transportModalsTitle')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.transportModalsHelp')}</p>
+                </div>
+                {modalError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                    <span className="mr-2">⚠️</span>
+                    {t('carriers.form.modalRequired')}
+                  </div>
+                )}
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${modalError ? 'p-2 border-2 border-red-300 rounded-xl bg-red-50/30' : ''}`}>
                 <label className="flex items-center p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
                   <input
                     type="checkbox"

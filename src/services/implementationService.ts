@@ -472,7 +472,7 @@ export const implementationService = {
             numero: row.numero || null,
             complemento: row.complemento || null,
             bairro: row.bairro || null,
-            cep: row.cep ? row.cep.replace(/\D/g, '') : null,
+            cep: row.cep ? String(row.cep).replace(/\D/g, '') : null,
             email: row.email || null,
             phone: row.telefone || null,
             tolerancia_valor_cte: row.tolerancia_valor_cte || 0,
@@ -1130,8 +1130,15 @@ export const implementationService = {
 
           // 4. Resolve Parceiro de Negócio (Opcional)
           let partnerId = null;
+          let partnerDocument = null;
           if (row.parceiro_negocio_documento) {
-            const docClean = row.parceiro_negocio_documento.replace(/\D/g, '');
+            let docClean = String(row.parceiro_negocio_documento).replace(/\D/g, '');
+            if (docClean.length > 11 && docClean.length < 14) {
+              docClean = docClean.padStart(14, '0');
+            } else if (docClean.length > 0 && docClean.length < 11) {
+              docClean = docClean.padStart(11, '0');
+            }
+            partnerDocument = docClean;
             partnerId = partnerMap.get(docClean);
             if (!partnerId) {
               const query = supabase.from('business_partners').select('id').ilike('documento', docClean);
@@ -1189,7 +1196,9 @@ export const implementationService = {
 
           const isDuplicate = existingFees.find(ef => {
             const efPartner = ef.business_partner_id || null;
+            const efDocument = ef.business_partner_document || null;
             const rowPartner = partnerId || null;
+            const rowDocument = partnerDocument || null;
             const efState = ef.state_id || null;
             const rowState = stateId || null;
             const efCity = ef.city_id || null;
@@ -1197,6 +1206,7 @@ export const implementationService = {
 
             return ef.fee_type === row.tipo_taxa &&
                    efPartner === rowPartner &&
+                   efDocument === rowDocument &&
                    efState === rowState &&
                    efCity === rowCity;
           });
@@ -1226,6 +1236,7 @@ export const implementationService = {
                 freight_rate_id: rateId,
                 fee_type: row.tipo_taxa,
                 business_partner_id: partnerId,
+                business_partner_document: partnerDocument,
                 consider_cnpj_root: String(row.considerar_raiz_cnpj).toLowerCase() === 'sim',
                 state_id: stateId,
                 city_id: cityId,
@@ -1248,6 +1259,7 @@ export const implementationService = {
             freight_rate_id: rateId,
             fee_type: row.tipo_taxa, // TDA, TDE, TRT, TEC
             business_partner_id: partnerId,
+            business_partner_document: partnerDocument,
             consider_cnpj_root: String(row.considerar_raiz_cnpj).toLowerCase() === 'sim',
             state_id: stateId,
             city_id: cityId,
@@ -1273,9 +1285,10 @@ export const implementationService = {
         const uniqueInserts = Array.from(
           feesToInsert.reduce((map, item) => {
             const partner = item.business_partner_id || 'null';
+            const document = item.business_partner_document || 'null';
             const state = item.state_id || 'null';
             const city = item.city_id || 'null';
-            const key = `${item.freight_rate_table_id}_${item.fee_type}_${partner}_${state}_${city}`;
+            const key = `${item.freight_rate_table_id}_${item.fee_type}_${partner}_${document}_${state}_${city}`;
             return map.set(key, item);
           }, new Map()).values()
         );

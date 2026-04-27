@@ -8,6 +8,7 @@ export interface AdditionalFee {
   freight_rate_id: string | null;
   fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC';
   business_partner_id: string | null;
+  business_partner_document: string | null;
   consider_cnpj_root: boolean;
   state_id: string | null;
   city_id: string | null;

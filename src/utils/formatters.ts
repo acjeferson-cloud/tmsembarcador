@@ -7,7 +7,7 @@ export const formatCNPJ = (cnpj: string): string => {
 };
 
 // Formata CPF: 000.000.000-00
-const formatCPF = (cpf: string): string => {
+export const formatCPF = (cpf: string): string => {
   if (!cpf) return '';
   
   // Remove caracteres não numéricos

@@ -8,6 +8,7 @@ import { fetchCities } from '../../services/citiesService';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { AutocompleteSelect } from '../common/AutocompleteSelect';
+import { formatCNPJInput, formatCPF } from '../../utils/formatters';
 
 interface AdditionalFeesModalProps {
   freightRateTableId: string;
@@ -60,6 +61,17 @@ const CityName: React.FC<{ cityId: string | null; stateId: string | null }> = ({
   }, [cityId, stateId, t]);
 
   return <>{cityName}</>;
+};
+
+const formatDocumentDisplay = (doc: string) => {
+  if (!doc) return '';
+  let paddedDoc = doc;
+  if (doc.length > 11 && doc.length < 14) paddedDoc = doc.padStart(14, '0');
+  else if (doc.length > 0 && doc.length < 11) paddedDoc = doc.padStart(11, '0');
+
+  if (paddedDoc.length === 14) return formatCNPJInput(paddedDoc);
+  if (paddedDoc.length === 11) return formatCPF(paddedDoc);
+  return paddedDoc;
 };
 
 export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
@@ -331,6 +343,15 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     onChange={(value) => setFormData({ ...formData, business_partner_id: value })}
                     placeholder={t('carriers.freightRates.additionalFees.allPartners')}
                   />
+                  {editingFee?.business_partner_document && !formData.business_partner_id && (
+                    <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                      <strong>Documento importado:</strong> {
+                        formatDocumentDisplay(editingFee.business_partner_document)
+                      } (Não cadastrado).
+                      <br/>
+                      <span className="text-xs text-amber-700">Selecione um parceiro na lista acima para vinculá-lo, ou deixe em branco para mantê-lo avulso.</span>
+                    </p>
+                  )}
                 </div>
 
                 {formData.business_partner_id && (
@@ -502,7 +523,16 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               <div>
-                                {bp?.name || t('carriers.freightRates.additionalFees.all')}
+                                {bp?.name ? (
+                                  bp.name
+                                ) : fee.business_partner_document ? (
+                                  <span className="text-gray-500 italic">
+                                    {formatDocumentDisplay(fee.business_partner_document)}
+                                    {' (Não cadastrado)'}
+                                  </span>
+                                ) : (
+                                  t('carriers.freightRates.additionalFees.all')
+                                )}
                                 {fee.consider_cnpj_root && (
                                   <div className="flex items-center space-x-1 text-xs text-blue-600 mt-1">
                                     <CheckSquare size={12} />

@@ -10,6 +10,7 @@ import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
+import { formatCNPJInput } from '../../utils/formatters';
 
 export const Carriers: React.FC = () => {
   const { t } = useTranslation();
@@ -461,7 +462,7 @@ export const Carriers: React.FC = () => {
                 <Hash size={14} />
                 <span># {carrier.codigo}</span>
               </div>
-              <p><strong>CNPJ:</strong> {carrier.cnpj}</p>
+              <p><strong>CNPJ:</strong> {carrier.cnpj ? formatCNPJInput(carrier.cnpj) : ''}</p>
               <div className="flex items-center space-x-2">
                 <Phone size={14} />
                 <span>{carrier.phone || t('carriers.form.notInformed')}</span>

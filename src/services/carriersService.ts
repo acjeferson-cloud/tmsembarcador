@@ -272,13 +272,19 @@ export const carriersService = {
         query = query.is('establishment_id', null);
       }
 
-      const { data, error } = await query.maybeSingle();
+      const { data, error } = await query.limit(1);
 
       if (error) {
         throw error;
       }
 
-      return this.transformCarrierData(data);
+      const carrier = Array.isArray(data) ? data[0] : data;
+
+      if (carrier) {
+        return this.transformCarrierData(carrier);
+      } else {
+        return null;
+      }
     } catch (error) {
       return null;
     }
@@ -525,6 +531,43 @@ export const carriersService = {
       const { data, error } = await query
         .order('codigo', { ascending: true })
         .limit(1);
+      if (error) {
+        return null;
+      }
+
+      const carrier = Array.isArray(data) ? data[0] : data;
+
+      if (carrier) {
+        return this.transformCarrierData(carrier);
+      } else {
+        return null;
+      }
+    } catch (error) {
+      return null;
+    }
+  },
+
+  async getByExactCnpj(cnpj: string): Promise<Carrier | null> {
+    try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+        return null;
+      }
+
+      const cleanCnpj = normalizarCNPJ(cnpj);
+      if (cleanCnpj.length !== 14) {
+        return null;
+      }
+
+      // Check across the entire environment to ensure global CNPJ uniqueness
+      const { data, error } = await supabase
+        .from('carriers')
+        .select('*')
+        .eq('organization_id', ctx.organizationId)
+        .eq('environment_id', ctx.environmentId)
+        .eq('cnpj', cleanCnpj)
+        .limit(1);
+
       if (error) {
         return null;
       }

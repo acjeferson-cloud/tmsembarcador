@@ -81,7 +81,7 @@ export const receitaFederalService = {
     }
 
     try {
-      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+      const response = await fetch(`https://minhareceita.org/${cnpjLimpo}`);
 
       if (!response.ok) {
         if (response.status === 404) {

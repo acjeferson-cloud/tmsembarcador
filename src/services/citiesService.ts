@@ -748,7 +748,7 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
       throw new Error(`Estado ${cepData.uf} não encontrado no sistema`);
     }
     // Verificar se a cidade já existe (pelo IBGE ou nome + estado)
-    const { data: existingCity } = await supabase
+    const { data: existingCityData } = await supabase
       .from('cities')
       .select(`
         *,
@@ -760,7 +760,9 @@ export const findOrCreateCityByCEP = async (zipCode: string) => {
         )
       `)
       .or(`codigo_ibge.eq.${cepData.ibge},and(nome.ilike.${cepData.localidade},state_id.eq.${stateData.id})`)
-      .maybeSingle();
+      .limit(1);
+
+    const existingCity = Array.isArray(existingCityData) && existingCityData.length > 0 ? existingCityData[0] : null;
 
     if (existingCity) {
       // ✅ CORREÇÃO: Removida a inserção "cep-a-cep" na tabela zip_code_ranges.

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Mail, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useTranslation } from 'react-i18next';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -14,14 +15,22 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    if (!captchaToken) {
+      setError('Por favor, confirme que você não é um robô antes de continuar.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        captchaToken,
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
@@ -31,9 +40,15 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
       setTimeout(() => {
         handleClose();
       }, 3000);
-    } catch (err) {
-
-      setError(t('login.forgotPasswordError'));
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      if (err?.message?.includes('captcha')) {
+        setError('O sistema de segurança bloqueou o envio. Por favor, desabilite o CAPTCHA no painel do Supabase ou tente novamente mais tarde.');
+      } else if (err?.status === 429) {
+        setError('Muitas tentativas de envio. Por favor, aguarde alguns minutos e tente novamente.');
+      } else {
+        setError(t('login.forgotPasswordError'));
+      }
     } finally {
       setLoading(false);
     }
@@ -43,6 +58,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
     setEmail('');
     setSuccess(false);
     setError(null);
+    setCaptchaToken(null);
     onClose();
   };
 
@@ -114,6 +130,27 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                     placeholder={t('login.emailPlaceholder')}
                   />
                 </div>
+              </div>
+
+              <div className="flex justify-center py-2 min-h-[65px] bg-gray-50 border border-dashed border-gray-300 rounded">
+                <Turnstile
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAAcWBQZiSuRibNl-J'}
+                  injectScript={false}
+                  onSuccess={(token) => {
+                    console.log('Turnstile success!', token);
+                    setCaptchaToken(token);
+                    setError(null);
+                  }}
+                  onError={(err) => {
+                    console.error('Turnstile error:', err);
+                    setError('Erro ao carregar o verificador de segurança. O seu Adblocker ou Antivírus pode estar bloqueando a Cloudflare.');
+                  }}
+                  onLoad={() => console.log('Turnstile loaded')}
+                  options={{
+                    theme: 'light',
+                    size: 'normal'
+                  }}
+                />
               </div>
 
               <div className="flex gap-3 pt-2">
