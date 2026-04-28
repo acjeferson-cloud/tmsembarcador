@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Star, Phone, Mail, CreditCard as Edit, Trash2, Eye, DollarSign, ArrowLeft, Hash, ShieldAlert } from 'lucide-react';
+import { Plus, Search, Star, CreditCard as Edit, Trash2, Eye, DollarSign, ArrowLeft, Hash, ShieldAlert } from 'lucide-react';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { CarrierForm } from './CarrierForm';
 import { CarrierView } from './CarrierView';
@@ -56,7 +56,6 @@ export const Carriers: React.FC = () => {
     carrier.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (carrier.fantasia && carrier.fantasia.toLowerCase().includes(searchTerm.toLowerCase())) ||
     carrier.cnpj.includes(searchTerm) ||
-    (carrier.email && carrier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     carrier.codigo.includes(searchTerm)
   );
 
@@ -463,14 +462,6 @@ export const Carriers: React.FC = () => {
                 <span># {carrier.codigo}</span>
               </div>
               <p><strong>CNPJ:</strong> {carrier.cnpj ? formatCNPJInput(carrier.cnpj) : ''}</p>
-              <div className="flex items-center space-x-2">
-                <Phone size={14} />
-                <span>{carrier.phone || t('carriers.form.notInformed')}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail size={14} />
-                <span>{carrier.email || t('carriers.form.notInformed')}</span>
-              </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">

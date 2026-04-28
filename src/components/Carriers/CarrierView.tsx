@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Edit, Star, Phone, Mail, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield, Plug } from 'lucide-react';
+import { ArrowLeft, Edit, Star, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield, Plug } from 'lucide-react';
 import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
 import { CarrierVision360 } from './CarrierVision360';
 import { CarrierInsurancesTab } from './CarrierInsurancesTab';
@@ -210,29 +210,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
             </div>
           </div>
 
-          {/* Contact Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.view.contactInfo')}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Mail className="text-blue-500" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.email')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Phone className="text-green-500" size={20} />
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.form.phone')}</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{carrier.phone || t('carriers.view.notInformed')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           {/* Location Information */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">

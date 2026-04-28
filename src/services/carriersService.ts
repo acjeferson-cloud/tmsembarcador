@@ -24,8 +24,6 @@ export interface Carrier {
   tolerancia_percentual_cte?: number;
   tolerancia_valor_fatura?: number;
   tolerancia_percentual_fatura?: number;
-  email?: string;
-  phone?: string;
   status: 'ativo' | 'inativo';
   rating?: number;
   active_shipments?: number;
@@ -75,8 +73,6 @@ export const carriersService = {
       complemento: carrier.complemento,
       bairro: carrier.bairro,
       cep: carrier.cep,
-      email: carrier.email,
-      phone: carrier.telefone,
       status: carrier.ativo ? 'ativo' : 'inativo',
       nps_interno: carrier.nps_interno || metadata.nps_interno || 0,
       nps_externo: metadata.nps_externo || 0,
@@ -101,7 +97,8 @@ export const carriersService = {
       scope: carrier.scope || 'ESTABLISHMENT',
       sap_cardcode: carrier.sap_cardcode,
       sap_bpl_id: carrier.sap_bpl_id,
-      sap_due_days: carrier.sap_due_days || 0
+      sap_due_days: carrier.sap_due_days || 0,
+      contacts: carrier.contacts || []
     };
   },
 
@@ -238,7 +235,7 @@ export const carriersService = {
     try {
       const { data, error } = await supabase
         .from('carriers')
-        .select('*')
+        .select('*, contacts:carrier_contacts(*)')
         .eq('id', id)
         .maybeSingle();
 
@@ -371,8 +368,6 @@ export const carriersService = {
         estado_id: carrier.estado_id || null,
         pais: paisNome,
         pais_id: carrier.pais_id || null,
-        telefone: carrier.phone || null,
-        email: carrier.email || null,
         website: null,
         tipo_servico: 'Expresso',
         prazo_entrega: 3,
@@ -393,7 +388,24 @@ export const carriersService = {
       if (error) {
         throw new Error(`Erro ao criar transportador: ${error.message}`);
       }
-      return this.transformCarrierData(data);
+
+      if ((carrier as any).contacts && (carrier as any).contacts.length > 0) {
+        const contactsToInsert = (carrier as any).contacts.map((c: any) => ({
+          carrier_id: data.id,
+          organization_id: userData.organization_id,
+          environment_id: userData.environment_id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          role: c.role || null,
+          contact_types: c.contact_types || [],
+          is_primary: c.is_primary || false
+        }));
+        await supabase.from('carrier_contacts').insert(contactsToInsert);
+      }
+
+      const carrierWithContacts = { ...data, contacts: (carrier as any).contacts || [] };
+      return this.transformCarrierData(carrierWithContacts);
     } catch (error: any) {
       throw error;
     }
@@ -477,8 +489,6 @@ export const carriersService = {
       if (carrier.complemento !== undefined) updateData.complemento = carrier.complemento;
       if (carrier.bairro !== undefined) updateData.bairro = carrier.bairro;
       if (carrier.cep !== undefined) updateData.cep = carrier.cep;
-      if (carrier.phone !== undefined) updateData.telefone = carrier.phone;
-      if (carrier.email !== undefined) updateData.email = carrier.email;
       if (carrier.status !== undefined) updateData.ativo = carrier.status === 'ativo';
       if (carrier.nps_interno !== undefined) updateData.nps_interno = carrier.nps_interno;
       if (carrier.sap_cardcode !== undefined) updateData.sap_cardcode = carrier.sap_cardcode;
@@ -495,7 +505,29 @@ export const carriersService = {
       if (error) {
         throw error;
       }
-      return this.transformCarrierData(data);
+
+      if ((carrier as any).contacts !== undefined) {
+        await supabase.from('carrier_contacts').delete().eq('carrier_id', id);
+        
+        if ((carrier as any).contacts.length > 0) {
+          const ctx = await TenantContextHelper.getCurrentContext();
+          const contactsToInsert = (carrier as any).contacts.map((c: any) => ({
+            carrier_id: id,
+            organization_id: ctx?.organizationId,
+            environment_id: ctx?.environmentId,
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            role: c.role || null,
+            contact_types: c.contact_types || [],
+            is_primary: c.is_primary || false
+          }));
+          await supabase.from('carrier_contacts').insert(contactsToInsert);
+        }
+      }
+
+      const carrierWithContacts = { ...data, contacts: (carrier as any).contacts !== undefined ? (carrier as any).contacts : existing?.contacts || [] };
+      return this.transformCarrierData(carrierWithContacts);
     } catch (error) {
       throw error;
     }

@@ -24,8 +24,7 @@ interface Carrier {
   codigo: string; // 4-digit sequential code
   name: string;
   cnpj: string;
-  phone: string;
-  email: string;
+  phone?: never; // DEPRECATED
   rating: number;
   activeShipments: number;
   razaoSocial: string;
@@ -39,6 +38,18 @@ interface Carrier {
   toleranciaValorFatura: string;
   toleranciaPercentualFatura: string;
   status: 'ativo' | 'inativo';
+  contacts?: CarrierContact[];
+}
+
+export interface CarrierContact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  contact_types: string[];
+  is_primary: boolean;
+  carrier_id?: string;
 }
 
 export interface User {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Upload, X, Info, Hash, MapPin, Settings, Truck, Search, Loader, Shield, Plug } from 'lucide-react';
+import { ArrowLeft, Upload, X, Info, Hash, MapPin, Settings, Truck, Search, Loader, Shield, Plug, Users } from 'lucide-react';
 import { carriersService } from '../../services/carriersService';
 import { countriesService } from '../../services/countriesService';
 import { statesService } from '../../services/statesService';
@@ -11,6 +11,8 @@ import { formatCompanyName, formatCNPJInput, formatPhone, unformatCNPJ, unformat
 import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
 import { useAuth } from '../../hooks/useAuth';
 import { CarrierInsurancesTab } from './CarrierInsurancesTab';
+import { CarrierContactsTab } from './CarrierContactsTab';
+import { CarrierContact } from '../../types';
 
 import { carrierInsuranceService } from '../../services/carrierInsuranceService';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -69,8 +71,9 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
 
   const [logoPreview, setLogoPreview] = useState<string | null>(carrier?.logotipo || null);
   const [codeError, setCodeError] = useState('');
-  const [activeTab, setActiveTab] = useState<'basic' | 'location' | 'tolerance' | 'insurances' | 'erp'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'contacts' | 'location' | 'tolerance' | 'insurances' | 'erp'>('basic');
   const [erpActive, setErpActive] = useState(false);
+  const [contacts, setContacts] = useState<CarrierContact[]>(carrier?.contacts || []);
   const [countries, setCountries] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
@@ -414,7 +417,8 @@ isOpen: false, missing: []});
       scope: formData.scope,
       sapCardCode: formData.sapCardCode,
       sapBplId: formData.sapBplId,
-      sapDueDays: formData.sapDueDays
+      sapDueDays: formData.sapDueDays,
+      contacts: contacts
     };
 
     if (formData.exigeSeguroObrigatorio && formData.tiposSeguroExigidos.length > 0) {
@@ -792,6 +796,19 @@ isOpen: false, missing: []});
               </div>
             </button>
             <button
+              onClick={() => setActiveTab('contacts')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'contacts'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Users size={16} />
+                <span>Pessoas de Contato</span>
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab('location')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'location'
@@ -1001,34 +1018,7 @@ isOpen: false, missing: []});
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.form.email')}
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="contato@transportadora.com.br"
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('carriers.form.phone')}
-                </label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handlePhoneChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="(00) 00000-0000"
-                  maxLength={15}
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1263,6 +1253,13 @@ isOpen: false, missing: []});
               </div>
             </div>
           </div>
+        )}
+        
+        {activeTab === 'contacts' && (
+          <CarrierContactsTab
+            contacts={contacts}
+            onChange={setContacts}
+          />
         )}
 
         {activeTab === 'location' && (
