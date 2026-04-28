@@ -205,13 +205,20 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
              if (res.success) {
                successGroupsCount += groupData.length;
              } else {
-               errorMessages.push(`Erro na transportadora ${groupData[0].carrier_name}: ${res.error}`);
+               errorMessages.push(`Erro (com e-mail): ${res.error || 'Desconhecido'}`);
              }
           } else {
              // If no email, just update status
              for (const p of groupData) {
                const res = await pickupsService.updateStatus(p.id, 'solicitada');
-               if (res.success) successGroupsCount++;
+               if (res.success) {
+                 successGroupsCount++;
+               } else {
+                 errorMessages.push(`Erro (sem e-mail) ao atualizar status: ${res.error || 'Desconhecido'}`);
+               }
+             }
+             if (groupData.length > 0) {
+               errorMessages.push(`Atenção: Nenhum e-mail de "Coleta" foi encontrado no cadastro da transportadora ${groupData[0].carrier_name}.`);
              }
           }
         }
@@ -223,7 +230,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
           });
           await refreshData();
         } else {
-          setToast({ message: `Falha ao processar solicitação de coleta(s).\n\n${errorMessages.join('\n')}`, type: 'error' });
+          setToast({ message: `Falha ao processar solicitação de coleta(s). Erros: ${errorMessages.join(' | ')}`, type: 'error' });
         }
       } else if (action === 'cancelar') {
         setConfirmDialog({

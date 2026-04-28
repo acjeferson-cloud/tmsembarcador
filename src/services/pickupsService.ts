@@ -131,8 +131,7 @@ export const pickupsService = {
           carrier:carriers(
             id, 
             razao_social, 
-            codigo, 
-            email,
+            codigo,
             contacts:carrier_contacts(name, email, contact_types, is_primary)
           ),
           pickup_invoices(count)
@@ -140,11 +139,14 @@ export const pickupsService = {
         .eq('id', id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro no getById do PickupsService:", error);
+        throw error;
+      }
       if (!data) return null;
 
       // Buscar email de coleta
-      let coletaEmail = data.carrier?.email || '';
+      let coletaEmail = '';
       if (data.carrier?.contacts && Array.isArray(data.carrier.contacts)) {
         const coletaContact = data.carrier.contacts.find((c: any) => 
           c.contact_types && 
