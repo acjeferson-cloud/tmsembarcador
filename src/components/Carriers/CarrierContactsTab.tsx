@@ -11,7 +11,7 @@ const CONTACT_TYPES = [
   { id: 'pricing', label: 'Comercial / Pricing', tooltip: 'Recebe: Cotações Manuais (Spot) e tabelas.' },
   { id: 'pickup', label: 'Coleta', tooltip: 'Recebe: Solicitação de Coleta.' },
   { id: 'reverse_logistics', label: 'Logística Reversa', tooltip: 'Recebe: Solicitações de Logística Reversa.' },
-  { id: 'tracking', label: 'Operacional / SAC / Tracking', tooltip: 'Recebe: Cobranças da Torre de Controle e acompanhamento de entregas.' },
+  { id: 'tracking', label: 'Operacional / SAC / Tracking', tooltip: 'Recebe: Divergências de CT-es, e acompanhamento de entregas.' },
   { id: 'billing', label: 'Financeiro / Faturamento', tooltip: 'Recebe: Divergências de Faturas SAP.' },
   { id: 'integration', label: 'TI / Integração', tooltip: 'Recebe: Avisos de erros em envios EDI (OCOREN/CONEMB/NOTFIS).' },
   { id: 'management', label: 'Diretoria / Gerência', tooltip: 'Recebe: Escalonamentos de problemas graves.' }

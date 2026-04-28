@@ -1282,7 +1282,28 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             result: tmsValue
           }
         };
-      }).filter(item => item.tmsValue > 0 || item.cteValue > 0);      const reportData: DivergenceReportData = {        cteId: fullCTe.id,        cteNumber: fullCTe.number,        serie: fullCTe.series || '',        chave: fullCTe.access_key || '',        carrierId: fullCTe.carrier_id || '',        carrierName: fullCTe.carrier?.razao_social || '',        carrierCnpj: fullCTe.carrier?.cnpj || '',        carrierEmail: fullCTe.carrier?.email,        carrierPhone: fullCTe.carrier?.telefone,        emissionDate: fullCTe.issue_date || '',        totalValue: parseFloat(fullCTe.total_value.toString()),
+      }).filter(item => item.tmsValue > 0 || item.cteValue > 0);      let contactEmail = '';
+      let contactPhone = '';
+      if (fullCTe.carrier?.contacts && Array.isArray(fullCTe.carrier.contacts)) {
+        const trackingContact = fullCTe.carrier.contacts.find((c: any) => 
+          c.contact_types && Array.isArray(c.contact_types) && c.contact_types.includes('Operacional / SAC / Tracking')
+        );
+        if (trackingContact) {
+          contactEmail = trackingContact.email;
+          contactPhone = trackingContact.phone;
+        } else {
+          const primaryContact = fullCTe.carrier.contacts.find((c: any) => c.is_primary);
+          if (primaryContact) {
+            contactEmail = primaryContact.email;
+            contactPhone = primaryContact.phone;
+          } else if (fullCTe.carrier.contacts.length > 0) {
+            contactEmail = fullCTe.carrier.contacts[0].email;
+            contactPhone = fullCTe.carrier.contacts[0].phone;
+          }
+        }
+      }
+
+      const reportData: DivergenceReportData = {        cteId: fullCTe.id,        cteNumber: fullCTe.number,        serie: fullCTe.series || '',        chave: fullCTe.access_key || '',        carrierId: fullCTe.carrier_id || '',        carrierName: fullCTe.carrier?.razao_social || '',        carrierCnpj: fullCTe.carrier?.cnpj || '',        carrierEmail: contactEmail,        carrierPhone: contactPhone,        emissionDate: fullCTe.issue_date || '',        totalValue: parseFloat(fullCTe.total_value.toString()),
         tmsTotalValue: parseFloat(fullCTe.carrier_costs?.find((c: any) => c.cost_type === 'total_value')?.cost_value?.toString() || '0'),
         status: fullCTe.status,        comparisonData, rejectionReason: passedRejectionReason     };      setDivergenceReportData(reportData);      setShowReportDivergenceModal(true);    } catch (error: any) {      const errorMessage = error?.message || 'Erro ao preparar relatório de divergência.';      setToast({ message: errorMessage, type: 'error' });    } finally {      setIsLoading(false);    }  };
     const handleRejectConfirm = async (reasonId: number, observation: string, reasonDescription?: string) => {
