@@ -392,8 +392,9 @@ export const carriersService = {
       if ((carrier as any).contacts && (carrier as any).contacts.length > 0) {
         const contactsToInsert = (carrier as any).contacts.map((c: any) => ({
           carrier_id: data.id,
-          organization_id: userData.organization_id,
-          environment_id: userData.environment_id,
+          organization_id: userData.organizationId || userData.organization_id,
+          environment_id: userData.environmentId || userData.environment_id,
+          establishment_id: userData.establishmentId || userData.establishment_id,
           name: c.name,
           email: c.email,
           phone: c.phone,
@@ -520,8 +521,9 @@ export const carriersService = {
           const ctx = await TenantContextHelper.getCurrentContext();
           const contactsToInsert = (carrier as any).contacts.map((c: any) => ({
             carrier_id: id,
-            organization_id: ctx?.organizationId,
-            environment_id: ctx?.environmentId,
+            organization_id: ctx?.organizationId || (ctx as any)?.organization_id,
+            environment_id: ctx?.environmentId || (ctx as any)?.environment_id,
+            establishment_id: ctx?.establishmentId || (ctx as any)?.establishment_id,
             name: c.name,
             email: c.email,
             phone: c.phone,
