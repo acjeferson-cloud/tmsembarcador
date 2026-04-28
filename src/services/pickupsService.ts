@@ -128,7 +128,13 @@ export const pickupsService = {
         .from('pickups')
         .select(`
           *,
-          carrier:carriers(id, razao_social, codigo, email),
+          carrier:carriers(
+            id, 
+            razao_social, 
+            codigo, 
+            email,
+            contacts:carrier_contacts(name, email, contact_types, is_primary)
+          ),
           pickup_invoices(count)
         `)
         .eq('id', id)
@@ -137,6 +143,27 @@ export const pickupsService = {
       if (error) throw error;
       if (!data) return null;
 
+      // Buscar email de coleta
+      let coletaEmail = data.carrier?.email || '';
+      if (data.carrier?.contacts && Array.isArray(data.carrier.contacts)) {
+        const coletaContact = data.carrier.contacts.find((c: any) => 
+          c.contact_types && 
+          Array.isArray(c.contact_types) && 
+          c.contact_types.includes('Coleta')
+        );
+        if (coletaContact && coletaContact.email) {
+          coletaEmail = coletaContact.email;
+        } else {
+           // Fallback para o contato principal se não achar o de "Coleta"
+           const primaryContact = data.carrier.contacts.find((c: any) => c.is_primary);
+           if (primaryContact && primaryContact.email) {
+               coletaEmail = primaryContact.email;
+           } else if (data.carrier.contacts.length > 0) {
+               coletaEmail = data.carrier.contacts[0].email;
+           }
+        }
+      }
+
       const pickupData: any = {
         id: data.id,
         pickup_number: data.numero_coleta,
@@ -144,7 +171,7 @@ export const pickupsService = {
         customer_name: data.contato_nome || '',
         carrier_id: data.carrier_id,
         carrier_name: data.carrier?.razao_social || '',
-        carrier_email: data.carrier?.email || '',
+        carrier_email: coletaEmail,
         transportador: data.carrier ? `${data.carrier.codigo ? data.carrier.codigo + ' - ' : ''}${data.carrier.razao_social}` : 'N/A',
         scheduled_date: data.data_agendada || data.data_solicitacao,
         pickup_address: data.logradouro || '',
