@@ -47,6 +47,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   });
 
   const [tarifas, setTarifas] = useState<FreightRate[]>([]);
+  const [deletedRateIds, setDeletedRateIds] = useState<string[]>([]);
   const [carriersList, setCarriersList] = useState<Carrier[]>([]);
   const [availableModals, setAvailableModals] = useState<string[]>([]);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -238,6 +239,9 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       'Tem certeza que deseja excluir esta tarifa?'
     );
     if (confirmed) {
+      if (!rateId.startsWith('temp-')) {
+        setDeletedRateIds(prev => [...prev, rateId]);
+      }
       setTarifas(prev => prev.filter(tarifa => tarifa.id !== rateId));
     }
   };
@@ -427,6 +431,15 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
           } catch (error) {
 
             throw new Error(`Erro ao atualizar tarifa ${tarifa.descricao}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+          }
+        }
+
+        // Excluir tarifas deletadas
+        for (const id of deletedRateIds) {
+          try {
+            await freightRatesService.deleteRate(id);
+          } catch (error) {
+            console.error(`Erro ao excluir tarifa ${id}:`, error);
           }
         }
 
