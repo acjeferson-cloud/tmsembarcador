@@ -47,6 +47,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         return null;
       }
 
+      // Ocultar Logística Reversa para todos, exceto jeferson.costa@logaxis.com.br
+      if (itemCopy.id === 'reverse-logistics' && user?.email !== 'jeferson.costa@logaxis.com.br') {
+        return null;
+      }
+
       // Regra para Perfil Personalizado: ocultar menus não permitidos
       if (user?.perfil === 'personalizado' && user.permissoes) {
         const permissoes = user.permissoes; // Type narrowing

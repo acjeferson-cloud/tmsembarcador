@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Command, Home, Package, Truck, FileText, Users, Globe, Calculator, Settings, BarChart3, Activity, Receipt, FileCheck, CreditCard, ShoppingCart, RotateCcw, FileDigit, Database, Building, MapPin, Map, AlertTriangle, XCircle, Key, DollarSign, Clock, Download, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SpotlightSearchProps {
   onNavigate: (page: string) => void;
@@ -17,6 +18,7 @@ interface SearchItem {
 
 export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ onNavigate }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -58,7 +60,12 @@ export const SpotlightSearch: React.FC<SpotlightSearchProps> = ({ onNavigate }) 
     { id: 'whatsapp-config', label: t('spotlight.items.whatsapp'), icon: Settings, color: 'text-green-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.whatsapp').split(', ') },
     { id: 'google-maps-config', label: t('spotlight.items.googleMaps'), icon: MapPin, color: 'text-red-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.googleMaps').split(', ') },
     { id: 'openai-config', label: t('spotlight.items.openai'), icon: Database, color: 'text-purple-500', category: t('spotlight.categories.Configurações'), keywords: t('spotlight.keywords.openai').split(', ') },
-  ];
+  ].filter(item => {
+    if (item.id === 'reverse-logistics' && user?.email !== 'jeferson.costa@logaxis.com.br') {
+      return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
