@@ -179,7 +179,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
 
     const itemData: RestrictedItem = {
       freight_rate_table_id: freightRateTableId,
-      item_code: restrictionType === 'custom_rule' ? undefined : formData.item_code,
+      item_code: restrictionType === 'custom_rule' ? 'REGRA_DINAMICA' : formData.item_code,
       item_description: restrictionType === 'custom_rule' ? `Regra ERP: ${formData.custom_rule_field} ${formData.custom_rule_operator} ${formData.custom_rule_value}` : formData.item_description,
       ncm_code: formData.ncm_code || undefined,
       ean_code: formData.ean_code || undefined,
@@ -299,7 +299,9 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                         {filteredItems.map((item) => (
                           <tr key={item.id} className="hover:bg-gray-50 dark:bg-gray-900">
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">{item.item_code || '-'}</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {item.custom_rule ? <span className="text-gray-400 italic">n/a</span> : (item.item_code || '-')}
+                              </span>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm text-gray-900 dark:text-white">{item.item_description}</span>

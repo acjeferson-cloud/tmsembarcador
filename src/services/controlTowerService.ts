@@ -34,53 +34,8 @@ export const controlTowerService = {
   async getKpiData(): Promise<KPIData> {
     console.log('=== INICIANDO BUSCA DE KPIs (MOCK DEBUG) ===');
     
-    // Se estiver em localhost, já retorna o mock imediatamente para evitar travamentos locais de autenticação/banco
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('Ambiente local detectado. Aplicando dados mockados imediatamente...');
-      return {
-        totalDeliveries: 1245,
-        inTransit: 312,
-        delivered: 933,
-        waitingCollection: 45,
-        cfv: 3.85,
-        custoPorKg: 0.87,
-        shareContrato: 82.5,
-        shareSpot: 17.5,
-        freteTotal: 84500,
-        faturamentoTotal: 2194805,
-        onTimeRate: 96.8
-      };
-    }
-
     const ctx = await TenantContextHelper.getCurrentContext();
     console.log('Current Context:', ctx);
-    
-    // MOCK DATA PARA DEMONSTRAÇÃO EM PRODUÇÃO (ALTERNATIVA 1)
-    const orgMatch = ctx?.organizationId === 'a7c49619-53f0-4401-9b17-2a830dd4da40';
-    const envMatch = ctx?.environmentId === 'b0d1aa42-38bb-4a33-8e51-0c6a0a390fd1';
-    const estabMatch = ctx?.establishmentId === '5ca0807a-7e5f-44fe-80c9-cb5e30d5d984';
-    
-    console.log('Match Org:', orgMatch, 'Match Env:', envMatch, 'Match Estab:', estabMatch);
-    
-    // Na demonstração em produção, vamos garantir que bate a organização e o ambiente.
-    const isMockEnv = orgMatch && envMatch;
-                      
-    if (isMockEnv) {
-      console.log('IDs de Demonstração detectados. Aplicando dados mockados...');
-      return {
-        totalDeliveries: 1245,
-        inTransit: 312,
-        delivered: 933,
-        waitingCollection: 45,
-        cfv: 3.85,
-        custoPorKg: 0.87,
-        shareContrato: 82.5,
-        shareSpot: 17.5,
-        freteTotal: 84500,
-        faturamentoTotal: 2194805,
-        onTimeRate: 96.8
-      };
-    }
     
     // Fallbacks
     let dailyData = {
