@@ -287,6 +287,12 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                             <div className="text-xs text-gray-500 dark:text-gray-400">TEC</div>
                             <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.tec || 0)}</div>
                           </div>
+                          {(result.calculationDetails.adicionalQuimico || 0) > 0 && (
+                            <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                              <div className="text-xs text-amber-600 dark:text-amber-500 font-semibold">Adicional Químico</div>
+                              <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.adicionalQuimico || 0)}</div>
+                            </div>
+                          )}
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.icms')}</div>
                             <div className="font-medium text-gray-900 dark:text-white flex items-baseline gap-2 mt-1">

@@ -23,6 +23,7 @@ export interface QuoteParams {
     ncmCode?: string;
     customFields?: any;
   }>;
+  hasChemical?: boolean;
 }
 
 export interface QuoteResult {
@@ -342,7 +343,8 @@ export const freightQuoteService = {
             weight: params.weight,
             value: params.cargoValue,
             volume: params.volumeQty,
-            m3: params.cubicMeters
+            m3: params.cubicMeters,
+            hasChemical: params.hasChemical
           },
           null,
           additionalFees

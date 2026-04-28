@@ -6,7 +6,7 @@ export interface AdditionalFee {
   id: string;
   freight_rate_table_id: string;
   freight_rate_id: string | null;
-  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC';
+  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'ADICIONAL_QUIMICO';
   business_partner_id: string | null;
   business_partner_document: string | null;
   consider_cnpj_root: boolean;

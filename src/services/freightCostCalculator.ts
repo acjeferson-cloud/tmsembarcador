@@ -1,17 +1,17 @@
 import { supabase } from '../lib/supabase';
 import { FreightRate, FreightRateDetail } from './freightRatesService';
 import { CTeWithRelations, CTeCarrierCost } from './ctesCompleteService';
-
 interface InvoiceData {
   weight: number;
   value: number;
   volume?: number;
   m3?: number;
+  hasChemical?: boolean;
 }
 
 interface AdditionalFee {
   id: string;
-  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC';
+  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'ADICIONAL_QUIMICO';
   fee_value: number;
   value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte';
   minimum_value: number;
@@ -31,6 +31,7 @@ interface CalculationResult {
   tde: number;
   trt: number;
   tec: number;
+  adicionalQuimico: number;
   outrosValores: number;
   icmsBase: number;
   icmsAliquota: number;
@@ -279,6 +280,7 @@ export const freightCostCalculator = {
       tde: 0,
       trt: 0,
       tec: 0,
+      adicionalQuimico: 0,
       outrosValores: 0,
       icmsBase: 0,
       icmsAliquota: 0,
@@ -305,6 +307,7 @@ export const freightCostCalculator = {
       tde: 0,
       trt: 0,
       tec: 0,
+      adicionalQuimico: 0,
       outrosValores: 0,
       icmsBase: 0,
       icmsAliquota: 0,
@@ -583,8 +586,49 @@ export const freightCostCalculator = {
       weight: totalWeight,
       value: totalValue,
       volume: totalVolume,
-      m3: totalM3
+      m3: totalM3,
+      hasChemical: this.extractChemicalFlag(cte)
     };
+  },
+
+  /**
+   * Verifica se o CT-e possui produtos químicos baseado no NCM do XML
+   */
+  extractChemicalFlag(cte: CTeWithRelations): boolean {
+    if (!cte.xml_data) return false;
+    try {
+      const xmlData = typeof cte.xml_data === 'string' ? JSON.parse(cte.xml_data) : cte.xml_data;
+      if (xmlData.infCte?.infDoc?.infNFe) {
+        const infNFe = Array.isArray(xmlData.infCte.infDoc.infNFe)
+          ? xmlData.infCte.infDoc.infNFe
+          : [xmlData.infCte.infDoc.infNFe];
+        
+        // Verifica todos os itens de todas as notas do CT-e
+        // Assumindo estrutura padrão onde NFe contém det (detalhes) com prod (produto)
+        for (const nfe of infNFe) {
+          // A estrutura exata do NCM no resumo do XML do CT-e pode não conter os detalhes dos produtos da NF-e
+          // Se o XML do CT-e for completo com chaves, usamos os produtos associados no DB:
+          // Como essa função é síncrona, fazemos fallback na estrutura XML, mas o ideal seria checar as invoicesNfe
+        }
+      }
+      
+      // Fallback: verificar faturas vinculadas
+      if (cte.invoices && cte.invoices.length > 0) {
+        for (const invoice of cte.invoices) {
+          if (invoice.products && invoice.products.length > 0) {
+            for (const product of invoice.products) {
+              const ncm = product.ncm || product.ncm_code;
+              if (ncm && (ncm.startsWith('28') || ncm.startsWith('29') || ncm.startsWith('38'))) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error extracting chemical flag', e);
+    }
+    return false;
   },
 
   /**
@@ -682,6 +726,7 @@ export const freightCostCalculator = {
     let tde = 0;
     let trt = 0;
     let tec = 0;
+    let adicionalQuimico = 0;
 
     if (!semTaxas && additionalFees.length > 0) {
 
@@ -717,6 +762,11 @@ export const freightCostCalculator = {
             tec += feeValue;
 
             break;
+          case 'ADICIONAL_QUIMICO':
+            if (invoiceData.hasChemical) {
+              adicionalQuimico += feeValue;
+            }
+            break;
         }
       });
 
@@ -728,7 +778,7 @@ export const freightCostCalculator = {
 
     // 11. BASE DE CÁLCULO (sem outros valores) - somar valores já arredondados
     const baseCalculo = this.roundValue(fretePeso + freteValor + gris + pedagio + tas + seccat +
-                        despacho + itr + coletaEntrega + tda + tde + trt + tec + taxaAdicional);
+                        despacho + itr + coletaEntrega + tda + tde + trt + tec + adicionalQuimico + taxaAdicional);
 
     // 13. ICMS - Calcular ANTES de "outros valores"
     const icmsAliquota = parseFloat(tariff.aliquota_icms?.toString() || '0');
@@ -1048,6 +1098,7 @@ export const freightCostCalculator = {
       { cte_id: cteId, cost_type: 'tde', cost_value: calculation.tde },
       { cte_id: cteId, cost_type: 'trt', cost_value: calculation.trt },
       { cte_id: cteId, cost_type: 'tec', cost_value: calculation.tec },
+      { cte_id: cteId, cost_type: 'adicional_quimico', cost_value: calculation.adicionalQuimico || 0 },
       { cte_id: cteId, cost_type: 'other_value', cost_value: calculation.outrosValores },
       { cte_id: cteId, cost_type: 'icms_base', cost_value: calculation.icmsBase },
       { cte_id: cteId, cost_type: 'icms_value', cost_value: calculation.icmsValor },

@@ -640,7 +640,7 @@ const FreightQuote: React.FC = () => {
               </div>
 
               {/* Parametros da Carga em Grid Line */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
                 
                 {/* Parceiro */}
                 <div className="lg:col-span-1">
@@ -729,6 +729,25 @@ const FreightQuote: React.FC = () => {
                     placeholder={t('freightQuote.form.cubicMetersPlaceholder')}
                     className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
                   />
+                </div>
+
+                {/* Produto Químico Toggle */}
+                <div className="flex items-center justify-center bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 h-[46px] px-3">
+                  <label className="flex items-center cursor-pointer">
+                    <div className="relative">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only" 
+                        checked={formData.hasChemical || false}
+                        onChange={(e) => setFormData({ ...formData, hasChemical: e.target.checked })}
+                      />
+                      <div className={`block w-10 h-6 rounded-full transition-colors ${formData.hasChemical ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                      <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.hasChemical ? 'transform translate-x-4' : ''}`}></div>
+                    </div>
+                    <div className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Produto Químico?
+                    </div>
+                  </label>
                 </div>
 
               </div>
