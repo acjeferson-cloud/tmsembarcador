@@ -401,7 +401,11 @@ export const carriersService = {
           contact_types: c.contact_types || [],
           is_primary: c.is_primary || false
         }));
-        await supabase.from('carrier_contacts').insert(contactsToInsert);
+        const { error: insertError } = await supabase.from('carrier_contacts').insert(contactsToInsert);
+        if (insertError) {
+          console.error("Erro ao inserir contatos no create:", insertError);
+          throw new Error(`Erro ao salvar contatos: ${insertError.message}`);
+        }
       }
 
       const carrierWithContacts = { ...data, contacts: (carrier as any).contacts || [] };
@@ -507,7 +511,10 @@ export const carriersService = {
       }
 
       if ((carrier as any).contacts !== undefined) {
-        await supabase.from('carrier_contacts').delete().eq('carrier_id', id);
+        const { error: deleteError } = await supabase.from('carrier_contacts').delete().eq('carrier_id', id);
+        if (deleteError) {
+          console.error("Erro ao excluir contatos antigos:", deleteError);
+        }
         
         if ((carrier as any).contacts.length > 0) {
           const ctx = await TenantContextHelper.getCurrentContext();
@@ -522,7 +529,11 @@ export const carriersService = {
             contact_types: c.contact_types || [],
             is_primary: c.is_primary || false
           }));
-          await supabase.from('carrier_contacts').insert(contactsToInsert);
+          const { error: insertError } = await supabase.from('carrier_contacts').insert(contactsToInsert);
+          if (insertError) {
+            console.error("Erro ao inserir contatos no update:", insertError);
+            throw new Error(`Erro ao salvar contatos: ${insertError.message}`);
+          }
         }
       }
 

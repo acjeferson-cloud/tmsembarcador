@@ -109,15 +109,37 @@ export const Carriers: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleEditCarrier = (carrier: any) => {
-    setEditingCarrier(carrier);
-    setShowForm(true);
+  const handleEditCarrier = async (carrier: any) => {
+    try {
+      setIsLoading(true);
+      const fullCarrier = await carriersService.getById(carrier.id);
+      if (fullCarrier) {
+        setEditingCarrier(fullCarrier);
+        setShowForm(true);
+      } else {
+        setToast({ message: t('carriers.messages.loadError'), type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: t('carriers.messages.loadError'), type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleViewCarrier = (carrier: any) => {
-    setViewingCarrier(carrier);
-    setShowView(true);
-    setEditMode(false);
+  const handleViewCarrier = async (carrier: any) => {
+    try {
+      setIsLoading(true);
+      const fullCarrier = await carriersService.getById(carrier.id);
+      if (fullCarrier) {
+        setViewingCarrier(fullCarrier);
+        setShowView(true);
+        setEditMode(false);
+      }
+    } catch (error) {
+      setToast({ message: t('carriers.messages.loadError'), type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
