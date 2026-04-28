@@ -371,7 +371,7 @@ export const pickupRequestService = {
             }
 
             const establishmentObj: any = await establishmentsService.getById(params.establishmentId);
-            const logoUrl = establishmentObj?.logo_claro_url || 'https://raw.githubusercontent.com/acjeferson-cloud/tmsembarcador/main/public/logo-logaxis.png';
+            const logoUrl = establishmentObj?.logo_light_base64 || 'https://raw.githubusercontent.com/acjeferson-cloud/tmsembarcador/main/public/logo-logaxis.png';
             const signName = establishmentObj?.fantasia || establishmentObj?.razao_social || 'Sua Empresa';
 
             let htmlBody = `
