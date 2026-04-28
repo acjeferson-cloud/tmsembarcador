@@ -205,6 +205,7 @@ export const Carriers: React.FC = () => {
         sap_cardcode: carrierData.sapCardCode || null,
         sap_bpl_id: carrierData.sapBplId || null,
         sap_due_days: carrierData.sapDueDays ? parseInt(carrierData.sapDueDays.toString(), 10) : 0,
+        contacts: carrierData.contacts || [],
       };
       if (editingCarrier) {
         const updated = await carriersService.update(editingCarrier.id, {
