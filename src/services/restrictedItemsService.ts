@@ -2,14 +2,21 @@ import { supabase } from '../lib/supabase';
 import { TenantContextHelper } from '../utils/tenantContext';
 
 
+export interface CustomRule {
+  field_name: string;
+  operator: 'equals' | 'not_equals' | 'contains';
+  value: string;
+}
+
 export interface RestrictedItem {
   id?: string;
   freight_rate_table_id: string;
   catalog_item_id?: string;
-  item_code: string;
-  item_description: string;
+  item_code?: string;
+  item_description?: string;
   ncm_code?: string;
   ean_code?: string;
+  custom_rule?: CustomRule | null;
   created_at?: string;
   updated_at?: string;
   catalog_items?: any;
@@ -60,10 +67,11 @@ export const restrictedItemsService = {
         .insert({
           freight_rate_table_id: item.freight_rate_table_id,
           catalog_item_id: item.catalog_item_id || null,
-          item_code: item.item_code.trim(),
-          item_description: item.item_description.trim(),
+          item_code: item.item_code?.trim() || null,
+          item_description: item.item_description?.trim() || null,
           ncm_code: item.ncm_code?.trim() || null,
           ean_code: item.ean_code?.trim() || null,
+          custom_rule: item.custom_rule || null,
           organization_id: organizationId,
           environment_id: environmentId,
           created_at: new Date().toISOString(),
@@ -88,10 +96,11 @@ export const restrictedItemsService = {
         updated_at: new Date().toISOString()
       };
 
-      if (item.item_code) updateData.item_code = item.item_code.trim();
-      if (item.item_description) updateData.item_description = item.item_description.trim();
+      if (item.item_code !== undefined) updateData.item_code = item.item_code?.trim() || null;
+      if (item.item_description !== undefined) updateData.item_description = item.item_description?.trim() || null;
       if (item.ncm_code !== undefined) updateData.ncm_code = item.ncm_code?.trim() || null;
       if (item.ean_code !== undefined) updateData.ean_code = item.ean_code?.trim() || null;
+      if (item.custom_rule !== undefined) updateData.custom_rule = item.custom_rule;
 
       const { error } = await supabase
         .from('freight_rate_restricted_items')

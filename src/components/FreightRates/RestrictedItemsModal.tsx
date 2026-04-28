@@ -27,7 +27,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; itemId?: string }>({ isOpen: false });
 
   // Hybrid Form State
-  const [restrictionType, setRestrictionType] = useState<'family' | 'specific'>('family');
+  const [restrictionType, setRestrictionType] = useState<'family' | 'specific' | 'custom_rule'>('family');
   
   // Specific Catalog Item Search
   const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
@@ -39,7 +39,10 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
     item_code: '',
     item_description: '',
     ncm_code: '',
-    ean_code: ''
+    ean_code: '',
+    custom_rule_field: '',
+    custom_rule_operator: 'equals' as 'equals' | 'not_equals' | 'contains',
+    custom_rule_value: ''
   });
 
   useEffect(() => {
@@ -90,14 +93,19 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       item_code: '',
       item_description: '',
       ncm_code: '',
-      ean_code: ''
+      ean_code: '',
+      custom_rule_field: '',
+      custom_rule_operator: 'equals',
+      custom_rule_value: ''
     });
     setShowForm(true);
   };
 
   const handleEdit = (item: RestrictedItem) => {
     setEditingItem(item);
-    if (item.catalog_item_id) {
+    if (item.custom_rule) {
+      setRestrictionType('custom_rule');
+    } else if (item.catalog_item_id) {
       setRestrictionType('specific');
       setSelectedCatalogItem(item.catalog_items || null);
       setCatalogSearchTerm(item.item_description || '');
@@ -105,10 +113,13 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       setRestrictionType('family');
     }
     setFormData({
-      item_code: item.item_code,
-      item_description: item.item_description,
+      item_code: item.item_code || '',
+      item_description: item.item_description || '',
       ncm_code: item.ncm_code || '',
-      ean_code: item.ean_code || ''
+      ean_code: item.ean_code || '',
+      custom_rule_field: item.custom_rule?.field_name || '',
+      custom_rule_operator: item.custom_rule?.operator || 'equals',
+      custom_rule_value: item.custom_rule?.value || ''
     });
     setShowForm(true);
   };
@@ -135,6 +146,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
     setCatalogSearchTerm(item.item_description);
     setCatalogSearchResults([]);
     setFormData({
+      ...formData,
       item_code: item.item_code,
       item_description: item.item_description,
       ncm_code: item.ncm_code || '',
@@ -160,13 +172,23 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
       return;
     }
 
+    if (restrictionType === 'custom_rule' && (!formData.custom_rule_field || !formData.custom_rule_value)) {
+      setToast({ message: 'Preencha os campos da regra customizada.', type: 'error' });
+      return;
+    }
+
     const itemData: RestrictedItem = {
       freight_rate_table_id: freightRateTableId,
-      item_code: formData.item_code,
-      item_description: formData.item_description,
+      item_code: restrictionType === 'custom_rule' ? undefined : formData.item_code,
+      item_description: restrictionType === 'custom_rule' ? `Regra ERP: ${formData.custom_rule_field} ${formData.custom_rule_operator} ${formData.custom_rule_value}` : formData.item_description,
       ncm_code: formData.ncm_code || undefined,
       ean_code: formData.ean_code || undefined,
-      catalog_item_id: restrictionType === 'specific' ? selectedCatalogItem?.id : undefined
+      catalog_item_id: restrictionType === 'specific' ? selectedCatalogItem?.id : undefined,
+      custom_rule: restrictionType === 'custom_rule' ? {
+        field_name: formData.custom_rule_field,
+        operator: formData.custom_rule_operator,
+        value: formData.custom_rule_value
+      } : null
     };
 
     if (editingItem?.id) {
@@ -277,13 +299,17 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                         {filteredItems.map((item) => (
                           <tr key={item.id} className="hover:bg-gray-50 dark:bg-gray-900">
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">{item.item_code}</span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">{item.item_code || '-'}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm text-gray-900 dark:text-white">{item.item_description}</span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
-                              {item.catalog_item_id ? (
+                              {item.custom_rule ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Atributo Dinâmico (ERP)
+                                </span>
+                              ) : item.catalog_item_id ? (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
                                   Item Específico
                                 </span>
@@ -353,11 +379,11 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex gap-4 mb-6">
+                <div className="flex flex-wrap gap-4 mb-6">
                    <button
                      type="button"
                      onClick={() => setRestrictionType('family')}
-                     className={`flex-1 py-3 px-4 rounded-lg flex flex-col items-center justify-center border-2 transition-colors ${restrictionType === 'family' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                     className={`flex-1 min-w-[200px] py-3 px-4 rounded-lg flex flex-col items-center justify-center border-2 transition-colors ${restrictionType === 'family' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                    >
                       <span className="font-semibold text-gray-900">Por Família (NCM Livre)</span>
                       <span className="text-xs text-gray-500 text-center mt-1">Bloquear todos os itens preenchendo o NCM.</span>
@@ -365,10 +391,18 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                    <button
                      type="button"
                      onClick={() => setRestrictionType('specific')}
-                     className={`flex-1 py-3 px-4 rounded-lg flex flex-col items-center justify-center border-2 transition-colors ${restrictionType === 'specific' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                     className={`flex-1 min-w-[200px] py-3 px-4 rounded-lg flex flex-col items-center justify-center border-2 transition-colors ${restrictionType === 'specific' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                    >
                       <span className="font-semibold text-gray-900 flex items-center gap-1"><Tag className="w-4 h-4" /> Item Específico</span>
                       <span className="text-xs text-gray-500 text-center mt-1">Busque no catálogo para bloquear exato.</span>
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => setRestrictionType('custom_rule')}
+                     className={`flex-1 min-w-[200px] py-3 px-4 rounded-lg flex flex-col items-center justify-center border-2 transition-colors ${restrictionType === 'custom_rule' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                   >
+                      <span className="font-semibold text-gray-900">Atributo Dinâmico (ERP)</span>
+                      <span className="text-xs text-gray-500 text-center mt-1">Bloquear através de campos customizados no JSON.</span>
                    </button>
                 </div>
 
@@ -426,7 +460,53 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                {restrictionType === 'custom_rule' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <h4 className="font-medium text-blue-900 mb-4 flex items-center gap-2">Construtor de Regra Dinâmica</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Campo do ERP (Chave)</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.custom_rule_field}
+                          onChange={(e) => setFormData({ ...formData, custom_rule_field: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="Ex: U_TipoItem"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Condição</label>
+                        <select
+                          value={formData.custom_rule_operator}
+                          onChange={(e) => setFormData({ ...formData, custom_rule_operator: e.target.value as 'equals' | 'not_equals' | 'contains' })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        >
+                          <option value="equals">Igual a</option>
+                          <option value="not_equals">Diferente de</option>
+                          <option value="contains">Contém o texto</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.custom_rule_value}
+                          onChange={(e) => setFormData({ ...formData, custom_rule_value: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="Ex: peça"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-blue-700 mt-3">
+                      A restrição ocorrerá se o valor do campo especificado na integração (Ex: custom_fields.U_TipoItem) atender à condição.
+                    </p>
+                  </div>
+                )}
+
+                {restrictionType !== 'custom_rule' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {t('carriers.freightRates.restrictedItems.itemCode')}
@@ -492,6 +572,7 @@ const RestrictedItemsModal: React.FC<RestrictedItemsModalProps> = ({
                     </div>
                   )}
                 </div>
+                )}
 
                 <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <button

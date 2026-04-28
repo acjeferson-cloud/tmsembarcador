@@ -21,6 +21,7 @@ export interface QuoteParams {
     itemCode?: string;
     eanCode?: string;
     ncmCode?: string;
+    customFields?: any;
   }>;
 }
 
@@ -217,7 +218,7 @@ export const freightQuoteService = {
           .from('freight_rate_restricted_items')
           .select(`
             freight_rate_table_id,
-            item_code, ean_code, ncm_code,
+            item_code, ean_code, ncm_code, custom_rule,
             catalog_items (
               item_code, ean_code, ncm_code
             )
@@ -239,7 +240,24 @@ export const freightQuoteService = {
               const ncmCode = item.ncmCode?.replace(/\D/g, ''); // strip punctuation just in case
               
               for (const restriction of myRestrictions) {
-                // Determine rules exactly as user requested:
+                if (restriction.custom_rule) {
+                  const rule = restriction.custom_rule;
+                  const metaValue = item.customFields?.[rule.field_name];
+                  
+                  if (metaValue !== undefined && metaValue !== null) {
+                    let matches = false;
+                    const val = String(metaValue).toLowerCase();
+                    const target = String(rule.value).toLowerCase();
+                    
+                    if (rule.operator === 'equals' && val === target) matches = true;
+                    if (rule.operator === 'not_equals' && val !== target) matches = true;
+                    if (rule.operator === 'contains' && val.includes(target)) matches = true;
+                    
+                    if (matches) return false; // Match! Block carrier
+                  }
+                  continue; // It's a custom rule, so skip standard NCM/Code checks
+                }
+
                 // 1. Match by NCM
                 const rNcm = restriction.catalog_items?.ncm_code || restriction.ncm_code;
                 if (rNcm && ncmCode) {
