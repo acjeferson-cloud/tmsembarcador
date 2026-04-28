@@ -13,10 +13,14 @@ serve(async (req) => {
 
   try {
     const payloadBody = await req.json();
-    const { partnerId, type, partnerName, orgId, envId, estabCode } = payloadBody;
+    const { partnerId, type, partnerName, orgId, envId, estabCode, cteData } = payloadBody;
 
-    if (!partnerId || !type || !partnerName || !orgId) {
-      throw new Error("Missing required fields: partnerId, type, partnerName, or orgId");
+    if (!type || !orgId) {
+      throw new Error("Missing required fields: type or orgId");
+    }
+    
+    if (type !== 'cte_comparison' && (!partnerId || !partnerName)) {
+      throw new Error("Missing required fields: partnerId or partnerName for partner insight");
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -25,17 +29,21 @@ serve(async (req) => {
     // Utilizando Admin Client (TMS utiliza auth custom via RPC, então bypassamos RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check Cache (Valid for 24h)
-    const { data: cached } = await supabase
-      .from('ai_insights_cache')
-      .select('insight_text, created_at')
-      .eq('partner_id', partnerId)
-      .eq('type', type)
-      .eq('organization_id', orgId)
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Check Cache (Valid for 24h) - Skip cache for cte_comparison because the payload can change dynamically
+    let cached = null;
+    if (type !== 'cte_comparison') {
+      const { data } = await supabase
+        .from('ai_insights_cache')
+        .select('insight_text, created_at')
+        .eq('partner_id', partnerId)
+        .eq('type', type)
+        .eq('organization_id', orgId)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      cached = data;
+    }
 
     if (cached) {
       return new Response(JSON.stringify({ insight: cached.insight_text, cached: true }), {
@@ -211,9 +219,37 @@ REGRAS OBRIGATÓRIAS:
 2. Baseie TUDO apenas nos KPIs do JSON.
 3. Se deliveries_pending for alto, direcione o aviso para não atrasar as parcerias de recebimento.
 4. Nunca mande mensagem "olá", seja estritamente focado nos dados.`;
+    } else if (type === 'cte_comparison') {
+      kpis = cteData || {};
+      systemPrompt = `Você é um auditor logístico sênior especializado em conferência de fretes rodoviários no Brasil. Sua tarefa é analisar o payload JSON a seguir que contém os valores cobrados pela transportadora (Conhecimento) vs os valores calculados pelo sistema (Calculado) de um CT-e.
+
+REGRAS OBRIGATÓRIAS:
+1. Foco Cirúrgico: Identifique e isole imediatamente apenas as divergências. Preste atenção especial em discrepâncias nas taxas secundárias (ex: 'Outros valores', 'Pedágio', 'GRIS', 'Despacho', 'Base ICMS', 'ITR', 'TAS', 'SECCAT', 'Coleta/Entrega').
+2. Demonstração Matemática: Mostre em formato de texto como os centavos e valores não batem (Ex: Pedágio Calculado (R$ 6,02) - Pedágio Conhecimento (R$ 6,01) = Divergência de -R$ 0,01). Utilize os dados do valor total e peso se fornecidos para tentar reproduzir a conta se possível.
+3. Diagnóstico e Causa Raiz: Avalie e classifique o motivo provável do erro:
+- Se a divergência for nos centavos (± R$ 0,01 a R$ 0,05) em bases de cálculo: Diagnostique como **Arredondamento Decimal**.
+- Se a taxa estiver zerada no cálculo, mas cobrada no CT-e (ex: 'Outros Valores' = 29,65 no CT-e e 0,00 no calculado): Diagnostique como **Falta de Regra na Tabela de Frete** e recomende o cadastro ou revisão.
+- Se os cálculos forem substancialmente distintos: Diagnostique como possível **Erro de cálculo do Transportador** ou peso cubado divergente.
+
+Siga exatamente a estrutura abaixo:
+✨ INSIGHT DE AUDITORIA - CT-e {Numero_CTe}
+
+📊 Resumo da Divergência:
+[Explicar a maior divergência identificada]
+
+🧮 Demonstração Matemática:
+[Mostrar a conta exata da diferença]
+
+🩺 Diagnóstico e Causa Raiz:
+[Classificar o motivo provável do erro e dar uma recomendação acionável]
+
+Seja direto, técnico e focado puramente nos dados fornecidos.`;
     }
 
-    const payload = {
+    const payload = type === 'cte_comparison' ? {
+      context: 'cte_values_auditing',
+      data: kpis
+    } : {
       context: `${type}_performance_analysis`,
       partner_name: partnerName,
       period: "Últimos 30 dias",
@@ -232,7 +268,7 @@ REGRAS OBRIGATÓRIAS:
         model: openaiModel,
         temperature: openaiTemperature,
         messages: [
-          { role: "system", content: systemPrompt.replace('{Nome}', partnerName) },
+          { role: "system", content: systemPrompt.replace('{Nome}', partnerName || '').replace('{Numero_CTe}', cteData?.number || '') },
           { role: "user", content: JSON.stringify(payload) }
         ]
       })
@@ -249,35 +285,37 @@ REGRAS OBRIGATÓRIAS:
 
     // Salvar Cache de forma simples (UPSERT)
     // Como a constraint unique é (organization_id, partner_id, type), nós buscamos se já existe, se não insere, se existe faz update
-    try {
-      const { data: existing } = await supabase
-        .from('ai_insights_cache')
-        .select('id')
-        .eq('organization_id', orgId)
-        .eq('partner_id', partnerId)
-        .eq('type', type)
-        .maybeSingle();
-      
-      if (existing) {
-        await supabase.from('ai_insights_cache').update({
-          insight_text: resultText,
-          environment_id: envId,
-          establishment_code: estabCode,
-          created_at: new Date().toISOString()
-        }).eq('id', existing.id);
-      } else {
-        await supabase.from('ai_insights_cache').insert({
-          organization_id: orgId,
-          environment_id: envId,
-          establishment_code: estabCode,
-          partner_id: partnerId,
-          type: type,
-          insight_text: resultText
-        });
+    if (type !== 'cte_comparison') {
+      try {
+        const { data: existing } = await supabase
+          .from('ai_insights_cache')
+          .select('id')
+          .eq('organization_id', orgId)
+          .eq('partner_id', partnerId)
+          .eq('type', type)
+          .maybeSingle();
+        
+        if (existing) {
+          await supabase.from('ai_insights_cache').update({
+            insight_text: resultText,
+            environment_id: envId,
+            establishment_code: estabCode,
+            created_at: new Date().toISOString()
+          }).eq('id', existing.id);
+        } else {
+          await supabase.from('ai_insights_cache').insert({
+            organization_id: orgId,
+            environment_id: envId,
+            establishment_code: estabCode,
+            partner_id: partnerId,
+            type: type,
+            insight_text: resultText
+          });
+        }
+      } catch(dbErr) {
+        console.error("[generate-partner-insight] Cache insertion error:", dbErr);
+        // Fails silently for cache errors to still return the result
       }
-    } catch(dbErr) {
-      console.error("[generate-partner-insight] Cache insertion error:", dbErr);
-      // Fails silently for cache errors to still return the result
     }
 
     return new Response(JSON.stringify({ insight: resultText, cached: false }), {

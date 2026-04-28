@@ -1,6 +1,109 @@
-import React from 'react';
-import { X, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CheckCircle, AlertCircle, Sparkles, AlertTriangle, XCircle } from 'lucide-react';
 import { CTeWithRelations } from '../../services/ctesCompleteService';
+import { useInnovation, INNOVATION_IDS } from '../../hooks/useInnovation';
+import { aiInsightService } from '../../services/aiInsightService';
+import { Toast } from '../common/Toast';
+
+interface AIInsightModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cteNumber: string;
+  isLoading: boolean;
+  insight: string;
+}
+
+const AIInsightModal: React.FC<AIInsightModalProps> = ({
+  isOpen,
+  onClose,
+  cteNumber,
+  isLoading,
+  insight
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Auditoria com IA
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Análise inteligente das divergências do CT-e Nº {cteNumber}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Gerando análise inteligente...</p>
+            </div>
+          ) : insight ? (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-start space-x-3">
+                  <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      Análise Gerada por IA
+                    </h3>
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        {insight}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-1" />
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                    Esta análise foi gerada por inteligência artificial e deve ser usada como apoio na auditoria. Valide os diagnósticos antes de tomar decisões financeiras.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">
+                Não foi possível gerar a análise. Tente novamente.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface CTeValuesComparisonModalProps {
   cte: CTeWithRelations;
@@ -18,8 +121,16 @@ interface TaxComparison {
 
 export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> = ({
   cte,
-  onClose
+  onClose,
+  onApproveDivergence,
+  onBlockDivergence
 }) => {
+  const { isActive: openaiActive } = useInnovation(INNOVATION_IDS.OPENAI);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiInsight, setAiInsight] = useState('');
+  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   const formatCurrency = (value: number): string => {
     return value.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
@@ -131,6 +242,51 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
   const equalCount = taxComparisons.filter(t => t.isEqual).length;
   const differentCount = taxComparisons.filter(t => !t.isEqual).length;
 
+  const generateInsight = async () => {
+    if (!openaiActive) {
+      setToast({ message: 'Recurso não contratado. Ative em Inovações & Sugestões.', type: 'error' });
+      return;
+    }
+
+    setIsGeneratingInsight(true);
+    setShowAIModal(true);
+    setAiInsight('');
+
+    try {
+      // Monta o payload com os dados financeiros do CT-e
+      const payloadData = {
+        number: cte.number,
+        total_value_cte: totalConhecimento,
+        total_value_calculated: totalCalculado,
+        total_weight: cte.total_weight,
+        taxes: taxComparisons.map(t => ({
+          name: t.label,
+          cte_value: t.conhecimento,
+          calculated_value: t.calculado,
+          divergence: Number((t.conhecimento - t.calculado).toFixed(2))
+        }))
+      };
+
+      const response = await aiInsightService.generateInsight({
+        type: 'cte_comparison',
+        cteData: payloadData
+      });
+
+      if (response.error) {
+        setToast({ message: response.error, type: 'error' });
+        setShowAIModal(false);
+      } else {
+        setAiInsight(response.insight);
+      }
+    } catch (error: any) {
+      setAiInsight('');
+      setToast({ message: error.message || 'Erro ao gerar análise com IA', type: 'error' });
+      setShowAIModal(false);
+    } finally {
+      setIsGeneratingInsight(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
@@ -141,12 +297,27 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
               CT-e Nº {cte.number} - Série {cte.series || 'N/A'}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={generateInsight}
+              disabled={!openaiActive || isGeneratingInsight}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                openaiActive
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              title={!openaiActive ? 'Recurso não contratado. Ative em Inovações & Sugestões.' : ''}
+            >
+              <Sparkles size={20} className={isGeneratingInsight ? 'animate-spin' : ''} />
+              <span className="font-medium text-sm">{isGeneratingInsight ? 'Analisando...' : 'Insight IA'}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors ml-4"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-4">
@@ -296,6 +467,22 @@ export const CTeValuesComparisonModal: React.FC<CTeValuesComparisonModalProps> =
           </button>
         </div>
       </div>
+
+      <AIInsightModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        cteNumber={cte.number?.toString() || 'N/A'}
+        isLoading={isGeneratingInsight}
+        insight={aiInsight}
+      />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
