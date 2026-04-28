@@ -240,7 +240,14 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     );
     if (confirmed) {
       if (!rateId.startsWith('temp-')) {
-        setDeletedRateIds(prev => [...prev, rateId]);
+        try {
+          await freightRatesService.deleteRate(rateId);
+          setToast({ message: 'Tarifa excluída com sucesso!', type: 'success' });
+        } catch (error) {
+          console.error(`Erro ao excluir tarifa ${rateId}:`, error);
+          setToast({ message: 'Erro ao excluir tarifa.', type: 'error' });
+          return;
+        }
       }
       setTarifas(prev => prev.filter(tarifa => tarifa.id !== rateId));
     }
