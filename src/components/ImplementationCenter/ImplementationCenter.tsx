@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug, Lock } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug, Lock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import { DeployAgent } from '../DeployAgent/DeployAgent';
 import { SyncLogsViewer } from './SyncLogsViewer';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
@@ -23,8 +23,6 @@ const ImplementationCenter: React.FC = () => {
   const { user, currentEstablishment } = useAuth();
   const { t } = useTranslation();
   
-  const isAdmin = user?.perfil?.toLowerCase() === 'administrador';
-  
   const breadcrumbItems = [
     { label: t('implementationCenter.title'), current: true }
   ];
@@ -41,6 +39,19 @@ const ImplementationCenter: React.FC = () => {
   // ERP Integration state
   const [selectedERP, setSelectedERP] = useState('');
   const [isBplIdLocked, setIsBplIdLocked] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    connection: false,
+    rules: false,
+    fiscalCte: false,
+    fiscalBill: false,
+    additional: false,
+    sync: false,
+    logs: false
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
   const [erpConfig, setErpConfig] = useState({
     serviceLayerAddress: '',
     port: '',
@@ -137,11 +148,8 @@ const ImplementationCenter: React.FC = () => {
         password: config.password || '',
         database: config.database || '',
         sapBplId: config.sap_bpl_id || '',
-        cteTaxCode: config.metadata?.cte_tax_code || '',
         cteIntegrationType: config.cte_integration_type || 'draft',
         cteModel: config.cte_model || '',
-        invoiceModel: config.invoice_model || '',
-        invoiceDefaultItem: config.invoice_default_item || '',
         billingNFeItem: config.billing_nfe_item || '',
         billingUsage: config.billing_usage || '',
         billingControlAccount: config.billing_control_account || '',
@@ -859,22 +867,7 @@ const ImplementationCenter: React.FC = () => {
         {/* ERP Integration Tab */}
         {activeTab === 'erp-integration' && (
           <div className="space-y-6">
-            {!isAdmin && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <Shield className="h-5 w-5 text-yellow-400" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">
-                      <strong>Modo Leitura:</strong> Apenas usuários com perfil de Administrador podem realizar modificações nesta aba.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 ${!isAdmin ? 'opacity-90' : ''}`}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Settings className="w-6 h-6 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configuração de Integração ERP</h3>
@@ -896,7 +889,7 @@ const ImplementationCenter: React.FC = () => {
                       <Download className="w-4 h-4" />
                       {t('implementationCenter.erpIntegration.template.downloadBtn')}
                     </button>
-                    <label className={`px-4 py-2 ${!isAdmin ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'} text-white rounded-lg flex items-center gap-2`}>
+                    <label className="px-4 py-2 bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-lg flex items-center gap-2">
                       <Upload className="w-4 h-4" />
                       {t('implementationCenter.erpIntegration.template.importBtn')}
                       <input
@@ -904,7 +897,7 @@ const ImplementationCenter: React.FC = () => {
                         accept=".xlsx,.xls"
                         onChange={handleERPFileUpload}
                         className="hidden"
-                        disabled={isLoading || !isAdmin}
+                        disabled={isLoading}
                       />
                     </label>
                   </div>
@@ -934,7 +927,7 @@ const ImplementationCenter: React.FC = () => {
                 )}
               </div>
 
-              <fieldset disabled={!isAdmin} className="space-y-6 group">
+              <fieldset className="space-y-6 group">
               {/* ERP Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -960,12 +953,20 @@ const ImplementationCenter: React.FC = () => {
               {selectedERP === 'sap-business-one' && (
                 <div className="space-y-6">
                   {/* Connection Settings */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-green-600" />
-                      Configurações de Conexão
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('connection')}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-green-600" />
+                        Configurações de Conexão
+                      </h4>
+                      {expandedSections.connection ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                    </button>
+                    {expandedSections.connection && (
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           {t('implementationCenter.erpIntegration.connection.serviceLayerAddress')}
@@ -1050,15 +1051,24 @@ const ImplementationCenter: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  )}
+                </div>
 
                   {/* Regras Essenciais */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-blue-600" />
-                      Regras Essenciais
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('rules')}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-blue-600" />
+                        Regras Essenciais
+                      </h4>
+                      {expandedSections.rules ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                    </button>
+                    {expandedSections.rules && (
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Tipo de integração
@@ -1074,16 +1084,37 @@ const ImplementationCenter: React.FC = () => {
                           <option value="auto_entry">Automático - Nota Fiscal de Entrada</option>
                         </select>
                       </div>
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Parâmetros Fiscais (CT-e) */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                      Parâmetros Fiscais (CT-e)
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('fiscalCte')}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+                        Parâmetros Fiscais (CT-e)
+                      </h4>
+                      {expandedSections.fiscalCte ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                    </button>
+                    {expandedSections.fiscalCte && (
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="md:col-span-2 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2 mb-2">
+                          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                          <div>
+                            <strong>Como preencher (CT-e):</strong>
+                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                              <li><strong>Modelo de CT-e:</strong> Informe o código do modelo fiscal (ex: 57).</li>
+                              <li><strong>Item padrão:</strong> Código do item genérico de frete cadastrado no SAP (ex: FRETE).</li>
+                              <li><strong>Código de Utilização:</strong> Código numérico da utilização financeira no SAP para CT-e (ex: 2).</li>
+                              <li><strong>Conta Controle:</strong> Conta contábil transitória de provisão onde o CT-e será alocado (ex: 2.1.01.001).</li>
+                            </ul>
+                          </div>
+                        </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Modelo de CT-e
@@ -1122,18 +1153,7 @@ const ImplementationCenter: React.FC = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Código do Imposto (TaxCode)
-                        </label>
-                        <input
-                          type="text"
-                          value={erpConfig.cteTaxCode}
-                          onChange={(e) => handleErpConfigChange('cteTaxCode', e.target.value)}
-                          placeholder="Ex: C020, I010..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Conta Controle de CT-e
@@ -1147,41 +1167,36 @@ const ImplementationCenter: React.FC = () => {
                         />
                       </div>
                     </div>
-                  </div>
+                  )}
+                </div>
 
                   {/* Parâmetros Fiscais (Fatura) */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-green-600" />
-                      Parâmetros Fiscais (Fatura)
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Modelo de Fatura
-                        </label>
-                        <input
-                          type="number"
-                          min="10"
-                          max="99"
-                          value={erpConfig.invoiceModel}
-                          onChange={(e) => handleErpConfigChange('invoiceModel', e.target.value)}
-                          placeholder="55"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Item padrão para Fatura
-                        </label>
-                        <input
-                          type="text"
-                          value={erpConfig.invoiceDefaultItem}
-                          onChange={(e) => handleErpConfigChange('invoiceDefaultItem', e.target.value)}
-                          placeholder="SERVICO"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('fiscalBill')}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                        Parâmetros Fiscais (Fatura)
+                      </h4>
+                      {expandedSections.fiscalBill ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                    </button>
+                    {expandedSections.fiscalBill && (
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="md:col-span-2 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2 mb-2">
+                          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                          <div>
+                            <strong>Como preencher (Fatura):</strong>
+                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                              <li><strong>Código de Utilização:</strong> Utilização financeira para a liquidação da Fatura (ex: 1).</li>
+                              <li><strong>Conta Controle:</strong> Conta do passivo circulante do Fornecedor/Transportador (ex: 1.1.01.001).</li>
+                              <li><strong>Conta Transitória:</strong> Conta ponte para realizar o encontro de contas e liquidar a provisão do CT-e (ex: 1.1.02.001).</li>
+                            </ul>
+                          </div>
+                        </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Código de Utilização de Fatura
@@ -1218,16 +1233,25 @@ const ImplementationCenter: React.FC = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Additional Configuration */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                      {t('implementationCenter.erpIntegration.additional.title')}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('additional')}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        {t('implementationCenter.erpIntegration.additional.title')}
+                      </h4>
+                      {expandedSections.additional ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                    </button>
+                    {expandedSections.additional && (
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Diretório de XMLs de NF-e
@@ -1265,16 +1289,26 @@ const ImplementationCenter: React.FC = () => {
                           <option value="invent">INVENT - TaxPlus</option>
                         </select>
                       </div>
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Auto Background Sync Section */}
-                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                      <Bot size={18} className="text-orange-500" />
-                      Sincronização em Background (Robô Cloud)
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-orange-200 bg-orange-50 dark:bg-gray-800 dark:border-gray-700 rounded-lg">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection('sync')}
+                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <Bot className="w-5 h-5 text-orange-500" />
+                        Sincronização em Background (Robô Cloud)
+                      </h4>
+                      {expandedSections.sync ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+                    </button>
+                    {expandedSections.sync && (
+                      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-orange-200 bg-orange-50 dark:bg-gray-800 dark:border-gray-700 rounded-lg">
                       <div className="flex items-center gap-3">
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -1305,6 +1339,15 @@ const ImplementationCenter: React.FC = () => {
                         </div>
                       )}
                     </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                      <h4 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        Histórico do Robô (Logs)
+                      </h4>
+                      <SyncLogsViewer />
+                    </div>
+                  </div>
+                )}
                   </div>
 
                   {/* Save and Test Buttons */}
@@ -1339,7 +1382,7 @@ const ImplementationCenter: React.FC = () => {
                       ) : (
                         <>
                           <Save className="w-4 h-4" />
-                          {t('implementationCenter.erpIntegration.saveBtn')}
+                          Atualizar Dados
                         </>
                       )}
                     </button>
@@ -1348,12 +1391,7 @@ const ImplementationCenter: React.FC = () => {
               )}
               </fieldset>
 
-              {/* Cron Logs */}
-              {selectedERP === 'sap-business-one' && (
-                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <SyncLogsViewer />
-                </div>
-              )}
+
 
               {/* Import Configuration */}
               <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -1375,7 +1413,6 @@ const ImplementationCenter: React.FC = () => {
                         type="file"
                         className="hidden"
                         accept=".xlsx,.xls"
-                        disabled={!isAdmin}
                         onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'erp-integration')}
                       />
                     </label>

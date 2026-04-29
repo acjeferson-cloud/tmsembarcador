@@ -660,7 +660,8 @@ app.post('/api/integrate-cte', async (req, res) => {
       cte_usage,
       cte_model,
       cte_integration_type,
-      fiscal_module 
+      fiscal_module,
+      inbound_nf_control_account
     } = req.body;
 
     if (!endpointSystem || !username || !companyDb || !cte_data) {
@@ -775,6 +776,7 @@ app.post('/api/integrate-cte', async (req, res) => {
       // Se for Draft, precisa do DocObjectCode
       ...(isDraft ? { DocObjectCode: 'oPurchaseInvoices' } : {}),
       CardCode: cardCode,
+      ...(inbound_nf_control_account ? { ControlAccount: inbound_nf_control_account } : {}),
       DocDate: cte_data.emissao?.split('T')[0] || new Date().toISOString().split('T')[0],
       DocDueDate: (() => { 
         // Lógica solicitada: Data atual do processamento + sap_due_days
@@ -970,7 +972,11 @@ app.post('/api/integrate-bill', async (req, res) => {
       username,
       password,
       companyDb,
-      billId
+      sap_bpl_id,
+      billId,
+      billing_usage,
+      invoice_transitory_account,
+      billing_control_account
     } = req.body;
 
     console.log('[INTEGRATE-BILL] Payload Body Recebido:', JSON.stringify({
@@ -1108,63 +1114,44 @@ app.post('/api/integrate-bill', async (req, res) => {
     }
 
     
-    console.log('[INTEGRATE-BILL] Buscando uma conta contábil (CashAccount) padrão no SAP para a transferência...');
-    let defaultTransferAccount = '';
-    try {
-      const accRes = await fetch(`${serviceLayerUrl}/ChartOfAccounts?$filter=CashAccount eq 'tYES'&$top=1`, {
-        method: 'GET',
-        headers: {
-          'Cookie': cookieHeader,
-          'Accept': 'application/json'
-        }
-      });
-      if (accRes.ok) {
-        const accData = await accRes.json();
-        if (accData && accData.value && accData.value.length > 0) {
-          defaultTransferAccount = accData.value[0].Code;
-          console.log(`[INTEGRATE-BILL] Conta contábil padrão encontrada: ${defaultTransferAccount}`);
-        }
-      }
-    } catch (e) {
-      console.log('[INTEGRATE-BILL] Aviso: Não foi possível buscar CashAccount no SAP:', e.message);
-    }
-
     console.log(`[INTEGRATE-BILL] Somatório Total Calculado (SumApplied Geral): ${sumAppliedCalculated}`);
-    // 4. Montar Payload JSON Dynamic
+    // 4. Montar Payload JSON Dynamic (OPCH / PurchaseInvoices)
     const todayStr = new Date().toISOString().split('T')[0];
     const ctesJoined = cteNumbersList.join(', ');
-    const carrierName = billData.customer_name || billData.metadata?.carrier_name || '';
-    // Formato: "CT-e(s) 1234, 5678 0001-ALFA Transportes LTDA"
-    const journalRemarksStr = `CT-e(s) ${ctesJoined} ${carrierName}`.trim().substring(0, 250);
+    const journalRemarksStr = `Fatura: ${billData.bill_number} | CT-es: ${ctesJoined}`.substring(0, 250);
 
-    const payloadVendor = {
+    const invoicePayload = {
+        DocType: "dDocument_Service",
         CardCode: finalCardCode,
-        DocType: "rSupplier",
         DocDate: todayStr,
-        JournalRemarks: journalRemarksStr,
-        Remarks: `Integrado via Log Axis (TMS Embarcador) - Fatura: ${billData.bill_number || billId.slice(0, 8)}`,
-        PaymentInvoices: paymentInvoices,
-        TransferSum: sumAppliedCalculated,
-        TransferDate: todayStr
+        // Aqui mantemos a data de hoje para a fatura (ou pode ser customizada)
+        DocDueDate: todayStr,
+        Comments: `Integrado via Log Axis (TMS) - ${journalRemarksStr}`,
+        BPL_IDAssignedToInvoice: sap_bpl_id || billData.metadata?.sap_bpl_id || undefined,
+        ...(billing_control_account ? { ControlAccount: billing_control_account } : {}),
+        
+        DocumentLines: [
+          {
+            ItemDescription: `Fatura de Frete - Lote ${billData.bill_number}`,
+            LineTotal: sumAppliedCalculated,
+            AccountCode: invoice_transitory_account,
+            Usage: parseInt(billing_usage) || undefined
+          }
+        ]
     };
 
-    if (defaultTransferAccount) {
-        payloadVendor.TransferAccount = defaultTransferAccount;
-    }
-
-
-    console.log('[INTEGRATE-BILL] Payload preparado para /VendorPayments:');
-    console.log(JSON.stringify(payloadVendor, null, 2));
+    console.log('[INTEGRATE-BILL] Payload preparado para /PurchaseInvoices:');
+    console.log(JSON.stringify(invoicePayload, null, 2));
 
     // 5. Postar na Service Layer
-    console.log(`[INTEGRATE-BILL] Disparando requisição POST para ${serviceLayerUrl}/VendorPayments ...`);
-    const paymentRes = await fetch(`${serviceLayerUrl}/VendorPayments`, {
+    console.log(`[INTEGRATE-BILL] Disparando requisição POST para ${serviceLayerUrl}/PurchaseInvoices ...`);
+    const paymentRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Cookie': cookieHeader
       },
-      body: JSON.stringify(payloadVendor)
+      body: JSON.stringify(invoicePayload)
     });
 
     if (!paymentRes.ok) {
@@ -1178,16 +1165,16 @@ app.post('/api/integrate-bill', async (req, res) => {
            sapErrorMsg = errRaw;
         }
         
-        console.error('[INTEGRATE-BILL] SAP Service Layer REJEITOU VendorPayments!');
+        console.error('[INTEGRATE-BILL] SAP Service Layer REJEITOU a Fatura (PurchaseInvoices)!');
         console.error('[INTEGRATE-BILL] Erro SAP:', sapErrorMsg);
         if (errJSON) console.error(JSON.stringify(errJSON, null, 2));
         
-        return res.status(400).json({ success: false, error: sapErrorMsg, payload: payloadVendor });
+        return res.status(400).json({ success: false, error: sapErrorMsg, payload: invoicePayload });
     }
 
     const sapPayment = await paymentRes.json();
     const paymentEntry = sapPayment.DocEntry;
-    console.log(`[INTEGRATE-BILL] SUCESSO! VendorPayments criado no SAP. DocEntry Financeiro: ${paymentEntry}`);
+    console.log(`[INTEGRATE-BILL] SUCESSO! Fatura criada no SAP (OPCH Serviço). DocEntry: ${paymentEntry}`);
 
     // 6. Tratar Retorno (Atualizar Fatura)
     console.log(`[INTEGRATE-BILL] Atualizando status da Fatura ${billId} no TMS para 'aprovada'...`);

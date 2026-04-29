@@ -22,6 +22,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
   const [availableCities, setAvailableCities] = useState<CityAvailability[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
+  const [selectedLinkedCities, setSelectedLinkedCities] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,6 +31,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
   const [editingCityId, setEditingCityId] = useState<string | null>(null);
   const [editingDeliveryDays, setEditingDeliveryDays] = useState<number | null>(null);
   const [bulkDeliveryDays, setBulkDeliveryDays] = useState<number | null>(null);
+  const [linkedBulkDeliveryDays, setLinkedBulkDeliveryDays] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -189,6 +191,35 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       newSelection.add(cityId);
     }
     setSelectedCities(newSelection);
+  };
+
+  const toggleLinkedCitySelection = (cityId: string) => {
+    const newSelection = new Set(selectedLinkedCities);
+    if (newSelection.has(cityId)) {
+      newSelection.delete(cityId);
+    } else {
+      newSelection.add(cityId);
+    }
+    setSelectedLinkedCities(newSelection);
+  };
+
+  const handleBulkUpdateLinkedDeliveryDays = async () => {
+    if (selectedLinkedCities.size === 0) return;
+
+    try {
+      setIsSaving(true);
+      const cityIds = Array.from(selectedLinkedCities);
+      await freightRateCitiesService.updateMultipleDeliveryDays(cityIds, linkedBulkDeliveryDays);
+      showToast('success', t('carriers.freightRates.cities.successUpdateDays'));
+      await loadData();
+      setSelectedLinkedCities(new Set());
+      setLinkedBulkDeliveryDays(null);
+      onUpdate();
+    } catch (_error) {
+      showToast('error', t('carriers.freightRates.cities.errorUpdateDays'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Função para normalizar texto removendo acentos (usado apenas para cidades vinculadas)
@@ -397,10 +428,55 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                 </div>
               )}
 
+              {/* Bulk Action Panel */}
+              {selectedLinkedCities.size > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <span className="text-blue-800 font-medium text-sm">
+                    {selectedLinkedCities.size} {selectedLinkedCities.size === 1 ? 'cidade selecionada' : 'cidades selecionadas'}
+                  </span>
+                  <div className="flex items-center space-x-3 w-full sm:w-auto">
+                    <label htmlFor="linkedBulkDeliveryDays" className="text-sm font-medium text-blue-800 whitespace-nowrap">
+                      Prazo (dias):
+                    </label>
+                    <input
+                      id="linkedBulkDeliveryDays"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={linkedBulkDeliveryDays ?? ''}
+                      onChange={(e) => setLinkedBulkDeliveryDays(e.target.value ? parseInt(e.target.value) : null)}
+                      placeholder="Padrão"
+                      className="w-24 px-3 py-1.5 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <button
+                      onClick={handleBulkUpdateLinkedDeliveryDays}
+                      disabled={isSaving}
+                      className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      {isSaving ? 'Aplicando...' : 'Aplicar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                     <tr>
+                      <th className="w-12 px-4 py-3">
+                        <input
+                          type="checkbox"
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedLinkedCities(new Set(filteredLinkedCities.map(c => c.id)));
+                            } else {
+                              setSelectedLinkedCities(new Set());
+                            }
+                          }}
+                          checked={selectedLinkedCities.size === filteredLinkedCities.length && filteredLinkedCities.length > 0}
+                          className="rounded border-gray-300"
+                        />
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.city')}</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.uf')}</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300">{t('carriers.freightRates.cities.ibgeCode')}</th>
@@ -411,7 +487,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
                     {filteredLinkedCities.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                           {linkedCities.length === 0
                             ? t('carriers.freightRates.cities.noLinkedCitiesClickAdd')
                             : t('carriers.freightRates.cities.noLinkedCitiesFound')
@@ -420,8 +496,16 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                       </tr>
                     ) : (
                       filteredLinkedCities.map((city) => (
-                        <tr key={city.id} className="hover:bg-gray-50 dark:bg-gray-900">
-                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{city.city_name}</td>
+                        <tr key={city.id} className={`hover:bg-gray-50 dark:bg-gray-900 ${selectedLinkedCities.has(city.id) ? 'bg-blue-50 dark:bg-gray-800' : ''}`}>
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedLinkedCities.has(city.id)}
+                              onChange={() => toggleLinkedCitySelection(city.id)}
+                              className="rounded border-gray-300"
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-white cursor-pointer" onClick={() => toggleLinkedCitySelection(city.id)}>{city.city_name}</td>
                           <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{city.city_state}</td>
                           <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{city.city_ibge_code || '-'}</td>
                           <td className="px-6 py-4">

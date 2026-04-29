@@ -259,16 +259,87 @@ export const freightRateCitiesService = {
     const success: FreightRateCity[] = [];
     const errors: { cityId: string; error: string }[] = [];
 
-    for (const cityId of cityIds) {
-      try {
-        const result = await this.addCityToRate(rateId, tableId, cityId, deliveryDays);
-        success.push(result);
-      } catch (error) {
-        errors.push({
-          cityId,
-          error: error instanceof Error ? error.message : 'Erro desconhecido'
-        });
+    if (!cityIds || cityIds.length === 0) return { success, errors };
+
+    try {
+      const CHUNK_SIZE = 200; // PostgREST URL limit safe size
+      
+      for (let i = 0; i < cityIds.length; i += CHUNK_SIZE) {
+        const batchCityIds = cityIds.slice(i, i + CHUNK_SIZE);
+        
+        // 1. Verify availability in bulk
+        const { data: existingInTable, error: existingError } = await supabase
+          .from('freight_rate_cities')
+          .select('city_id, freight_rate_id, freight_rates(codigo)')
+          .eq('freight_rate_table_id', tableId)
+          .in('city_id', batchCityIds);
+
+        if (existingError) throw existingError;
+
+        const existingMap = new Map((existingInTable || []).map(e => [e.city_id, e]));
+        const validToInsert = [];
+
+        for (const cityId of batchCityIds) {
+          const existing = existingMap.get(cityId);
+          if (existing) {
+            if (existing.freight_rate_id === rateId) {
+              errors.push({ cityId, error: 'Esta cidade já está vinculada a esta tarifa.' });
+            } else {
+              const usedRateCode = (existing as any).freight_rates?.codigo || existing.freight_rate_id;
+              errors.push({ cityId, error: `Cidade já vinculada à tarifa ${usedRateCode}` });
+            }
+            continue;
+          }
+          
+          validToInsert.push({
+            freight_rate_id: rateId,
+            freight_rate_table_id: tableId,
+            city_id: cityId,
+            ...(deliveryDays !== undefined && deliveryDays !== null ? { delivery_days: deliveryDays } : {})
+          });
+        }
+
+        // 2. Insert valid cities in bulk
+        if (validToInsert.length > 0) {
+          const { data, error } = await supabase
+            .from('freight_rate_cities')
+            .insert(validToInsert)
+            .select(`
+              *,
+              cities!inner (
+                id,
+                nome,
+                codigo_ibge,
+                states!inner (
+                  sigla
+                )
+              )
+            `);
+            
+          if (error) {
+            batchCityIds.forEach(id => {
+              errors.push({ cityId: id, error: error.message || 'Erro ao vincular lote' });
+            });
+          } else if (data) {
+            const formatted = data.map((item: any) => ({
+              id: item.id,
+              freight_rate_id: item.freight_rate_id,
+              freight_rate_table_id: item.freight_rate_table_id,
+              city_id: item.city_id,
+              city_name: (item as any).cities?.nome,
+              city_state: (item as any).cities?.states?.sigla,
+              city_ibge_code: (item as any).cities?.codigo_ibge,
+              delivery_days: item.delivery_days,
+              created_at: item.created_at,
+              updated_at: item.updated_at
+            }));
+            success.push(...formatted);
+          }
+        }
       }
+    } catch (error) {
+      console.error('Error linking multiple cities:', error);
+      throw new Error('Erro crítico ao vincular múltiplas cidades. ' + (error instanceof Error ? error.message : ''));
     }
 
     return { success, errors };
@@ -335,6 +406,18 @@ export const freightRateCitiesService = {
         updated_at: new Date().toISOString()
       })
       .eq('id', cityId);
+
+    if (error) throw error;
+  },
+
+  async updateMultipleDeliveryDays(cityIds: string[], deliveryDays: number | null): Promise<void> {
+    const { error } = await supabase
+      .from('freight_rate_cities')
+      .update({
+        delivery_days: deliveryDays,
+        updated_at: new Date().toISOString()
+      })
+      .in('id', cityIds);
 
     if (error) throw error;
   }
