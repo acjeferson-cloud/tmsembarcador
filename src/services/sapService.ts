@@ -749,8 +749,7 @@ export const sapIntegrationService = {
         billId: billId,
         billing_usage: config.billing_usage,
         invoice_transitory_account: config.invoice_transitory_account,
-        billing_control_account: config.billing_control_account,
-        invoice_default_item: config.invoice_default_item
+        billing_control_account: config.billing_control_account
       };
 
       let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';

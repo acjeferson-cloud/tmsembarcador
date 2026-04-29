@@ -19,6 +19,46 @@ interface ImportResult {
   errors?: string[];
 }
 
+const SAPIntegrationExample: React.FC = () => (
+  <details className="mt-3 group bg-white dark:bg-gray-800 rounded-md border border-blue-200 dark:border-blue-800">
+    <summary className="p-2 cursor-pointer font-medium text-blue-700 dark:text-blue-400 flex items-center justify-between select-none">
+      <span className="flex items-center gap-2"><Info className="w-4 h-4" /> Exemplo Prático de Funcionamento (CT-e + Fatura)</span>
+      <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+    </summary>
+    <div className="p-3 border-t border-blue-200 dark:border-blue-800 text-gray-700 dark:text-gray-300 space-y-3">
+      <p>Imagine que você teve <strong>5 CT-es de R$ 100,00</strong> aprovados durante a semana e, no sábado, a transportadora enviou uma <strong>Fatura de Frete de R$ 500,00</strong> agrupando-os.</p>
+      
+      <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+        <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+          <FileSpreadsheet className="w-4 h-4 text-blue-600"/> 
+          1. Ao integrar os 5 CT-es no SAP:
+        </h5>
+        <p className="text-sm mb-1">O TMS cria 5 <em>Notas Fiscais de Entrada</em> (ou Esboços) de R$ 100,00 cada.</p>
+        <ul className="text-sm list-disc pl-5 space-y-1">
+          <li>O SAP usa a <strong>Conta Controle de CT-e</strong> para creditar uma conta transitória de Provisão (ex: <em>Provisão de Fretes a Pagar</em>).</li>
+          <li>Isso garante que o custo financeiro do frete entre no resultado contábil da sua empresa imediatamente na data do serviço.</li>
+        </ul>
+      </div>
+
+      <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+        <h5 className="font-semibold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-green-600"/> 
+          2. Ao integrar a Fatura de R$ 500,00 no SAP:
+        </h5>
+        <p className="text-sm mb-1">O TMS cria uma única <em>Fatura de Fornecedor (ou Esboço)</em> de R$ 500,00 para a transportadora.</p>
+        <ul className="text-sm list-disc pl-5 space-y-1">
+          <li>A despesa da fatura é alocada na <strong>Conta Transitória</strong>, cujo objetivo é cruzar com a conta provisionada pelos CT-es, "zerando" o saldo.</li>
+          <li>O passivo final a ser pago fica amarrado à <strong>Conta Controle de Fatura</strong>, que é a conta contábil oficial de Passivo Circulante onde o financeiro fará o pagamento do boleto.</li>
+        </ul>
+      </div>
+      
+      <p className="text-sm font-medium mt-2">
+        <strong>Resultado:</strong> O custo foi contabilizado fragmentado e antecipado (por CT-e) e o financeiro só precisará programar 1 pagamento agrupado (Fatura), mantendo a contabilidade e os impostos do SAP perfeitamente redondos! 🔄
+      </p>
+    </div>
+  </details>
+);
+
 const ImplementationCenter: React.FC = () => {
   const { user, currentEstablishment } = useAuth();
   const { t } = useTranslation();
@@ -62,8 +102,6 @@ const ImplementationCenter: React.FC = () => {
     cteTaxCode: '',
     cteIntegrationType: 'draft',
     cteModel: '',
-    invoiceModel: '',
-    invoiceDefaultItem: '',
     billingNFeItem: '',
     billingUsage: '',
     billingControlAccount: '',
@@ -650,8 +688,6 @@ const ImplementationCenter: React.FC = () => {
         sap_bpl_id: erpConfig.sapBplId,
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
-        invoice_model: erpConfig.invoiceModel,
-        invoice_default_item: erpConfig.invoiceDefaultItem,
         billing_nfe_item: erpConfig.billingNFeItem,
         billing_usage: erpConfig.billingUsage,
         billing_control_account: erpConfig.billingControlAccount,
@@ -720,8 +756,6 @@ const ImplementationCenter: React.FC = () => {
         metadata: { cte_tax_code: erpConfig.cteTaxCode },
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
-        invoice_model: erpConfig.invoiceModel,
-        invoice_default_item: erpConfig.invoiceDefaultItem,
         billing_nfe_item: erpConfig.billingNFeItem,
         billing_usage: erpConfig.billingUsage,
         billing_control_account: erpConfig.billingControlAccount,
@@ -786,7 +820,6 @@ const ImplementationCenter: React.FC = () => {
           database: firstRecord.database || '',
           cteIntegrationType: firstRecord.cte_integration_type || '',
           cteModel: firstRecord.cte_numeric_model_1 || '',
-          invoiceModel: firstRecord.cte_numeric_model_2 || '',
           billingNFeItem: firstRecord.billing_item_code || '',
           billingUsage: firstRecord.billing_usage || '',
           billingControlAccount: firstRecord.billing_control_account || '',
@@ -1103,17 +1136,20 @@ const ImplementationCenter: React.FC = () => {
                     </button>
                     {expandedSections.fiscalCte && (
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="md:col-span-2 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2 mb-2">
-                          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                          <div>
-                            <strong>Como preencher (CT-e):</strong>
-                            <ul className="list-disc pl-5 mt-1 space-y-1">
-                              <li><strong>Modelo de CT-e:</strong> Informe o código do modelo fiscal (ex: 57).</li>
-                              <li><strong>Item padrão:</strong> Código do item genérico de frete cadastrado no SAP (ex: FRETE).</li>
-                              <li><strong>Código de Utilização:</strong> Código numérico da utilização financeira no SAP para CT-e (ex: 2).</li>
-                              <li><strong>Conta Controle:</strong> Conta contábil transitória de provisão onde o CT-e será alocado (ex: 2.1.01.001).</li>
-                            </ul>
+                        <div className="md:col-span-2 mb-2">
+                          <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
+                            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                            <div>
+                              <strong>Como preencher (CT-e):</strong>
+                              <ul className="list-disc pl-5 mt-1 space-y-1">
+                                <li><strong>Modelo de CT-e:</strong> Informe o código do modelo fiscal (ex: 57).</li>
+                                <li><strong>Item padrão:</strong> Código do item genérico de frete cadastrado no SAP (ex: FRETE).</li>
+                                <li><strong>Código de Utilização:</strong> Código numérico da utilização financeira no SAP para CT-e (ex: 2).</li>
+                                <li><strong>Conta Controle:</strong> Conta contábil transitória de provisão onde o CT-e será alocado (ex: 2.1.01.001).</li>
+                              </ul>
+                            </div>
                           </div>
+                          <SAPIntegrationExample />
                         </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1185,16 +1221,19 @@ const ImplementationCenter: React.FC = () => {
                     </button>
                     {expandedSections.fiscalBill && (
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="md:col-span-2 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2 mb-2">
-                          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                          <div>
-                            <strong>Como preencher (Fatura):</strong>
-                            <ul className="list-disc pl-5 mt-1 space-y-1">
-                              <li><strong>Código de Utilização:</strong> Utilização financeira para a liquidação da Fatura (ex: 1).</li>
-                              <li><strong>Conta Controle:</strong> Conta do passivo circulante do Fornecedor/Transportador (ex: 1.1.01.001).</li>
-                              <li><strong>Conta Transitória:</strong> Conta ponte para realizar o encontro de contas e liquidar a provisão do CT-e (ex: 1.1.02.001).</li>
-                            </ul>
+                        <div className="md:col-span-2 mb-2">
+                          <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
+                            <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                            <div>
+                              <strong>Como preencher (Fatura):</strong>
+                              <ul className="list-disc pl-5 mt-1 space-y-1">
+                                <li><strong>Código de Utilização:</strong> Utilização financeira para a liquidação da Fatura (ex: 1).</li>
+                                <li><strong>Conta Controle:</strong> Conta do passivo circulante do Fornecedor/Transportador (ex: 1.1.01.001).</li>
+                                <li><strong>Conta Transitória:</strong> Conta ponte para realizar o encontro de contas e liquidar a provisão do CT-e (ex: 1.1.02.001).</li>
+                              </ul>
+                            </div>
                           </div>
+                          <SAPIntegrationExample />
                         </div>
 
                       <div>

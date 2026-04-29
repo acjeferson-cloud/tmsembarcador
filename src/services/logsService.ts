@@ -416,8 +416,6 @@ export function getFieldLabel(fieldName: string): string {
     database: 'Banco de Dados',
     cte_integration_type: 'Tipo Integração CT-e',
     cte_model: 'Modelo CT-e',
-    invoice_model: 'Modelo NF-e',
-    invoice_default_item: 'Item Padrão NF-e',
     billing_nfe_item: 'Item Faturamento NF-e',
     billing_usage: 'Utilização Faturamento',
     billing_control_account: 'Conta Controle Faturamento',
