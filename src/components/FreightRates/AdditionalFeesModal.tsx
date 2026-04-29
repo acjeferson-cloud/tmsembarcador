@@ -582,7 +582,9 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                               {getValueTypeLabel(fee.value_type)}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                              {formatCurrency(fee.fee_value)}
+                              {fee.value_type === 'fixed' 
+                                ? formatCurrency(fee.fee_value)
+                                : `${fee.fee_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               {formatCurrency(fee.minimum_value)}

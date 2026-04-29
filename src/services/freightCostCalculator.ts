@@ -31,6 +31,7 @@ interface CalculationResult {
   tde: number;
   trt: number;
   tec: number;
+  taxaAdicional: number;
   adicionalQuimico: number;
   outrosValores: number;
   icmsBase: number;
@@ -280,6 +281,7 @@ export const freightCostCalculator = {
       tde: 0,
       trt: 0,
       tec: 0,
+      taxaAdicional: 0,
       adicionalQuimico: 0,
       outrosValores: 0,
       icmsBase: 0,
@@ -307,6 +309,7 @@ export const freightCostCalculator = {
       tde: 0,
       trt: 0,
       tec: 0,
+      taxaAdicional: 0,
       adicionalQuimico: 0,
       outrosValores: 0,
       icmsBase: 0,
@@ -863,6 +866,7 @@ export const freightCostCalculator = {
       trt,
       tec,
       taxaAdicional,
+      adicionalQuimico,
       outrosValores,
       icmsBase,
       icmsAliquota,
