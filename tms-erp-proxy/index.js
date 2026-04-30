@@ -762,7 +762,7 @@ app.post('/api/integrate-cte', async (req, res) => {
     }
 
     if (!cardCode) {
-      return res.status(200).json({ success: false, error: `Não foi possível localizar o fornecedor no SAP com o CNPJ ${cte_data.carrier_cnpj}. Verifique o cadastro no SAP.` });
+      return res.status(200).json({ success: false, error: `Não foi possível identificar o código do fornecedor (CardCode) no SAP para o CNPJ ${cte_data.carrier_cnpj}. Acesse o cadastro deste Transportador no TMS, vá na aba 'Integração ERP' e informe o 'Código do Fornecedor no SAP (CardCode)' corretamente.` });
     }
 
     // 3. Create A/P Invoice (OPCH / PurchaseInvoices)
@@ -1069,7 +1069,7 @@ app.post('/api/integrate-bill', async (req, res) => {
     
     if (!finalCardCode) {
       console.error(`[INTEGRATE-BILL] REJEITADO: Transportador (Doc: ${billData.customer_document}) não possui CardCode mapeado no banco.`);
-      return res.status(400).json({ success: false, error: `Falha: Transportador (Doc: ${billData.customer_document}) não possui CardCode mapeado. Sincronize primeiramente.` });
+      return res.status(400).json({ success: false, error: `Não foi possível identificar o código do fornecedor (CardCode) no SAP para a transportadora Doc: ${billData.customer_document}. Acesse o cadastro deste Transportador no TMS, vá na aba 'Integração ERP' e informe o 'Código do Fornecedor no SAP (CardCode)' corretamente.` });
     }
     
     console.log(`[INTEGRATE-BILL] Fornecedor Validado. CardCode associado: ${finalCardCode}`);

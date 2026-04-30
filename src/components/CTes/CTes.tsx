@@ -404,9 +404,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
     
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      switch (action) {
+    switch (action) {
         case 'print':
           (async () => {
             try {
@@ -855,7 +853,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
       setIsLoading(false);
       // Clear selection after action
       setSelectedCTes([]);
-    }, 1000);
   };
 
   const handleSingleAction = async (cteId: string, action: string) => {
@@ -924,11 +921,9 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      switch (action) {
-        case 'approve':
-          (async () => {
+    switch (action) {
+      case 'approve':
+        (async () => {
             setIsLoading(true);
             setToast({ message: `Processando integração do CT-e...`, type: 'info' });
             try {
@@ -1190,9 +1185,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         default:
           break;
       }
-
       setIsLoading(false);
-    }, 500);
   };
 
   const confirmDelete = async () => {
