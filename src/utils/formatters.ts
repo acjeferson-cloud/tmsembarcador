@@ -180,53 +180,34 @@ export const formatTitleCase = (text: string): string => {
 export const formatCompanyName = (text: string): string => {
   if (!text) return '';
 
-  // Lista de siglas empresariais que devem permanecer em maiúsculo
+  // Lista de siglas empresariais/natureza jurídica que devem permanecer em maiúsculo
   const companySuffixes = [
-    'LTDA', 'ME', 'EPP', 'MEI', 'EIRELI', 'SA', 'S/A', 'S.A.',
-    'CIA', 'CIA.', 'SS', 'S.S.', 'LTDA.', 'LDA', 'LDA.'
+    'LTDA', 'ME', 'EPP', 'MEI', 'EIRELI', 'SA', 'S/A', 'S.A.'
   ];
 
-  // Palavras que devem permanecer em minúsculo
+  // Palavras de ligação que devem permanecer em minúsculo
   const minorWords = [
-    'a', 'o', 'e', 'de', 'da', 'do', 'das', 'dos',
-    'em', 'no', 'na', 'nos', 'nas', 'por', 'para',
-    'com', 'sem', 'sob', 'sobre', 'ao', 'aos', 'à', 'às'
+    'de', 'da', 'do', 'das', 'dos', 'e'
   ];
-
-  // Converte para uppercase para comparação e depois trabalha com lowercase
-  const upperText = text.toUpperCase();
 
   return text
     .toLowerCase()
     .trim()
-    .split(' ')
+    .split(/\s+/) // Separa por qualquer quantidade de espaços
     .map((word, index) => {
-      const upperWord = word.toUpperCase();
+      const cleanWordUpper = word.toUpperCase().replace(/\./g, '');
 
-      // Verifica se é uma sigla empresarial
-      if (companySuffixes.includes(upperWord.replace(/\./g, ''))) {
-        return upperWord;
+      // Exceção 1: Siglas de Natureza Jurídica
+      if (companySuffixes.includes(cleanWordUpper) || companySuffixes.includes(word.toUpperCase())) {
+        return word.toUpperCase();
       }
 
-      // Verifica se é uma sigla genérica (2-6 letras maiúsculas sem pontos)
-      // mas apenas se no texto original estava em maiúsculo
-      const originalWord = text.trim().split(' ')[index];
-      if (originalWord && originalWord === originalWord.toUpperCase() &&
-          /^[A-Z]{2,6}$/.test(originalWord)) {
-        return upperWord;
-      }
-
-      // Sempre capitaliza a primeira palavra
-      if (index === 0) {
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      }
-
-      // Verifica se é uma palavra menor
-      if (minorWords.includes(word)) {
+      // Exceção 2: Preposições e artigos (mas capitaliza se for a primeira palavra)
+      if (minorWords.includes(word) && index !== 0) {
         return word;
       }
 
-      // Capitaliza as demais palavras
+      // Regra Geral: Title Case
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(' ');

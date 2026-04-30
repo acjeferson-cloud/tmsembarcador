@@ -60,7 +60,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
               <span className="text-gray-600 dark:text-gray-400">{t('header.currentVersion')}</span>
-              <span className="font-semibold text-gray-900 dark:text-white">V1.22</span>
+              <span className="font-semibold text-gray-900 dark:text-white">V1.23</span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
@@ -287,12 +287,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
                 ) : (
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-sm font-semibold text-white">
-                      {user?.name?.split(' ').map(n => n[0]).join('') || 'JC'}
+                      {user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : 'U')}
                     </span>
                   </div>
                 )}
                 <div className="hidden lg:flex flex-col items-start">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{user?.name || 'Jeferson Carthen'}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{user?.name || user?.email || 'Usuário'}</span>
                   {currentEstablishment && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {currentEstablishment.codigo} - {currentEstablishment.fantasia || currentEstablishment.razaoSocial}
@@ -317,7 +317,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, menuType, onToggle
                       ) : (
                         <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                           <span className="text-lg font-semibold text-white">
-                            {user?.name?.split(' ').map(n => n[0]).join('') || 'JC'}
+                            {user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : 'U')}
                           </span>
                         </div>
                       )}
