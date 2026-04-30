@@ -15,6 +15,7 @@ interface ERPIntegrationConfig {
   database: string;
   cte_integration_type: string;
   cte_model: string;
+  invoice_default_item?: string;
   sap_bpl_id?: string;
   billing_nfe_item: string;
   billing_usage: string;

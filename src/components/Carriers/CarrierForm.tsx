@@ -82,6 +82,7 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
   const [cepMessage, setCepMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [isLoadingCNPJ, setIsLoadingCNPJ] = useState(false);
   const [cnpjMessage, setCnpjMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [erpError, setErpError] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -219,6 +220,10 @@ isOpen: false, missing: []});
 
     if (name === 'codigo') {
       validateCode(value);
+    }
+    
+    if (name === 'sapCardCode') {
+      setErpError(false);
     }
   };
 
@@ -367,6 +372,13 @@ isOpen: false, missing: []});
       return;
     }
     setModalError(false);
+
+    if (erpActive && !formData.sapCardCode) {
+      setActiveTab('erp');
+      setErpError(true);
+      return;
+    }
+    setErpError(false);
 
     // Validate code only when creating (not editing)
     if (!carrier) {
@@ -1557,20 +1569,31 @@ isOpen: false, missing: []});
         )}
 
         {activeTab === 'erp' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configurações de Integração ERP</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6"> Configure os dados necessários para que o TMS possa se comunicar com o seu ERP SAP Business One.</p>
+          <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border p-6 ${erpError ? 'border-red-300' : 'border-gray-200 dark:border-gray-700'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Configurações de Integração ERP</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400"> Configure os dados necessários para que o TMS possa se comunicar com o seu ERP SAP Business One.</p>
+              </div>
+              {erpError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                  <span className="mr-2">⚠️</span>
+                  Preencha o Código do Fornecedor.
+                </div>
+              )}
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Código do Fornecedor no SAP (CardCode)
+                  Código do Fornecedor no SAP (CardCode) {erpActive && '*'}
                 </label>
                 <input
                   type="text"
                   name="sapCardCode"
                   value={formData.sapCardCode}
                   onChange={handleInputChange}
+                  required={erpActive}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Ex: V0001"
                 />

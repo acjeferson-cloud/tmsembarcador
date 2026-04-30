@@ -103,6 +103,7 @@ const ImplementationCenter: React.FC = () => {
     cteIntegrationType: 'draft',
     cteModel: '',
     billingNFeItem: '',
+    invoiceNFeItem: '',
     billingUsage: '',
     billingControlAccount: '',
     outboundNFItem: '',
@@ -189,6 +190,7 @@ const ImplementationCenter: React.FC = () => {
         cteIntegrationType: config.cte_integration_type || 'draft',
         cteModel: config.cte_model || '',
         billingNFeItem: config.billing_nfe_item || '',
+        invoiceNFeItem: config.invoice_default_item || config.metadata?.invoice_nfe_item || '',
         billingUsage: config.billing_usage || '',
         billingControlAccount: config.billing_control_account || '',
         outboundNFItem: config.outbound_nf_item || '',
@@ -689,6 +691,10 @@ const ImplementationCenter: React.FC = () => {
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         billing_nfe_item: erpConfig.billingNFeItem,
+        invoice_default_item: erpConfig.invoiceNFeItem,
+        metadata: { 
+          cte_tax_code: erpConfig.cteTaxCode
+        },
         billing_usage: erpConfig.billingUsage,
         billing_control_account: erpConfig.billingControlAccount,
         outbound_nf_item: erpConfig.outboundNFItem,
@@ -753,10 +759,13 @@ const ImplementationCenter: React.FC = () => {
         password: erpConfig.password,
         database: erpConfig.database,
         sap_bpl_id: erpConfig.sapBplId,
-        metadata: { cte_tax_code: erpConfig.cteTaxCode },
+        metadata: { 
+          cte_tax_code: erpConfig.cteTaxCode
+        },
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         billing_nfe_item: erpConfig.billingNFeItem,
+        invoice_default_item: erpConfig.invoiceNFeItem,
         billing_usage: erpConfig.billingUsage,
         billing_control_account: erpConfig.billingControlAccount,
         outbound_nf_item: erpConfig.outboundNFItem,
@@ -1227,6 +1236,7 @@ const ImplementationCenter: React.FC = () => {
                             <div>
                               <strong>Como preencher (Fatura):</strong>
                               <ul className="list-disc pl-5 mt-1 space-y-1">
+                                <li><strong>Item padrão para Faturas:</strong> Código do item no SAP exclusivo para espelho financeiro (ex: D00051). Evita bitributação com o CT-e.</li>
                                 <li><strong>Código de Utilização:</strong> Utilização financeira para a liquidação da Fatura (ex: 1).</li>
                                 <li><strong>Conta Controle:</strong> Conta do passivo circulante do Fornecedor/Transportador (ex: 1.1.01.001).</li>
                                 <li><strong>Conta Transitória:</strong> Conta ponte para realizar o encontro de contas e liquidar a provisão do CT-e (ex: 1.1.02.001).</li>
@@ -1235,6 +1245,19 @@ const ImplementationCenter: React.FC = () => {
                           </div>
                           <SAPIntegrationExample />
                         </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Item padrão para Faturas
+                        </label>
+                        <input
+                          type="text"
+                          value={erpConfig.invoiceNFeItem}
+                          onChange={(e) => handleErpConfigChange('invoiceNFeItem', e.target.value)}
+                          placeholder="D00051"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1260,7 +1283,7 @@ const ImplementationCenter: React.FC = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <div className="md:col-span-2">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Conta Transitória
                         </label>

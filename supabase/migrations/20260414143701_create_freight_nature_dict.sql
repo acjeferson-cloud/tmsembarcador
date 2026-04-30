@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.freight_nature_dict (
 ALTER TABLE public.freight_nature_dict ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de RLS padrão baseada no Scope Contextual do TMS Empresarial
+DROP POLICY IF EXISTS "freight_nature_dict_select_policy" ON public.freight_nature_dict;
 CREATE POLICY "freight_nature_dict_select_policy"
     ON public.freight_nature_dict FOR SELECT
     USING (
@@ -32,6 +33,7 @@ CREATE POLICY "freight_nature_dict_select_policy"
         )
     );
 
+DROP POLICY IF EXISTS "freight_nature_dict_insert_policy" ON public.freight_nature_dict;
 CREATE POLICY "freight_nature_dict_insert_policy"
     ON public.freight_nature_dict FOR INSERT
     WITH CHECK (
@@ -39,6 +41,7 @@ CREATE POLICY "freight_nature_dict_insert_policy"
         AND environment_id = (current_setting('app.current_env_id', true))::uuid
     );
 
+DROP POLICY IF EXISTS "freight_nature_dict_update_policy" ON public.freight_nature_dict;
 CREATE POLICY "freight_nature_dict_update_policy"
     ON public.freight_nature_dict FOR UPDATE
     USING (
@@ -55,6 +58,7 @@ CREATE POLICY "freight_nature_dict_update_policy"
         AND environment_id = (current_setting('app.current_env_id', true))::uuid
     );
 
+DROP POLICY IF EXISTS "freight_nature_dict_delete_policy" ON public.freight_nature_dict;
 CREATE POLICY "freight_nature_dict_delete_policy"
     ON public.freight_nature_dict FOR DELETE
     USING (

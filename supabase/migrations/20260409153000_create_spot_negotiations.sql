@@ -27,6 +27,7 @@ DROP POLICY IF EXISTS "Enable insert for users on freight_spot_negotiations" ON 
 DROP POLICY IF EXISTS "Enable update for users on freight_spot_negotiations" ON public.freight_spot_negotiations;
 DROP POLICY IF EXISTS "Enable delete for users on freight_spot_negotiations" ON public.freight_spot_negotiations;
 
+DROP POLICY IF EXISTS "freight_spot_negotiations_all_access" ON public.freight_spot_negotiations;
 CREATE POLICY "freight_spot_negotiations_all_access" 
 ON public.freight_spot_negotiations 
 FOR ALL 
@@ -54,6 +55,7 @@ DROP POLICY IF EXISTS "Enable read access for users on freight_spot_invoices" ON
 DROP POLICY IF EXISTS "Enable insert access for users on freight_spot_invoices" ON public.freight_spot_invoices;
 DROP POLICY IF EXISTS "Enable delete access for users on freight_spot_invoices" ON public.freight_spot_invoices;
 
+DROP POLICY IF EXISTS "freight_spot_invoices_all_access" ON public.freight_spot_invoices;
 CREATE POLICY "freight_spot_invoices_all_access" 
 ON public.freight_spot_invoices 
 FOR ALL 

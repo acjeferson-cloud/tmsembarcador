@@ -661,7 +661,8 @@ app.post('/api/integrate-cte', async (req, res) => {
       cte_model,
       cte_integration_type,
       fiscal_module,
-      inbound_nf_control_account
+      inbound_nf_control_account,
+      invoice_transitory_account
     } = req.body;
 
     if (!endpointSystem || !username || !companyDb || !cte_data) {
@@ -976,7 +977,10 @@ app.post('/api/integrate-bill', async (req, res) => {
       billId,
       billing_usage,
       invoice_transitory_account,
-      billing_control_account
+      billing_control_account,
+      tax_code,
+      billing_nfe_item,
+      invoice_nfe_item
     } = req.body;
 
     console.log('[INTEGRATE-BILL] Payload Body Recebido:', JSON.stringify({
@@ -1120,11 +1124,15 @@ app.post('/api/integrate-bill', async (req, res) => {
     const ctesJoined = cteNumbersList.join(', ');
     const journalRemarksStr = `Fatura: ${billData.bill_number} | CT-es: ${ctesJoined}`.substring(0, 250);
 
+    if (!invoice_transitory_account) {
+        console.error(`[INTEGRATE-BILL] REJEITADO: A 'Conta Transitória da Fatura' não foi configurada.`);
+        return res.status(400).json({ success: false, error: `A 'Conta Contábil Transitória da Fatura' não foi configurada. Acesse Centro de Implementação > Integrações ERP e preencha este campo obrigatório para a integração de faturas.` });
+    }
+
     const invoicePayload = {
-        DocType: "dDocument_Service",
+        DocType: "dDocument_Items",
         CardCode: finalCardCode,
         DocDate: todayStr,
-        // Aqui mantemos a data de hoje para a fatura (ou pode ser customizada)
         DocDueDate: todayStr,
         Comments: `Integrado via Log Axis (TMS) - ${journalRemarksStr}`,
         BPL_IDAssignedToInvoice: sap_bpl_id || billData.metadata?.sap_bpl_id || undefined,
@@ -1132,9 +1140,13 @@ app.post('/api/integrate-bill', async (req, res) => {
         
         DocumentLines: [
           {
+            ItemCode: invoice_nfe_item || billing_nfe_item || 'FRETES',
             ItemDescription: `Fatura de Frete - Lote ${billData.bill_number}`,
+            Quantity: 1,
+            UnitPrice: sumAppliedCalculated,
+            Price: sumAppliedCalculated,
             LineTotal: sumAppliedCalculated,
-            AccountCode: invoice_transitory_account,
+            // AccountCode: invoice_transitory_account, // Removido para que o SAP determine a conta transitória diretamente pelo Cadastro do Item (ItemCode)
             Usage: parseInt(billing_usage) || undefined
           }
         ]
@@ -1176,6 +1188,97 @@ app.post('/api/integrate-bill', async (req, res) => {
     const paymentEntry = sapPayment.DocEntry;
     console.log(`[INTEGRATE-BILL] SUCESSO! Fatura criada no SAP (OPCH Serviço). DocEntry: ${paymentEntry}`);
 
+    // =========================================================================
+    // Passo 3: Liquidação via VendorPayments dos CT-es vinculados
+    // =========================================================================
+    let ctePaymentSuccess = false;
+    let ctePaymentWarning = null;
+    let sapPaymentSyncError = null;
+    let sapVendorPaymentEntry = null;
+
+    if (invoice_transitory_account && billData.bill_ctes && billData.bill_ctes.length > 0) {
+       console.log(`[INTEGRATE-BILL] Iniciando liquidação de CT-es associados via VendorPayments...`);
+       
+       const validCtes = billData.bill_ctes.filter(rel => rel.ctes_complete?.sap_doc_entry);
+       const paymentInvoices = [];
+
+       for (const rel of validCtes) {
+           const cteDocEntry = rel.ctes_complete.sap_doc_entry;
+           let sumApplied = parseFloat(rel.ctes_complete.total_value) || 0;
+           
+           try {
+               const docRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices(${cteDocEntry})?$select=DocTotal`, {
+                   headers: { 'Cookie': cookieHeader }
+               });
+               if (docRes.ok) {
+                   const docData = await docRes.json();
+                   if (docData.DocTotal) {
+                       sumApplied = docData.DocTotal;
+                       console.log(`[INTEGRATE-BILL] CT-e ${cteDocEntry}: DocTotal corrigido do SAP = ${sumApplied}`);
+                   }
+               }
+           } catch (e) {
+               console.warn(`[INTEGRATE-BILL] Falha ao consultar DocTotal do CT-e ${cteDocEntry}. Usando fallback: ${sumApplied}`);
+           }
+
+           if (sumApplied > 0) {
+               paymentInvoices.push({
+                   DocEntry: cteDocEntry,
+                   SumApplied: sumApplied,
+                   InstallmentId: 1,
+                   InvoiceType: 'it_PurchaseInvoice'
+               });
+           }
+       }
+
+       if (paymentInvoices.length > 0) {
+           const transferSum = paymentInvoices.reduce((acc, curr) => acc + curr.SumApplied, 0);
+
+           const vendorPaymentPayload = {
+               CardCode: cardCode,
+               DocType: 'rSupplier',
+               TransferAccount: invoice_transitory_account,
+               TransferSum: transferSum,
+               TransferDate: new Date().toISOString().split('T')[0],
+               JournalRemarks: `Liquidação Lote CT-es TMS Fatura ${billData.bill_number}`,
+               PaymentInvoices: paymentInvoices
+           };
+
+           console.log('[INTEGRATE-BILL] Payload de Liquidação (VendorPayments):', JSON.stringify(vendorPaymentPayload, null, 2));
+
+           try {
+               const vpRes = await fetch(`${serviceLayerUrl}/VendorPayments`, {
+                   method: 'POST',
+                   headers: { 
+                     'Content-Type': 'application/json', 
+                     'Accept': 'application/json',
+                     'Cookie': cookieHeader
+                   },
+                   body: JSON.stringify(vendorPaymentPayload)
+               });
+
+               if (!vpRes.ok) {
+                   let vpErr = null;
+                   try { vpErr = await vpRes.json(); } catch(e) {}
+                   sapPaymentSyncError = vpErr?.error?.message?.value || vpRes.statusText;
+                   ctePaymentWarning = `Fatura gerada, porém falha ao liquidar os CT-es vinculados (DLQ): ${sapPaymentSyncError}`;
+                   console.error('[INTEGRATE-BILL] Erro ao liquidar CT-es:', sapPaymentSyncError);
+               } else {
+                   ctePaymentSuccess = true;
+                   const vpData = await vpRes.json();
+                   sapVendorPaymentEntry = vpData.DocEntry;
+                   console.log(`[INTEGRATE-BILL] Liquidação de CT-es concluída com sucesso! VendorPayment DocEntry: ${sapVendorPaymentEntry}`);
+               }
+           } catch (e) {
+               sapPaymentSyncError = e.message;
+               ctePaymentWarning = `Exceção ao liquidar CT-es vinculados: ${e.message}`;
+               console.error('[INTEGRATE-BILL] Exceção na liquidação de CT-es:', e);
+           }
+       } else {
+           console.log('[INTEGRATE-BILL] Nenhum CT-e vinculado possui sap_doc_entry válido para liquidar.');
+       }
+    }
+
     // 6. Tratar Retorno (Atualizar Fatura)
     console.log(`[INTEGRATE-BILL] Atualizando status da Fatura ${billId} no TMS para 'aprovada'...`);
     const { error: updateError } = await supabase
@@ -1185,7 +1288,9 @@ app.post('/api/integrate-bill', async (req, res) => {
             metadata: {
                 ...(billData.metadata || {}),
                 sap_payment_entry: paymentEntry,
-                sap_payment_sync_at: new Date().toISOString()
+                sap_payment_sync_at: new Date().toISOString(),
+                ...(sapVendorPaymentEntry ? { sap_vendor_payment_entry: sapVendorPaymentEntry } : {}),
+                ...(sapPaymentSyncError ? { sap_payment_sync_error: sapPaymentSyncError } : { sap_payment_sync_error: null })
             }
         })
         .eq('id', billId);
@@ -1194,7 +1299,7 @@ app.post('/api/integrate-bill', async (req, res) => {
         console.error('[INTEGRATE-BILL] AVISO: Fatura aprovada no SAP, porém falhou ao atualizar tabela no TMS:', updateError);
         return res.status(500).json({
             success: true,
-            warning: 'Integrado ao SAP, mas falhou ao atualizar TMS',
+            warning: 'Integrado ao SAP, mas falhou ao atualizar TMS. ' + (ctePaymentWarning || ''),
             paymentEntry
         });
     }
@@ -1204,7 +1309,8 @@ app.post('/api/integrate-bill', async (req, res) => {
     return res.status(200).json({
         success: true,
         sap_payment_entry: paymentEntry,
-        message: 'Fatura aprovada e integrada com sucesso no SAP.'
+        message: 'Fatura aprovada e integrada com sucesso no SAP.',
+        ...(ctePaymentWarning ? { warning: ctePaymentWarning } : {})
     });
 
   } catch (error) {
@@ -1266,15 +1372,15 @@ app.post('/api/cancel-bill', async (req, res) => {
 
     const docEntry = billData.metadata?.sap_payment_entry;
     if (!docEntry) {
-      return res.status(400).json({ success: false, error: 'Fatura não possui Documento de Pagamento (VendorPayment) vinculado no SAP.' });
+      return res.status(400).json({ success: false, error: 'Fatura não possui Documento de Fatura (PurchaseInvoice) vinculado no SAP.' });
     }
 
-    console.log(`[CANCEL-BILL] Solicitando cancelamento do VendorPayment DocEntry: ${docEntry}`);
+    console.log(`[CANCEL-BILL] Solicitando cancelamento da Fatura (PurchaseInvoices) DocEntry: ${docEntry}`);
     
-    // Pegar o CardCode do VendorPayment original
+    // Pegar o CardCode da Fatura original
     let cardCode = '';
     try {
-      const origRes = await fetch(`${serviceLayerUrl}/VendorPayments(${docEntry})?$select=CardCode`, {
+      const origRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices(${docEntry})?$select=CardCode`, {
         headers: { 'Cookie': cookieHeader }
       });
       if (origRes.ok) {
@@ -1283,14 +1389,14 @@ app.post('/api/cancel-bill', async (req, res) => {
       }
     } catch(e) {}
 
-    // 3. Cancel VendorPayment in SAP
-    const cancelRes = await fetch(`${serviceLayerUrl}/VendorPayments(${docEntry})/Cancel`, {
+    // 3. Cancel PurchaseInvoices in SAP
+    const cancelRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices(${docEntry})/Cancel`, {
       method: 'POST',
       headers: { 
         'Cookie': cookieHeader,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ JournalRemarks: "Cancelado via Log Axis (TMS)" })
+      }
+      // PurchaseInvoices /Cancel não aceita body com JournalRemarks
     });
     
     // Tentar atualizar a observação do diário do estorno
@@ -1298,21 +1404,23 @@ app.post('/api/cancel-bill', async (req, res) => {
        try {
          // esperar 1 segundo para o B1 commitar
          await new Promise(r => setTimeout(r, 1000));
-         const cDocsRes = await fetch(`${serviceLayerUrl}/VendorPayments?$filter=CardCode eq '${cardCode}' and CancelStatus eq 'csCancellation'&$orderby=DocEntry desc&$top=1`, {
+         const cDocsRes = await fetch(`${serviceLayerUrl}/PurchaseInvoices?$filter=CardCode eq '${cardCode}' and CancelStatus eq 'csCancellation'&$orderby=DocEntry desc&$top=1`, {
             headers: { 'Cookie': cookieHeader }
          });
-         const cDocs = await cDocsRes.json();
-         if (cDocs.value && cDocs.value.length > 0) {
-            const cancelDocEntry = cDocs.value[0].DocEntry;
-            console.log(`[CANCEL-BILL] CANCELLATION DOC ENTRY ENCONTRADO: ${cancelDocEntry}. Aplicando PATCH de JournalRemarks...`);
-            await fetch(`${serviceLayerUrl}/VendorPayments(${cancelDocEntry})`, {
-               method: 'PATCH',
-               headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/json' },
-               body: JSON.stringify({ JournalRemarks: "Cancelado via Log Axis (TMS)" })
-            });
+         if (cDocsRes.ok) {
+            const cDocs = await cDocsRes.json();
+            if (cDocs.value && cDocs.value.length > 0) {
+               const cancelDocEntry = cDocs.value[0].DocEntry;
+               console.log(`[CANCEL-BILL] CANCELLATION DOC ENTRY ENCONTRADO: ${cancelDocEntry}. Aplicando PATCH de Comments...`);
+               await fetch(`${serviceLayerUrl}/PurchaseInvoices(${cancelDocEntry})`, {
+                  method: 'PATCH',
+                  headers: { 'Cookie': cookieHeader, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ Comments: "Cancelado via Log Axis (TMS)" })
+               });
+            }
          }
        } catch (ex) {
-         console.error('[CANCEL-BILL] Não foi possível atualizar JournalRemarks do documento de estorno.', ex);
+         console.error('[CANCEL-BILL] Não foi possível atualizar Comments do documento de estorno.', ex);
        }
     }
 
@@ -1330,10 +1438,37 @@ app.post('/api/cancel-bill', async (req, res) => {
       }
     }
 
+    // 3b. Cancel VendorPayment (CT-es Liquidation) in SAP
+    const vendorPaymentEntry = billData.metadata?.sap_vendor_payment_entry;
+    if (vendorPaymentEntry) {
+      console.log(`[CANCEL-BILL] Solicitando cancelamento secundário do VendorPayment (CT-es) DocEntry: ${vendorPaymentEntry}`);
+      try {
+        const cancelVpRes = await fetch(`${serviceLayerUrl}/VendorPayments(${vendorPaymentEntry})/Cancel`, {
+          method: 'POST',
+          headers: { 
+            'Cookie': cookieHeader,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!cancelVpRes.ok && cancelVpRes.status !== 204) {
+          let errVP;
+          try { errVP = await cancelVpRes.json(); } catch(e){}
+          console.warn(`[CANCEL-BILL] Aviso: Não foi possível estornar o VendorPayment associado. Erro:`, errVP || cancelVpRes.statusText);
+        } else {
+          console.log(`[CANCEL-BILL] VendorPayment ${vendorPaymentEntry} cancelado com sucesso. CT-es reabertos.`);
+        }
+      } catch (e) {
+        console.warn(`[CANCEL-BILL] Falha de rede ao tentar cancelar o VendorPayment:`, e.message);
+      }
+    }
+
     // 4. Update TMS Bill Status back to "importada"
     console.log(`[CANCEL-BILL] Sucesso no SAP. Estornando status no TMS...`);
     const newMetadata = { ...billData.metadata };
     delete newMetadata.sap_payment_entry;
+    delete newMetadata.sap_vendor_payment_entry;
+    delete newMetadata.sap_payment_sync_error;
 
     await supabase.from('bills').update({
        status: 'importada',

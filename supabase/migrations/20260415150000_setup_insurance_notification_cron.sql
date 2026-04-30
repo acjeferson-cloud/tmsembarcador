@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 -- Garantir que a extensão net esteja habilitada para chamadas HTTP
-CREATE EXTENSION IF NOT EXISTS pgnet;
+CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- Remover agendamento anterior se existir para evitar duplicidade
 SELECT cron.unschedule('carrier-insurance-check-daily');

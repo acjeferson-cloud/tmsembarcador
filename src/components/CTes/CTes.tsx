@@ -921,10 +921,9 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
     setIsLoading(true);
 
-    switch (action) {
-      case 'approve':
-        (async () => {
-            setIsLoading(true);
+    try {
+      switch (action) {
+        case 'approve':
             setToast({ message: `Processando integração do CT-e...`, type: 'info' });
             try {
               const fullCTe = await ctesCompleteService.getById(cteId.toString());
@@ -1002,16 +1001,11 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               }
 
               refreshData();
-              setIsLoading(false);
             } catch (error: any) {
               setToast({ message: `Erro ao aprovar CT-e: ${error.message}`, type: 'error' });
-              setIsLoading(false);
             }
-          })();
           break;
         case 'revert':
-          (async () => {
-            setIsLoading(true);
             setToast({ message: `Processando estorno do CT-e...`, type: 'info' });
             try {
               
@@ -1085,23 +1079,17 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               refreshData();
             } catch (error: any) {
               setToast({ message: `Erro ao estornar CT-e: ${error.message}`, type: 'error' });
-            } finally {
-              setIsLoading(false);
             }
-          })();
           break;
         case 'print':
-          (async () => {
              // Handle single-action print essentially like a bulk of 1
              const prevSelected = [...selectedCTes];
              setSelectedCTes([cteId.toString()]);
              setTimeout(() => handleBulkAction('print'), 50);
              setTimeout(() => setSelectedCTes(prevSelected), 1000);
-          })();
           break;
 
         case 'recalculate':
-          (async () => {
             try {
               const fullCTe = await ctesCompleteService.getById(cteId.toString());
               if (fullCTe) {
@@ -1116,7 +1104,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 // null
               setToast({ message: `Erro ao recalcular CT-e: ${error instanceof Error ? error.message : 'Erro desconhecido'}.`, type: 'error' });
             }
-          })();
           break;
         case 'reject':
           // Se houver divergência de valor (Vermelho), redirecionar para o relatório detalhado
@@ -1128,7 +1115,6 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           setShowRejectModal(true);
           break;
         case 'download':
-          (async () => {
             try {
               const fullCTe = await ctesCompleteService.getById(cteId.toString());
 
@@ -1160,19 +1146,12 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                   });
                 }
               } else {
-                setToast({
-                  message: `CT-e ${cte.numero} não encontrado.`,
-                  type: 'error'
-                });
+                setToast({ message: `CT-e ${cte.numero} não encontrado.`, type: 'error' });
               }
-              setIsLoading(false);
             } catch (error) {
-// null
               setToast({ message: 'Erro ao baixar XML.', type: 'error' });
-              setIsLoading(false);
             }
-          })();
-          return; // Retorna aqui para não executar setIsLoading(false) prematuramente
+          break;
         case 'delete':
           setConfirmDialog({
             isOpen: true,
@@ -1180,12 +1159,13 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
             cteNumber: cte.numero,
             action: 'delete'
           });
-          setIsLoading(false);
-          return;
+          return; // Retorna aqui, setIsLoading(false) não será chamado
         default:
           break;
       }
+    } finally {
       setIsLoading(false);
+    }
   };
 
   const confirmDelete = async () => {

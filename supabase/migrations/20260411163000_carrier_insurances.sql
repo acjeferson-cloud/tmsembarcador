@@ -21,9 +21,13 @@ CREATE TABLE IF NOT EXISTS public.carrier_insurances (
 ALTER TABLE public.carrier_insurances ENABLE ROW LEVEL SECURITY;
 
 -- Configuração permissiva inicial para debug e validação da tabela no Supabase PostgREST
+DROP POLICY IF EXISTS "carrier_insurances_isolation_select" ON public.carrier_insurances;
 CREATE POLICY "carrier_insurances_isolation_select" ON carrier_insurances FOR SELECT USING (true);
+DROP POLICY IF EXISTS "carrier_insurances_isolation_insert" ON public.carrier_insurances;
 CREATE POLICY "carrier_insurances_isolation_insert" ON carrier_insurances FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "carrier_insurances_isolation_update" ON public.carrier_insurances;
 CREATE POLICY "carrier_insurances_isolation_update" ON carrier_insurances FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "carrier_insurances_isolation_delete" ON public.carrier_insurances;
 CREATE POLICY "carrier_insurances_isolation_delete" ON carrier_insurances FOR DELETE USING (true);
 
 -- Garantir privilégios básicos para a API REST conseguir operar na tabela

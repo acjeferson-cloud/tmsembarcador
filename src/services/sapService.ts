@@ -641,6 +641,9 @@ export const sapIntegrationService = {
       company_db: config.database,
       companyDb: config.database,
       billing_nfe_item: config.billing_nfe_item,
+      billing_usage: config.billing_usage,
+      invoice_transitory_account: config.invoice_transitory_account,
+      billing_control_account: config.billing_control_account,
       cte_usage: config.cte_usage,
       cte_tax_code: config.metadata?.cte_tax_code || config.metadata?.cteTaxCode,
       sap_bpl_id: config.sap_bpl_id,
@@ -749,7 +752,10 @@ export const sapIntegrationService = {
         billId: billId,
         billing_usage: config.billing_usage,
         invoice_transitory_account: config.invoice_transitory_account,
-        billing_control_account: config.billing_control_account
+        billing_control_account: config.billing_control_account,
+        tax_code: config.cte_tax_code,
+        billing_nfe_item: config.billing_nfe_item,
+        invoice_nfe_item: config.invoice_default_item || config.metadata?.invoice_nfe_item
       };
 
       let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
