@@ -3,6 +3,7 @@ import { getMenuItemsByCategory } from '../../data/menuConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface FioriMenuProps {
   onPageChange: (page: string) => void;
@@ -14,6 +15,7 @@ export const FioriMenu: React.FC<FioriMenuProps> = ({ onPageChange }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isMasterAdmin = user?.email === MASTER_ADMIN_EMAIL;
+  const { isInnovationActive } = useInnovations();
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,6 +25,11 @@ export const FioriMenu: React.FC<FioriMenuProps> = ({ onPageChange }) => {
   const allMenuItems = Object.entries(menuByCategory).flatMap(([category, items]) =>
     items.filter(item => {
       if (item.id === 'saas-admin' && !isMasterAdmin) {
+        return false;
+      }
+
+      // Ocultar inovações não ativadas
+      if (item.innovationKey && !isInnovationActive(item.innovationKey)) {
         return false;
       }
 

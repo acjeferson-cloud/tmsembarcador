@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Check, Sparkles, MessageCircle, MessageSquare, MapPin, Package, DollarSign, Lightbulb, ShieldAlert, Lock, History } from 'lucide-react';
-import { Innovation, fetchInnovations, activateInnovation, deactivateInnovation, isInnovationActivated } from '../../services/innovationsService';
+import { Innovation, fetchInnovations, activateInnovation, deactivateInnovation, getInnovationStatus } from '../../services/innovationsService';
 import { Toast, ToastType } from '../common/Toast';
 import { NewSuggestionModal } from '../Suggestions/NewSuggestionModal';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,7 +28,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
   const [innovations, setInnovations] = useState<Innovation[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedInnovation, setSelectedInnovation] = useState<Innovation | null>(null);
-  const [activatedInnovations, setActivatedInnovations] = useState<Set<string>>(new Set());
+  const [innovationStatuses, setInnovationStatuses] = useState<Record<string, 'approved' | 'pending' | 'none'>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
@@ -112,14 +112,12 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
       const data = await fetchInnovations();
       setInnovations(data);
 
-      const activatedSet = new Set<string>();
+      const statuses: Record<string, 'approved' | 'pending' | 'none'> = {};
       for (const innovation of data) {
-        const isActivated = await isInnovationActivated(userNumericId, innovation.id, orgId, envId, estabCode);
-        if (isActivated) {
-          activatedSet.add(innovation.id);
-        }
+        const status = await getInnovationStatus(userNumericId, innovation.id, orgId, envId, estabCode);
+        statuses[innovation.id] = status;
       }
-      setActivatedInnovations(activatedSet);
+      setInnovationStatuses(statuses);
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -154,7 +152,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
       const result = await activateInnovation(userNumericId, innovationId, orgId, envId, estabCode);
 
       if (result.success) {
-        setActivatedInnovations(prev => new Set(prev).add(innovationId));
+        setInnovationStatuses(prev => ({ ...prev, [innovationId]: 'pending' }));
         setToast({ message: result.message, type: 'success' });
         setSelectedInnovation(null);
 
@@ -199,10 +197,10 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
       const result = await deactivateInnovation(userNumericId, innovationId, orgId, envId, estabCode);
 
       if (result.success) {
-        setActivatedInnovations(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(innovationId);
-          return newSet;
+        setInnovationStatuses(prev => {
+          const newStatuses = { ...prev };
+          newStatuses[innovationId] = 'none';
+          return newStatuses;
         });
         setToast({ message: result.message, type: 'success' });
         setSelectedInnovation(null);
@@ -376,7 +374,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                       <DollarSign className="w-4 h-4" />
                       <span>Será adicionado à sua mensalidade</span>
                     </div>
-                    {activatedInnovations.has(selectedInnovation.id) ? (
+                    {innovationStatuses[selectedInnovation.id] === 'approved' ? (
                       <div className="flex items-center space-x-2">
                         <div className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
                           <Check className="w-4 h-4" />
@@ -392,6 +390,11 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                           </button>
                         )}
                       </div>
+                    ) : innovationStatuses[selectedInnovation.id] === 'pending' ? (
+                      <div className="flex items-center space-x-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg border border-amber-200">
+                        <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="font-semibold text-sm">Aguardando Aprovação ⏳</span>
+                      </div>
                     ) : (
                       <div className="relative">
                         <button
@@ -403,12 +406,12 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                               : 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
                           }`}
                         >
-                          {isLoading ? 'Ativando...' : !isAdmin ? (
+                          {isLoading ? 'Solicitando...' : !isAdmin ? (
                             <span className="flex items-center space-x-1">
                               <Lock className="w-3 h-3" />
-                              <span>Ativar Recurso</span>
+                              <span>Solicitar Ativação</span>
                             </span>
-                          ) : 'Ativar Recurso'}
+                          ) : 'Solicitar Ativação'}
                         </button>
                         {!isAdmin && (
                           <p className="text-xs text-amber-600 mt-1">Apenas administradores</p>
@@ -455,10 +458,15 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                                   {currentInnovation.description}
                                 </p>
                               </div>
-                              {activatedInnovations.has(currentInnovation.id) && (
-                                <div className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg flex-shrink-0">
+                              {innovationStatuses[currentInnovation.id] === 'approved' && (
+                                <div className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg flex-shrink-0 border border-green-200">
                                   <Check className="w-4 h-4" />
                                   <span className="font-semibold text-xs">Ativado</span>
+                                </div>
+                              )}
+                              {innovationStatuses[currentInnovation.id] === 'pending' && (
+                                <div className="flex items-center space-x-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-lg flex-shrink-0 border border-amber-200">
+                                  <span className="font-semibold text-xs">Aguardando Aprovação ⏳</span>
                                 </div>
                               )}
                             </div>
@@ -527,7 +535,9 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {innovations.map((innovation) => {
                       const Icon = getIcon(innovation.icon);
-                      const isActivated = activatedInnovations.has(innovation.id);
+                      const status = innovationStatuses[innovation.id] || 'none';
+                      const isActivated = status === 'approved';
+                      const isPending = status === 'pending';
 
                       return (
                         <div
@@ -537,8 +547,8 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                         >
                           <div className="flex items-start space-x-3">
                             <div className="flex-shrink-0">
-                              <div className={`p-2 rounded-lg ${isActivated ? 'bg-green-100' : 'bg-blue-100'}`}>
-                                <Icon className={`w-5 h-5 ${isActivated ? 'text-green-600' : 'text-blue-600'}`} />
+                              <div className={`p-2 rounded-lg ${isActivated ? 'bg-green-100' : isPending ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                                <Icon className={`w-5 h-5 ${isActivated ? 'text-green-600' : isPending ? 'text-amber-600' : 'text-blue-600'}`} />
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
@@ -546,6 +556,9 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                                 <h4 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{innovation.name}</h4>
                                 {isActivated && (
                                   <Check className="w-4 h-4 text-green-600 flex-shrink-0 ml-1" />
+                                )}
+                                {isPending && (
+                                  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold ml-1 border border-amber-200">Aguardando</span>
                                 )}
                               </div>
                               <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">{innovation.description}</p>

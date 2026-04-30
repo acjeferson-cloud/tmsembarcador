@@ -56,6 +56,13 @@ const SaasAdminConsole = lazy(() => import('./components/SaasAdmin/SaasAdminCons
 const SaasAdminApp = lazy(() => import('./components/SaasAdmin/SaasAdminApp').then(m => ({ default: m.SaasAdminApp })));
 const DeliveryTracking = lazy(() => import('./components/DeliveryTracking/DeliveryTracking').then(m => ({ default: m.DeliveryTracking })));
 const NotificationCenter = lazy(() => import('./components/Notifications/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
+
+// Routing Module
+const RoutingTower = lazy(() => import('./components/Routing/RoutingTower/RoutingTower').then(m => ({ default: m.RoutingTower })));
+const Trips = lazy(() => import('./components/Routing/Trips/Trips').then(m => ({ default: m.Trips })));
+const Vehicles = lazy(() => import('./components/Routing/Vehicles/Vehicles').then(m => ({ default: m.Vehicles })));
+const Drivers = lazy(() => import('./components/Routing/Drivers/Drivers').then(m => ({ default: m.Drivers })));
+
 import { ThemeProvider } from './context/ThemeContext';
 import { ConnectionProvider } from './context/ConnectionContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -432,6 +439,14 @@ function AppContent() {
         return <NPSConfiguration key={`nps-config-${refreshKey}`} />;
       case 'notifications':
         return <NotificationCenter key={`notifications-${refreshKey}`} />;
+      case 'routing-tower':
+        return <RoutingTower key={`routing-tower-${refreshKey}`} />;
+      case 'trips':
+        return <Trips key={`trips-${refreshKey}`} />;
+      case 'vehicles':
+        return <Vehicles key={`vehicles-${refreshKey}`} />;
+      case 'drivers':
+        return <Drivers key={`drivers-${refreshKey}`} />;
       default:
         return <Dashboard key={`dashboard-${refreshKey}`} />;
       }

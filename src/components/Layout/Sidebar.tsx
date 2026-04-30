@@ -12,6 +12,7 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 interface SidebarProps {
   currentPage: string;
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isInnovationActive } = useInnovations();
 
   // Filter menu items based on user permissions
   const menuItems = useMemo(() => {
@@ -44,6 +46,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       
       // Ocultar Saas Admin se não for master admin
       if (itemCopy.id === 'saas-admin' && !isMasterAdmin) {
+        return null;
+      }
+
+      // Ocultar se for Inovação e não estiver ativa
+      if (itemCopy.innovationKey && !isInnovationActive(itemCopy.innovationKey)) {
         return null;
       }
 
