@@ -47,10 +47,10 @@ export const authWithEnvironmentService = {
       });
 
       if (error) {
-
+        console.error("RPC Error:", error);
         return {
           success: false,
-          error: 'Erro ao validar credenciais'
+          error: error.message || 'Erro ao validar credenciais'
         };
       }
 
@@ -66,7 +66,7 @@ export const authWithEnvironmentService = {
 
       return {
         success: false,
-        error: 'Erro ao validar credenciais'
+        error: (err as Error).message || 'Erro ao validar credenciais'
       };
     }
   },
@@ -89,7 +89,7 @@ export const authWithEnvironmentService = {
 
         return {
           success: false,
-          error: 'Erro ao fazer login no ambiente selecionado'
+          error: error.message || 'Erro ao fazer login no ambiente selecionado'
         };
       }
 
