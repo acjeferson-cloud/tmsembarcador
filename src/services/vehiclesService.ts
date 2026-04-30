@@ -1,6 +1,40 @@
 import { supabase } from '../lib/supabase';
 import { getCurrentEstablishmentId } from '../utils/establishmentUtils';
 
+export interface VehicleMetadata {
+  categoria_operacional?: 'Próprio' | 'Agregado' | 'Terceiro';
+  tipo_operacao?: 'Urbano' | 'Rodoviário' | 'Misto';
+  dimensoes?: {
+    comprimento: number;
+    largura: number;
+    altura: number;
+  };
+  capacidade_pallets?: number;
+  numero_eixos?: number;
+  restricoes?: {
+    area_restrita: boolean;
+    tipo_carroceria: string;
+    suporta_refrigerado: boolean;
+    tipo_carga: string[];
+    certificacoes: string[];
+    equipamentos_especiais: string[];
+  };
+  custos?: {
+    fixo_mensal: number;
+    variavel_km: number;
+    consumo_km_l: number;
+    tipo_combustivel: string;
+  };
+  motorista_padrao_id?: string;
+  avancado?: {
+    prioridade_uso: number;
+    score: number;
+    rastreador: boolean;
+    telemetria: boolean;
+    observacoes: string;
+  };
+}
+
 export interface Vehicle {
   id: string;
   placa: string;
@@ -8,6 +42,7 @@ export interface Vehicle {
   capacidade_kg: number;
   cubagem_m3: number;
   status: 'ativo' | 'inativo' | 'manutencao';
+  metadata?: VehicleMetadata;
   establishment_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -29,7 +64,11 @@ export const vehiclesService = {
       throw error;
     }
 
-    return data || [];
+    // Garante que o metadata seja pelo menos um objeto vazio ao invés de null
+    return (data || []).map(v => ({
+      ...v,
+      metadata: v.metadata || {}
+    }));
   },
 
   async getById(id: string): Promise<Vehicle | null> {
@@ -48,6 +87,10 @@ export const vehiclesService = {
       throw error;
     }
 
+    if (data) {
+      data.metadata = data.metadata || {};
+    }
+
     return data;
   },
 
@@ -57,13 +100,17 @@ export const vehiclesService = {
 
     const { data, error } = await supabase
       .from('vehicles')
-      .insert([{ ...vehicle, establishment_id: establishmentId }])
+      .insert([{ ...vehicle, metadata: vehicle.metadata || {}, establishment_id: establishmentId }])
       .select()
       .single();
 
     if (error) {
       console.error('Error creating vehicle:', error);
       throw error;
+    }
+
+    if (data) {
+      data.metadata = data.metadata || {};
     }
 
     return data;
@@ -73,9 +120,14 @@ export const vehiclesService = {
     const establishmentId = getCurrentEstablishmentId();
     if (!establishmentId) throw new Error('Establishment not selected');
 
+    const payload = { ...vehicle, updated_at: new Date().toISOString() };
+    if (payload.metadata === undefined) {
+      // Se não enviou metadata explícito, não mexe no banco (o supabase ignora undefined, mas é bom garantir)
+    }
+
     const { data, error } = await supabase
       .from('vehicles')
-      .update({ ...vehicle, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', id)
       .eq('establishment_id', establishmentId)
       .select()
@@ -84,6 +136,10 @@ export const vehiclesService = {
     if (error) {
       console.error('Error updating vehicle:', error);
       throw error;
+    }
+
+    if (data) {
+      data.metadata = data.metadata || {};
     }
 
     return data;

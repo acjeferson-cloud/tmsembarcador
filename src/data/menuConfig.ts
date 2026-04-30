@@ -35,7 +35,8 @@ import {
   Shield,
   Search,
   Sparkles,
-  Tag
+  Tag,
+  Route
 } from 'lucide-react';
 
 interface MenuItem {
@@ -118,7 +119,7 @@ export const menuConfig: MenuItem[] = [
     hasSubmenu: true,
     innovationKey: 'routing',
     submenu: [
-      { id: 'routing-tower', labelKey: 'menu.routingTower', icon: Activity, color: 'bg-indigo-500', categoryKey: 'menu.categories.operacoes', innovationKey: 'routing' },
+      { id: 'routing-tower', labelKey: 'menu.routingTower', icon: Route, color: 'bg-indigo-500', categoryKey: 'menu.categories.operacoes', innovationKey: 'routing' },
       { id: 'trips', labelKey: 'menu.trips', icon: FileText, color: 'bg-orange-500', categoryKey: 'menu.categories.documentos', innovationKey: 'routing' },
       { id: 'vehicles', labelKey: 'menu.vehicles', icon: Truck, color: 'bg-cyan-500', categoryKey: 'menu.categories.cadastros', innovationKey: 'routing' },
       { id: 'drivers', labelKey: 'menu.drivers', icon: Users, color: 'bg-slate-500', categoryKey: 'menu.categories.cadastros', innovationKey: 'routing' }

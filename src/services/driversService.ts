@@ -7,7 +7,31 @@ export interface Driver {
   cpf: string;
   cnh: string;
   telefone: string;
-  status: 'livre' | 'em_viagem' | 'inativo';
+  status: 'livre' | 'em_rota' | 'indisponivel' | 'ferias' | 'afastado' | 'em_viagem' | 'inativo'; // Manteve em_viagem e inativo por compatibilidade
+  metadata?: {
+    categoria_operacional?: 'Próprio' | 'Agregado' | 'Terceiro';
+    operacao?: {
+      regioes_atuacao?: string[];
+      turno_inicio?: string;
+      turno_fim?: string;
+      jornada_maxima_diaria?: number;
+      disponibilidade?: boolean;
+    };
+    habilitacoes?: {
+      mopp?: boolean;
+      certificacoes?: string[];
+      tipos_carga?: string[];
+      veiculos_permitidos?: string[];
+      restricoes?: string;
+    };
+    custos?: {
+      valor_hora?: number;
+      valor_diaria?: number;
+      score_performance?: number;
+      possui_rastreador?: boolean;
+      observacoes?: string;
+    };
+  };
   establishment_id?: string;
   created_at?: string;
   updated_at?: string;
