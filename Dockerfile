@@ -21,7 +21,7 @@ ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 COPY package*.json ./
 
 # Instalar dependências
-RUN npm ci --only=production=false
+RUN npm ci --legacy-peer-deps --only=production=false
 
 # Copiar código fonte
 COPY . .
