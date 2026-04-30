@@ -13,11 +13,14 @@ serve(async (req) => {
   }
 
   try {
-    const { innovationName, organizationName, userEmail, userName } = await req.json();
+    const { innovationName, organizationName, userEmail, userName, requestType = 'activation' } = await req.json();
 
     if (!innovationName || !organizationName) {
       throw new Error("Dados da solicitação incompletos.");
     }
+
+    const typeLabel = requestType === 'deactivation' ? 'Desativação' : 'Ativação';
+    const typeLabelLower = requestType === 'deactivation' ? 'desativação' : 'ativação';
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -68,14 +71,15 @@ serve(async (req) => {
         <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eeeeee;">
           <img src="${logoUrl}" alt="Log Axis TMS" style="max-height: 60px; max-width: 200px; display: block; margin: 0 auto;" />
         </div>
-        <h2 style="color: #2563eb; font-size: 22px; margin-bottom: 20px; text-align: center;">Nova Solicitação de Módulo</h2>
+        <h2 style="color: #2563eb; font-size: 22px; margin-bottom: 20px; text-align: center;">Nova Solicitação de ${typeLabel}</h2>
         <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">Olá Jeferson,</p>
-        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">O cliente <strong>${organizationName}</strong> acabou de solicitar a ativação do módulo <strong>${innovationName}</strong>.</p>
+        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">O cliente <strong>${organizationName}</strong> acabou de solicitar a <strong>${typeLabelLower}</strong> do módulo <strong>${innovationName}</strong>.</p>
         
         <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; margin: 25px 0; border-radius: 6px;">
           <ul style="list-style-type: none; padding: 0; margin: 0;">
             <li style="margin-bottom: 10px;"><strong>Cliente:</strong> ${organizationName}</li>
             <li style="margin-bottom: 10px;"><strong>Módulo Solicitado:</strong> ${innovationName}</li>
+            <li style="margin-bottom: 10px;"><strong>Tipo:</strong> ${typeLabel}</li>
             <li style="margin-bottom: 10px;"><strong>Solicitante:</strong> ${userName} (${userEmail})</li>
             <li><strong>Status:</strong> Aguardando Aprovação</li>
           </ul>
@@ -93,7 +97,7 @@ serve(async (req) => {
     const info = await transporter.sendMail({
       from: sendFrom,
       to: 'jeferson.costa@logaxis.com.br',
-      subject: `Nova Solicitação de Módulo: ${innovationName} - ${organizationName}`,
+      subject: `Solicitação de ${typeLabel} de Módulo: ${innovationName} - ${organizationName}`,
       html: htmlBody,
     });
 

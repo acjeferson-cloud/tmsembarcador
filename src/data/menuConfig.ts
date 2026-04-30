@@ -110,6 +110,21 @@ export const menuConfig: MenuItem[] = [
     ]
   },
   {
+    id: 'routing',
+    labelKey: 'menu.routing',
+    icon: Map,
+    color: 'bg-emerald-600',
+    categoryKey: 'menu.categories.operacoes',
+    hasSubmenu: true,
+    innovationKey: 'routing',
+    submenu: [
+      { id: 'routing-tower', labelKey: 'menu.routingTower', icon: Activity, color: 'bg-indigo-500', categoryKey: 'menu.categories.operacoes', innovationKey: 'routing' },
+      { id: 'trips', labelKey: 'menu.trips', icon: FileText, color: 'bg-orange-500', categoryKey: 'menu.categories.documentos', innovationKey: 'routing' },
+      { id: 'vehicles', labelKey: 'menu.vehicles', icon: Truck, color: 'bg-cyan-500', categoryKey: 'menu.categories.cadastros', innovationKey: 'routing' },
+      { id: 'drivers', labelKey: 'menu.drivers', icon: Users, color: 'bg-slate-500', categoryKey: 'menu.categories.cadastros', innovationKey: 'routing' }
+    ]
+  },
+  {
     id: 'delivery-tracking',
     labelKey: 'menu.deliveryTracking',
     icon: Search,
@@ -165,21 +180,6 @@ export const menuConfig: MenuItem[] = [
       { id: 'report-carrier-efficiency', labelKey: 'menu.reportCarrierEfficiency', icon: Truck, color: 'bg-teal-500', categoryKey: 'menu.categories.relatorios' },
       { id: 'report-xml-download-history', labelKey: 'menu.reportXmlDownloadHistory', icon: Download, color: 'bg-cyan-500', categoryKey: 'menu.categories.relatorios' },
       { id: 'report-tolerance-usage', labelKey: 'menu.reportToleranceUsage', icon: Clock, color: 'bg-amber-500', categoryKey: 'menu.categories.relatorios' }
-    ]
-  },
-  {
-    id: 'routing',
-    labelKey: 'menu.routing',
-    icon: Map,
-    color: 'bg-emerald-600',
-    categoryKey: 'menu.categories.operacoes',
-    hasSubmenu: true,
-    innovationKey: 'routing',
-    submenu: [
-      { id: 'routing-tower', labelKey: 'menu.routingTower', icon: Activity, color: 'bg-indigo-500', categoryKey: 'menu.categories.operacoes', innovationKey: 'routing' },
-      { id: 'trips', labelKey: 'menu.trips', icon: FileText, color: 'bg-orange-500', categoryKey: 'menu.categories.documentos', innovationKey: 'routing' },
-      { id: 'vehicles', labelKey: 'menu.vehicles', icon: Truck, color: 'bg-cyan-500', categoryKey: 'menu.categories.cadastros', innovationKey: 'routing' },
-      { id: 'drivers', labelKey: 'menu.drivers', icon: Users, color: 'bg-slate-500', categoryKey: 'menu.categories.cadastros', innovationKey: 'routing' }
     ]
   },
   {

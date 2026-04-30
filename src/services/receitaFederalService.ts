@@ -80,42 +80,104 @@ export const receitaFederalService = {
       throw new Error('CNPJ inválido. Dígitos verificadores incorretos.');
     }
 
-    try {
-      const response = await fetch(`https://minhareceita.org/${cnpjLimpo}`);
+    let isNotFound = true;
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('CNPJ não encontrado na base da Receita Federal.');
+    const apis = [
+      {
+        name: 'brasilapi',
+        fetch: () => fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`),
+        map: (data: any) => ({
+          cnpj: formatarCNPJ(data.cnpj),
+          razao_social: data.razao_social || '',
+          nome_fantasia: data.nome_fantasia || data.razao_social || '',
+          situacao_cadastral: data.descricao_situacao_cadastral || '',
+          data_situacao_cadastral: data.data_situacao_cadastral || '',
+          cnae_fiscal: data.cnae_fiscal_principal?.codigo?.toString() || data.cnae_fiscal?.toString() || '',
+          cnae_fiscal_descricao: data.cnae_fiscal_principal?.descricao || data.cnae_fiscal_descricao || '',
+          logradouro: data.logradouro || '',
+          numero: data.numero || '',
+          complemento: data.complemento || '',
+          bairro: data.bairro || '',
+          municipio: data.municipio || '',
+          uf: data.uf || '',
+          cep: data.cep ? this.formatarCEP(data.cep) : '',
+          ddd_telefone_1: data.ddd_telefone_1 || '',
+          ddd_telefone_2: data.ddd_telefone_2 || '',
+          email: data.email || '',
+        })
+      },
+      {
+        name: 'cnpjws',
+        fetch: () => fetch(`https://publica.cnpj.ws/cnpj/${cnpjLimpo}`),
+        map: (data: any) => {
+          const estab = data.estabelecimento || {};
+          const atividade = estab.atividade_principal || {};
+          return {
+            cnpj: formatarCNPJ(estab.cnpj || cnpjLimpo),
+            razao_social: data.razao_social || '',
+            nome_fantasia: estab.nome_fantasia || data.razao_social || '',
+            situacao_cadastral: estab.situacao_cadastral || '',
+            data_situacao_cadastral: estab.data_situacao_cadastral || '',
+            cnae_fiscal: atividade.id || '',
+            cnae_fiscal_descricao: atividade.descricao || '',
+            logradouro: estab.logradouro || '',
+            numero: estab.numero || '',
+            complemento: estab.complemento || '',
+            bairro: estab.bairro || '',
+            municipio: estab.cidade?.nome || '',
+            uf: estab.estado?.sigla || '',
+            cep: estab.cep ? this.formatarCEP(estab.cep) : '',
+            ddd_telefone_1: estab.ddd1 || '',
+            ddd_telefone_2: estab.ddd2 || '',
+            email: estab.email || '',
+          };
         }
-        throw new Error('Erro ao consultar a Receita Federal. Tente novamente.');
+      },
+      {
+        name: 'minhareceita',
+        fetch: () => fetch(`https://minhareceita.org/${cnpjLimpo}`),
+        map: (data: any) => ({
+          cnpj: formatarCNPJ(data.cnpj),
+          razao_social: data.razao_social || data.nome_empresarial || '',
+          nome_fantasia: data.nome_fantasia || data.razao_social || '',
+          situacao_cadastral: data.descricao_situacao_cadastral || data.situacao_cadastral || '',
+          data_situacao_cadastral: data.data_situacao_cadastral || '',
+          cnae_fiscal: data.cnae_fiscal || '',
+          cnae_fiscal_descricao: data.cnae_fiscal_descricao || '',
+          logradouro: data.logradouro || data.descricao_tipo_de_logradouro || '',
+          numero: data.numero || '',
+          complemento: data.complemento || '',
+          bairro: data.bairro || '',
+          municipio: data.municipio || '',
+          uf: data.uf || '',
+          cep: data.cep ? this.formatarCEP(data.cep) : '',
+          ddd_telefone_1: data.ddd_telefone_1 || '',
+          ddd_telefone_2: data.ddd_telefone_2 || '',
+          email: data.email || '',
+        })
       }
+    ];
 
-      const data = await response.json();
-
-      return {
-        cnpj: formatarCNPJ(data.cnpj),
-        razao_social: data.razao_social || data.nome_empresarial || '',
-        nome_fantasia: data.nome_fantasia || data.razao_social || '',
-        situacao_cadastral: data.descricao_situacao_cadastral || data.situacao_cadastral || '',
-        data_situacao_cadastral: data.data_situacao_cadastral || '',
-        cnae_fiscal: data.cnae_fiscal || '',
-        cnae_fiscal_descricao: data.cnae_fiscal_descricao || '',
-        logradouro: data.logradouro || data.descricao_tipo_de_logradouro || '',
-        numero: data.numero || '',
-        complemento: data.complemento || '',
-        bairro: data.bairro || '',
-        municipio: data.municipio || '',
-        uf: data.uf || '',
-        cep: data.cep ? this.formatarCEP(data.cep) : '',
-        ddd_telefone_1: data.ddd_telefone_1 || '',
-        ddd_telefone_2: data.ddd_telefone_2 || '',
-        email: data.email || '',
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
+    for (const api of apis) {
+      try {
+        const response = await api.fetch();
+        if (response.ok) {
+          const data = await response.json();
+          return api.map(data);
+        }
+        if (response.status !== 404) {
+          isNotFound = false; // Falhou por erro de servidor ou rate limit, não porque o CNPJ não existe
+        }
+      } catch (error) {
+        // Falha de rede, CORS, bloqueio de adblocker, etc.
+        isNotFound = false; 
       }
-      throw new Error('Erro ao consultar a Receita Federal. Verifique sua conexão.');
+    }
+
+    if (isNotFound) {
+      throw new Error('CNPJ não encontrado na base da Receita Federal.');
+    } else {
+      throw new Error('Não foi possível realizar a consulta. Verifique possíveis bloqueios em sua infraestrutura interna de rede (Firewall, Proxy Corporativo ou Extensões/AdBlock).');
     }
   },
 

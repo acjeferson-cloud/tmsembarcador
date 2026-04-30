@@ -21,11 +21,10 @@ import { WhiteLabelManagement } from './WhiteLabelManagement';
 import { SaasPlansManager } from './SaasPlansManager';
 import { SaasEnvironmentsView } from './SaasEnvironmentsView';
 import { InnovationsCrud } from '../Innovations/InnovationsCrud';
-import { InnovationRequests } from './InnovationRequests';
 import { tenantAuthService } from '../../services/tenantAuthService';
 import { useAdminSessionTimeout } from '../../hooks/useAdminSessionTimeout';
 
-type TabType = 'dashboard' | 'tenants' | 'plans' | 'environments' | 'whitelabel' | 'databases' | 'metrics' | 'logs' | 'alerts' | 'innovations' | 'innovation-requests' | 'settings';
+type TabType = 'dashboard' | 'tenants' | 'plans' | 'environments' | 'whitelabel' | 'databases' | 'metrics' | 'logs' | 'alerts' | 'innovations' | 'settings';
 
 export function SaasAdminConsole() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -55,7 +54,6 @@ export function SaasAdminConsole() {
     { id: 'logs' as TabType, label: 'Logs de Auditoria', icon: FileText },
     { id: 'alerts' as TabType, label: 'Alertas', icon: AlertTriangle },
     { id: 'innovations' as TabType, label: 'Inovações', icon: Sparkles },
-    { id: 'innovation-requests' as TabType, label: 'Aprovações de Módulos', icon: Activity },
     { id: 'settings' as TabType, label: 'Configurações', icon: Settings }
   ];
 
@@ -145,7 +143,6 @@ export function SaasAdminConsole() {
         )}
 
         {activeTab === 'innovations' && <InnovationsCrud />}
-        {activeTab === 'innovation-requests' && <InnovationRequests />}
 
         {activeTab === 'settings' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">

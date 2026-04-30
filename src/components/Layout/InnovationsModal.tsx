@@ -199,7 +199,7 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
       if (result.success) {
         setInnovationStatuses(prev => {
           const newStatuses = { ...prev };
-          newStatuses[innovationId] = 'none';
+          newStatuses[innovationId] = 'pending_deactivation';
           return newStatuses;
         });
         setToast({ message: result.message, type: 'success' });
@@ -386,9 +386,14 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                             disabled={isLoading}
                             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm transition-colors"
                           >
-                            {isLoading ? 'Desativando...' : 'Desativar'}
+                            {isLoading ? 'Solicitando...' : 'Desativar'}
                           </button>
                         )}
+                      </div>
+                    ) : innovationStatuses[selectedInnovation.id] === 'pending_deactivation' ? (
+                      <div className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg border border-red-200">
+                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="font-semibold text-sm">Desativação Solicitada ⏳</span>
                       </div>
                     ) : innovationStatuses[selectedInnovation.id] === 'pending' ? (
                       <div className="flex items-center space-x-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg border border-amber-200">
@@ -462,6 +467,11 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
                                 <div className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg flex-shrink-0 border border-green-200">
                                   <Check className="w-4 h-4" />
                                   <span className="font-semibold text-xs">Ativado</span>
+                                </div>
+                              )}
+                              {innovationStatuses[currentInnovation.id] === 'pending_deactivation' && (
+                                <div className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-lg flex-shrink-0 border border-red-200">
+                                  <span className="font-semibold text-xs">Desativação Solicitada ⏳</span>
                                 </div>
                               )}
                               {innovationStatuses[currentInnovation.id] === 'pending' && (

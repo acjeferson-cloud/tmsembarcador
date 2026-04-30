@@ -117,7 +117,7 @@ CREATE POLICY "trip_stops_anon_policy" ON trip_stops
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM innovations WHERE name = 'Módulo de Roteirização') THEN
-    INSERT INTO innovations (name, description, detailed_description, category, icon, is_active, monthly_price, display_order)
+    INSERT INTO innovations (name, description, detailed_description, category, icon, is_active, monthly_price, display_order, innovation_key)
     VALUES (
       'Módulo de Roteirização',
       'Otimização de Rotas e Gestão de Frota Própria.',
@@ -126,7 +126,8 @@ BEGIN
       'Map',
       true,
       0,
-      10
+      10,
+      'routing'
     );
   END IF;
 END $$;

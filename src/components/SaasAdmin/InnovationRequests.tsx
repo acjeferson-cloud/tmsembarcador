@@ -42,19 +42,23 @@ export function InnovationRequests() {
         .from('user_innovations')
         .select(`
           *,
-          innovation:innovations(name, description),
-          organization:saas_tenants(nome)
+          innovation:innovations(name, description)
         `)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'pending_deactivation'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
       
       // Load user details separately because the relation might be tricky with numeric user_id
       const requestsData = data || [];
       const enrichedRequests = await Promise.all(
         requestsData.map(async (req: any) => {
           let userInfo = undefined;
+          let orgInfo = undefined;
+          
           if (req.user_id) {
             const { data: user } = await supabase
               .from('users')
@@ -63,24 +67,38 @@ export function InnovationRequests() {
               .maybeSingle();
             if (user) userInfo = user;
           }
-          return { ...req, user: userInfo } as InnovationRequest;
+          
+          if (req.organization_id) {
+            const { data: org } = await supabase
+              .from('saas_organizations')
+              .select('nome')
+              .eq('id', req.organization_id)
+              .maybeSingle();
+            if (org) orgInfo = org;
+          }
+          
+          return { ...req, user: userInfo, organization: orgInfo } as InnovationRequest;
         })
       );
       
       setRequests(enrichedRequests);
     } catch (err: any) {
+      console.error('Load requests failed:', err);
       setToast({ message: 'Erro ao carregar solicitações', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (req: InnovationRequest) => {
     try {
+      const newStatus = req.status === 'pending_deactivation' ? 'deactivated' : 'approved';
+      const newIsActive = req.status === 'pending_deactivation' ? false : true;
+
       const { error } = await supabase
         .from('user_innovations')
-        .update({ status: 'approved', is_active: true })
-        .eq('id', id);
+        .update({ status: newStatus, is_active: newIsActive })
+        .eq('id', req.id);
 
       if (error) throw error;
 
@@ -91,14 +109,17 @@ export function InnovationRequests() {
     }
   };
 
-  const handleReject = async (id: string) => {
+  const handleReject = async (req: InnovationRequest) => {
     if (!window.confirm('Tem certeza que deseja rejeitar esta solicitação?')) return;
 
     try {
+      const newStatus = req.status === 'pending_deactivation' ? 'approved' : 'rejected';
+      const newIsActive = req.status === 'pending_deactivation' ? true : false;
+
       const { error } = await supabase
         .from('user_innovations')
-        .update({ status: 'rejected', is_active: false })
-        .eq('id', id);
+        .update({ status: newStatus, is_active: newIsActive })
+        .eq('id', req.id);
 
       if (error) throw error;
 
@@ -109,11 +130,16 @@ export function InnovationRequests() {
     }
   };
 
-  const filteredRequests = requests.filter(req => 
-    req.innovation?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.organization?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.user?.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRequests = requests.filter(req => {
+    const searchLower = searchTerm.toLowerCase();
+    const innovationName = req.innovation?.name?.toLowerCase() || '';
+    const orgName = req.organization?.nome?.toLowerCase() || '';
+    const userName = req.user?.nome?.toLowerCase() || '';
+
+    return innovationName.includes(searchLower) ||
+           orgName.includes(searchLower) ||
+           userName.includes(searchLower);
+  });
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
@@ -158,6 +184,7 @@ export function InnovationRequests() {
                 <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                   <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente / Organização</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Módulo Solicitado</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Solicitante</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Ações</th>
@@ -178,6 +205,17 @@ export function InnovationRequests() {
                       <div className="font-medium text-blue-600 dark:text-blue-400">
                         {request.innovation?.name || 'Recurso Removido'}
                       </div>
+                    </td>
+                    <td className="p-4">
+                      {request.status === 'pending_deactivation' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                          Desativação
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                          Ativação
+                        </span>
+                      )}
                     </td>
                     <td className="p-4">
                       {request.user ? (
@@ -206,13 +244,13 @@ export function InnovationRequests() {
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => handleReject(request.id)}
+                          onClick={() => handleReject(request)}
                           className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                         >
                           Rejeitar
                         </button>
                         <button
-                          onClick={() => handleApprove(request.id)}
+                          onClick={() => handleApprove(request)}
                           className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors shadow-sm"
                         >
                           Aprovar

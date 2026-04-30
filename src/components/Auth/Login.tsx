@@ -322,7 +322,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <a href="https://www.logaxis.com.br" target="_blank" rel="noopener noreferrer" className="inline-block" title="Visitar site da Log Axis">
               <img src="/logo-logaxis.png" alt="Log Axis" className="h-8 mx-auto hover:scale-105 transition-all duration-200 opacity-70 hover:opacity-100 grayscale hover:grayscale-0" />
             </a>
-            <p className="text-xs text-gray-400 dark:text-gray-600">V1.21</p>
+            <p className="text-xs text-gray-400 dark:text-gray-600">V1.22</p>
           </div>
         </div>
       </div>

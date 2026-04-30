@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { isInnovationActive } = useInnovations();
+  const { isInnovationActive, activeInnovationKeys } = useInnovations();
 
   // Filter menu items based on user permissions
   const menuItems = useMemo(() => {
@@ -79,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       return itemCopy;
     }).filter((item): item is NonNullable<typeof item> => item !== null);
-  }, [isMasterAdmin, user]);
+  }, [isMasterAdmin, user, activeInnovationKeys]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

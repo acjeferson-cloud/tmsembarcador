@@ -142,7 +142,7 @@ export async function activateInnovation(
   }
 }
 
-async function sendInnovationRequestEmail(innovationId: string) {
+async function sendInnovationRequestEmail(innovationId: string, requestType: 'activation' | 'deactivation' = 'activation') {
   try {
     const savedUser = localStorage.getItem('tms-user');
     const parsedUser = savedUser ? JSON.parse(savedUser) : {};
@@ -159,7 +159,8 @@ async function sendInnovationRequestEmail(innovationId: string) {
         innovationName,
         organizationName: orgName,
         userEmail,
-        userName
+        userName,
+        requestType
       }
     });
   } catch (err) {
@@ -176,19 +177,23 @@ export async function deactivateInnovation(
 ): Promise<{ success: boolean; message: string }> {
   try {
     const { error } = await (supabase as any).from('user_innovations')
-      .update({ is_active: false, status: 'rejected' } as any)
+      .update({ status: 'pending_deactivation' } as any)
       .eq('organization_id', orgId)
       .eq('environment_id', envId)
       .eq('establishment_code', estabCode)
       .eq('innovation_id', innovationId);
 
     if (error) {
-      return { success: false, message: `Erro ao desativar recurso: ${error.message}` };
+      return { success: false, message: `Erro ao solicitar desativação: ${error.message}` };
     }
+    
+    // Disparar e-mail informando o Master Admin sobre a solicitação de desativação
+    await sendInnovationRequestEmail(innovationId, 'deactivation');
+    
     window.dispatchEvent(new Event('innovationsUpdated'));
-    return { success: true, message: 'Recurso desativado com sucesso!' };
+    return { success: true, message: 'Solicitação de desativação enviada com sucesso!' };
   } catch (error) {
-    return { success: false, message: 'Erro ao desativar recurso' };
+    return { success: false, message: 'Erro ao solicitar desativação' };
   }
 }
 
@@ -198,7 +203,7 @@ export async function getInnovationStatus(
   orgId: string,
   envId: string,
   estabCode: string
-): Promise<'approved' | 'pending' | 'none'> {
+): Promise<'approved' | 'pending' | 'pending_deactivation' | 'none'> {
   try {
     const { data, error } = await (supabase as any).from('user_innovations')
       .select('is_active, status')
@@ -212,7 +217,10 @@ export async function getInnovationStatus(
       return 'none';
     }
 
+    if (!data) return 'none';
+
     if (data.is_active && data.status === 'approved') return 'approved';
+    if (data.is_active && data.status === 'pending_deactivation') return 'pending_deactivation';
     if (!data.is_active && data.status === 'pending') return 'pending';
     
     return 'none';

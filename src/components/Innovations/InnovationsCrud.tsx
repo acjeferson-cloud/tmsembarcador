@@ -3,6 +3,7 @@ import { Plus, Search, Edit, Trash2, Eye, Sparkles, Check, X } from 'lucide-reac
 import { InnovationCrud, innovationsCrudService } from '../../services/innovationsCrudService';
 import { InnovationForm } from './InnovationForm';
 import { InnovationView } from './InnovationView';
+import { InnovationRequests } from '../SaasAdmin/InnovationRequests';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +14,7 @@ export const InnovationsCrud: React.FC = () => {
   const [filteredInnovations, setFilteredInnovations] = useState<InnovationCrud[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'approvals'>('catalog');
   const [showForm, setShowForm] = useState(false);
   const [showView, setShowView] = useState(false);
   const [selectedInnovation, setSelectedInnovation] = useState<InnovationCrud | null>(null);
@@ -114,34 +116,67 @@ export const InnovationsCrud: React.FC = () => {
 
   return (
     <div className="w-full">
-      <div className="mb-6 px-1">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('innovations.title')}</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {t('innovations.subtitle')}
-            </p>
-          </div>
-          <button
-            onClick={handleAdd}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{t('innovations.buttons.new')}</span>
-          </button>
-        </div>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder={t('innovations.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-          />
-        </div>
+      <div className="mb-6 px-1 flex items-center border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveSubTab('catalog')}
+          className={`py-3 px-4 font-medium text-sm transition-colors relative ${
+            activeSubTab === 'catalog' 
+              ? 'text-blue-600 dark:text-blue-400' 
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          }`}
+        >
+          Catálogo de Inovações
+          {activeSubTab === 'catalog' && (
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400"></div>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveSubTab('approvals')}
+          className={`py-3 px-4 font-medium text-sm transition-colors relative ${
+            activeSubTab === 'approvals' 
+              ? 'text-blue-600 dark:text-blue-400' 
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          }`}
+        >
+          Aprovações Pendentes
+          {activeSubTab === 'approvals' && (
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400"></div>
+          )}
+        </button>
       </div>
+      
+      {activeSubTab === 'approvals' ? (
+        <InnovationRequests />
+      ) : (
+        <>
+          <div className="mb-6 px-1">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('innovations.title')}</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  {t('innovations.subtitle')}
+                </p>
+              </div>
+              <button
+                onClick={handleAdd}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t('innovations.buttons.new')}</span>
+              </button>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder={t('innovations.searchPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -234,6 +269,8 @@ export const InnovationsCrud: React.FC = () => {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
 
       {showForm && (
