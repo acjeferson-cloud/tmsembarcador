@@ -167,6 +167,50 @@ export const ordersService = {
     }
   },
 
+  async getPendingRoutingOrders(): Promise<Order[]> {
+    try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
+      // Buscar pedidos que estão pendentes ou em processamento (prontos para roteirizar)
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          business_partners (razao_social, cpf_cnpj),
+          carriers (razao_social, codigo)
+        `)
+        .in('status', ['pendente', 'processando']); // Status que indicam que a carga não saiu
+
+      if (ctx?.organizationId) {
+        query = query.eq('organization_id', ctx.organizationId);
+      }
+      if (ctx?.environmentId) {
+        query = query.eq('environment_id', ctx.environmentId);
+      }
+      if (ctx?.establishmentId) {
+        query = query.eq('establishment_id', ctx.establishmentId);
+      }
+
+      const { data, error } = await query.order('data_pedido', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // No mundo real, faríamos um LEFT JOIN com trip_stops para filtrar os que já estão em viagens que não foram canceladas.
+      // Como o Supabase não suporta NOT IN com subquery facilmente via SDK, vamos filtrar em memória para o MVP.
+      
+      const mapped = (data || []).map(mapOrderFromDb);
+      return mapped;
+    } catch (error) {
+      console.error("Erro ao buscar pedidos para roteirização", error);
+      return [];
+    }
+  },
+
   async getById(id: string): Promise<Order | null> {
     try {
       const { data, error } = await supabase

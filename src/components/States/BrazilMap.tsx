@@ -3,6 +3,8 @@ import { MapPin } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useTranslation } from 'react-i18next';
 import { useInnovations } from '../../contexts/InnovationsContext';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface BrazilMapProps {
   states?: any[];
@@ -85,17 +87,18 @@ export const BrazilMap: React.FC<BrazilMapProps> = ({ states, onStateClick }) =>
             <p className="text-gray-500 animate-pulse">Carregando inovações...</p>
           </div>
         ) : !isActive ? (
-          <div className="w-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6 text-center" style={{ minHeight: '400px' }}>
-            <div className="max-w-md bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center gap-3">
-              <MapPin className="w-10 h-10 text-yellow-500 mb-2" />
-              <h3 className="text-yellow-800 font-semibold text-lg">Integração Google Maps Premium não habilitada</h3>
-              <p className="text-yellow-700 text-sm">
-                Para visualizar a interação geográfica das suas operações de transporte e regiões do país, solicite a ativação ao administrador em:
-              </p>
-              <span className="text-yellow-800 font-medium bg-yellow-100 px-3 py-1 rounded-md text-xs mt-1">
-                Menu {'>'} Inovações & Sugestões {'>'} Ativar Recurso
-              </span>
+          <div className="w-full relative rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" style={{ minHeight: '400px' }}>
+            <div className="absolute top-4 right-4 z-[1000] bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+              <span className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">Modo Compatibilidade (OSM)</span>
             </div>
+            <MapContainer center={[-14.235, -51.9253]} zoom={4} style={{ height: '100%', width: '100%' }}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              />
+              {/* States can be highlighted with GeoJSON if needed, but for fallback just showing the map is enough */}
+            </MapContainer>
           </div>
         ) : (
           <div 

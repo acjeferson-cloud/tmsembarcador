@@ -4,6 +4,10 @@ import { Package, AlertTriangle, CheckCircle, Navigation, Clock } from 'lucide-r
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { CargoMarker, controlTowerService } from '../../services/controlTowerService';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
+import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useInnovations } from '../../contexts/InnovationsContext';
 
 export const RealTimeMap: React.FC = () => {
   const { t } = useTranslation();
@@ -125,6 +129,9 @@ export const RealTimeMap: React.FC = () => {
     return { class: 'bg-yellow-100 text-yellow-700', text: 'Em Trânsito', icon: <Navigation size={14} /> };
   };
 
+  const { isInnovationActive } = useInnovations();
+  const isActive = isInnovationActive('google-maps');
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
@@ -141,9 +148,72 @@ export const RealTimeMap: React.FC = () => {
         </div>
       </div>
 
-      {/* Google Maps Container */}
+      {/* Map Container */}
       <div className="w-full relative rounded-lg border border-gray-300 dark:border-gray-600 mb-4 overflow-hidden" style={{ minHeight: '400px', flex: '1 1 auto' }}>
-        <div ref={mapRef} className="w-full h-full absolute inset-0" />
+        {isActive ? (
+          <div ref={mapRef} className="w-full h-full absolute inset-0" />
+        ) : (
+          <div className="absolute inset-0 z-10 w-full h-full bg-gray-50 dark:bg-gray-800">
+            <div className="absolute top-4 right-4 z-[1000] bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+              <span className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">Modo Compatibilidade (OSM)</span>
+            </div>
+            {(() => {
+              const MapUpdater = ({ cargo }: { cargo: CargoMarker | null }) => {
+                const map = useMap();
+                useEffect(() => {
+                  if (cargo) {
+                    map.setView([cargo.lat, cargo.lng], 12);
+                  } else if (cargoMarkers.length > 0) {
+                    const bounds = L.latLngBounds(cargoMarkers.map(m => [m.lat, m.lng]));
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                  }
+                }, [cargo, map]);
+                return null;
+              };
+
+              const createCustomIcon = (color: string) => new L.DivIcon({
+                className: 'custom-icon',
+                html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><div style="width: 8px; height: 8px; background-color: white; border-radius: 50%;"></div></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24],
+              });
+
+              return (
+                <MapContainer center={[defaultCenter.lat, defaultCenter.lng]} zoom={7} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  />
+                  {cargoMarkers.map(cargo => {
+                    let pinColor = '#FBBF24';
+                    if (cargo.situacao === 'entregue') pinColor = '#10B981';
+                    else if (cargo.is_delayed) pinColor = '#EF4444';
+                    
+                    return (
+                      <Marker 
+                        key={cargo.id} 
+                        position={[cargo.lat, cargo.lng]}
+                        icon={createCustomIcon(pinColor)}
+                        eventHandlers={{ click: () => setSelectedCargo(cargo) }}
+                      >
+                        <Popup>
+                          <div className="p-1">
+                            <p className="font-bold text-gray-900">NF-e {cargo.numero}</p>
+                            <p className="text-xs text-gray-600">{cargo.destinatario_nome}</p>
+                            <p className="text-xs font-semibold mt-1">SLA: {new Date(cargo.expected_delivery_date).toLocaleDateString()}</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
+                  <MapUpdater cargo={selectedCargo} />
+                </MapContainer>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {selectedCargo && (
