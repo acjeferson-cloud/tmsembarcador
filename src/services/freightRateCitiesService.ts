@@ -103,8 +103,7 @@ export const freightRateCitiesService = {
         )
       `)
       .eq('ativo', true)
-      .order('nome', { ascending: true })
-      .limit(500);
+      .order('nome', { ascending: true });
 
     // Se houver termo de busca, filtrar no servidor
     if (searchTerm && searchTerm.trim()) {
