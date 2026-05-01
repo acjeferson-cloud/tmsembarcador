@@ -5,7 +5,7 @@ import { freightRatesService, FreightRateTable } from '../../services/freightRat
 import { FreightRateTableView } from './FreightRateTableView';
 import { FreightRateTableForm } from './FreightRateTableForm';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
-import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast, ToastType } from '../common/Toast';
 

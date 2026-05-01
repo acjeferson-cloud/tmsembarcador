@@ -10,7 +10,7 @@ import { AdditionalFeesModal } from './AdditionalFeesModal';
 import RestrictedItemsModal from './RestrictedItemsModal';
 import { freightRatesService } from '../../services/freightRatesService';
 import { Toast, ToastType } from '../common/Toast';
-import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
 
 interface FreightRateTableViewProps {

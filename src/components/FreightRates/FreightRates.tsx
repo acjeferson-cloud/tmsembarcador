@@ -9,7 +9,7 @@ import { FreightRateTableForm } from './FreightRateTableForm';
 import { carriersService } from '../../services/carriersService';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
-import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast, ToastType } from '../common/Toast';
 

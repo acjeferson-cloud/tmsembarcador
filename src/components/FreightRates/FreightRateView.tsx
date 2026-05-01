@@ -3,7 +3,7 @@ import { ArrowLeft, Edit, Trash2, DollarSign, MapPin, User, Package, Clock, Info
 import { useTranslation } from 'react-i18next';
 import { FreightRate } from '../../data/freightRatesData';
 import { FreightRateCitiesModal } from './FreightRateCitiesModal';
-import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast, ToastType } from '../common/Toast';
 
