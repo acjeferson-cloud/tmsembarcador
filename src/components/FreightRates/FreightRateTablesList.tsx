@@ -239,7 +239,7 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
                 <button
                   onClick={() => {
                     if (!isAdmin) {
-                      setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
+                      alert('Ação restrita. Contate um administrador para realizar exclusões.');
                       return;
                     }
                     handleDeleteTable(table.id!);

@@ -431,7 +431,7 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
                         <button
                           onClick={() => {
                             if (!isAdmin) {
-                              setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
+                              alert('Ação restrita. Contate um administrador para realizar exclusões.');
                               return;
                             }
                             handleDeleteRate(rate.id);
