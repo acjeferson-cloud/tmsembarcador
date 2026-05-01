@@ -310,8 +310,8 @@ export const pickupsService = {
       const { data: lastPickup } = await query.order('created_at', { ascending: false }).limit(1);
       let nextNum = 1;
       if (lastPickup && lastPickup.length > 0 && lastPickup[0].numero_coleta) {
-        const match = lastPickup[0].numero_coleta.match(/COL-(\d+)/);
-        if (match) nextNum = parseInt(match[1], 10) + 1;
+        const match = lastPickup[0].numero_coleta.match(/\d+/);
+        if (match) nextNum = parseInt(match[0], 10) + 1;
       }
 
       const createdPickups = [];
@@ -354,7 +354,7 @@ export const pickupsService = {
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.quantidade_volumes) || 0), 0);
         const totalValue = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.valor_total) || 0), 0);
 
-        const pickupNumber = `COL-${String(nextNum).padStart(4, '0')}`;
+        const pickupNumber = String(nextNum).padStart(6, '0');
         nextNum++;
 
         const pickupData = {
@@ -481,8 +481,8 @@ export const pickupsService = {
       const { data: lastPickup } = await query.order('created_at', { ascending: false }).limit(1);
       let nextNum = 1;
       if (lastPickup && lastPickup.length > 0 && lastPickup[0].numero_coleta) {
-        const match = lastPickup[0].numero_coleta.match(/COL-(\d+)/);
-        if (match) nextNum = parseInt(match[1], 10) + 1;
+        const match = lastPickup[0].numero_coleta.match(/\d+/);
+        if (match) nextNum = parseInt(match[0], 10) + 1;
       }
 
       const createdPickups = [];
@@ -494,7 +494,7 @@ export const pickupsService = {
         const totalPackages = group.invoices.reduce((sum: number, inv: any) => sum + (inv.quantidade_volumes || 0), 0);
         const totalValue = group.invoices.reduce((sum: number, inv: any) => sum + (Number(inv.valor_total) || 0), 0);
 
-        const pickupNumber = `COL-${String(nextNum).padStart(4, '0')}`;
+        const pickupNumber = String(nextNum).padStart(6, '0');
         nextNum++;
 
         const pickupData = {

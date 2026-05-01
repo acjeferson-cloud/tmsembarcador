@@ -371,7 +371,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
       const data = await pickupsService.getAll();
       const formattedPickups = data.map((pickup: any) => ({
         id: pickup.id,
-        numeroColeta: pickup.pickup_number || `COL-${pickup.id}`,
+        numeroColeta: pickup.pickup_number || '000000',
         status: pickup.status,
         transportador: pickup.transportador || pickup.carrier_name || 'N/A',
         carrier_id: pickup.carrier_id,
