@@ -10,6 +10,7 @@ import { AdditionalFeesModal } from './AdditionalFeesModal';
 import RestrictedItemsModal from './RestrictedItemsModal';
 import { freightRatesService } from '../../services/freightRatesService';
 import { Toast, ToastType } from '../common/Toast';
+import { ConfirmDialog } from '../Common/ConfirmDialog';
 
 interface FreightRateTableViewProps {
   onBack: () => void;
@@ -29,6 +30,8 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
   const [refreshKey, setRefreshKey] = useState(0);
   const [rates, setRates] = useState<FreightRate[]>(table.tarifas);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean, id: number | null }>({ show: false, id: null });
+  const [duplicateConfirm, setDuplicateConfirm] = useState<{ show: boolean, rate: FreightRate | null }>({ show: false, rate: null });
 
   const formatDate = (dateString: string | Date | undefined) => {
     if (!dateString) return '-';
@@ -95,16 +98,20 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
   };
 
   const handleDeleteRate = (rateId: number) => {
-    if (window.confirm(t('carriers.freightRates.view.confirmDelete'))) {
-      const success = deleteFreightRate(table.id, rateId);
-      if (success) {
-        alert(t('carriers.freightRates.view.deleteSuccess'));
-        setRates(table.tarifas);
-        setRefreshKey(prev => prev + 1);
-      } else {
-        alert(t('carriers.freightRates.view.deleteError'));
-      }
+    setDeleteConfirm({ show: true, id: rateId });
+  };
+
+  const confirmDeleteRate = () => {
+    if (!deleteConfirm.id) return;
+    const success = deleteFreightRate(table.id, deleteConfirm.id);
+    if (success) {
+      alert(t('carriers.freightRates.view.deleteSuccess'));
+      setRates(table.tarifas);
+      setRefreshKey(prev => prev + 1);
+    } else {
+      alert(t('carriers.freightRates.view.deleteError'));
     }
+    setDeleteConfirm({ show: false, id: null });
   };
 
   const handleSaveRate = (rateData: Partial<FreightRate>) => {
@@ -168,19 +175,22 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
   };
 
   const handleDuplicateRate = async (rate: FreightRate) => {
-    if (window.confirm(`\n${t('carriers.freightRates.form.duplicateConfirm')} "${rate.descricao}"?`)) {
-      try {
-        await freightRatesService.duplicateRate(rate.id as any);
-        setToast({ message: t('carriers.freightRates.view.duplicateSuccess'), type: 'success' });
+    setDuplicateConfirm({ show: true, rate });
+  };
 
-        const updatedRates = await freightRatesService.getRatesByTable(table.id as any);
-        setRates(updatedRates as any);
-        setRefreshKey(prev => prev + 1);
-      } catch (error) {
+  const confirmDuplicateRate = async () => {
+    if (!duplicateConfirm.rate) return;
+    try {
+      await freightRatesService.duplicateRate(duplicateConfirm.rate.id as any);
+      setToast({ message: t('carriers.freightRates.view.duplicateSuccess'), type: 'success' });
 
-        setToast({ message: t('carriers.freightRates.view.duplicateError'), type: 'error' });
-      }
+      const updatedRates = await freightRatesService.getRatesByTable(table.id as any);
+      setRates(updatedRates as any);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      setToast({ message: t('carriers.freightRates.view.duplicateError'), type: 'error' });
     }
+    setDuplicateConfirm({ show: false, rate: null });
   };
 
   if (showRateView && selectedRate) {
@@ -609,6 +619,25 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
           onClose={() => setToast(null)}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.show}
+        title={t('carriers.freightRates.view.deleteAction')}
+        message={t('carriers.freightRates.view.confirmDelete')}
+        onConfirm={confirmDeleteRate}
+        onCancel={() => setDeleteConfirm({ show: false, id: null })}
+        type="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={duplicateConfirm.show}
+        title={t('carriers.freightRates.view.duplicateAction')}
+        message={`${t('carriers.freightRates.form.duplicateConfirm')} "${duplicateConfirm.rate?.descricao}"?`}
+        onConfirm={confirmDuplicateRate}
+        onCancel={() => setDuplicateConfirm({ show: false, rate: null })}
+        type="info"
+        confirmText="Duplicar"
+      />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { FreightRateTableForm } from './FreightRateTableForm';
 import { carriersService } from '../../services/carriersService';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
+import { ConfirmDialog } from '../Common/ConfirmDialog';
 
 export const FreightRates: React.FC = () => {
   useActivityLogger('Cotação de frete', 'Acesso', 'Acessou os relatórios de Cotação de Fretes');
@@ -31,6 +32,7 @@ export const FreightRates: React.FC = () => {
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean, id: string | null }>({ show: false, id: null });
   const [quoteData, setQuoteData] = useState({
     originType: 'cep',
     destinationType: 'cep',
@@ -139,16 +141,19 @@ export const FreightRates: React.FC = () => {
     setShowView(true);
   };
 
-  const handleDeleteTable = async (tableId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta tabela de frete?')) {
-      try {
-        await freightRatesService.deleteFreightRateTable(tableId);
-        alert('Tabela de frete excluída com sucesso!');
-        forceRefresh();
-      } catch (err) {
+  const handleDeleteTable = (tableId: string) => {
+    setDeleteConfirm({ show: true, id: tableId });
+  };
 
-        alert('Erro ao excluir tabela de frete.');
-      }
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      await freightRatesService.deleteFreightRateTable(deleteConfirm.id);
+      setDeleteConfirm({ show: false, id: null });
+      forceRefresh();
+    } catch (err) {
+      alert('Erro ao excluir tabela de frete.');
+      setDeleteConfirm({ show: false, id: null });
     }
   };
 
@@ -770,6 +775,15 @@ export const FreightRates: React.FC = () => {
         isOpen={showCopyModal}
         onClose={() => setShowCopyModal(false)}
         onSuccess={forceRefresh}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.show}
+        title="Excluir Tabela de Frete"
+        message="Tem certeza que deseja excluir esta tabela de frete?"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ show: false, id: null })}
+        type="danger"
       />
     </div>
   );

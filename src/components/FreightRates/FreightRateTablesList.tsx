@@ -5,6 +5,7 @@ import { freightRatesService, FreightRateTable } from '../../services/freightRat
 import { FreightRateTableView } from './FreightRateTableView';
 import { FreightRateTableForm } from './FreightRateTableForm';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
+import { ConfirmDialog } from '../Common/ConfirmDialog';
 
 interface FreightRateTablesListProps {
   carrierId?: string;
@@ -22,6 +23,7 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
   const [tables, setTables] = useState<FreightRateTable[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean, id: string | null }>({ show: false, id: null });
 
   useEffect(() => {
     loadTables();
@@ -63,16 +65,19 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
     setShowView(true);
   };
 
-  const handleDeleteTable = async (tableId: string) => {
-    if (window.confirm(t('carriers.freightRates.deleteConfirm'))) {
-      try {
-        await freightRatesService.deleteTable(tableId);
-        alert(t('carriers.freightRates.deleteSuccess'));
-        loadTables();
-      } catch (error) {
+  const handleDeleteTable = (tableId: string) => {
+    setDeleteConfirm({ show: true, id: tableId });
+  };
 
-        alert(t('carriers.freightRates.deleteError'));
-      }
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      await freightRatesService.deleteTable(deleteConfirm.id);
+      setDeleteConfirm({ show: false, id: null });
+      loadTables();
+    } catch (error) {
+      alert(t('carriers.freightRates.deleteError'));
+      setDeleteConfirm({ show: false, id: null });
     }
   };
 
@@ -332,6 +337,15 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
         isOpen={showCopyModal}
         onClose={() => setShowCopyModal(false)}
         onSuccess={loadTables}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.show}
+        title={t('carriers.freightRates.deleteConfirmTitle', 'Excluir Tabela')}
+        message={t('carriers.freightRates.deleteConfirm')}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ show: false, id: null })}
+        type="danger"
       />
     </div>
   );

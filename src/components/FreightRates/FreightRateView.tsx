@@ -3,6 +3,7 @@ import { ArrowLeft, Edit, Trash2, DollarSign, MapPin, User, Package, Clock, Info
 import { useTranslation } from 'react-i18next';
 import { FreightRate } from '../../data/freightRatesData';
 import { FreightRateCitiesModal } from './FreightRateCitiesModal';
+import { ConfirmDialog } from '../Common/ConfirmDialog';
 
 interface FreightRateViewProps {
   onBack: () => void;
@@ -21,6 +22,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const [showCitiesModal, setShowCitiesModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return 'R$ 0,00';
@@ -49,9 +51,12 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
   };
 
   const handleDeleteClick = () => {
-    if (window.confirm(t('carriers.freightRates.view.confirmDelete'))) {
-      onDelete(rate.id);
-    }
+    setDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    onDelete(rate.id);
+    setDeleteConfirm(false);
   };
 
   return (
@@ -229,6 +234,15 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
           onUpdate={() => {}}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={deleteConfirm}
+        title={t('carriers.freightRates.view.deleteAction')}
+        message={t('carriers.freightRates.view.confirmDelete')}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(false)}
+        type="danger"
+      />
     </div>
   );
 };
