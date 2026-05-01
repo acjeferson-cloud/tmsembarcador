@@ -53,6 +53,10 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
   };
 
   const handleDeleteClick = () => {
+    if (!isAdmin) {
+      alert('Ação restrita. Contate um administrador para realizar exclusões.');
+      return;
+    }
     setDeleteConfirm(true);
   };
 
@@ -93,7 +97,6 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
             </button>
             <button
               onClick={handleDeleteClick}
-              disabled={!isAdmin}
               title={!isAdmin ? "Apenas administradores podem excluir tarifas" : t('carriers.freightRates.view.delete')}
               className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
                 isAdmin

@@ -424,8 +424,13 @@ export const Carriers: React.FC = () => {
                   <Edit size={16} />
                 </button>
                 <button 
-                  onClick={() => isAdmin && handleDeleteCarrier(carrier.id)}
-                  disabled={!isAdmin}
+                  onClick={() => {
+                    if (!isAdmin) {
+                      setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
+                      return;
+                    }
+                    handleDeleteCarrier(carrier.id);
+                  }}
                   className={`${isAdmin ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-400 opacity-50 cursor-not-allowed'} p-1 rounded transition-colors`}
                   title={!isAdmin ? 'Apenas administradores podem excluir' : t('carriers.deleteAction')}
                 >

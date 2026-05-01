@@ -237,8 +237,13 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
                   <Edit size={16} />
                 </button>
                 <button
-                  onClick={() => handleDeleteTable(table.id!)}
-                  disabled={!isAdmin}
+                  onClick={() => {
+                    if (!isAdmin) {
+                      setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
+                      return;
+                    }
+                    handleDeleteTable(table.id!);
+                  }}
                   title={!isAdmin ? "Apenas administradores podem excluir tabelas" : t('carriers.freightRates.delete')}
                   className={`p-2 transition-colors rounded ${
                     isAdmin 

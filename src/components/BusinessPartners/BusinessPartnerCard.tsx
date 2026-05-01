@@ -89,6 +89,10 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
             </button>
             <button
               onClick={() => {
+                if (!isAdmin) {
+                  alert('Ação restrita. Contate um administrador para realizar exclusões.');
+                  return;
+                }
                 if (!partner.id) {
 
                   alert(t('businessPartners.card.errors.idNotFound', 'Erro: ID do parceiro não encontrado'));
@@ -96,7 +100,6 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
                 }
                 onDelete(partner.id);
               }}
-              disabled={!isAdmin}
               title={!isAdmin ? "Apenas administradores podem excluir parceiros" : t('businessPartners.card.actions.delete', 'Excluir')}
               className={`p-2 transition-colors rounded-lg ${
                 isAdmin

@@ -429,8 +429,13 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
                             <Map size={16} />
                           </button>
                         <button
-                          onClick={() => handleDeleteRate(rate.id)}
-                          disabled={!isAdmin}
+                          onClick={() => {
+                            if (!isAdmin) {
+                              setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
+                              return;
+                            }
+                            handleDeleteRate(rate.id);
+                          }}
                           title={!isAdmin ? "Apenas administradores podem excluir tarifas" : t('carriers.freightRates.view.deleteAction')}
                           className={`p-2 transition-colors rounded ${
                             isAdmin 
