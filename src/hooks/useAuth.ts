@@ -912,7 +912,7 @@ export const useAuth = () => {
     }
   };
 
-  const isAdmin = user?.perfil === 'administrador';
+  const isAdmin = user?.perfil?.toLowerCase() === 'administrador' || user?.perfil?.toLowerCase() === 'admin' || user?.tipo === 'admin';
   const isJeferson = user?.email === 'jeferson.costa@logaxis.com.br';
 
   return {

@@ -10,7 +10,11 @@ USING (
   EXISTS (
     SELECT 1 FROM users
     WHERE users.email = auth.jwt()->>'email'
-    AND users.perfil = 'administrador'
+    AND (
+      users.perfil ILIKE 'administrador' 
+      OR users.perfil ILIKE 'admin' 
+      OR users.tipo = 'admin'
+    )
   )
 );
 
@@ -24,7 +28,11 @@ USING (
   EXISTS (
     SELECT 1 FROM users
     WHERE users.email = auth.jwt()->>'email'
-    AND users.perfil = 'administrador'
+    AND (
+      users.perfil ILIKE 'administrador' 
+      OR users.perfil ILIKE 'admin' 
+      OR users.tipo = 'admin'
+    )
   )
 );
 
@@ -38,6 +46,10 @@ USING (
   EXISTS (
     SELECT 1 FROM users
     WHERE users.email = auth.jwt()->>'email'
-    AND users.perfil = 'administrador'
+    AND (
+      users.perfil ILIKE 'administrador' 
+      OR users.perfil ILIKE 'admin' 
+      OR users.tipo = 'admin'
+    )
   )
 );
