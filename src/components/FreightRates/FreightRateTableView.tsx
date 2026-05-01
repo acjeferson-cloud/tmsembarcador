@@ -11,6 +11,7 @@ import RestrictedItemsModal from './RestrictedItemsModal';
 import { freightRatesService } from '../../services/freightRatesService';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 interface FreightRateTableViewProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ interface FreightRateTableViewProps {
 
 export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBack, onEdit, table }) => {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
   const [showRateView, setShowRateView] = useState(false);
   const [showRateForm, setShowRateForm] = useState(false);
   const [showCitiesModal, setShowCitiesModal] = useState(false);
@@ -426,14 +428,18 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
                           >
                             <Map size={16} />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteRate(rate.id)}
-                            className="text-red-600 hover:text-red-900"
-                            title={t('carriers.freightRates.view.deleteAction')}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                        <button
+                          onClick={() => handleDeleteRate(rate.id)}
+                          disabled={!isAdmin}
+                          title={!isAdmin ? "Apenas administradores podem excluir tarifas" : t('carriers.freightRates.view.deleteAction')}
+                          className={`p-2 transition-colors rounded ${
+                            isAdmin 
+                              ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                              : "text-gray-400 cursor-not-allowed opacity-50"
+                          }`}
+                        >
+                          <Trash2 size={18} />
+                        </button>
                         </div>
                       </td>
                     </tr>

@@ -912,6 +912,9 @@ export const useAuth = () => {
     }
   };
 
+  const isAdmin = user?.perfil === 'administrador';
+  const isJeferson = user?.email === 'jeferson.costa@logaxis.com.br';
+
   return {
     user,
     login,
@@ -928,6 +931,8 @@ export const useAuth = () => {
     showOrgEnvSelector,
     selectOrganizationEnvironment,
     selectedOrgId,
-    selectedEnvId
+    selectedEnvId,
+    isAdmin,
+    isJeferson
   };
 };

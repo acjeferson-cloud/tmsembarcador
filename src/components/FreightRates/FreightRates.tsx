@@ -10,8 +10,10 @@ import { carriersService } from '../../services/carriersService';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
 import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 export const FreightRates: React.FC = () => {
+  const { isAdmin } = useAuth();
   useActivityLogger('Cotação de frete', 'Acesso', 'Acessou os relatórios de Cotação de Fretes');
 
   const breadcrumbItems = [
@@ -696,8 +698,13 @@ export const FreightRates: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleDeleteTable(table.id)}
-                    className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                    title="Excluir"
+                    disabled={!isAdmin}
+                    title={!isAdmin ? "Apenas administradores podem excluir tabelas" : "Excluir"}
+                    className={`p-2 transition-colors rounded ${
+                      isAdmin 
+                        ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                        : "text-gray-400 cursor-not-allowed opacity-50"
+                    }`}
                   >
                     <Trash2 size={16} />
                   </button>

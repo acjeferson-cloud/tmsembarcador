@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit, Eye, Trash2, Mail, Phone, MapPin, Building2, User } from 'lucide-react';
 import { BusinessPartner } from '../../types';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
 
 interface BusinessPartnerCardProps {
   partner: BusinessPartner;
@@ -17,6 +18,7 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
   onDelete
 }) => {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'customer':
@@ -94,8 +96,13 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
                 }
                 onDelete(partner.id);
               }}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title={t('businessPartners.card.actions.delete', 'Excluir')}
+              disabled={!isAdmin}
+              title={!isAdmin ? "Apenas administradores podem excluir parceiros" : t('businessPartners.card.actions.delete', 'Excluir')}
+              className={`p-2 transition-colors rounded-lg ${
+                isAdmin
+                  ? "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                  : "text-gray-400 cursor-not-allowed opacity-50"
+              }`}
             >
               <Trash2 className="w-4 h-4" />
             </button>

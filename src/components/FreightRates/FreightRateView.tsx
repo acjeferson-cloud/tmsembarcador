@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FreightRate } from '../../data/freightRatesData';
 import { FreightRateCitiesModal } from './FreightRateCitiesModal';
 import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 interface FreightRateViewProps {
   onBack: () => void;
@@ -21,6 +22,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
   tableId
 }) => {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
   const [showCitiesModal, setShowCitiesModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
@@ -91,7 +93,13 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
             </button>
             <button
               onClick={handleDeleteClick}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              disabled={!isAdmin}
+              title={!isAdmin ? "Apenas administradores podem excluir tarifas" : t('carriers.freightRates.view.delete')}
+              className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                isAdmin
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
+              }`}
             >
               <Trash2 size={20} />
               <span>{t('carriers.freightRates.view.delete')}</span>

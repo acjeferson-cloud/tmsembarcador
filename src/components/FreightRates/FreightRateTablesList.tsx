@@ -6,6 +6,7 @@ import { FreightRateTableView } from './FreightRateTableView';
 import { FreightRateTableForm } from './FreightRateTableForm';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
 import { ConfirmDialog } from '../Common/ConfirmDialog';
+import { useAuth } from '../../hooks/useAuth';
 
 interface FreightRateTablesListProps {
   carrierId?: string;
@@ -14,6 +15,7 @@ interface FreightRateTablesListProps {
 
 export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ carrierId, carrierName }) => {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [showForm, setShowForm] = useState(false);
@@ -235,11 +237,16 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
                   <Edit size={16} />
                 </button>
                 <button
-                  onClick={() => handleDeleteTable(table.id)}
-                  className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                  title={t('carriers.freightRates.deleteAction')}
+                  onClick={() => handleDeleteTable(table.id!)}
+                  disabled={!isAdmin}
+                  title={!isAdmin ? "Apenas administradores podem excluir tabelas" : t('carriers.freightRates.delete')}
+                  className={`p-2 transition-colors rounded ${
+                    isAdmin 
+                      ? "text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                      : "text-gray-400 cursor-not-allowed opacity-50"
+                  }`}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={18} />
                 </button>
               </div>
             </div>
