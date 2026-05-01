@@ -296,15 +296,21 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                 </button>
               </div>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={t('carriers.freightRates.cities.searchCity')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={t('carriers.freightRates.cities.searchCity')}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2.5 rounded-md border border-amber-200 dark:border-amber-800/50">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <p><strong>Atenção:</strong> A busca deve ser <strong>exatamente igual</strong> ao nome da cidade, respeitando acentos, hifens e apóstrofos (ex: São Paulo, Pingo-d'Água).</p>
+                </div>
               </div>
 
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
