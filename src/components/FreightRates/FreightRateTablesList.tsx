@@ -7,6 +7,7 @@ import { FreightRateTableForm } from './FreightRateTableForm';
 import { CopyFreightTableModal } from './CopyFreightTableModal';
 import { ConfirmDialog } from '../Common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
+import { Toast, ToastType } from '../common/Toast';
 
 interface FreightRateTablesListProps {
   carrierId?: string;
@@ -26,6 +27,7 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
   const [isLoading, setIsLoading] = useState(true);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean, id: string | null }>({ show: false, id: null });
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
     loadTables();
@@ -239,7 +241,7 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
                 <button
                   onClick={() => {
                     if (!isAdmin) {
-                      alert('Ação restrita. Contate um administrador para realizar exclusões.');
+                      setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
                       return;
                     }
                     handleDeleteTable(table.id!);
@@ -359,6 +361,14 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
         onCancel={() => setDeleteConfirm({ show: false, id: null })}
         type="danger"
       />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

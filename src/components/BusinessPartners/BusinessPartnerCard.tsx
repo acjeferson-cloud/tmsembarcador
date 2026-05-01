@@ -3,6 +3,8 @@ import { Edit, Eye, Trash2, Mail, Phone, MapPin, Building2, User } from 'lucide-
 import { BusinessPartner } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
+import { Toast, ToastType } from '../common/Toast';
+import { useState } from 'react';
 
 interface BusinessPartnerCardProps {
   partner: BusinessPartner;
@@ -19,6 +21,8 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'customer':
@@ -90,12 +94,12 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
             <button
               onClick={() => {
                 if (!isAdmin) {
-                  alert('Ação restrita. Contate um administrador para realizar exclusões.');
+                  setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
                   return;
                 }
                 if (!partner.id) {
 
-                  alert(t('businessPartners.card.errors.idNotFound', 'Erro: ID do parceiro não encontrado'));
+                  setToast({ message: t('businessPartners.card.errors.idNotFound', 'Erro: ID do parceiro não encontrado'), type: 'error' });
                   return;
                 }
                 onDelete(partner.id);
@@ -157,6 +161,13 @@ const BusinessPartnerCard: React.FC<BusinessPartnerCardProps> = ({
           </div>
         </div>
       </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

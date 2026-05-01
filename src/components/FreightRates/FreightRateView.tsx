@@ -5,6 +5,7 @@ import { FreightRate } from '../../data/freightRatesData';
 import { FreightRateCitiesModal } from './FreightRateCitiesModal';
 import { ConfirmDialog } from '../Common/ConfirmDialog';
 import { useAuth } from '../../hooks/useAuth';
+import { Toast, ToastType } from '../common/Toast';
 
 interface FreightRateViewProps {
   onBack: () => void;
@@ -25,6 +26,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
   const { isAdmin } = useAuth();
   const [showCitiesModal, setShowCitiesModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return 'R$ 0,00';
@@ -54,7 +56,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
 
   const handleDeleteClick = () => {
     if (!isAdmin) {
-      alert('Ação restrita. Contate um administrador para realizar exclusões.');
+      setToast({ message: 'Ação restrita. Contate um administrador para realizar exclusões.', type: 'error' });
       return;
     }
     setDeleteConfirm(true);
@@ -254,6 +256,14 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
         onCancel={() => setDeleteConfirm(false)}
         type="danger"
       />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };
