@@ -19,6 +19,7 @@ export const RoutingTower = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [draggedOrder, setDraggedOrder] = useState<Order | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [routeStats, setRouteStats] = useState({ distanceKm: 0, timeMin: 0 });
 
   const loadData = async () => {
     setIsLoading(true);
@@ -190,6 +191,7 @@ export const RoutingTower = () => {
             <RoutingMap 
               pendingOrders={pendingOrders}
               selectedOrders={selectedOrders}
+              onRouteCalculated={(dist, time) => setRouteStats({ distanceKm: dist, timeMin: time })}
             />
           </div>
 
@@ -205,6 +207,7 @@ export const RoutingTower = () => {
               onDrop={handleDrop}
               onSaveTrip={handleSaveTrip}
               isSaving={isSaving}
+              routeStats={routeStats}
             />
           </div>
           

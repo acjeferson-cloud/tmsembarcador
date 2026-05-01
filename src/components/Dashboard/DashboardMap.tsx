@@ -269,58 +269,7 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
                 <span className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">Modo Compatibilidade (OSM)</span>
               </div>
               
-              {(() => {
-                // Helper to generate deterministic coordinates for Brazil cities when Google is off
-                const getMockCoords = (cityName: string): [number, number] => {
-                  let hash = 0;
-                  for (let i = 0; i < cityName.length; i++) {
-                    hash = cityName.charCodeAt(i) + ((hash << 5) - hash);
-                  }
-                  // Spread across Brazil roughly
-                  const lat = -14.235 + ((hash % 100) / 100) * 20 - 10;
-                  const lng = -51.925 + (((hash >> 8) % 100) / 100) * 20 - 10;
-                  return [lat, lng];
-                };
-
-                const maxCost = Math.max(...mapData.map(d => d.custoTotal), 1);
-
-                return (
-                  <MapContainer center={[-14.235, -51.925]} zoom={4} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                    />
-                    {mapData.slice(0, 50).map((city, idx) => {
-                      const coords = getMockCoords(city.cidade);
-                      const isHighCost = city.custoTotal > (maxCost * 0.5);
-                      // radius between 10 and 30 pixels
-                      const radius = 10 + (city.custoTotal / maxCost) * 20;
-
-                      return (
-                        <CircleMarker
-                          key={idx}
-                          center={coords}
-                          radius={radius}
-                          fillColor={isHighCost ? '#EF4444' : '#3B82F6'}
-                          color={isHighCost ? '#DC2626' : '#2563EB'}
-                          weight={2}
-                          opacity={0.8}
-                          fillOpacity={0.6}
-                        >
-                          <Popup>
-                            <div className="p-1">
-                              <h4 className="font-bold text-gray-900 border-b pb-1 mb-2">{city.cidade} - {city.uf}</h4>
-                              <p className="text-xs mb-1"><span className="text-gray-500">Custo Total:</span> <strong className="text-red-600">R$ {city.custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></p>
-                              <p className="text-xs mb-1"><span className="text-gray-500">Volume:</span> <strong>{city.volumeKg.toLocaleString('pt-BR')} Kg</strong></p>
-                              <p className="text-xs"><span className="text-gray-500">Entregas:</span> <strong>{city.totalEntregas}</strong></p>
-                            </div>
-                          </Popup>
-                        </CircleMarker>
-                      );
-                    })}
-                  </MapContainer>
-                );
-              })()}
+              <DashboardLeafletMap mapData={mapData} />
             </div>
           ) : (
             <>
@@ -369,5 +318,75 @@ export const DashboardMap: React.FC<Props> = ({ filters }) => {
          </div>
       </div>
     </div>
+  );
+};
+
+const DashboardLeafletMap: React.FC<{
+  mapData: DashboardMapaCusto[];
+}> = ({ mapData }) => {
+  const [coordsMap, setCoordsMap] = useState<Record<string, [number, number]>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadCoords = async () => {
+      const { nominatimGeocoder } = await import('../../utils/nominatimGeocoder');
+      
+      for (const city of mapData.slice(0, 50)) {
+        if (!mounted) break;
+        const addressKey = `${city.cidade}, ${city.uf}, Brasil`;
+        if (!coordsMap[addressKey]) {
+          const coords = await nominatimGeocoder.geocode(addressKey);
+          if (coords && mounted) {
+            setCoordsMap(prev => ({ ...prev, [addressKey]: [coords.lat, coords.lng] }));
+          }
+        }
+      }
+    };
+    
+    loadCoords();
+    return () => { mounted = false; };
+  }, [mapData]);
+
+  const maxCost = Math.max(...mapData.map(d => d.custoTotal), 1);
+
+  return (
+    <MapContainer center={[-14.235, -51.925]} zoom={4} style={{ height: '100%', width: '100%' }}>
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+      />
+      {mapData.slice(0, 50).map((city, idx) => {
+        const addressKey = `${city.cidade}, ${city.uf}, Brasil`;
+        const coords = coordsMap[addressKey];
+        if (!coords) return null;
+
+        const isHighCost = city.custoTotal > (maxCost * 0.5);
+        // radius between 10 and 30 pixels
+        const radius = 10 + (city.custoTotal / maxCost) * 20;
+
+        return (
+          <CircleMarker
+            key={idx}
+            center={coords}
+            radius={radius}
+            fillColor={isHighCost ? '#EF4444' : '#3B82F6'}
+            color={isHighCost ? '#DC2626' : '#2563EB'}
+            weight={2}
+            opacity={0.8}
+            fillOpacity={0.6}
+          >
+            <Popup>
+              <div className="p-1">
+                <h4 className="font-bold text-gray-900 border-b pb-1 mb-2">{city.cidade} - {city.uf}</h4>
+                <p className="text-xs mb-1"><span className="text-gray-500">Custo Total:</span> <strong className="text-red-600">R$ {city.custoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></p>
+                <p className="text-xs mb-1"><span className="text-gray-500">Volume:</span> <strong>{city.volumeKg.toLocaleString('pt-BR')} Kg</strong></p>
+                <p className="text-xs"><span className="text-gray-500">Entregas:</span> <strong>{city.totalEntregas}</strong></p>
+              </div>
+            </Popup>
+          </CircleMarker>
+        );
+      })}
+    </MapContainer>
   );
 };

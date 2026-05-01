@@ -247,87 +247,7 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
   }
 
   if (!isActive) {
-    // Helper to generate deterministic coordinates for Brazil cities when Google is off
-    const getMockCoords = (cityName: string): [number, number] => {
-      let hash = 0;
-      for (let i = 0; i < cityName.length; i++) {
-        hash = cityName.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const lat = -14.235 + ((hash % 100) / 100) * 20 - 10;
-      const lng = -51.925 + (((hash >> 8) % 100) / 100) * 20 - 10;
-      return [lat, lng];
-    };
-
-    return (
-      <div className="relative w-full h-[600px] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="absolute top-4 right-4 z-[1000] bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
-          <Info className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-          <span className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">Modo Compatibilidade (OSM)</span>
-        </div>
-        
-        <MapContainer center={[-14.2350, -51.9253]} zoom={4} style={{ height: '100%', width: '100%' }}>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          />
-          {partners.filter(p => p.addresses && p.addresses.length > 0).map((partner, idx) => {
-            const address = partner.addresses![0];
-            const coords = getMockCoords(address.city);
-            
-            const fillColor = partner.type === 'customer' ? '#3B82F6' :
-                              partner.type === 'supplier' ? '#10B981' :
-                              '#8B5CF6';
-
-            return (
-              <CircleMarker
-                key={partner.id || idx}
-                center={coords}
-                radius={8}
-                fillColor={fillColor}
-                color="#FFFFFF"
-                weight={2}
-                opacity={1}
-                fillOpacity={0.9}
-                eventHandlers={{ click: () => onSelectPartner && onSelectPartner(partner) }}
-              >
-                <Popup>
-                  <div className="p-1">
-                    <h3 className="font-bold text-gray-900 mb-1">{partner.name}</h3>
-                    <p className="text-xs text-gray-600 mb-1">
-                      <strong>Tipo:</strong> {
-                        partner.type === 'customer' ? t('businessPartners.typeCustomer', 'Cliente') :
-                        partner.type === 'supplier' ? t('businessPartners.typeSupplier', 'Fornecedor') :
-                        t('businessPartners.typeBoth', 'Cliente/Fornecedor')
-                      }
-                    </p>
-                    <p className="text-xs text-gray-600 pt-1 border-t border-gray-200 mt-1">{address.city} - {address.state}</p>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            );
-          })}
-        </MapContainer>
-
-        {/* Legenda */}
-        <div className="absolute bottom-4 left-4 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('businessPartners.map.legend.title', 'Legenda')}</h4>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeCustomer', 'Cliente')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeSupplier', 'Fornecedor')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-purple-500 border-2 border-white"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeBoth', 'Cliente/Fornecedor')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <BusinessPartnersLeafletMap partners={partners} onSelectPartner={onSelectPartner} />;
   }
 
   if (error) {
@@ -389,3 +309,105 @@ const BusinessPartnersMap: React.FC<BusinessPartnersMapProps> = ({ partners, onS
 };
 
 export default BusinessPartnersMap;
+
+const BusinessPartnersLeafletMap: React.FC<{
+  partners: BusinessPartner[];
+  onSelectPartner?: (partner: BusinessPartner) => void;
+}> = ({ partners, onSelectPartner }) => {
+  const { t } = useTranslation();
+  const [coordsMap, setCoordsMap] = useState<Record<string, [number, number]>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadCoords = async () => {
+      const { nominatimGeocoder } = await import('../../utils/nominatimGeocoder');
+      
+      for (const partner of partners) {
+        if (!mounted) break;
+        if (partner.addresses && partner.addresses.length > 0 && !coordsMap[partner.id]) {
+          const address = partner.addresses[0];
+          const fullAddress = `${address.street}, ${address.city}, ${address.state}, Brasil`;
+          const coords = await nominatimGeocoder.geocode(fullAddress);
+          if (coords && mounted) {
+            setCoordsMap(prev => ({ ...prev, [partner.id]: [coords.lat, coords.lng] }));
+          }
+        }
+      }
+    };
+    
+    loadCoords();
+    return () => { mounted = false; };
+  }, [partners]);
+
+  return (
+    <div className="relative w-full h-[600px] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="absolute top-4 right-4 z-[1000] bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+        <Info className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+        <span className="text-xs text-yellow-800 dark:text-yellow-400 font-medium">Modo Compatibilidade (OSM)</span>
+      </div>
+      
+      <MapContainer center={[-14.2350, -51.9253]} zoom={4} style={{ height: '100%', width: '100%' }}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        />
+        {partners.filter(p => p.addresses && p.addresses.length > 0).map((partner, idx) => {
+          const coords = coordsMap[partner.id];
+          if (!coords) return null;
+          
+          const fillColor = partner.type === 'customer' ? '#3B82F6' :
+                            partner.type === 'supplier' ? '#10B981' :
+                            '#8B5CF6';
+
+          return (
+            <CircleMarker
+              key={partner.id || idx}
+              center={coords}
+              radius={8}
+              fillColor={fillColor}
+              color="#FFFFFF"
+              weight={2}
+              opacity={1}
+              fillOpacity={0.9}
+              eventHandlers={{ click: () => onSelectPartner && onSelectPartner(partner) }}
+            >
+                <Popup>
+                  <div className="p-1">
+                    <h3 className="font-bold text-gray-900 mb-1">{partner.name}</h3>
+                    <p className="text-xs text-gray-600 mb-1">
+                      <strong>Tipo:</strong> {
+                        partner.type === 'customer' ? t('businessPartners.typeCustomer', 'Cliente') :
+                        partner.type === 'supplier' ? t('businessPartners.typeSupplier', 'Fornecedor') :
+                        t('businessPartners.typeBoth', 'Cliente/Fornecedor')
+                      }
+                    </p>
+                    <p className="text-xs text-gray-600 pt-1 border-t border-gray-200 mt-1">{partner.addresses![0].city} - {partner.addresses![0].state}</p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })}
+        </MapContainer>
+
+        {/* Legenda */}
+        <div className="absolute bottom-4 left-4 z-[1000] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('businessPartners.map.legend.title', 'Legenda')}</h4>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeCustomer', 'Cliente')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeSupplier', 'Fornecedor')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-purple-500 border-2 border-white"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('businessPartners.typeBoth', 'Cliente/Fornecedor')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+};
