@@ -11,9 +11,11 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { logCreate, logUpdate, logDelete } from '../../services/logsService';
 import { useActivityLogger } from '../../hooks/useActivityLogger';
 import { formatCNPJInput } from '../../utils/formatters';
+import { useAuth } from '../../hooks/useAuth';
 
 export const Carriers: React.FC = () => {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
 
   useActivityLogger('Transportadores', 'Acesso', 'Acessou a Gestão de Transportadores');
 
@@ -422,9 +424,10 @@ export const Carriers: React.FC = () => {
                   <Edit size={16} />
                 </button>
                 <button 
-                  onClick={() => handleDeleteCarrier(carrier.id)}
-                  className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
-                  title={t('carriers.deleteAction')}
+                  onClick={() => isAdmin && handleDeleteCarrier(carrier.id)}
+                  disabled={!isAdmin}
+                  className={`${isAdmin ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-400 opacity-50 cursor-not-allowed'} p-1 rounded transition-colors`}
+                  title={!isAdmin ? 'Apenas administradores podem excluir' : t('carriers.deleteAction')}
                 >
                   <Trash2 size={16} />
                 </button>
