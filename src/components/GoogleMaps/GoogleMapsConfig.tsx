@@ -4,7 +4,7 @@ import { googleMapsService, GoogleMapsConfig as IGoogleMapsConfig } from '../../
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { GoogleMapsExtract } from './GoogleMapsExtract';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 import { useTranslation, Trans } from 'react-i18next';
 
 export const GoogleMapsConfig: React.FC = () => {

@@ -190,7 +190,7 @@ import {
   FileText,
   Sparkles
 } from 'lucide-react';
-import { useInnovations } from './contexts/InnovationsContext';
+import { useInnovations } from './hooks/useInnovations';
 import { menuConfig } from './data/menuConfig';
 
 function AppContent() {

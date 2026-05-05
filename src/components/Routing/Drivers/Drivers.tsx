@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../../Layout/Breadcrumbs';
-import { Search, Plus, Download, Users as UsersIcon, Edit, Trash2, Hash, Phone, CreditCard, CheckCircle2, AlertTriangle, Truck } from 'lucide-react';
+import { Search, Plus, Download, Users as UsersIcon, Edit, Trash2, Hash, Phone, CreditCard, CheckCircle2, AlertTriangle, Truck, Smartphone } from 'lucide-react';
 import { driversService, Driver } from '../../../services/driversService';
 import { DriverForm } from './DriverForm';
 import { Toast, ToastType } from '../../common/Toast';
@@ -101,15 +101,41 @@ export const Drivers: React.FC = () => {
     setConfirmDialog({ isOpen: false });
   };
 
-  const handleSaveDriver = async (driverData: Partial<Driver>) => {
+  const handleSaveDriver = async (driverData: any) => {
     try {
+      const profilePhoto = driverData._profilePhoto as File | undefined;
+      const dataToSave = { ...driverData };
+      delete dataToSave._profilePhoto;
+
+      let savedDriverId: string;
+
       if (editingDriver) {
-        await driversService.update(editingDriver.id, driverData);
+        await driversService.update(editingDriver.id, dataToSave);
+        savedDriverId = editingDriver.id;
         setToast({ message: 'Motorista atualizado com sucesso', type: 'success' });
       } else {
-        await driversService.create(driverData as any);
+        const created = await driversService.create(dataToSave as any);
+        if (created) savedDriverId = created.id;
+        else throw new Error('Falha ao criar motorista');
         setToast({ message: 'Motorista criado com sucesso', type: 'success' });
       }
+
+      if (profilePhoto && profilePhoto instanceof File && savedDriverId) {
+        const photoUrl = await driversService.uploadDriverPhoto(savedDriverId, profilePhoto);
+        if (photoUrl) {
+          // Fetch the latest driver to not overwrite new data
+          const currentDriver = await driversService.getById(savedDriverId);
+          if (currentDriver) {
+            await driversService.update(savedDriverId, {
+              metadata: {
+                ...currentDriver.metadata,
+                foto_url: photoUrl
+              }
+            });
+          }
+        }
+      }
+
       setShowForm(false);
       setEditingDriver(null);
       await loadDrivers();
@@ -315,11 +341,24 @@ export const Drivers: React.FC = () => {
             <div key={driver.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex gap-3">
-                  <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
-                    {driver.nome ? driver.nome.trim().split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'MT'}
-                  </div>
+                  {driver.metadata?.foto_url ? (
+                    <img 
+                      src={driver.metadata.foto_url} 
+                      alt={driver.nome} 
+                      className="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200 dark:border-gray-700"
+                    />
+                  ) : (
+                    <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                      {driver.nome ? driver.nome.trim().split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'MT'}
+                    </div>
+                  )}
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white leading-tight">{driver.nome}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white leading-tight flex items-center gap-2">
+                      {driver.nome}
+                      {driver.metadata?.acesso_app && (
+                        <Smartphone size={16} className="text-blue-500" title="Acesso ao App Liberado" />
+                      )}
+                    </h3>
                     <p className="text-xs text-gray-500">{driver.metadata?.categoria_operacional || 'Frota Própria'}</p>
                   </div>
                 </div>
@@ -374,9 +413,14 @@ export const Drivers: React.FC = () => {
                    driver.status === 'em_viagem' ? 'Em Viagem' : 'Inativo'}
                 </span>
                 
-                <span className="text-gray-500 text-xs font-medium flex items-center gap-1">
-                  Motorista
-                </span>
+                <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
+                  {driver.metadata?.acesso_app && (
+                    <span className="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Smartphone size={12} /> App
+                    </span>
+                  )}
+                  <span>Motorista</span>
+                </div>
               </div>
             </div>
           ))}

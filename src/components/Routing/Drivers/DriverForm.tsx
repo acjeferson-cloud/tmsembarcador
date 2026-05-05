@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Users, AlertTriangle, ShieldCheck, DollarSign } from 'lucide-react';
-import { Driver } from '../../../services/driversService';
+import { ArrowLeft, Save, Users, AlertTriangle, ShieldCheck, DollarSign, Camera, X } from 'lucide-react';
+import { Driver, driversService } from '../../../services/driversService';
 import { formatCPFInput, formatPhone } from '../../../utils/formatters';
 
 interface DriverFormProps {
@@ -18,6 +18,7 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
     telefone: '',
     status: 'livre',
     metadata: {
+      acesso_app: false,
       categoria_operacional: 'Próprio',
       operacao: {
         regioes_atuacao: [],
@@ -36,6 +37,10 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(driver?.metadata?.foto_url || null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   useEffect(() => {
     if (driver) {
@@ -47,11 +52,53 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
           ...driver.metadata,
           operacao: driver.metadata?.operacao || { regioes_atuacao: [], disponibilidade: true },
           habilitacoes: driver.metadata?.habilitacoes || { mopp: false, certificacoes: [], tipos_carga: [], veiculos_permitidos: [] },
-          custos: driver.metadata?.custos || { possui_rastreador: false }
+          custos: driver.metadata?.custos || { possui_rastreador: false },
+          acesso_app: driver.metadata?.acesso_app || false
         }
       });
+      setProfilePhotoPreview(driver.metadata?.foto_url || null);
     }
   }, [driver]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('A foto deve ter no máximo 5MB.');
+        return;
+      }
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Formato inválido. Use JPG, PNG, GIF ou WebP.');
+        return;
+      }
+      setProfilePhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (driver?.id && driver.metadata?.foto_url) {
+      setIsUploadingPhoto(true);
+      const success = await driversService.deleteDriverPhoto(driver.metadata.foto_url);
+      setIsUploadingPhoto(false);
+      if (success) {
+        setProfilePhoto(null);
+        setProfilePhotoPreview(null);
+        setFormData(prev => ({
+          ...prev,
+          metadata: { ...prev.metadata, foto_url: undefined }
+        }));
+      }
+    } else {
+      setProfilePhoto(null);
+      setProfilePhotoPreview(null);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -145,7 +192,11 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
 
     setIsSubmitting(true);
     try {
-      await onSave(formData);
+      const dataToSave = {
+        ...formData,
+        _profilePhoto: profilePhoto
+      };
+      await onSave(dataToSave);
     } finally {
       setIsSubmitting(false);
     }
@@ -182,7 +233,6 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* TABS */}
           <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
             <button type="button" onClick={() => setActiveTab('gerais')} className={tabClass('gerais')}>
               <div className="flex items-center justify-center gap-2">
@@ -207,15 +257,43 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
           </div>
 
           <div className="p-6">
-            {/* ABA 1: GERAIS */}
             {activeTab === 'gerais' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="pb-6 border-b border-gray-200 dark:border-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Foto do Motorista</label>
+                  <div className="flex items-center space-x-6">
+                    <div className="relative">
+                      {profilePhotoPreview ? (
+                        <img src={profilePhotoPreview} alt="Foto" className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700" />
+                      ) : (
+                        <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700">
+                          <span className="text-3xl font-semibold text-white">{formData.nome ? formData.nome.trim().split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'MT'}</span>
+                        </div>
+                      )}
+                      {isUploadingPhoto && <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div></div>}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <label className="cursor-pointer">
+                          <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handlePhotoChange} className="hidden" disabled={isUploadingPhoto} />
+                          <div className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                            <Camera size={18} /> <span>Escolher foto</span>
+                          </div>
+                        </label>
+                        {profilePhotoPreview && (
+                          <button type="button" onClick={handleRemovePhoto} disabled={isUploadingPhoto} className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                            <X size={18} /> <span>Remover</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome Completo *</label>
-                    <input type="text" name="nome" value={formData.nome} onChange={handleChange} placeholder="João da Silva"
-                      className={`w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white ${errors.nome ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-                    />
+                    <input type="text" name="nome" value={formData.nome} onChange={handleChange} placeholder="João da Silva" className={`w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white ${errors.nome ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     {errors.nome && <p className="mt-1 text-sm text-red-500">{errors.nome}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -433,12 +511,19 @@ export const DriverForm: React.FC<DriverFormProps> = ({ onBack, onSave, driver }
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white"
                     />
                   </div>
-                  <div className="flex items-end">
-                    <label className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-full cursor-pointer">
-                      <input type="checkbox" name="metadata.custos.possui_rastreador" checked={formData.metadata?.custos?.possui_rastreador || false} onChange={handleChange}
+                  <div className="flex items-end gap-4 md:col-span-3">
+                    <label className="flex items-center space-x-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 w-full md:w-1/2 cursor-pointer">
+                      <input type="checkbox" name="metadata.acesso_app" checked={formData.metadata?.acesso_app || false} onChange={handleChange}
                         className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Possui App/Rastreador</span>
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Liberar acesso ao App do Motorista</span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-full md:w-1/2 cursor-pointer">
+                      <input type="checkbox" name="metadata.custos.possui_rastreador" checked={formData.metadata?.custos?.possui_rastreador || false} onChange={handleChange}
+                        className="w-4 h-4 text-gray-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Possui Rastreador Físico</span>
                     </label>
                   </div>
                 </div>

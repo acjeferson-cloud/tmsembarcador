@@ -1,0 +1,1 @@
+UPDATE zip_code_ranges SET start_zip = '0' || SUBSTRING(start_zip FROM 1 FOR 7), end_zip = '0' || SUBSTRING(end_zip FROM 1 FOR 7) WHERE city_id IN (SELECT id FROM cities WHERE state_id = (SELECT id FROM states WHERE sigla = 'SP')) AND start_zip NOT LIKE '0%' AND start_zip NOT LIKE '1%';

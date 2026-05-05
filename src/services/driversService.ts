@@ -9,6 +9,8 @@ export interface Driver {
   telefone: string;
   status: 'livre' | 'em_rota' | 'indisponivel' | 'ferias' | 'afastado' | 'em_viagem' | 'inativo'; // Manteve em_viagem e inativo por compatibilidade
   metadata?: {
+    foto_url?: string;
+    acesso_app?: boolean;
     categoria_operacional?: 'Próprio' | 'Agregado' | 'Terceiro';
     operacao?: {
       regioes_atuacao?: string[];
@@ -129,5 +131,54 @@ export const driversService = {
     }
 
     return true;
+  },
+
+  async uploadDriverPhoto(driverId: string, file: File): Promise<string | null> {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `driver-${driverId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading driver photo:', error);
+      return null;
+    }
+  },
+
+  async deleteDriverPhoto(fotoUrl: string): Promise<boolean> {
+    try {
+      if (!fotoUrl) return false;
+      const urlParts = fotoUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+
+      const { error } = await supabase.storage
+        .from('profile-photos')
+        .remove([fileName]);
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting driver photo:', error);
+      return false;
+    }
   }
 };

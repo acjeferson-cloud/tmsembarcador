@@ -14,7 +14,7 @@ interface TripBuilderPanelProps {
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   isSaving: boolean;
-  routeStats?: { distanceKm: number, timeMin: number };
+  routeStats?: { distanceKm: number, timeMin: number, outboundKm?: number, returnKm?: number };
 }
 
 export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
@@ -162,7 +162,14 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
             <div className="flex gap-4 mb-2 pb-3 border-b border-gray-200 dark:border-gray-700">
               <div className="flex-1">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Distância Prevista</p>
-                <p className="font-bold text-gray-900 dark:text-white">{routeStats.distanceKm.toFixed(1)} km</p>
+                <div className="flex flex-col">
+                  <span className="font-bold text-gray-900 dark:text-white">{routeStats.distanceKm.toFixed(1)} km</span>
+                  {routeStats.outboundKm !== undefined && routeStats.returnKm !== undefined && (
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+                      (Ida {routeStats.outboundKm.toFixed(1)} km / Volta {routeStats.returnKm.toFixed(1)} km)
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex-1 border-l border-gray-200 dark:border-gray-700 pl-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Tempo Estimado</p>

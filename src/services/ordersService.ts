@@ -167,7 +167,7 @@ export const ordersService = {
     }
   },
 
-  async getPendingRoutingOrders(): Promise<Order[]> {
+  async getPendingRoutingOrders(startDate?: string, endDate?: string): Promise<Order[]> {
     try {
       const ctx = await TenantContextHelper.getCurrentContext();
       if (ctx && ctx.organizationId && ctx.environmentId) {
@@ -192,6 +192,13 @@ export const ordersService = {
       }
       if (ctx?.establishmentId) {
         query = query.eq('establishment_id', ctx.establishmentId);
+      }
+      
+      if (startDate) {
+        query = query.gte('data_pedido', startDate);
+      }
+      if (endDate) {
+        query = query.lte('data_pedido', endDate);
       }
 
       const { data, error } = await query.order('data_pedido', { ascending: false });

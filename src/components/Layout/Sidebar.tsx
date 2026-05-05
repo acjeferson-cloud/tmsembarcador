@@ -12,7 +12,7 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 
 interface SidebarProps {
   currentPage: string;

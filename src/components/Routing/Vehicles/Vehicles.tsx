@@ -310,7 +310,13 @@ export const Vehicles: React.FC = () => {
                     {vehicle.placa}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white leading-tight uppercase">{vehicle.tipo}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white leading-tight uppercase">
+                      {vehicle.tipo === 'Van' ? 'VUC' : 
+                       vehicle.tipo === 'Fiorino' ? 'Fiorino / Van Pequena' : 
+                       vehicle.tipo === 'Toco' ? 'Caminhão Toco' : 
+                       vehicle.tipo === 'Truck' ? 'Caminhão Truck' : 
+                       vehicle.tipo}
+                    </h3>
                     <p className="text-xs text-gray-500">{vehicle.metadata?.categoria_operacional || 'Categoria Não Definida'}</p>
                   </div>
                 </div>

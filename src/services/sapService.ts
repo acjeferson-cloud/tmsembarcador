@@ -12,8 +12,9 @@ export const sapIntegrationService = {
   /**
    * Orchestrates fetching the latest Order from SAP, checking/enriching the partner via 
    * Receita Federal, and persisting to `orders` and `order_items` tables.
+   * Se orderId for informado, busca e importa apenas aquele pedido ignorando regras de data.
    */
-  async importLatestSAPOrder(): Promise<{ success: boolean; message?: string; error?: string }> {
+  async importLatestSAPOrder(orderId?: string): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       const context = await TenantContextHelper.getCurrentContext();
 
@@ -40,11 +41,20 @@ export const sapIntegrationService = {
         lastSyncTime: null // Manual fetch pulls last 3 days
       };
 
-      const response = await fetch(`${proxyUrl}/api/fetch-sap-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      let response;
+      if (orderId) {
+        response = await fetch(`${proxyUrl}/api/fetch-sap-order-by-id`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, orderId })
+        });
+      } else {
+        response = await fetch(`${proxyUrl}/api/fetch-sap-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
       
       let data = null;
       try { data = await response.json(); } catch(e) {}

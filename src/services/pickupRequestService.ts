@@ -67,6 +67,7 @@ interface RomaneioData {
     totalWeight: number;
     totalValue: number;
   };
+  observations?: string;
 }
 
 export const pickupRequestService = {
@@ -154,6 +155,7 @@ export const pickupRequestService = {
         contactName: contactName,
         contactPhone: contactPhone,
         scheduledDate: pickup.scheduled_date || pickup.data_agendada || pickup.dataAgendada || new Date().toISOString(),
+        observations: pickup.observations || pickup.observacoes || pickup.observacao || '',
         invoices,
         totals
       };
@@ -202,6 +204,13 @@ export const pickupRequestService = {
 
     yPos += 5;
     doc.text(`Contato: ${data.contactName} - Tel: ${data.contactPhone}`, 15, yPos);
+
+    if (data.observations) {
+      yPos += 7;
+      const obsLines = doc.splitTextToSize(`Observações: ${data.observations}`, pageWidth - 30);
+      doc.text(obsLines, 15, yPos);
+      yPos += (obsLines.length * 5) - 5;
+    }
 
     yPos += 10;
     doc.setFontSize(12);
@@ -426,6 +435,7 @@ export const pickupRequestService = {
                     <tr><td style="padding: 4px 0;"><strong>Cidade/UF:</strong> ${romaneioData.pickupCity}/${romaneioData.pickupState} - CEP: ${romaneioData.pickupZip}</td></tr>
                     <tr><td style="padding: 4px 0;"><strong>Contato Local:</strong> ${romaneioData.contactName} (${romaneioData.contactPhone})</td></tr>
                     <tr><td style="padding: 4px 0;"><strong>Data Agendada:</strong> ${scheduledDateStr}</td></tr>
+                    ${romaneioData.observations ? `<tr><td style="padding: 4px 0;"><strong>Observações:</strong> ${romaneioData.observations}</td></tr>` : ''}
                   </table>
                 </div>
 

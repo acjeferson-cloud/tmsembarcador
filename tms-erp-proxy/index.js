@@ -171,14 +171,15 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       }
       
       if (sap_bpl_id) {
-         dateFilter += ` and BPL_IDAssignedToInvoice eq ${sap_bpl_id}`;
+         // dateFilter += ` and BPL_IDAssignedToInvoice eq ${sap_bpl_id}`;
+         // Filtro de filial removido temporariamente para Orders pois o SAP está retornando null neste campo para alguns pedidos
       }
       
       // Order ascending so the oldest changes are processed first
       dateFilter += `&$orderby=DocEntry asc`;
       
       const orderEndpoint = `${serviceLayerUrl}/Orders${dateFilter}`;
-      console.log(`[Proxy] Buscando orders em: ${orderEndpoint}`);
+      console.log(`[Proxy][DEBUG-ORDERS] Buscando orders em: ${orderEndpoint}`);
       
       orderResponse = await fetch(orderEndpoint, {
         method: 'GET',
@@ -204,6 +205,14 @@ app.post('/api/fetch-sap-order', async (req, res) => {
 
     const orderData = await orderResponse.json();
     const ordersList = orderData.value || [];
+    
+    console.log(`[Proxy][DEBUG-ORDERS] SAP respondeu com HTTP ${orderResponse.status}. Quantidade de orders retornadas no array value: ${ordersList.length}`);
+    if (ordersList.length === 0) {
+       console.log(`[Proxy][DEBUG-ORDERS] O payload do SAP foi: ${JSON.stringify(orderData).substring(0, 500)}...`);
+    } else {
+       console.log(`[Proxy][DEBUG-ORDERS] Exemplo do primeiro pedido retornado: DocNum=${ordersList[0].DocNum}, CreationDate=${ordersList[0].CreationDate}`);
+    }
+
 
     if (ordersList.length === 0) {
       return res.status(200).json({ success: true, orders: [] });
@@ -319,6 +328,222 @@ app.post('/api/fetch-sap-order', async (req, res) => {
     }
 
     // Callback logout invisível
+    fetch(`${serviceLayerUrl}/Logout`, { 
+      method: 'POST', 
+      headers: { 'Cookie': cookieString, 'Accept': 'application/json' } 
+    }).catch(() => {});
+
+    return res.status(200).json({ success: true, orders: mappedOrdersPayload });
+
+  } catch (globalError) {
+    return res.status(200).json({ success: false, error: `Erro no servidor Node Proxy: ${globalError.message}` });
+  }
+});
+
+// Endpoint 2.5: Fetch Specific SAP Order By ID
+app.post('/api/fetch-sap-order-by-id', async (req, res) => {
+  try {
+    const { endpointSystem, port, username, password, companyDb, orderId } = req.body;
+
+    if (!endpointSystem || !username || !companyDb || !orderId) {
+      return res.status(400).json({ success: false, error: 'Parâmetros de conexão ou ID do pedido ausentes.' });
+    }
+
+    let cleanEndpoint = endpointSystem.trim().replace(/\/$/, '');
+    let serviceLayerUrl = cleanEndpoint;
+    
+    if (port && !cleanEndpoint.includes(`:${port}`)) {
+      try {
+        const urlParts = new URL(cleanEndpoint);
+        urlParts.port = port.toString();
+        serviceLayerUrl = urlParts.toString().replace(/\/$/, '');
+      } catch (e) {
+        serviceLayerUrl = `${cleanEndpoint}:${port}`;
+      }
+    }
+    
+    if (!serviceLayerUrl.endsWith('/b1s/v1')) serviceLayerUrl = `${serviceLayerUrl}/b1s/v1`;
+    if (!serviceLayerUrl.startsWith('http')) serviceLayerUrl = `https://${serviceLayerUrl}`;
+
+    // 1. Login
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); 
+
+    let loginResponse;
+    try {
+      console.log(`[Proxy] Login no SAP: ${serviceLayerUrl}/Login`);
+      loginResponse = await fetch(`${serviceLayerUrl}/Login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          CompanyDB: companyDb,
+          UserName: username,
+          Password: password || ''
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!loginResponse.ok) {
+        let errorData = null;
+        try { errorData = await loginResponse.json(); } catch (e) {}
+        const sapErrorMsg = errorData?.error?.message?.value || loginResponse.statusText;
+        return res.status(200).json({ success: false, error: `Falha na conexão de Login SAP (${loginResponse.status}): ${sapErrorMsg}` });
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      return res.status(200).json({ success: false, error: `Falha de Rede/SSL ao autenticar no IP do SAP: ${fetchError.message}` });
+    }
+
+    const setCookieHeader = loginResponse.headers.get('set-cookie');
+    if (!setCookieHeader) {
+      return res.status(200).json({ success: false, error: `Nenhum Cookie de sessão retornado pelo SAP.` });
+    }
+    const cookiesMatch = setCookieHeader.match(/(B1SESSION=[^;]+)|(ROUTEID=[^;]+)/g) || [];
+    const cookieString = cookiesMatch.join('; ');
+
+    // 2. Fetch Order By ID
+    const orderController = new AbortController();
+    const orderTimeoutId = setTimeout(() => orderController.abort(), 25000);
+    
+    let orderResponse;
+    try {
+      const orderEndpoint = `${serviceLayerUrl}/Orders?$filter=DocNum eq ${orderId}`;
+      console.log(`[Proxy][DEBUG-ORDERS] Buscando pedido especifico em: ${orderEndpoint}`);
+      
+      orderResponse = await fetch(orderEndpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Cookie': cookieString
+        },
+        signal: orderController.signal
+      });
+      clearTimeout(orderTimeoutId);
+
+      if (!orderResponse.ok) {
+        let orderErrorData = null;
+        try { orderErrorData = await orderResponse.json(); } catch (e) {}
+        const orderSapErrorMsg = orderErrorData?.error?.message?.value || orderResponse.statusText;
+        return res.status(200).json({ success: false, error: `Falha ao buscar Pedido Específico (${orderResponse.status}): ${orderSapErrorMsg}` });
+      }
+    } catch (fetchError) {
+      clearTimeout(orderTimeoutId);
+      return res.status(200).json({ success: false, error: `Falha de Rede ao buscar Pedido SAP: ${fetchError.message}` });
+    }
+
+    const orderData = await orderResponse.json();
+    const ordersList = orderData.value || [];
+    
+    console.log(`[Proxy][DEBUG-ORDERS] Pedido Específico SAP retornou ${ordersList.length} itens.`);
+    if (ordersList.length > 0) {
+       console.log(`[Proxy][DEBUG-ORDERS] Infos do pedido: CreationDate=${ordersList[0].CreationDate}, UpdateDate=${ordersList[0].UpdateDate}, BPL_ID=${ordersList[0].BPL_IDAssignedToInvoice}`);
+    }
+
+    if (ordersList.length === 0) {
+      return res.status(200).json({ success: true, orders: [] });
+    }
+
+    const bpCache = {};
+    const carrierBPCache = {};
+    const mappedOrdersPayload = [];
+
+    for (const latestOrder of ordersList) {
+      let documentStr = (latestOrder.LicTradNum || latestOrder.TaxIdNum || latestOrder.FederalTaxID || '').replace(/\D/g, '');
+      
+      if (latestOrder.CardCode && (!documentStr || !latestOrder.AddressExtension?.ShipToCity || !latestOrder.AddressExtension?.ShipToZipCode)) {
+        if (!bpCache[latestOrder.CardCode]) {
+           try {
+             const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${latestOrder.CardCode}')`;
+             const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
+             if (bpRes.ok) bpCache[latestOrder.CardCode] = await bpRes.json();
+           } catch (e) {}
+        }
+        
+        const bpData = bpCache[latestOrder.CardCode];
+        if (bpData) {
+          if (!documentStr) {
+              documentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+          }
+          if (!latestOrder.AddressExtension?.ShipToCity || !latestOrder.AddressExtension?.ShipToZipCode) {
+             let bestAddress = null;
+             if (bpData.BPAddresses && bpData.BPAddresses.length > 0) {
+                bestAddress = bpData.BPAddresses.find(a => a.AddressType === 'bo_ShipTo') || bpData.BPAddresses.find(a => a.AddressType === 'bo_BillTo') || bpData.BPAddresses[0];
+             }
+             if (bestAddress || bpData.City || bpData.ZipCode) {
+                if (!latestOrder.AddressExtension) latestOrder.AddressExtension = {};
+                if (!latestOrder.AddressExtension.ShipToCity) latestOrder.AddressExtension.ShipToCity = (bestAddress?.City) || bpData.City || '';
+                if (!latestOrder.AddressExtension.ShipToState) latestOrder.AddressExtension.ShipToState = (bestAddress?.State) || bpData.State1 || bpData.County || '';
+                if (!latestOrder.AddressExtension.ShipToZipCode) latestOrder.AddressExtension.ShipToZipCode = (bestAddress?.ZipCode) || bpData.ZipCode || '';
+                if (!latestOrder.AddressExtension.ShipToStreet) latestOrder.AddressExtension.ShipToStreet = (bestAddress?.Street) || bpData.Address || '';
+             }
+          }
+        }
+      }
+
+      let carrierDocumentStr = '';
+      const carrierCode = latestOrder.TaxExtension?.Carrier || '';
+      if (carrierCode) {
+        if (!carrierBPCache[carrierCode]) {
+           try {
+             const bpEndpoint = `${serviceLayerUrl}/BusinessPartners('${carrierCode}')`;
+             const bpRes = await fetch(bpEndpoint, { method: 'GET', headers: { 'Accept': 'application/json', 'Cookie': cookieString } });
+             if (bpRes.ok) carrierBPCache[carrierCode] = await bpRes.json();
+           } catch (e) {}
+        }
+        const bpData = carrierBPCache[carrierCode];
+        if (bpData) {
+            carrierDocumentStr = (bpData.LicTradNum || bpData.FederalTaxID || bpData.TaxIdNum || bpData.AdditionalID || '').replace(/\D/g, '');
+        }
+      }
+
+      const mappedOrder = {
+        order_number: latestOrder.DocNum?.toString() || '',
+        issue_date: latestOrder.DocDate || new Date().toISOString().split('T')[0],
+        entry_date: latestOrder.DocDate || new Date().toISOString().split('T')[0],
+        expected_delivery: latestOrder.DocDueDate || '',
+        order_value: Number(latestOrder.DocTotal || 0),
+        observations: latestOrder.Comments || '',
+        carrier_document: carrierDocumentStr,
+        carrier_code: carrierCode,
+        customer: {
+          document: documentStr,
+          name: latestOrder.CardName || '',
+          cardCode: latestOrder.CardCode || ''
+        },
+        destination: {
+          zip_code: String(latestOrder.AddressExtension?.ShipToZipCode || ''),
+          street: String(latestOrder.AddressExtension?.ShipToStreet || ''),
+          number: String(latestOrder.AddressExtension?.ShipToStreetNo || ''),
+          neighborhood: String(latestOrder.AddressExtension?.ShipToBlock || ''),
+          city: String(latestOrder.AddressExtension?.ShipToCity || ''),
+          state: String(latestOrder.AddressExtension?.ShipToState || ''),
+        },
+        items: (latestOrder.DocumentLines || []).map((line) => ({
+          product_code: String(line.ItemCode || ''),
+          product_description: String(line.ItemDescription || ''),
+          quantity: Number(line.Quantity || 1),
+          unit_price: Number(line.Price || 0),
+          total_price: Number(line.LineTotal || 0),
+          weight: Number(line.Weight1 || 0), 
+          cubic_meters: Number(line.Volume || 0)
+        }))
+      };
+
+      const totalWeight = mappedOrder.items.reduce((acc, cur) => acc + cur.weight, 0);
+      const totalVolumeQty = mappedOrder.items.reduce((acc, cur) => acc + cur.quantity, 0);
+      const totalCubicMeters = mappedOrder.items.reduce((acc, cur) => acc + cur.cubic_meters, 0);
+
+      const fullOrderPayload = {
+        ...mappedOrder,
+        weight: totalWeight,
+        volume_qty: totalVolumeQty > 0 ? totalVolumeQty : 1,
+        cubic_meters: totalCubicMeters
+      };
+      
+      mappedOrdersPayload.push(fullOrderPayload);
+    }
+
     fetch(`${serviceLayerUrl}/Logout`, { 
       method: 'POST', 
       headers: { 'Cookie': cookieString, 'Accept': 'application/json' } 

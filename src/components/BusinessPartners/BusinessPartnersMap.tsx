@@ -3,7 +3,7 @@ import { BusinessPartner } from '../../types';
 import { MapPin, Loader, Info } from 'lucide-react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useTranslation } from 'react-i18next';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 

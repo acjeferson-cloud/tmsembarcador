@@ -9,7 +9,7 @@ interface InnovationsContextType {
   isLoading: boolean;
 }
 
-const InnovationsContext = createContext<InnovationsContextType | undefined>(undefined);
+export const InnovationsContext = createContext<InnovationsContextType | undefined>(undefined);
 
 export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, currentEstablishment } = useAuth();
@@ -57,7 +57,8 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
       const { data, error } = await (supabase as any).from('user_innovations')
         .select(`
           innovation_id,
-          innovation:innovations ( innovation_key )
+          status,
+          innovations ( innovation_key )
         `)
         .eq('organization_id', orgId)
         .eq('environment_id', envId)
@@ -65,17 +66,18 @@ export const InnovationsProvider: React.FC<{ children: ReactNode }> = ({ childre
         .eq('is_active', true);
 
       if (error) {
-
+        console.error('Error fetching user_innovations:', error);
         return;
       }
 
       if (data) {
-        // Filtrar apenas inovações que possuam uma chave vinculada,
-        // suportando tanto o formato objeto direto (1:1) quanto array vindo do Supabase
+        // Filtrar apenas inovações que possuam uma chave vinculada e que estejam aprovadas/ativas
         const keys = data
+          .filter((row: any) => row.status === 'approved' || row.status === 'active' || !row.status)
           .map((row: any) => {
-            const inn = Array.isArray(row.innovation) ? row.innovation[0] : row.innovation;
-            return inn?.innovation_key;
+            const inn = row.innovation || row.innovations; // Suporta alias ou nome direto
+            const innObj = Array.isArray(inn) ? inn[0] : inn;
+            return innObj?.innovation_key;
           })
           .filter(Boolean);
         

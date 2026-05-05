@@ -7,7 +7,7 @@ import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 
 export const RealTimeMap: React.FC = () => {
   const { t } = useTranslation();

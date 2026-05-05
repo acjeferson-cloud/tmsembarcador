@@ -3,11 +3,12 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Order } from '../../../services/ordersService';
-import { useInnovations } from '../../../contexts/InnovationsContext';
+import { Establishment } from '../../../services/establishmentsService';
+import { useInnovations } from '../../../hooks/useInnovations';
 import { loadGoogleMapsAPI } from '../../../utils/googleMapsLoader';
 import { getOsrmRoute } from '../../../utils/osrmRouter';
 import { nominatimGeocoder } from '../../../utils/nominatimGeocoder';
-import { Loader, Info, MapPin } from 'lucide-react';
+import { Loader, Info, MapPin, Building2 } from 'lucide-react';
 
 // Fix for default marker icons in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -50,6 +51,7 @@ const createCustomIcon = (color: string) => {
 
 const unselectedIcon = createCustomIcon('#6366f1'); // Indigo
 const selectedIcon = createCustomIcon('#10b981');   // Emerald
+const establishmentIcon = createCustomIcon('#1e293b'); // Slate/Dark Gray
 
 interface MapUpdaterProps {
   markers: [number, number][];
@@ -61,7 +63,7 @@ const MapUpdater: React.FC<MapUpdaterProps> = ({ markers }) => {
   useEffect(() => {
     if (markers.length > 0) {
       const bounds = L.latLngBounds(markers);
-      map.fitBounds(bounds, { padding: [50, 50] });
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
     }
   }, [markers, map]);
   
@@ -71,10 +73,11 @@ const MapUpdater: React.FC<MapUpdaterProps> = ({ markers }) => {
 interface RoutingMapProps {
   pendingOrders: Order[];
   selectedOrders: Order[];
-  onRouteCalculated?: (distanceKm: number, timeMin: number) => void;
+  establishment?: Establishment | null;
+  onRouteCalculated?: (distanceKm: number, timeMin: number, outboundDistanceKm?: number, returnDistanceKm?: number) => void;
 }
 
-export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedOrders, onRouteCalculated }) => {
+export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedOrders, establishment, onRouteCalculated }) => {
   const { isInnovationActive, isLoading: isContextLoading } = useInnovations();
   const isActive = isInnovationActive('google-maps');
   
@@ -94,27 +97,90 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
     ...selectedOrders.map(o => ({ ...o, isSelected: true }))
   ];
 
-  // Geocode all orders
+  // Geocode all orders + establishment
   useEffect(() => {
     let mounted = true;
     
     const loadCoords = async () => {
-      // Limit to max 50 points to avoid huge queues, but ideally handle all in view
+      const newCoords = { ...coordsMap };
+      let changed = false;
+
+      // Geocode establishment
+      if (establishment && !newCoords['ESTABLISHMENT']) {
+         const estParts = [
+           establishment.logradouro || establishment.endereco,
+           establishment.numero,
+           establishment.bairro,
+           establishment.cidade,
+           establishment.estado
+         ].filter(Boolean);
+         
+         let estAddress = `${estParts.join(', ')}, Brasil`;
+         let estCoords = await nominatimGeocoder.geocode(estAddress);
+         
+         // Fallback to city/state
+         if (!estCoords && establishment.cidade) {
+            estAddress = `${establishment.cidade}, ${establishment.estado}, Brasil`;
+            estCoords = await nominatimGeocoder.geocode(estAddress);
+         }
+
+         if (estCoords && mounted) {
+           newCoords['ESTABLISHMENT'] = [estCoords.lat, estCoords.lng];
+           changed = true;
+         } else if (mounted) {
+           console.warn('Falha ao geocodificar o endereço do estabelecimento.');
+         }
+      }
+
+      // Geocode orders
       for (const order of mappedOrders) {
         if (!mounted) break;
-        if (!coordsMap[order.id!]) {
-          const addressString = `${order.destination_city}, ${order.destination_state}, Brasil`;
-          const coords = await nominatimGeocoder.geocode(addressString);
+        if (!newCoords[order.id!]) {
+          // Try full address first
+          const parts = [
+            order.destination_street,
+            order.destination_number,
+            order.destination_neighborhood,
+            order.destination_city,
+            order.destination_state
+          ].filter(Boolean);
+          
+          let addressString = `${parts.join(', ')}, Brasil`;
+          let coords = await nominatimGeocoder.geocode(addressString);
+          
+          // Fallback to city/state if full address fails
+          if (!coords && order.destination_street) {
+             addressString = `${order.destination_city}, ${order.destination_state}, Brasil`;
+             coords = await nominatimGeocoder.geocode(addressString);
+          }
+
           if (coords && mounted) {
-            setCoordsMap(prev => ({ ...prev, [order.id!]: [coords.lat, coords.lng] }));
+            // Check for exact duplicates to add jitter (prevent overlap)
+            let finalLat = coords.lat;
+            let finalLng = coords.lng;
+            
+            Object.values(newCoords).forEach(existing => {
+               if (existing[0] === finalLat && existing[1] === finalLng) {
+                  // Add ~10-20 meters of random offset (approx 0.0001 to 0.0002 degrees)
+                  finalLat += (Math.random() - 0.5) * 0.0002;
+                  finalLng += (Math.random() - 0.5) * 0.0002;
+               }
+            });
+
+            newCoords[order.id!] = [finalLat, finalLng];
+            changed = true;
           }
         }
+      }
+
+      if (changed && mounted) {
+         setCoordsMap(newCoords);
       }
     };
     
     loadCoords();
     return () => { mounted = false; };
-  }, [pendingOrders, selectedOrders]); // Depend on orders so if new arrive, we geocode
+  }, [pendingOrders, selectedOrders, establishment]); // Depend on orders and establishment
 
   // Load Google Maps API
   useEffect(() => {
@@ -204,10 +270,54 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
 
     // Draw route
     const selectedWithCoords = selectedOrders.filter(o => coordsMap[o.id!]);
-    if (selectedWithCoords.length > 1) {
-      const origin = coordsMap[selectedWithCoords[0].id!];
-      const destination = coordsMap[selectedWithCoords[selectedWithCoords.length - 1].id!];
-      const waypoints = selectedWithCoords.slice(1, -1).map(o => ({
+    const estCoords = coordsMap['ESTABLISHMENT'];
+    
+    // Draw establishment marker if exists
+    if (estCoords) {
+        hasPoints = true;
+        const position = { lat: estCoords[0], lng: estCoords[1] };
+        bounds.extend(position);
+
+        const estMarker = new google.maps.Marker({
+          position,
+          map: mapInstance,
+          title: establishment?.nome_fantasia || 'Estabelecimento',
+          icon: {
+            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+            fillColor: '#1e293b',
+            fillOpacity: 1,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+            scale: 6
+          }
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+          content: `
+            <div style="padding: 4px; font-family: sans-serif;">
+              <p style="font-weight: bold; margin: 0 0 4px 0;">📍 ${establishment?.nome_fantasia || 'Origem'}</p>
+              <p style="font-size: 11px; color: #666; margin: 2px 0 0 0;">Estabelecimento Emissor</p>
+            </div>
+          `
+        });
+
+        estMarker.addListener('click', () => {
+          infoWindow.open(mapInstance, estMarker);
+        });
+
+        markersRef.current.push(estMarker);
+    }
+
+    if (hasPoints) {
+      mapInstance.fitBounds(bounds);
+    }
+
+    if (selectedWithCoords.length > 0 && estCoords) {
+      // Origin and destination are the establishment
+      const origin = estCoords;
+      const destination = estCoords;
+      
+      const waypoints = selectedWithCoords.map(o => ({
         location: { lat: coordsMap[o.id!][0], lng: coordsMap[o.id!][1] },
         stopover: true
       }));
@@ -227,25 +337,36 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
             // Calculate total distance and time
             let totalDistanceMeters = 0;
             let totalDurationSeconds = 0;
+            let outboundDistanceMeters = 0;
+            let returnDistanceMeters = 0;
+            
             const legs = result.routes[0]?.legs || [];
-            legs.forEach(leg => {
-              if (leg.distance) totalDistanceMeters += leg.distance.value;
+            legs.forEach((leg, index) => {
+              if (leg.distance) {
+                 totalDistanceMeters += leg.distance.value;
+                 // If it's the last leg, it's the return
+                 if (index === legs.length - 1 && legs.length > 1) {
+                    returnDistanceMeters += leg.distance.value;
+                 } else {
+                    outboundDistanceMeters += leg.distance.value;
+                 }
+              }
               if (leg.duration) totalDurationSeconds += leg.duration.value;
             });
             
             if (onRouteCalculated) {
-              onRouteCalculated(totalDistanceMeters / 1000, totalDurationSeconds / 60);
+              onRouteCalculated(totalDistanceMeters / 1000, totalDurationSeconds / 60, outboundDistanceMeters / 1000, returnDistanceMeters / 1000);
             }
           } else {
             console.error('Directions request failed due to ' + status);
             directionsRendererRef.current?.setDirections({ routes: [] } as any);
-            if (onRouteCalculated) onRouteCalculated(0, 0);
+            if (onRouteCalculated) onRouteCalculated(0, 0, 0, 0);
           }
         }
       );
     } else {
        directionsRendererRef.current?.setDirections({ routes: [] } as any);
-       if (onRouteCalculated) onRouteCalculated(0, 0);
+       if (onRouteCalculated) onRouteCalculated(0, 0, 0, 0);
     }
 
   }, [mappedOrders, coordsMap, isActive, mapInstance, selectedOrders, onRouteCalculated]);
@@ -256,19 +377,26 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
 
     const fetchOsrm = async () => {
       const selectedWithCoords = selectedOrders.filter(o => coordsMap[o.id!]);
-      if (selectedWithCoords.length > 1) {
-        const points = selectedWithCoords.map(o => ({
-          lat: coordsMap[o.id!][0],
-          lng: coordsMap[o.id!][1]
-        }));
-        const { routeCoords, distanceKm, timeMin } = await getOsrmRoute(points);
+      const estCoords = coordsMap['ESTABLISHMENT'];
+
+      if (selectedWithCoords.length > 0 && estCoords) {
+        // Start at establishment, go through orders, end at establishment
+        const points = [
+          { lat: estCoords[0], lng: estCoords[1] },
+          ...selectedWithCoords.map(o => ({
+            lat: coordsMap[o.id!][0],
+            lng: coordsMap[o.id!][1]
+          })),
+          { lat: estCoords[0], lng: estCoords[1] }
+        ];
+        const { routeCoords, distanceKm, timeMin, outboundDistanceKm, returnDistanceKm } = await getOsrmRoute(points);
         setOsrmRoute(routeCoords);
         if (onRouteCalculated) {
-           onRouteCalculated(distanceKm, timeMin);
+           onRouteCalculated(distanceKm, timeMin, outboundDistanceKm, returnDistanceKm);
         }
       } else {
         setOsrmRoute([]);
-        if (onRouteCalculated) onRouteCalculated(0, 0);
+        if (onRouteCalculated) onRouteCalculated(0, 0, 0, 0);
       }
     };
 
@@ -310,13 +438,29 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
             center={[-23.5505, -46.6333]} 
             zoom={11} 
             style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
+            zoomControl={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
             
+            {coordsMap['ESTABLISHMENT'] && (
+              <Marker 
+                position={coordsMap['ESTABLISHMENT']}
+                icon={establishmentIcon}
+                zIndexOffset={2000}
+              >
+                <Popup>
+                  <div className="p-1 text-center">
+                    <Building2 className="w-6 h-6 mx-auto text-slate-800 mb-1" />
+                    <p className="font-bold text-gray-900">{establishment?.nome_fantasia || 'Origem'}</p>
+                    <p className="text-xs text-gray-500 mt-1">Estabelecimento Emissor</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
             {markersData.map((marker, idx) => (
               <Marker 
                 key={marker.order.id || idx} 
@@ -348,7 +492,10 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
               />
             )}
 
-            <MapUpdater markers={markersData.map(m => m.coords)} />
+            <MapUpdater markers={[
+              ...markersData.map(m => m.coords),
+              ...(coordsMap['ESTABLISHMENT'] ? [coordsMap['ESTABLISHMENT']] : [])
+            ]} />
           </MapContainer>
         </>
       )}
@@ -357,11 +504,21 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
       <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-900/90 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm z-[1000]">
         <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider">Legenda</h4>
         <div className="flex items-center gap-2 mb-1.5">
-          <div className="w-3 h-3 rounded-full bg-indigo-500 border border-white shadow-sm"></div>
+          <div className="w-3 h-3 rounded-full bg-slate-800 border border-white shadow-sm flex items-center justify-center">
+             <div className="w-1 h-1 bg-white rounded-full"></div>
+          </div>
+          <span className="text-xs text-gray-600 dark:text-gray-300">Estabelecimento (Origem/Fim)</span>
+        </div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="w-3 h-3 rounded-full bg-indigo-500 border border-white shadow-sm flex items-center justify-center">
+             <div className="w-1 h-1 bg-white rounded-full"></div>
+          </div>
           <span className="text-xs text-gray-600 dark:text-gray-300">Carga Disponível</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 border border-white shadow-sm"></div>
+          <div className="w-3 h-3 rounded-full bg-emerald-500 border border-white shadow-sm flex items-center justify-center">
+             <div className="w-1 h-1 bg-white rounded-full"></div>
+          </div>
           <span className="text-xs text-gray-600 dark:text-gray-300">Em Romaneio</span>
         </div>
       </div>

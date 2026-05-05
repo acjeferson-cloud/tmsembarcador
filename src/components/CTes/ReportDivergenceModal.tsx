@@ -3,7 +3,7 @@ import { X, Download, Mail, MessageCircle, FileText, AlertCircle, CheckCircle, L
 import { cteDivergenceReportService, DivergenceReportData } from '../../services/cteDivergenceReportService';
 import { whatsappService } from '../../services/whatsappService';
 import { supabase } from '../../lib/supabase';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 
 interface ReportDivergenceModalProps {
   isOpen: boolean;

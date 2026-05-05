@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 
 export interface Option {
   value: string;
@@ -55,7 +55,7 @@ export const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
       >
         <input
           type="text"
-          className="w-full bg-transparent outline-none cursor-pointer disabled:cursor-not-allowed placeholder-gray-500 dark:placeholder-gray-400"
+          className="w-full bg-transparent outline-none cursor-pointer disabled:cursor-not-allowed placeholder-gray-500 dark:placeholder-gray-400 pr-8"
           placeholder={selectedOption ? selectedOption.label : placeholder}
           value={displayValue}
           onChange={(e) => {
@@ -64,7 +64,19 @@ export const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
           }}
           disabled={disabled}
         />
-        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none" />
+        {value && !disabled ? (
+          <X 
+            className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 absolute right-3 cursor-pointer z-10" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange('');
+              setSearchTerm('');
+            }}
+          />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none" />
+        )}
       </div>
 
       {isOpen && !disabled && (

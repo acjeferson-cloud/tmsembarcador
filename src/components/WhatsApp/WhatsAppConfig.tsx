@@ -4,7 +4,7 @@ import { whatsappService, WhatsAppConfig as IWhatsAppConfig, WhatsAppTemplate } 
 import { useAuth } from '../../hooks/useAuth';
 import { WhatsAppExtract } from './WhatsAppExtract';
 import { useTranslation } from 'react-i18next';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 
 export const WhatsAppConfig: React.FC = () => {
   const { user } = useAuth();

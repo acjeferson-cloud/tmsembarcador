@@ -42,8 +42,12 @@ const FreightQuote: React.FC = () => {
   const [destinationState, setDestinationState] = useState('');
   const [originCity, setOriginCity] = useState('');
   const [destinationCity, setDestinationCity] = useState('');
-  const [originMode, setOriginMode] = useState<'cep' | 'cidade'>('cidade');
-  const [destinationMode, setDestinationMode] = useState<'cep' | 'cidade'>('cidade');
+  const [originMode, setOriginMode] = useState<'cep' | 'cidade'>(() => {
+    return (localStorage.getItem('freightQuote_originMode') as 'cep' | 'cidade') || 'cidade';
+  });
+  const [destinationMode, setDestinationMode] = useState<'cep' | 'cidade'>(() => {
+    return (localStorage.getItem('freightQuote_destinationMode') as 'cep' | 'cidade') || 'cidade';
+  });
   const [weightFormatted, setWeightFormatted] = useState('');
   const [cubicMetersFormatted, setCubicMetersFormatted] = useState('');
   const [cargoValueFormatted, setCargoValueFormatted] = useState('');
@@ -250,6 +254,43 @@ const FreightQuote: React.FC = () => {
     });
   };
 
+  const handleBusinessPartnerChange = async (partnerId: string | undefined) => {
+    setFormData(prev => ({ ...prev, businessPartnerId: partnerId }));
+    
+    if (partnerId) {
+      const partner = businessPartners.find(p => p.id === partnerId);
+      if (partner && partner.addresses && partner.addresses.length > 0) {
+        const address = partner.addresses.find(a => a.type === 'delivery') || 
+                        partner.addresses.find(a => a.isPrimary) || 
+                        partner.addresses[0];
+        
+        if (address.zipCode) {
+          setDestinationMode('cep');
+          localStorage.setItem('freightQuote_destinationMode', 'cep');
+          const cleanZip = formatZipCode(address.zipCode);
+          setFormData(prev => ({ ...prev, destinationZipCode: cleanZip }));
+          await handleZipCodeSearch('destination', cleanZip);
+        } else if (address.state && address.city) {
+          setDestinationMode('cidade');
+          localStorage.setItem('freightQuote_destinationMode', 'cidade');
+          
+          setDestinationState(address.state);
+          
+          setLoadingDestCities(true);
+          const cities = await getCitiesByState(address.state);
+          setDestinationCities(cities);
+          setLoadingDestCities(false);
+          
+          const cityData = cities.find((c: BrazilianCity) => c.name.toLowerCase() === address.city.toLowerCase());
+          if (cityData) {
+            setDestinationCity(cityData.ibgeCode);
+            setFormData(prev => ({ ...prev, destinationCityId: cityData.ibgeCode }));
+          }
+        }
+      }
+    }
+  };
+
   const handleAddQuoteItem = () => {
     if (!selectedCatalogItemId) {
       setToast({ message: 'Selecione um item do catálogo para adicioná-lo', type: 'error' });
@@ -408,6 +449,7 @@ const FreightQuote: React.FC = () => {
                         type="button"
                         onClick={() => {
                           setOriginMode('cidade');
+                          localStorage.setItem('freightQuote_originMode', 'cidade');
                           setFormData({ ...formData, originZipCode: '' });
                         }}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${
@@ -422,6 +464,7 @@ const FreightQuote: React.FC = () => {
                         type="button"
                         onClick={() => {
                           setOriginMode('cep');
+                          localStorage.setItem('freightQuote_originMode', 'cep');
                           setOriginState('');
                           setOriginCity('');
                           setFormData({ ...formData, originCityId: undefined });
@@ -522,11 +565,12 @@ const FreightQuote: React.FC = () => {
                       <MapPin className="w-4 h-4 mr-2 text-red-500" />
                       {t('freightQuote.form.destination')} <span className="text-red-500 ml-1">*</span>
                     </h3>
-                    <div className="flex bg-white dark:bg-gray-800 rounded-md p-1 border border-gray-200 dark:border-gray-700">
+                    <div className={`flex bg-white dark:bg-gray-800 rounded-md p-1 border border-gray-200 dark:border-gray-700 ${formData.businessPartnerId ? 'opacity-50 pointer-events-none' : ''}`}>
                       <button
                         type="button"
                         onClick={() => {
                           setDestinationMode('cidade');
+                          localStorage.setItem('freightQuote_destinationMode', 'cidade');
                           setFormData({ ...formData, destinationZipCode: '' });
                         }}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${
@@ -541,6 +585,7 @@ const FreightQuote: React.FC = () => {
                         type="button"
                         onClick={() => {
                           setDestinationMode('cep');
+                          localStorage.setItem('freightQuote_destinationMode', 'cep');
                           setDestinationState('');
                           setDestinationCity('');
                           setFormData({ ...formData, destinationCityId: undefined });
@@ -564,7 +609,8 @@ const FreightQuote: React.FC = () => {
                           required
                           value={destinationState}
                           onChange={(e) => handleStateChange('destination', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                          disabled={!!formData.businessPartnerId}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-900"
                         >
                           <option value="">{t('freightQuote.form.select')}</option>
                           {states.map(state => (
@@ -579,8 +625,8 @@ const FreightQuote: React.FC = () => {
                           required
                           value={destinationCity}
                           onChange={(e) => handleCityChange('destination', e.target.value)}
-                          disabled={loadingDestCities || !destinationState}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 dark:bg-gray-800 dark:text-white"
+                          disabled={loadingDestCities || !destinationState || !!formData.businessPartnerId}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-900 dark:bg-gray-800 dark:text-white"
                         >
                           <option value="">{loadingDestCities ? t('freightQuote.form.loading') : t('freightQuote.form.selectCity')}</option>
                           {sortedDestinationCities.map(city => (
@@ -608,7 +654,8 @@ const FreightQuote: React.FC = () => {
                             }
                           }}
                           maxLength={8}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                          disabled={!!formData.businessPartnerId}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-900"
                         />
                       </div>
                       {destinationCity && destinationState && (
@@ -654,7 +701,7 @@ const FreightQuote: React.FC = () => {
                       label: `${partner.codigo} - ${partner.name}`
                     }))}
                     value={formData.businessPartnerId || ''}
-                    onChange={(val) => setFormData({ ...formData, businessPartnerId: val || undefined })}
+                    onChange={(val) => handleBusinessPartnerChange(val || undefined)}
                     placeholder={t('freightQuote.form.partnerOptional')}
                   />
                 </div>

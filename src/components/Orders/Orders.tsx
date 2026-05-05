@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Plus, FileText, CheckCircle, XCircle, Truck, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Plus, FileText, CheckCircle, XCircle, Truck, RefreshCw, ShoppingCart, Search } from 'lucide-react';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { OrdersFilters } from './OrdersFilters';
@@ -117,6 +117,27 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
       setIsLoading(false);
     }
   };
+
+  const handleImportSpecificSAPOrder = async () => {
+    const orderId = window.prompt('Digite o número (DocNum) do pedido SAP para importar:');
+    if (!orderId) return;
+
+    setIsLoading(true);
+    try {
+      const response = await sapIntegrationService.importLatestSAPOrder(orderId.trim());
+      if (!response.success) {
+        setToast({ message: response.error || 'Erro ao sincronizar pedido específico.', type: 'error' });
+      } else {
+        setToast({ message: response.message || `Pedido ${orderId} importado com sucesso!`, type: 'success' });
+        await loadOrders();
+      }
+    } catch (err: any) {
+      setToast({ message: err.message || 'Erro inesperado ao buscar pedido do SAP.', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   // Handle initial order navigation from Spotlight
   const [lastOpenedInitialId, setLastOpenedInitialId] = useState<string | null>(null);
@@ -617,7 +638,19 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
               <span>Baixar Pedidos SAP</span>
             </button>
           )}
+          {isSapActive && (
+            <button
+              onClick={handleImportSpecificSAPOrder}
+              disabled={isLoading}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+              title="Busca um pedido específico por número (DocNum) ignorando filtros de data/filial"
+            >
+              <Search size={20} className={isLoading ? 'animate-spin' : ''} />
+              <span>Buscar Pedido Específico</span>
+            </button>
+          )}
           
+
           <button
             onClick={() => setShowOrderForm(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"

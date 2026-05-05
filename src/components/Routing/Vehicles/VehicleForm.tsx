@@ -270,7 +270,7 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ onBack, onSave, vehicl
                     >
                       <option value="Moto">Moto</option>
                       <option value="Fiorino">Fiorino / Van Pequena</option>
-                      <option value="Van">Van Grande / VUC</option>
+                      <option value="Van">VUC (Veículo Urbano de Carga)</option>
                       <option value="Toco">Caminhão Toco</option>
                       <option value="Truck">Caminhão Truck</option>
                       <option value="Carreta">Carreta</option>
@@ -387,33 +387,17 @@ export const VehicleForm: React.FC<VehicleFormProps> = ({ onBack, onSave, vehicl
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-4">Certificações e Equipamentos</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white mb-4">Equipamentos Auxiliares</h3>
                     <div className="space-y-4">
-                      <div>
-                        <span className="block text-xs font-medium text-gray-500 uppercase mb-2">Certificados</span>
-                        <div className="flex gap-4">
-                          {['ANTT', 'MOPP', 'SASSMAQ'].map(cert => (
-                            <label key={cert} className="flex items-center space-x-2 cursor-pointer">
-                              <input type="checkbox" checked={formData.metadata?.restricoes?.certificacoes?.includes(cert) || false} onChange={() => handleMultiSelectChange('metadata.restricoes.certificacoes', cert)}
-                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{cert}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="block text-xs font-medium text-gray-500 uppercase mb-2 mt-4">Equipamentos Auxiliares</span>
-                        <div className="flex gap-4">
-                          {['Munck', 'Plataforma', 'Guincho'].map(eq => (
-                            <label key={eq} className="flex items-center space-x-2 cursor-pointer">
-                              <input type="checkbox" checked={formData.metadata?.restricoes?.equipamentos_especiais?.includes(eq) || false} onChange={() => handleMultiSelectChange('metadata.restricoes.equipamentos_especiais', eq)}
-                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{eq}</span>
-                            </label>
-                          ))}
-                        </div>
+                      <div className="flex gap-4">
+                        {['Munck', 'Plataforma', 'Guincho'].map(eq => (
+                          <label key={eq} className="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" checked={formData.metadata?.restricoes?.equipamentos_especiais?.includes(eq) || false} onChange={() => handleMultiSelectChange('metadata.restricoes.equipamentos_especiais', eq)}
+                              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{eq}</span>
+                          </label>
+                        ))}
                       </div>
                     </div>
                   </div>

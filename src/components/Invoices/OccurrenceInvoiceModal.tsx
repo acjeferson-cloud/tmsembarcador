@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Calendar, Clock, Upload, AlertCircle, FileText, Info } from 'lucide-react';
+import { X, Calendar, Clock, Upload, AlertCircle, FileText, Info, Camera, Trash2, Image as ImageIcon } from 'lucide-react';
 import { occurrencesService } from '../../services/occurrencesService';
-import { DeliveryProofModal } from './DeliveryProofModal';
+import { deliveryProofService } from '../../services/deliveryProofService';
 
 interface OccurrenceInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (occurrenceData: any) => Promise<void>;
+  invoiceNumber?: string;
   invoiceId?: string;
   carrierName?: string;
   userId?: number;
@@ -26,13 +27,17 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
 
   const [occurrencesList, setOccurrencesList] = useState<any[]>([]);
   const [selectedOccurrenceId, setSelectedOccurrenceId] = useState('');
-  const [showDeliveryProof, setShowDeliveryProof] = useState(false);
-  const [pendingOccurrence, setPendingOccurrence] = useState<any>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(new Date().toTimeString().substring(0, 5));
   const [observacao, setObservacao] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverDocument, setReceiverDocument] = useState('');
+  const [receiptPhoto, setReceiptPhoto] = useState<File | null>(null);
+  const [receiptPhotoPreview, setReceiptPhotoPreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,12 +50,40 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
       const data = await occurrencesService.getAll();
       setOccurrencesList(data);
     } catch (err) {
-// null
       setError(t('invoices.modals.occurrence.errorLoad'));
     }
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      if (!file.type.startsWith('image/')) {
+        setError('Formato de imagem inválido. Use JPG ou PNG.');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        setError('A foto não pode ter mais que 5MB.');
+        return;
+      }
 
+      setReceiptPhoto(file);
+      setReceiptPhotoPreview(URL.createObjectURL(file));
+      setError(null);
+    }
+  };
+
+  const removePhoto = () => {
+    setReceiptPhoto(null);
+    setReceiptPhotoPreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const selectedOccurrenceDef = occurrencesList.find(o => o.id === selectedOccurrenceId);
+  const isDelivery = selectedOccurrenceDef && ['001', '002', '01', '02'].includes(selectedOccurrenceDef.codigo);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,56 +99,63 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
       return;
     }
 
+    if (isDelivery) {
+      if (!receiverName.trim()) {
+        setError('O nome do recebedor é obrigatório.');
+        return;
+      }
+      if (!receiverDocument.trim()) {
+        setError('O documento (CPF/RG) do recebedor é obrigatório.');
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
       const occurrenceDef = occurrencesList.find(o => o.id === selectedOccurrenceId);
-      
+      let photoUrl = '';
+
+      if (isDelivery && receiptPhoto && invoiceId) {
+        const result = await deliveryProofService.uploadPhoto(invoiceId, receiptPhoto, 1);
+        if (result.success && result.url) {
+          photoUrl = result.url;
+        } else {
+          throw new Error(result.error || 'Erro ao fazer upload da foto do canhoto.');
+        }
+      }
+
+      if (isDelivery && invoiceId && userId !== undefined) {
+        await deliveryProofService.saveProof(invoiceId, {
+          delivered_at: `${date}T${time}:00`,
+          receiver_name: receiverName.trim(),
+          receiver_document: receiverDocument.trim(),
+          photo_1_url: photoUrl || undefined,
+          legal_terms_accepted: true,
+          created_by: userId,
+          observations: observacao.trim() || undefined
+        });
+      }
+
       const payload = {
         codigo: occurrenceDef?.codigo,
         descricao: occurrenceDef?.descricao,
         data_ocorrencia: `${date}T${time}:00`,
         observacao: observacao.trim() || undefined,
-        criado_em: new Date().toISOString()
+        criado_em: new Date().toISOString(),
+        nome_recebedor: isDelivery ? receiverName.trim() : undefined,
+        documento_recebedor: isDelivery ? receiverDocument.trim() : undefined,
+        foto_canhoto: photoUrl || undefined
       };
 
-      if (occurrenceDef && ['001', '002'].includes(occurrenceDef.codigo) && invoiceId && userId !== undefined) {
-        setPendingOccurrence(payload);
-        setShowDeliveryProof(true);
-      } else {
-        await onSave(payload);
-        onClose();
-      }
+      await onSave(payload);
+      onClose();
     } catch (err: any) {
       setError(err.message || t('invoices.modals.occurrence.errorSave'));
     } finally {
       setIsLoading(false);
     }
   };
-
-  const selectedOccurrenceDef = occurrencesList.find(o => o.id === selectedOccurrenceId);
-  const isDelivery = selectedOccurrenceDef && ['001', '002'].includes(selectedOccurrenceDef.codigo);
-
-  if (showDeliveryProof && invoiceId && userId) {
-    return (
-      <DeliveryProofModal
-        invoiceId={invoiceId}
-        invoiceNumber={invoiceNumber}
-        carrierName={carrierName}
-        userId={userId}
-        onClose={() => {
-          setPendingOccurrence(null);
-          setShowDeliveryProof(false);
-        }}
-        onSuccess={async () => {
-          if (pendingOccurrence) {
-            await onSave(pendingOccurrence);
-          }
-          onClose();
-        }}
-      />
-    );
-  }
 
   if (!isOpen) return null;
 
@@ -129,7 +169,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('invoices.modals.occurrence.title')}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">NF-e: {invoiceNumber}</p>
+              {invoiceNumber && <p className="text-sm text-gray-500 dark:text-gray-400">NF-e: {invoiceNumber}</p>}
             </div>
           </div>
           <button
@@ -168,13 +208,6 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
               </select>
             </div>
 
-            {isDelivery && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 flex items-start gap-3 mt-4">
-                <Info size={20} className="flex-shrink-0 mt-0.5" />
-                <p className="text-sm">Esta ocorrência exige o preenchimento do <strong>Comprovante de Entrega</strong>. Você será direcionado para a próxima tela após "Continuar".</p>
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -207,6 +240,79 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
                 </div>
               </div>
             </div>
+
+            {isDelivery && (
+              <div className="space-y-4 border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300 mb-2">
+                  <Info size={18} />
+                  <h3 className="font-medium text-sm">Informações de Entrega</h3>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nome do Recebedor *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={receiverName}
+                    onChange={(e) => setReceiverName(e.target.value)}
+                    placeholder="Nome completo de quem recebeu"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Documento (CPF/RG) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={receiverDocument}
+                    onChange={(e) => setReceiverDocument(e.target.value)}
+                    placeholder="Apenas números ou formato padrão"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Anexar Canhoto
+                  </label>
+                  
+                  {receiptPhotoPreview ? (
+                    <div className="relative mt-2">
+                      <img 
+                        src={receiptPhotoPreview} 
+                        alt="Preview Canhoto" 
+                        className="w-full h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={removePhoto}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="mt-2 w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-colors bg-white dark:bg-gray-800">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handlePhotoChange}
+                        ref={fileInputRef}
+                        className="hidden"
+                      />
+                      <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tirar foto ou galeria</p>
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -245,7 +351,7 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
                 <span>{t('invoices.form.saving')}</span>
               </>
             ) : (
-              <span>{isDelivery ? "Continuar para Comprovante" : t('invoices.modals.occurrence.title')}</span>
+              <span>{t('invoices.modals.occurrence.title')}</span>
             )}
           </button>
         </div>
@@ -253,3 +359,4 @@ export const OccurrenceInvoiceModal: React.FC<OccurrenceInvoiceModalProps> = ({
     </div>
   );
 };
+

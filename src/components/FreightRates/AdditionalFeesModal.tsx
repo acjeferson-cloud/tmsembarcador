@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit, DollarSign, CheckSquare } from 'lucide-react';
+import { X, Plus, Trash2, Edit, DollarSign, CheckSquare, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { additionalFeesService, AdditionalFee } from '../../services/additionalFeesService';
 import { businessPartnersService } from '../../services/businessPartnersService';
@@ -81,6 +81,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const [fees, setFees] = useState<AdditionalFee[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cityNamesMap, setCityNamesMap] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [editingFee, setEditingFee] = useState<AdditionalFee | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     state_id: '',
     city_id: '',
     fee_value: 0,
-    value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte',
+    value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms',
     minimum_value: 0,
   });
 
@@ -121,6 +123,23 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       // Load states
       const statesData = await statesService.getAll();
       setStates(statesData || []);
+
+      // Pre-load city names for search
+      if (feesData && feesData.length > 0) {
+        const uniqueCityIds = Array.from(new Set(feesData.map(f => f.city_id).filter(Boolean))) as string[];
+        const newCityMap = { ...cityNamesMap };
+        for (const id of uniqueCityIds) {
+          if (!newCityMap[id]) {
+            try {
+               const result = await fetchCities(1, 1, { searchTerm: id });
+               if (result.cities.length > 0) {
+                 newCityMap[id] = result.cities[0].name;
+               }
+            } catch (e) {}
+          }
+        }
+        setCityNamesMap(newCityMap);
+      }
 
     } catch (error) {
 
@@ -257,8 +276,9 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       fixed: t('carriers.freightRates.additionalFees.fixedShort'),
       percent_weight: t('carriers.freightRates.additionalFees.pctWeightShort'),
       percent_value: t('carriers.freightRates.additionalFees.pctValueShort'),
-      percent_weight_value: t('carriers.freightRates.additionalFees.pctWeightValueShort'),
+      percent_weight_value: 'Pct s/ Peso+Valor',
       percent_cte: t('carriers.freightRates.additionalFees.pctCteShort'),
+      percent_freight_without_icms: 'Pct s/ Frete sem ICMS',
     };
     return types[type] || type;
   };
@@ -270,6 +290,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       percent_value: t('carriers.freightRates.additionalFees.percentValue'),
       percent_weight_value: t('carriers.freightRates.additionalFees.percentWeightValue'),
       percent_cte: t('carriers.freightRates.additionalFees.percentCte'),
+      percent_freight_without_icms: 'Percentual sobre Frete sem ICMS',
     };
     return types[type] || type;
   };
@@ -305,6 +326,35 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       return false;
     });
   };
+
+  const filteredFees = fees.filter(fee => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    
+    const typeLabel = getFeeTypeLabel(fee.fee_type).toLowerCase();
+    const valueTypeLabel = getValueTypeLabel(fee.value_type).toLowerCase();
+    
+    const bp = findBusinessPartner(fee.business_partner_id, fee.business_partner_document);
+    const partnerName = bp?.name?.toLowerCase() || '';
+    const bpDoc = cleanDoc(bp?.document || fee.business_partner_document || '');
+    const bpDocFormatted = formatDocumentDisplay(bpDoc).toLowerCase();
+    
+    const state = states.find(s => s.id === fee.state_id);
+    const stateAbbr = state?.abbreviation?.toLowerCase() || '';
+    const stateName = state?.name?.toLowerCase() || '';
+    
+    const cityName = (cityNamesMap[fee.city_id || ''] || '').toLowerCase();
+    
+    return typeLabel.includes(searchLower) || 
+           valueTypeLabel.includes(searchLower) ||
+           partnerName.includes(searchLower) || 
+           bpDoc.includes(searchLower) ||
+           bpDocFormatted.includes(searchLower) ||
+           stateAbbr.includes(searchLower) ||
+           stateName.includes(searchLower) ||
+           cityName.includes(searchLower) ||
+           fee.fee_type.toLowerCase().includes(searchLower);
+  });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -460,6 +510,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     <option value="percent_value">{getValueTypeFullLabel('percent_value')}</option>
                     <option value="percent_weight_value">{getValueTypeFullLabel('percent_weight_value')}</option>
                     <option value="percent_cte">{getValueTypeFullLabel('percent_cte')}</option>
+                    <option value="percent_freight_without_icms">{getValueTypeFullLabel('percent_freight_without_icms')}</option>
                   </select>
                 </div>
 
@@ -509,16 +560,29 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
             </form>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {t('carriers.freightRates.additionalFees.registeredFees')} ({fees.length})
-                </h3>
+              {/* Filters and Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="flex-1 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Buscar por taxa, CNPJ, parceiro, estado, cidade ou tipo..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                  <button
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg flex items-center gap-2 transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                    Buscar
+                  </button>
+                </div>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm"
                 >
-                  <Plus size={16} />
-                  <span>{t('carriers.freightRates.additionalFees.newFee')}</span>
+                  <Plus className="w-4 h-4" />
+                  {t('carriers.freightRates.additionalFees.newFee')}
                 </button>
               </div>
 
@@ -542,7 +606,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                      {fees.map((fee) => {
+                      {filteredFees.map((fee) => {
                         const bp = findBusinessPartner(fee.business_partner_id, fee.business_partner_document);
                         const state = states.find(s => s.id === fee.state_id);
 
@@ -632,7 +696,10 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
           )}
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t flex justify-end">
+        <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t flex items-center justify-between">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            <strong>Total de taxas cadastradas:</strong> {fees.length}
+          </p>
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"

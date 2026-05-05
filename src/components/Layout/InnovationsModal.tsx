@@ -147,6 +147,19 @@ export const InnovationsModal: React.FC<InnovationsModalProps> = ({ isOpen, onCl
       return;
     }
 
+    const innovationToActivate = innovations.find(i => i.id === innovationId);
+    if (innovationToActivate?.innovation_key === 'driver_app' || innovationToActivate?.name === 'Aplicativo do Motorista') {
+      const routingInnovation = innovations.find(i => i.innovation_key === 'routing' || i.name === 'Módulo de Roteirização');
+      
+      if (!routingInnovation || innovationStatuses[routingInnovation.id] !== 'approved') {
+        setToast({
+          message: 'O Aplicativo do Motorista exige que o Módulo de Roteirização esteja ativado.',
+          type: 'warning'
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const result = await activateInnovation(userNumericId, innovationId, orgId, envId, estabCode);

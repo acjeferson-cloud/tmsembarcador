@@ -13,7 +13,7 @@ interface AdditionalFee {
   id: string;
   fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'ADICIONAL_QUIMICO';
   fee_value: number;
-  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte';
+  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms';
   minimum_value: number;
 }
 
@@ -642,7 +642,8 @@ export const freightCostCalculator = {
     fretePeso: number,
     freteValor: number,
     valorMercadoria: number,
-    valorCTe: number
+    valorCTe: number,
+    freteSemIcms: number = 0
   ): number {
     let calculated = 0;
 
@@ -661,6 +662,9 @@ export const freightCostCalculator = {
         break;
       case 'percent_cte':
         calculated = (valorCTe * fee.fee_value) / 100;
+        break;
+      case 'percent_freight_without_icms':
+        calculated = (freteSemIcms * fee.fee_value) / 100;
         break;
     }
 
@@ -736,6 +740,9 @@ export const freightCostCalculator = {
 
       // O valor do CT-e para cálculo percentual é a soma do frete peso + frete valor
       const valorCTeParaCalculo = fretePeso + freteValor;
+      
+      // Base sem ICMS (todas as rubricas antes de taxas adicionais e impostos)
+      const freteSemIcms = fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + coletaEntrega + taxaAdicional;
 
       additionalFees.forEach(fee => {
         const feeValue = this.roundValue(
@@ -744,7 +751,8 @@ export const freightCostCalculator = {
             fretePeso,
             freteValor,
             invoiceData.value,
-            valorCTeParaCalculo
+            valorCTeParaCalculo,
+            freteSemIcms
           )
         );
 

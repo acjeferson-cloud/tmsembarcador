@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { dashboardService, DashboardFilters, DashboardMapaCusto } from '../../services/dashboardService';
 import { AlertCircle } from 'lucide-react';
 import { loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';

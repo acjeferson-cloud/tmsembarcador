@@ -264,6 +264,18 @@ export const pickupPdfService = {
       pdf.text(`COLETA: ${numColeta}  -  TRANSPORTADORA: ${transportador}  -  DATA AGENDADA: ${dataAgendadaStr}  -  TOTAL NFs: ${numNotas}`, margin + 2, yPos + 5.5);
       yPos += 8;
 
+      const obsText = pickup.observacoes || pickup.observations;
+      if (obsText) {
+        const obsLines = pdf.splitTextToSize(`Observações: ${obsText}`, contentWidth - 4);
+        const obsHeight = obsLines.length * 4 + 2;
+        pdf.setFillColor(250, 250, 240); // Light yellow/gray background for notes
+        pdf.rect(margin, yPos, contentWidth, obsHeight, 'F');
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text(obsLines, margin + 2, yPos + 4);
+        yPos += obsHeight;
+      }
+
       // Draw table headers for the NFs inside this pickup
       pdf.setFillColor(230, 230, 230);
       pdf.rect(margin, yPos, contentWidth, 6, 'F');

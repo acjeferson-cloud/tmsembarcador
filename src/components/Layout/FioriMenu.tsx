@@ -3,7 +3,7 @@ import { getMenuItemsByCategory } from '../../data/menuConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
-import { useInnovations } from '../../contexts/InnovationsContext';
+import { useInnovations } from '../../hooks/useInnovations';
 
 interface FioriMenuProps {
   onPageChange: (page: string) => void;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, RefreshCw } from 'lucide-react';
+import { Activity, RefreshCw, Calendar, Filter } from 'lucide-react';
 import { PendingOrdersList } from './PendingOrdersList';
 import { TripBuilderPanel } from './TripBuilderPanel';
 import { RoutingMap } from './RoutingMap';
@@ -7,6 +7,8 @@ import { ordersService, Order } from '../../../services/ordersService';
 import { vehiclesService, Vehicle } from '../../../services/vehiclesService';
 import { driversService, Driver } from '../../../services/driversService';
 import { tripsService } from '../../../services/tripsService';
+import { establishmentsService, Establishment } from '../../../services/establishmentsService';
+import { TenantContextHelper } from '../../../utils/tenantContext';
 import { Toast, ToastType } from '../../common/Toast';
 
 export const RoutingTower = () => {
@@ -19,16 +21,27 @@ export const RoutingTower = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [draggedOrder, setDraggedOrder] = useState<Order | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [routeStats, setRouteStats] = useState({ distanceKm: 0, timeMin: 0 });
+  const [routeStats, setRouteStats] = useState({ distanceKm: 0, timeMin: 0, outboundKm: 0, returnKm: 0 });
+  const [dateFilter, setDateFilter] = useState({
+    start: new Date().toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
+  const [establishment, setEstablishment] = useState<Establishment | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [ordersRes, vehiclesRes, driversRes] = await Promise.all([
-        ordersService.getPendingRoutingOrders(),
+      const [ordersRes, vehiclesRes, driversRes, ctx] = await Promise.all([
+        ordersService.getPendingRoutingOrders(dateFilter.start, dateFilter.end),
         vehiclesService.getAll(),
-        driversService.getAll()
+        driversService.getAll(),
+        TenantContextHelper.getCurrentContext()
       ]);
+      
+      if (ctx?.establishmentId) {
+        const estData = await establishmentsService.getById(ctx.establishmentId);
+        setEstablishment(estData);
+      }
       
       setPendingOrders(ordersRes);
       // Filter only active and available resources
@@ -43,7 +56,7 @@ export const RoutingTower = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [dateFilter]);
 
   // --- Drag and Drop Handlers ---
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, order: Order) => {
@@ -172,11 +185,42 @@ export const RoutingTower = () => {
           {/* Esquerda: Backlog de Cargas */}
           <div className="col-span-3 h-full flex flex-col">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center justify-between">
-              Cargas Disponíveis
-              <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 text-xs py-0.5 px-2 rounded-full font-bold">
-                {pendingOrders.length}
+              <span className="flex items-center gap-2">
+                 Cargas Disponíveis
+                 <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 text-xs py-0.5 px-2 rounded-full font-bold">
+                   {pendingOrders.length}
+                 </span>
               </span>
             </h3>
+            
+            <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-3 space-y-2 shrink-0">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                <Filter size={14} /> Filtro de Data do Pedido
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                   <div className="flex-1">
+                     <label className="text-xs text-gray-500 mb-1 block">Início</label>
+                     <input 
+                       type="date" 
+                       value={dateFilter.start}
+                       onChange={(e) => setDateFilter(prev => ({...prev, start: e.target.value}))}
+                       className="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 p-1.5" 
+                     />
+                   </div>
+                   <div className="flex-1">
+                     <label className="text-xs text-gray-500 mb-1 block">Fim</label>
+                     <input 
+                       type="date" 
+                       value={dateFilter.end}
+                       onChange={(e) => setDateFilter(prev => ({...prev, end: e.target.value}))}
+                       className="w-full text-sm rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 p-1.5" 
+                     />
+                   </div>
+                </div>
+              </div>
+            </div>
+
             <PendingOrdersList 
               orders={pendingOrders} 
               isLoading={isLoading} 
@@ -191,7 +235,13 @@ export const RoutingTower = () => {
             <RoutingMap 
               pendingOrders={pendingOrders}
               selectedOrders={selectedOrders}
-              onRouteCalculated={(dist, time) => setRouteStats({ distanceKm: dist, timeMin: time })}
+              establishment={establishment}
+              onRouteCalculated={(dist, time, outKm, retKm) => setRouteStats({ 
+                distanceKm: dist, 
+                timeMin: time,
+                outboundKm: outKm || 0,
+                returnKm: retKm || 0
+              })}
             />
           </div>
 
