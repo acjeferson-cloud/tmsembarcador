@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, User, Plus, Trash2, Save, Map, AlertCircle, RefreshCw } from 'lucide-react';
+import { Truck, User, Plus, Trash2, Save, Map, AlertCircle, RefreshCw, Sparkles, Loader2 } from 'lucide-react';
 import { Order } from '../../../services/ordersService';
 import { Vehicle } from '../../../services/vehiclesService';
 import { Driver } from '../../../services/driversService';
+import { nominatimGeocoder } from '../../../utils/nominatimGeocoder';
 
 interface TripBuilderPanelProps {
   selectedOrders: Order[];
@@ -15,6 +16,7 @@ interface TripBuilderPanelProps {
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   isSaving: boolean;
   routeStats?: { distanceKm: number, timeMin: number, outboundKm?: number, returnKm?: number };
+  onReorderOrders?: (orders: Order[]) => void;
 }
 
 export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
@@ -27,10 +29,12 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
   onDragOver,
   onDrop,
   isSaving,
-  routeStats
+  routeStats,
+  onReorderOrders
 }) => {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
+  const [isOptimizing, setIsOptimizing] = useState(false);
   
   const selectedVehicle = availableVehicles.find(v => v.id === selectedVehicleId);
   
@@ -49,6 +53,74 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
   
   const isSaveDisabled = selectedOrders.length === 0 || !selectedVehicleId || !selectedDriverId || isOverweight || isSaving;
 
+  const handleOptimizeRoute = async () => {
+    if (selectedOrders.length < 2 || !onReorderOrders) return;
+    setIsOptimizing(true);
+    
+    try {
+      const validPoints: { id: string, lat: number, lng: number }[] = [];
+      
+      for (const order of selectedOrders) {
+        const parts = [
+          order.destination_street,
+          order.destination_number,
+          order.destination_neighborhood,
+          order.destination_city,
+          order.destination_state
+        ].filter(Boolean);
+        
+        let address = `${parts.join(', ')}, Brasil`;
+        let coords = await nominatimGeocoder.geocode(address);
+        
+        if (!coords && order.destination_city) {
+           address = `${order.destination_city}, ${order.destination_state}, Brasil`;
+           coords = await nominatimGeocoder.geocode(address);
+        }
+        
+        if (coords) {
+          validPoints.push({
+            id: order.id || order.order_number,
+            lat: coords.lat,
+            lng: coords.lng
+          });
+        }
+      }
+
+      // Origin point (CD)
+      const points = [
+        { id: 'cd-origin', lat: -26.9038, lng: -48.6536 },
+        ...validPoints
+      ];
+
+      if (points.length < 3) {
+        setIsOptimizing(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8081/api/optimize-route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ points })
+      });
+      
+      const data = await response.json();
+      
+      if (data.optimizedSequence) {
+        const reorderedLoads = [...selectedOrders].sort((a, b) => {
+          const idA = a.id || a.order_number;
+          const idB = b.id || b.order_number;
+          return data.optimizedSequence.indexOf(idA) - data.optimizedSequence.indexOf(idB);
+        });
+        
+        onReorderOrders(reorderedLoads);
+      }
+    } catch (error) {
+      console.error("Erro ao otimizar", error);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex-1">
       {/* Header */}
@@ -58,15 +130,17 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
           Montagem de Romaneio
         </h2>
         
-        {selectedOrders.length > 0 && (
-          <button 
-            onClick={onClearTrip}
-            className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-medium"
-          >
-            <RefreshCw size={14} />
-            Limpar
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {selectedOrders.length > 0 && (
+            <button 
+              onClick={onClearTrip}
+              className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-medium bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-md transition-all"
+            >
+              <RefreshCw size={13} />
+              Limpar
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Recurses Selection */}
@@ -137,8 +211,8 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
                     {index + 1}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{order.order_number}</p>
-                    <p className="text-xs text-gray-500">{order.destination_city} - {order.weight?.toFixed(1)} kg</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{order.order_number}{order.customer_name ? ` - ${order.customer_name}` : ''}</p>
+                    <p className="text-xs text-gray-500">{order.destination_city}{order.destination_state ? `-${order.destination_state}` : ''} - {order.weight?.toFixed(1)} kg</p>
                   </div>
                 </div>
                 <button 
@@ -185,7 +259,7 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
             <div className="flex justify-between text-xs mb-1">
               <span className="font-medium text-gray-700 dark:text-gray-300">Peso Total</span>
               <span className={`font-bold ${isOverweight ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
-                {totalWeight.toFixed(1)} / {weightCapacity} kg
+                {totalWeight.toFixed(1)} / {weightCapacity} kg ({weightPercentage.toFixed(1)}%)
               </span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 overflow-hidden">
@@ -205,7 +279,7 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
             <div className="flex justify-between text-xs mb-1">
               <span className="font-medium text-gray-700 dark:text-gray-300">Cubagem Total</span>
               <span className={`font-bold ${isOvervolume ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
-                {totalVolume.toFixed(2)} / {volumeCapacity} m³
+                {totalVolume.toFixed(2)} / {volumeCapacity} m³ ({volumePercentage.toFixed(1)}%)
               </span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 overflow-hidden">
@@ -227,6 +301,19 @@ export const TripBuilderPanel: React.FC<TripBuilderPanelProps> = ({
             <p>O peso total das cargas excede a capacidade do veículo selecionado.</p>
           </div>
         )}
+
+        <button
+          onClick={handleOptimizeRoute}
+          disabled={isOptimizing || isSaving || selectedOrders.length < 2}
+          className="w-full mb-3 flex items-center justify-center gap-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isOptimizing ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Sparkles className="w-5 h-5" />
+          )}
+          {isOptimizing ? 'Calculando melhor rota...' : 'Roteirização Inteligente'}
+        </button>
 
         <button
           onClick={() => onSaveTrip(selectedVehicleId, selectedDriverId)}

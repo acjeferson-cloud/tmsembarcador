@@ -64,6 +64,7 @@ export const businessPartnersService = {
         creditLimit: item.limite_credito || 0,
         paymentTerms: item.prazo_pagamento || 30,
         notes: item.notas_adicionais || '',
+        metadata: item.metadata || {},
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         contacts: (item.contacts || []).map((c: any) => ({
@@ -138,6 +139,7 @@ export const businessPartnersService = {
         creditLimit: data.limite_credito || 0,
         paymentTerms: data.prazo_pagamento || 30,
         notes: data.notas_adicionais || '',
+        metadata: data.metadata || {},
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         contacts: (data.contacts || []).map((c: any) => ({
@@ -229,6 +231,7 @@ export const businessPartnersService = {
         limite_credito: partnerData.creditLimit || 0,
         observacoes: partnerData.observations || null,
         notas_adicionais: partnerData.notes || null,
+        metadata: partnerData.metadata || null,
         ativo: partnerData.status === 'active'
       };
 
@@ -472,6 +475,7 @@ export const businessPartnersService = {
       if (partnerData.paymentTerms !== undefined) partnerDbData.prazo_pagamento = partnerData.paymentTerms;
       if (partnerData.creditLimit !== undefined) partnerDbData.limite_credito = partnerData.creditLimit;
       if (partnerData.notes !== undefined) partnerDbData.notas_adicionais = partnerData.notes;
+      if (partnerData.metadata !== undefined) partnerDbData.metadata = partnerData.metadata;
 
       partnerDbData.updated_at = new Date().toISOString();
 
@@ -768,6 +772,7 @@ export const businessPartnersService = {
               item.tipo === 'fornecedor' ? 'supplier' as const : 'both' as const,
         status: item.ativo ? 'active' as const : 'inactive' as const,
         observations: item.observacoes || '',
+        metadata: item.metadata || {},
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         contacts: (item.contacts || []).map((c: any) => ({

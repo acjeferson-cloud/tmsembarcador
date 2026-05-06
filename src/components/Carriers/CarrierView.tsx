@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Edit, Star, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield, Plug } from 'lucide-react';
+import { ArrowLeft, Edit, Star, MapPin, Building, Clock, Truck, Globe, Eye, CheckCircle, Circle, Shield, Plug, DollarSign } from 'lucide-react';
 import { FreightRateTablesList } from '../FreightRates/FreightRateTablesList';
 import { CarrierVision360 } from './CarrierVision360';
 import { CarrierInsurancesTab } from './CarrierInsurancesTab';
@@ -120,7 +120,7 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               }`}
             >
               <div className="flex items-center space-x-2">
-                <Clock size={16} />
+                <DollarSign size={16} />
                 <span>{t('carriers.freightRates.title')}</span>
               </div>
             </button>

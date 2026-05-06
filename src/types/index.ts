@@ -129,6 +129,7 @@ export interface BusinessPartner {
   paymentTerms?: string;
   creditLimit?: number;
   notes?: string;
+  metadata?: any;
   createdAt?: string;
   updatedAt?: string;
 }

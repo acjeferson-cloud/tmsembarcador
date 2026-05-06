@@ -146,7 +146,6 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     descricao: '',
     tipo_aplicacao: 'cidade' as 'cidade' | 'cliente' | 'produto',
     prazo_entrega: 1,
-    valor: 0,
     observacoes: ''
   });
 
@@ -214,7 +213,6 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       descricao: '',
       tipo_aplicacao: 'cidade',
       prazo_entrega: 1,
-      valor: 0,
       observacoes: ''
     });
     setShowRateForm(false);
@@ -226,7 +224,6 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       descricao: rate.descricao,
       tipo_aplicacao: rate.tipo_aplicacao,
       prazo_entrega: rate.prazo_entrega,
-      valor: rate.valor,
       observacoes: rate.observacoes || ''
     });
     setEditingRateId(rate.id);
@@ -259,20 +256,32 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       `${t('carriers.freightRates.form.duplicateConfirm')} "${rate.descricao}"?`
     );
     if (confirmed) {
-      try {
-        await freightRatesService.duplicateRate(rate.id);
+      if (rate.id.toString().startsWith('temp-')) {
+        const newCode = await freightRatesService.getNextRateCode(table?.id || '', tarifas);
+        const newRate = {
+          ...rate,
+          id: `temp-${Date.now()}`,
+          codigo: newCode,
+          descricao: `${rate.descricao} (Cópia)`
+        };
+        setTarifas(prev => [...prev, newRate]);
         setToast({ message: t('carriers.freightRates.form.duplicateSuccess'), type: 'success' });
+      } else {
+        try {
+          await freightRatesService.duplicateRate(rate.id);
+          setToast({ message: t('carriers.freightRates.form.duplicateSuccess'), type: 'success' });
 
-        // Recarregar as tarifas
-        if (table?.id) {
-          const updatedTable = await freightRatesService.getTableById(table.id);
-          if (updatedTable && updatedTable.tarifas) {
-            setTarifas(updatedTable.tarifas);
+          // Recarregar as tarifas
+          if (table?.id) {
+            const updatedTable = await freightRatesService.getTableById(table.id);
+            if (updatedTable && updatedTable.tarifas) {
+              setTarifas(updatedTable.tarifas);
+            }
           }
-        }
-      } catch (error) {
+        } catch (error) {
 
-        setToast({ message: t('carriers.freightRates.form.duplicateError'), type: 'error' });
+          setToast({ message: t('carriers.freightRates.form.duplicateError'), type: 'error' });
+        }
       }
     }
   };
@@ -737,7 +746,6 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                       descricao: '',
                       tipo_aplicacao: 'cidade',
                       prazo_entrega: 1,
-                      valor: 0,
                       observacoes: ''
                     });
                   }}
@@ -795,22 +803,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('carriers.freightRates.form.value')}
-                  </label>
-                  <input
-                    type="number"
-                    name="valor"
-                    value={rateFormData.valor}
-                    onChange={handleRateInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0.00"
-                  />
-                </div>
+
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -857,9 +850,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       {t('carriers.freightRates.form.deadline')}
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Valor
-                    </th>
+
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       {t('carriers.freightRates.form.actions')}
                     </th>
@@ -883,9 +874,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {rate.prazo_entrega} {rate.prazo_entrega === 1 ? 'dia' : 'dias'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {formatCurrency(rate.valor)}
-                      </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                           <button

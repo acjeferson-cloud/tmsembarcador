@@ -627,7 +627,7 @@ export const carriersService = {
     }
   },
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<{success: boolean, error?: string}> {
     try {
       const { error } = await supabase
         .from('carriers')
@@ -637,9 +637,15 @@ export const carriersService = {
       if (error) {
         throw error;
       }
-      return true;
+      return { success: true };
     } catch (error: any) {
-      return false;
+      if (error.code === '23503') {
+        return { 
+          success: false, 
+          error: 'Não é possível excluir o transportador pois existem registros (ex: pedidos, faturas, tabelas) vinculados a ele.'
+        };
+      }
+      return { success: false, error: 'Erro ao excluir transportador. Tente novamente.' };
     }
   },
 

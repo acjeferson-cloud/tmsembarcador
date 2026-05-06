@@ -6,7 +6,6 @@ export interface FreightRate {
   descricao: string;
   tipoAplicacao: 'cidade' | 'cliente' | 'produto';
   prazoEntrega: number; // em dias
-  valor: number;
   observacoes?: string;
 }
 
@@ -42,7 +41,6 @@ const initialFreightRateTables: FreightRateTable[] = [
         descricao: 'Frete São Paulo → Rio de Janeiro',
         tipoAplicacao: 'cidade',
         prazoEntrega: 2,
-        valor: 1500.00,
         observacoes: 'Entrega em dias úteis'
       },
       {
@@ -51,7 +49,6 @@ const initialFreightRateTables: FreightRateTable[] = [
         descricao: 'Frete São Paulo → Belo Horizonte',
         tipoAplicacao: 'cidade',
         prazoEntrega: 3,
-        valor: 1800.00,
         observacoes: 'Entrega em dias úteis'
       },
       {
@@ -60,7 +57,6 @@ const initialFreightRateTables: FreightRateTable[] = [
         descricao: 'Frete para Cliente Premium',
         tipoAplicacao: 'cliente',
         prazoEntrega: 1,
-        valor: 2200.00,
         observacoes: 'Entrega expressa para clientes premium'
       }
     ],
@@ -82,7 +78,6 @@ const initialFreightRateTables: FreightRateTable[] = [
         descricao: 'Frete Rio de Janeiro → São Paulo',
         tipoAplicacao: 'cidade',
         prazoEntrega: 2,
-        valor: 1450.00,
         observacoes: 'Promoção primeiro trimestre'
       },
       {
@@ -91,7 +86,6 @@ const initialFreightRateTables: FreightRateTable[] = [
         descricao: 'Frete para Produtos Eletrônicos',
         tipoAplicacao: 'produto',
         prazoEntrega: 4,
-        valor: 1200.00,
         observacoes: 'Seguro incluso para produtos eletrônicos'
       }
     ],

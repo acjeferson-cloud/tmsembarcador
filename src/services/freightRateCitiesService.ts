@@ -92,52 +92,84 @@ export const freightRateCitiesService = {
     rateId: string,
     searchTerm?: string
   ): Promise<CityAvailability[]> {
-    let query = supabase
-      .from('cities')
-      .select(`
-        id,
-        nome,
-        codigo_ibge,
-        states!inner (
-          sigla
-        )
-      `)
-      .eq('ativo', true)
-      .order('nome', { ascending: true });
+    let allCities: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    // Se houver termo de busca, filtrar no servidor
-    if (searchTerm && searchTerm.trim()) {
-      const term = searchTerm.trim();
-      const isNumber = /^\d+$/.test(term);
-      const isUF = term.length === 2 && /^[a-zA-Z]{2}$/.test(term);
-      
-      if (isNumber) {
-        query = query.like('codigo_ibge', `%${term}%`);
-      } else if (isUF) {
-        const validUFs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
-        if (validUFs.includes(term.toUpperCase())) {
-           query = query.eq('states.sigla', term.toUpperCase());
+    while (hasMore) {
+      let query = supabase
+        .from('cities')
+        .select(`
+          id,
+          nome,
+          codigo_ibge,
+          states!inner (
+            sigla
+          )
+        `)
+        .eq('ativo', true)
+        .order('nome', { ascending: true })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      // Se houver termo de busca, filtrar no servidor
+      if (searchTerm && searchTerm.trim()) {
+        const term = searchTerm.trim();
+        const isNumber = /^\d+$/.test(term);
+        const isUF = term.length === 2 && /^[a-zA-Z]{2}$/.test(term);
+        
+        if (isNumber) {
+          query = query.like('codigo_ibge', `%${term}%`);
+        } else if (isUF) {
+          const validUFs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+          if (validUFs.includes(term.toUpperCase())) {
+             query = query.eq('states.sigla', term.toUpperCase());
+          } else {
+             query = query.ilike('nome', `%${term}%`);
+          }
         } else {
            query = query.ilike('nome', `%${term}%`);
         }
-      } else {
-         query = query.ilike('nome', `%${term}%`);
+      }
+
+      const { data: pageData, error: citiesError } = await query;
+      if (citiesError) throw citiesError;
+      
+      if (pageData && pageData.length > 0) {
+        allCities = [...allCities, ...pageData];
+      }
+      
+      if (!pageData || pageData.length < pageSize) {
+        hasMore = false;
+      }
+      page++;
+
+      if (searchTerm && searchTerm.trim()) {
+        hasMore = false; // with search term, 1000 limit is fine
       }
     }
 
-    const { data: allCities, error: citiesError } = await query;
+    // Now fetch all used cities with pagination
+    let usedCities: any[] = [];
+    let usedPage = 0;
+    let hasMoreUsed = true;
+    while (hasMoreUsed) {
+      const { data: usedPageData, error: usedError } = await supabase
+        .from('freight_rate_cities')
+        .select('city_id, freight_rate_id, freight_rates(codigo)')
+        .eq('freight_rate_table_id', tableId)
+        .range(usedPage * pageSize, (usedPage + 1) * pageSize - 1);
 
-    if (citiesError) {
-      throw citiesError;
-    }
-
-    const { data: usedCities, error: usedError } = await supabase
-      .from('freight_rate_cities')
-      .select('city_id, freight_rate_id, freight_rates(codigo)')
-      .eq('freight_rate_table_id', tableId);
-
-    if (usedError) {
-      throw usedError;
+      if (usedError) throw usedError;
+      
+      if (usedPageData && usedPageData.length > 0) {
+        usedCities = [...usedCities, ...usedPageData];
+      }
+      
+      if (!usedPageData || usedPageData.length < pageSize) {
+        hasMoreUsed = false;
+      }
+      usedPage++;
     }
 
     const usedCitiesMap = new Map(

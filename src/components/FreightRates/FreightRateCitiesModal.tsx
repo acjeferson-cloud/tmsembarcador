@@ -37,23 +37,19 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     loadData();
   }, [rate.id, tableId]);
 
-  // Debounce para busca de cidades disponíveis
   useEffect(() => {
-    if (showAddMode) {
-      const timer = setTimeout(() => {
-        loadAvailableCities(searchTerm);
-      }, 300);
-      return () => clearTimeout(timer);
+    if (showAddMode && availableCities.length === 0) {
+      loadAvailableCities();
     }
-  }, [searchTerm, showAddMode]);
+  }, [showAddMode]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       const cities = await freightRateCitiesService.getCitiesByRate(rate.id);
       setLinkedCities(cities);
-      if (showAddMode) {
-        await loadAvailableCities(searchTerm);
+      if (showAddMode && availableCities.length === 0) {
+        await loadAvailableCities();
       }
     } catch (_error) {
       showToast('error', t('carriers.freightRates.cities.errorLoad'));
@@ -62,13 +58,12 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     }
   };
 
-  const loadAvailableCities = async (search: string) => {
+  const loadAvailableCities = async () => {
     try {
       setIsSearching(true);
       const available = await freightRateCitiesService.getAvailableCitiesForRate(
         tableId,
-        rate.id,
-        search
+        rate.id
       );
       setAvailableCities(available);
     } catch (_error) {
@@ -222,7 +217,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     }
   };
 
-  // Função para normalizar texto removendo acentos (usado apenas para cidades vinculadas)
+  // Função para normalizar texto removendo acentos
   const normalizeText = (text: string): string => {
     return text
       .normalize('NFD')
@@ -231,17 +226,34 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       .trim();
   };
 
-  // Cidades disponíveis já vem filtradas do servidor
-  const filteredAvailableCities = availableCities.filter(city => city.is_available);
+  const filteredAvailableCities = availableCities.filter(city => {
+    if (!city.is_available) return false;
+    if (!searchTerm.trim()) return true;
+    
+    // Split search term by ; or ,
+    const searchTerms = searchTerm.split(/[;,]/).map(t => normalizeText(t)).filter(t => t.length > 0);
+    
+    if (searchTerms.length === 0) return true;
+
+    return searchTerms.some(term => 
+      (city.city_name && normalizeText(city.city_name).includes(term)) ||
+      (city.city_state && normalizeText(city.city_state).includes(term)) ||
+      (city.city_ibge_code && city.city_ibge_code.includes(term))
+    );
+  });
 
   // Filtro local apenas para cidades vinculadas (menor volume)
   const filteredLinkedCities = linkedCities.filter(city => {
     if (!searchTerm.trim()) return true;
-    const searchNormalized = normalizeText(searchTerm);
-    return (
-      (city.city_name && normalizeText(city.city_name).includes(searchNormalized)) ||
-      (city.city_state && normalizeText(city.city_state).includes(searchNormalized)) ||
-      (city.city_ibge_code && city.city_ibge_code.includes(searchTerm))
+    
+    const searchTerms = searchTerm.split(/[;,]/).map(t => normalizeText(t)).filter(t => t.length > 0);
+    
+    if (searchTerms.length === 0) return true;
+
+    return searchTerms.some(term => 
+      (city.city_name && normalizeText(city.city_name).includes(term)) ||
+      (city.city_state && normalizeText(city.city_state).includes(term)) ||
+      (city.city_ibge_code && city.city_ibge_code.includes(term))
     );
   });
 
@@ -303,13 +315,9 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={t('carriers.freightRates.cities.searchCity')}
+                    placeholder={t('carriers.freightRates.cities.searchCity') + " (ex: São Paulo; Campinas; MG)"}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                </div>
-                <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2.5 rounded-md border border-amber-200 dark:border-amber-800/50">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                  <p><strong>Atenção:</strong> A busca deve ser <strong>exatamente igual</strong> ao nome da cidade, respeitando acentos, hifens e apóstrofos (ex: São Paulo, Pingo-d'Água).</p>
                 </div>
               </div>
 
@@ -428,7 +436,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={t('carriers.freightRates.cities.searchLinkedCity')}
+                    placeholder={t('carriers.freightRates.cities.searchLinkedCity') + " (ex: São Paulo; Campinas; MG)"}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

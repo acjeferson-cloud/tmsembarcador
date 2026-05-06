@@ -903,7 +903,7 @@ export const implementationService = {
 
       // Campos financeiros de freight_rates que devem ser ajustados
       const rateMonetaryFields = [
-        'valor', 'pedagio_minimo', 'pedagio_por_kg', 'gris_minimo', 'seccat',
+        'pedagio_minimo', 'pedagio_por_kg', 'gris_minimo', 'seccat',
         'despacho', 'itr', 'taxa_adicional', 'coleta_entrega', 'tde_trt',
         'tas', 'taxa_suframa', 'valor_outros_minimo', 'taxa_outros_valor',
         'taxa_outros_minima', 'frete_peso_minimo', 'frete_valor_minimo',

@@ -3,19 +3,19 @@ import { supabase } from '../lib/supabase';
 export const autoXmlImportService = {
   async runScheduler(): Promise<void> {
     try {
-      const { data: result, error: invokeError } = await supabase.functions.invoke('auto-import-xml-scheduler', {
-        method: 'POST'
+      const response = await fetch(`${import.meta.env.VITE_PROXY_URL || 'https://tms-erp-proxy-303812479794.southamerica-east1.run.app'}/api/auto-import-xml`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
       });
 
-      if (invokeError) {
-
-        throw new Error(`Erro na execução: ${invokeError.message || 'Erro desconhecido'}`);
+      if (!response.ok) {
+        throw new Error(`Erro de rede: ${response.statusText}`);
       }
-
-      if (!result || !result.success) {
-
-        throw new Error(`Erro na função: ${result?.error || 'Erro desconhecido'}`);
-      }
+      
+      const result = await response.json();
 
       const totalNfe = result.nfeImported || 0;
       const totalCte = result.cteImported || 0;

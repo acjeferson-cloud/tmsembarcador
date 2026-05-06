@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, RefreshCw, Calendar, Filter } from 'lucide-react';
+import { Activity, RefreshCw, Calendar, Filter, Search } from 'lucide-react';
 import { PendingOrdersList } from './PendingOrdersList';
 import { TripBuilderPanel } from './TripBuilderPanel';
 import { RoutingMap } from './RoutingMap';
@@ -22,6 +22,7 @@ export const RoutingTower = () => {
   const [draggedOrder, setDraggedOrder] = useState<Order | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [routeStats, setRouteStats] = useState({ distanceKm: 0, timeMin: 0, outboundKm: 0, returnKm: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState({
     start: new Date().toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
@@ -82,6 +83,12 @@ export const RoutingTower = () => {
       setDraggedOrder(null);
     }
   };
+
+  const filteredPendingOrders = pendingOrders.filter(o => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (o.order_number?.toLowerCase().includes(q) || o.customer_name?.toLowerCase().includes(q));
+  });
 
   // --- Hybrid Handlers (Checkbox / Click) ---
   const handleToggleOrder = (orderId: string) => {
@@ -183,7 +190,7 @@ export const RoutingTower = () => {
         <div className="grid grid-cols-12 gap-6 h-full">
           
           {/* Esquerda: Backlog de Cargas */}
-          <div className="col-span-3 h-full flex flex-col">
+          <div className="col-span-3 h-full flex flex-col min-h-0">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center justify-between">
               <span className="flex items-center gap-2">
                  Cargas Disponíveis
@@ -219,10 +226,20 @@ export const RoutingTower = () => {
                    </div>
                 </div>
               </div>
+              <div className="relative mt-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por pedido ou cliente..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
 
             <PendingOrdersList 
-              orders={pendingOrders} 
+              orders={filteredPendingOrders} 
               isLoading={isLoading} 
               onDragStart={handleDragStart}
               selectedOrders={selectedOrders.map(o => o.id!)}
@@ -231,7 +248,7 @@ export const RoutingTower = () => {
           </div>
 
           {/* Centro: Mapa */}
-          <div className="col-span-6 h-full">
+          <div className="col-span-6 h-full min-h-0">
             <RoutingMap 
               pendingOrders={pendingOrders}
               selectedOrders={selectedOrders}
@@ -246,7 +263,7 @@ export const RoutingTower = () => {
           </div>
 
           {/* Direita: Trip Builder */}
-          <div className="col-span-3 h-full">
+          <div className="col-span-3 h-full min-h-0 flex flex-col">
             <TripBuilderPanel 
               selectedOrders={selectedOrders}
               availableVehicles={availableVehicles}
@@ -254,8 +271,8 @@ export const RoutingTower = () => {
               onRemoveOrder={handleRemoveOrderFromTrip}
               onClearTrip={handleClearTrip}
               onDragOver={handleDragOver}
-              onDrop={handleDrop}
               onSaveTrip={handleSaveTrip}
+              onReorderOrders={setSelectedOrders}
               isSaving={isSaving}
               routeStats={routeStats}
             />

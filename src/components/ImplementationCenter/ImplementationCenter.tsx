@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
-import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug, Lock, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug, Lock, ChevronDown, ChevronUp, Activity, Globe } from 'lucide-react';
 import { DeployAgent } from '../DeployAgent/DeployAgent';
 import { SyncLogsViewer } from './SyncLogsViewer';
 import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrationTemplate, generateCarriersTemplate, generateFreightRatesTemplate, generateFreightRateCitiesTemplate, generateAdditionalFeesTemplate } from '../../services/templateService';
 import { implementationService } from '../../services/implementationService';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { freightRatesService, FreightRateTable } from '../../services/freightRatesService';
+import { TaxExceptionGroupsTab } from './TaxExceptionGroupsTab';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast } from '../common/Toast';
@@ -870,6 +871,7 @@ const ImplementationCenter: React.FC = () => {
     { id: 'freight', label: t('implementationCenter.tabs.freightTables'), icon: DollarSign },
     { id: 'cities', label: t('implementationCenter.tabs.cities'), icon: MapPin },
     { id: 'table-fees', label: t('implementationCenter.tabs.tableFees'), icon: FileSpreadsheet },
+    { id: 'tax-exceptions', label: 'Listas de Exceção', icon: Globe },
     { id: 'adjust-tables', label: t('implementationCenter.tabs.adjustTables'), icon: Percent }
   ];
 
@@ -1527,6 +1529,10 @@ const ImplementationCenter: React.FC = () => {
         )}
 
         {activeTab === 'adjust-tables' && renderAdjustmentSection()}
+        
+        {activeTab === 'tax-exceptions' && (
+          <TaxExceptionGroupsTab />
+        )}
       </div>
 
       {/* Instructions Deploy Agent*/}

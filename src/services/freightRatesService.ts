@@ -5,7 +5,7 @@ import { TenantContextHelper } from '../utils/tenantContext';
 // Lista de campos válidos da tabela freight_rates
 const VALID_FREIGHT_RATE_FIELDS = [
   'freight_rate_table_id', 'codigo', 'descricao', 'tipo_aplicacao', 'prazo_entrega',
-  'valor', 'data_inicio', 'observacoes', 'pedagio_minimo', 'pedagio_por_kg', 'pedagio_a_cada_kg',
+  'data_inicio', 'observacoes', 'pedagio_minimo', 'pedagio_por_kg', 'pedagio_a_cada_kg',
   'pedagio_tipo_kg', 'icms_embutido_tabela', 'aliquota_icms', 'fator_m3',
   'fator_m3_apartir_kg', 'fator_m3_apartir_m3', 'fator_m3_apartir_valor',
   'percentual_gris', 'gris_minimo', 'seccat', 'despacho', 'itr', 'taxa_adicional',
@@ -74,7 +74,6 @@ export interface FreightRate {
   descricao: string;
   tipo_aplicacao: 'cidade' | 'cliente' | 'produto';
   prazo_entrega: number;
-  valor: number;
   data_inicio: string;
   observacoes?: string;
 

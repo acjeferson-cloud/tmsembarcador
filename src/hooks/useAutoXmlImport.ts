@@ -15,6 +15,7 @@ export const useAutoXmlImport = () => {
       if (isGloballyInitialized) {
         return;
       }
+      isGloballyInitialized = true; // Prevents race conditions from concurrent component mounts
 
       try {
         const { data: establishments } = await supabase

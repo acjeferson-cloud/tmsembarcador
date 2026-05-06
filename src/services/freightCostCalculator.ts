@@ -11,10 +11,11 @@ interface InvoiceData {
 
 interface AdditionalFee {
   id: string;
-  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'ADICIONAL_QUIMICO';
+  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG';
   fee_value: number;
   value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms';
   minimum_value: number;
+  exception_group_id?: string | null;
 }
 
 interface CalculationResult {
@@ -31,8 +32,11 @@ interface CalculationResult {
   tde: number;
   trt: number;
   tec: number;
+  tcd: number;
+  tag: number;
   taxaAdicional: number;
-  adicionalQuimico: number;
+  tcp: number;
+  emex: number;
   outrosValores: number;
   icmsBase: number;
   icmsAliquota: number;
@@ -159,7 +163,8 @@ export const freightCostCalculator = {
           matchedTableId,
           cityData.id,
           stateData.id,
-          cte.sender_id // ID do parceiro de negócios (remetente)
+          cte.sender_id, // ID do parceiro de negócios (remetente)
+          cte.recipient_document || '' // NOVO: CNPJ do destinatário
         );
       }
     }
@@ -281,8 +286,11 @@ export const freightCostCalculator = {
       tde: 0,
       trt: 0,
       tec: 0,
+      tcd: 0,
+      tag: 0,
       taxaAdicional: 0,
-      adicionalQuimico: 0,
+      tcp: 0,
+      emex: 0,
       outrosValores: 0,
       icmsBase: 0,
       icmsAliquota: 0,
@@ -309,8 +317,11 @@ export const freightCostCalculator = {
       tde: 0,
       trt: 0,
       tec: 0,
+      tcd: 0,
+      tag: 0,
       taxaAdicional: 0,
-      adicionalQuimico: 0,
+      tcp: 0,
+      emex: 0,
       outrosValores: 0,
       icmsBase: 0,
       icmsAliquota: 0,
@@ -328,7 +339,8 @@ export const freightCostCalculator = {
     tableId: string,
     cityId: string,
     stateId: string,
-    businessPartnerId?: string
+    businessPartnerId?: string,
+    recipientDocument?: string
   ): Promise<AdditionalFee[]> {
     try {
 
@@ -357,28 +369,48 @@ export const freightCostCalculator = {
       // 5. Genérica para parceiro (sem localização)
       // 6. Genérica (sem parceiro e sem localização)
 
-      const applicableFees = fees.filter(fee => {
-        // Se tem parceiro especificado na taxa, deve ser do mesmo parceiro (ou considerar raiz CNPJ)
-        if (fee.business_partner_id) {
-          if (!businessPartnerId) return false;
+      const applicableFees = [];
 
-          if (fee.consider_cnpj_root) {
-            // TODO: Implementar lógica de raiz CNPJ se necessário
-            // Por enquanto, comparação exata
-            if (fee.business_partner_id !== businessPartnerId) return false;
-          } else {
-            if (fee.business_partner_id !== businessPartnerId) return false;
+      for (const fee of fees) {
+        // Se a taxa está vinculada a um grupo de exceção, verificar se o CNPJ/CPF está no grupo
+        if (fee.exception_group_id) {
+          if (!recipientDocument) continue; // Não aplica se não tem o documento de destino
+
+          // Limpa o documento para comparação (remove pontuação)
+          const cleanDoc = recipientDocument.replace(/[^\d]/g, '');
+          
+          const { data: memberExists, error: memberError } = await supabase
+            .from('tax_exception_members')
+            .select('id')
+            .eq('group_id', fee.exception_group_id)
+            .eq('document', cleanDoc)
+            .maybeSingle();
+
+          if (memberError || !memberExists) {
+            continue; // Se não encontrou no grupo, descarta esta taxa
+          }
+        } else {
+          // Lógica original de parceiro de negócio específico
+          if (fee.business_partner_id) {
+            if (!businessPartnerId) continue;
+  
+            if (fee.consider_cnpj_root) {
+              // TODO: Implementar lógica de raiz CNPJ se necessário
+              if (fee.business_partner_id !== businessPartnerId) continue;
+            } else {
+              if (fee.business_partner_id !== businessPartnerId) continue;
+            }
           }
         }
 
         // Se tem cidade especificada na taxa, deve ser a mesma cidade
-        if (fee.city_id && fee.city_id !== cityId) return false;
+        if (fee.city_id && fee.city_id !== cityId) continue;
 
         // Se tem estado especificado na taxa, deve ser o mesmo estado
-        if (fee.state_id && fee.state_id !== stateId) return false;
+        if (fee.state_id && fee.state_id !== stateId) continue;
 
-        return true;
-      });
+        applicableFees.push(fee);
+      }
 
 
       applicableFees.forEach(fee => {
@@ -733,7 +765,10 @@ export const freightCostCalculator = {
     let tde = 0;
     let trt = 0;
     let tec = 0;
-    let adicionalQuimico = 0;
+    let tcd = 0;
+    let tag = 0;
+    let tcp = 0;
+    let emex = 0;
 
     if (!semTaxas && additionalFees.length > 0) {
 
@@ -759,37 +794,37 @@ export const freightCostCalculator = {
         switch (fee.fee_type) {
           case 'TDA':
             tda += feeValue;
-
             break;
           case 'TDE':
             tde += feeValue;
-
             break;
           case 'TRT':
             trt += feeValue;
-
             break;
           case 'TEC':
             tec += feeValue;
-
             break;
-          case 'ADICIONAL_QUIMICO':
+          case 'TCD':
+            tcd += feeValue;
+            break;
+          case 'TAG':
+            tag += feeValue;
+            break;
+          case 'TCP':
             if (invoiceData.hasChemical) {
-              adicionalQuimico += feeValue;
+              tcp += feeValue;
             }
+            break;
+          case 'EMEX':
+            emex += feeValue;
             break;
         }
       });
-
-
-
-
-
     }
 
     // 11. BASE DE CÁLCULO (sem outros valores) - somar valores já arredondados
-    const baseCalculo = this.roundValue(fretePeso + freteValor + gris + pedagio + tas + seccat +
-                        despacho + itr + coletaEntrega + tda + tde + trt + tec + adicionalQuimico + taxaAdicional);
+    const baseCalculo = semTaxas ? 0 : 
+                      (fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + coletaEntrega + tda + tde + trt + tec + tcd + tag + tcp + emex + taxaAdicional);
 
     // 13. ICMS - Calcular ANTES de "outros valores"
     const icmsAliquota = parseFloat(tariff.aliquota_icms?.toString() || '0');
@@ -873,8 +908,11 @@ export const freightCostCalculator = {
       tde,
       trt,
       tec,
+      tcd,
+      tag,
       taxaAdicional,
-      adicionalQuimico,
+      tcp,
+      emex,
       outrosValores,
       icmsBase,
       icmsAliquota,
@@ -1110,7 +1148,10 @@ export const freightCostCalculator = {
       { cte_id: cteId, cost_type: 'tde', cost_value: calculation.tde },
       { cte_id: cteId, cost_type: 'trt', cost_value: calculation.trt },
       { cte_id: cteId, cost_type: 'tec', cost_value: calculation.tec },
-      { cte_id: cteId, cost_type: 'adicional_quimico', cost_value: calculation.adicionalQuimico || 0 },
+      { cte_id: cteId, cost_type: 'tcd', cost_value: calculation.tcd },
+      { cte_id: cteId, cost_type: 'tag', cost_value: calculation.tag },
+      { cte_id: cteId, cost_type: 'adicional_quimico', cost_value: calculation.tcp || 0 },
+      { cte_id: cteId, cost_type: 'emex', cost_value: calculation.emex || 0 },
       { cte_id: cteId, cost_type: 'other_value', cost_value: calculation.outrosValores },
       { cte_id: cteId, cost_type: 'icms_base', cost_value: calculation.icmsBase },
       { cte_id: cteId, cost_type: 'icms_value', cost_value: calculation.icmsValor },

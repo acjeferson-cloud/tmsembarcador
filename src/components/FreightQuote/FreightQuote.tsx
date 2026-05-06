@@ -698,7 +698,7 @@ const FreightQuote: React.FC = () => {
                   <AutocompleteSelect
                     options={businessPartners.map(partner => ({
                       value: partner.id || '',
-                      label: `${partner.codigo} - ${partner.name}`
+                      label: partner.metadata?.sap_cardcode ? `${partner.metadata.sap_cardcode} - ${partner.codigo} - ${partner.name}` : `${partner.codigo} - ${partner.name}`
                     }))}
                     value={formData.businessPartnerId || ''}
                     onChange={(val) => handleBusinessPartnerChange(val || undefined)}

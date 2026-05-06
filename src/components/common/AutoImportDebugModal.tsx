@@ -273,7 +273,7 @@ export const AutoImportDebugModal: React.FC<AutoImportDebugModalProps> = ({
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">{est.codigo} - {est.razao_social}</div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Email: {est.email_config?.emailAddress || t('autoImport.establishments.notConfigured')}
+                          Email: {est.email_config?.email || est.email_config?.emailAddress || t('autoImport.establishments.notConfigured')}
                         </div>
                       </div>
                       <div className="text-right text-xs text-gray-500 dark:text-gray-400">

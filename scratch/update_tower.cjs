@@ -1,0 +1,1 @@
+const fs = require('fs'); let code = fs.readFileSync('src/components/Routing/RoutingTower/RoutingTower.tsx', 'utf8'); code = code.replace('onSaveTrip={handleSaveTrip}', 'onSaveTrip={handleSaveTrip}\\n              onReorderOrders={setSelectedOrders}'); fs.writeFileSync('src/components/Routing/RoutingTower/RoutingTower.tsx', code);

@@ -1,0 +1,1 @@
+const fs = require('fs'); let code = fs.readFileSync('src/components/Routing/RoutingTower/RoutingMap.tsx', 'utf8'); code = code.replace(/order\.id!/g, '(order.id || order.order_number)'); fs.writeFileSync('src/components/Routing/RoutingTower/RoutingMap.tsx', code);

@@ -3,6 +3,7 @@ import cors from 'cors';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '../.env' });
 import { runCronSync, supabase } from './syncWorker.js';
+import { executeAutoImport } from './services/auto-import/index.js';
 
 // Permite conexões com Service Layer que possuam certificados SSL auto-assinados
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -16,6 +17,43 @@ const PORT = process.env.PORT || 8081;
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'tms-erp-proxy', time: new Date() });
+});
+// Endpoint: Optimize Route via OSRM
+app.post('/api/optimize-route', async (req, res) => {
+  try {
+    const { points } = req.body;
+    
+    if (!points || points.length < 2) {
+      return res.status(400).json({ error: 'Mínimo de 2 pontos necessários' });
+    }
+
+    // OSRM recebe as coordenadas em lng,lat
+    const coordsString = points.map(p => `${p.lng},${p.lat}`).join(';');
+    
+    // Parâmetros: roundtrip=false e source=first
+    const osrmUrl = `https://router.project-osrm.org/trip/v1/driving/${coordsString}?roundtrip=false&source=first`;
+    
+    const response = await fetch(osrmUrl);
+    const data = await response.json();
+
+    if (data.code !== 'Ok') {
+      throw new Error('Erro na API do OSRM');
+    }
+
+    // OSRM retorna a propriedade 'waypoints' na mesma ordem do input.
+    // Cada item possui 'waypoint_index' indicando sua nova posição na rota.
+    const sortedPoints = points.map((p, index) => ({
+      id: p.id,
+      newIndex: data.waypoints[index].waypoint_index
+    }))
+    .sort((a, b) => a.newIndex - b.newIndex)
+    .map(p => p.id); // Devolve apenas os IDs ordenados
+
+    res.json({ optimizedSequence: sortedPoints });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao otimizar rota' });
+  }
 });
 
 // Endpoint 1: Test Connection
@@ -1290,7 +1328,9 @@ app.post('/api/integrate-bill', async (req, res) => {
       .from('carriers')
       .select('sap_cardcode')
       .eq('cnpj', billData.customer_document || '')
+      .eq('organization_id', billData.organization_id)
       .not('sap_cardcode', 'is', null)
+      .order('updated_at', { ascending: false })
       .limit(1);
 
     const cardCode = carrierData && carrierData.length > 0 ? carrierData[0].sap_cardcode : null;
@@ -1708,6 +1748,15 @@ app.post('/api/cancel-bill', async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 });
+app.post('/api/auto-import-xml', async (req, res) => {
+  try {
+    const result = await executeAutoImport(req.body);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 TMS ERP Proxy Server running on port ${PORT}`);
   

@@ -172,97 +172,63 @@ serve(async (req) => {
 
         await flushLogs('running', `Lock INBOX obtido! Buscando emails unread...`);
         
-        try {
-          // Fetch with UID, envelope and bodyStructure ONLY (NO source: true -> prevents OOM)
-          const messageGenerator = mailClient.fetch({ unseen: true }, { envelope: true, bodyStructure: true, flags: true, uid: true });
-          
-          const messagesToProcess: any[] = [];
-          for await (let msg of messageGenerator) {
-            messagesToProcess.push(msg);
-          }
+          try {
+            // Voltando ao modo bodyStructure para não baixar o source de tudo e travar
+            const messageGenerator = mailClient.fetch({ unseen: true }, { envelope: true, bodyStructure: true, flags: true, uid: true, size: true });
+            
+            const messagesToProcess: any[] = [];
+            for await (let msg of messageGenerator) {
+              messagesToProcess.push(msg);
+            }
 
-          for (let msg of messagesToProcess) {
-             estabEmailsChecked++;
-             emailsChecked++;
-             
-             await flushLogs('running', `Lendo UID/Seq ${msg.seq}... Analisando anexos.`);
-             
-             try {
-               const validAttachmentsInfo: any[] = [];
+            for (let msg of messagesToProcess) {
+               estabEmailsChecked++;
+               emailsChecked++;
                
-               const findValidParts = (node: any) => {
-                 if (!node) return;
-                 const type = node.type ? node.type.toLowerCase() : '';
-                 const name = node.parameters?.name?.toLowerCase() || node.dispositionParameters?.filename?.toLowerCase() || '';
-                 
-                 if (
-                   type.includes('xml') || name.endsWith('.xml') ||
-                   name.endsWith('.txt') || name.endsWith('.edi')
-                 ) {
-                   validAttachmentsInfo.push({
-                     part: node.part,
-                     filename: node.parameters?.name || node.dispositionParameters?.filename || 'anexo.bin',
-                     encoding: node.encoding
-                   });
-                 }
-                 if (node.childNodes && Array.isArray(node.childNodes)) {
-                   node.childNodes.forEach(findValidParts);
-                 }
-               };
-
-               if (msg.bodyStructure) {
-                 findValidParts(msg.bodyStructure);
-               }
-
-               const assunto = msg.envelope?.subject || 'Sem Assunto';
-               const hasValidFiles = validAttachmentsInfo.length > 0;
-
-               details.push({ 
-                 message: `Lendo email ${msg.seq}`, 
-                 assunto: assunto,
-                 anexos: validAttachmentsInfo.map(a => a.filename),
-                 tem_arquivos_suportados: hasValidFiles
-               });
+               await flushLogs('running', `Lendo UID/Seq ${msg.seq}... Analisando anexos (Source em memória).`);
                
-               // Sort attachments so NFes are processed first based on filename heuristic
-               validAttachmentsInfo.sort((a, b) => {
-                  const aName = (a.filename || '').toLowerCase();
-                  const bName = (b.filename || '').toLowerCase();
-                  const aIsNfe = aName.includes('nfe') || (!aName.includes('cte') && aName.includes('nf'));
-                  const bIsNfe = bName.includes('nfe') || (!bName.includes('cte') && bName.includes('nf'));
-                  if (aIsNfe && !bIsNfe) return -1;
-                  if (!aIsNfe && bIsNfe) return 1;
-                  return 0;
-               });
+               try {
+                  if (!msg.source) throw new Error('Source do email vazio ou não retornado pelo IMAP.');
 
-               for (const attachmentInfo of validAttachmentsInfo) {
-                 const currFilename = attachmentInfo.filename ? attachmentInfo.filename.toLowerCase() : '';
-                 if (currFilename.endsWith('.xml') || currFilename.endsWith('.txt') || currFilename.endsWith('.edi')) {
+                  await flushLogs('running', `Fazendo parse estrutural do email com simpleParser...`);
+                  const parsed = await simpleParser(msg.source);
+
+                const validAttachmentsInfo = parsed.attachments.filter((a: any) => {
+                    const name = (a.filename || '').toLowerCase();
+                    const type = (a.contentType || '').toLowerCase();
+                    return type.includes('xml') || name.endsWith('.xml') || name.endsWith('.txt') || name.endsWith('.edi');
+                });
+
+                const assunto = parsed.subject || msg.envelope?.subject || 'Sem Assunto';
+                const hasValidFiles = validAttachmentsInfo.length > 0;
+
+                details.push({ 
+                  message: `Lendo email ${msg.seq}`, 
+                  assunto: assunto,
+                  anexos: validAttachmentsInfo.map((a: any) => a.filename),
+                  tem_arquivos_suportados: hasValidFiles
+                });
+                
+                validAttachmentsInfo.sort((a: any, b: any) => {
+                   const aName = (a.filename || '').toLowerCase();
+                   const bName = (b.filename || '').toLowerCase();
+                   const aIsNfe = aName.includes('nfe') || (!aName.includes('cte') && aName.includes('nf'));
+                   const bIsNfe = bName.includes('nfe') || (!bName.includes('cte') && bName.includes('nf'));
+                   if (aIsNfe && !bIsNfe) return -1;
+                   if (!aIsNfe && bIsNfe) return 1;
+                   return 0;
+                });
+
+                for (const attachmentInfo of validAttachmentsInfo) {
+                  const currFilename = attachmentInfo.filename ? attachmentInfo.filename.toLowerCase() : '';
+                  if (currFilename.endsWith('.xml') || currFilename.endsWith('.txt') || currFilename.endsWith('.edi')) {
                    let payloadString = '';
-                   try {
-                     // Use fetchOne instead of a fetch stream generator to completely avoid Deno iterator hanging bugs
-                     // We encapsulate this in a Promise.race to guarantee Deno ImapFlow bugs don't freeze the cloud Function
-                     const pMsg = await Promise.race([
-                         mailClient.fetchOne(msg.uid, { bodyParts: [attachmentInfo.part], uid: true }, { uid: true }),
-                         new Promise<any>((_, reject) => setTimeout(() => reject(new Error(`Timeout de 15s baixando anexo parte ${attachmentInfo.part}`)), 15000))
-                     ]);
-                     
-                     let partBuffer = pMsg?.bodyParts?.get(attachmentInfo.part);
-
-                     if (!partBuffer) {
-                        throw new Error("ImapFlow falhou em retornar o buffer do bodyPart " + attachmentInfo.part);
-                     }
-
-                     let rawString = partBuffer.toString('utf8');
-                     if (attachmentInfo.encoding && attachmentInfo.encoding.toLowerCase() === 'base64') {
-                        payloadString = atob(rawString.replace(/\s/g, ''));
-                     } else {
-                        payloadString = rawString;
-                     }
-                   } catch (downloadErr: any) {
-                     details.push({ establishment: estab.razao_social, warning: `Falha ao baixar anexo ${attachmentInfo.filename}`, error: downloadErr.message });
-                     continue;
-                   }
+                  if (attachmentInfo.content) {
+                      payloadString = attachmentInfo.content.toString('utf8');
+                  } else {
+                      details.push({ establishment: estab.razao_social, warning: `Anexo ${attachmentInfo.filename} vazio ou sem conteúdo.` });
+                      continue;
+                  }
 
                    if (currFilename.endsWith('.txt') || currFilename.endsWith('.edi')) {
                      const firstLine = payloadString.split('\n')[0] || '';

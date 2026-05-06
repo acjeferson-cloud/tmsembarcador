@@ -19,14 +19,18 @@ L.Icon.Default.mergeOptions({
 });
 
 // Custom Icons
-const createCustomIcon = (color: string) => {
+const createCustomIcon = (color: string, label?: string | number) => {
+  const innerHtml = label 
+    ? `<span style="transform: rotate(45deg); color: white; font-weight: 800; font-size: 13px; font-family: sans-serif; display: block;">${label}</span>`
+    : `<div style="width: 8px; height: 8px; background-color: white; border-radius: 50%;"></div>`;
+
   return new L.DivIcon({
     className: 'custom-icon',
     html: `
       <div style="
         background-color: ${color};
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         border-radius: 50% 50% 50% 0;
         transform: rotate(-45deg);
         border: 2px solid white;
@@ -35,17 +39,12 @@ const createCustomIcon = (color: string) => {
         align-items: center;
         justify-content: center;
       ">
-        <div style="
-          width: 8px;
-          height: 8px;
-          background-color: white;
-          border-radius: 50%;
-        "></div>
+        ${innerHtml}
       </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 24],
-    popupAnchor: [0, -24],
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
   });
 };
 
@@ -60,12 +59,15 @@ interface MapUpdaterProps {
 const MapUpdater: React.FC<MapUpdaterProps> = ({ markers }) => {
   const map = useMap();
   
+  // Usar a stringificação dos markers para evitar re-render/zoom a cada ciclo do React
+  const markersStr = JSON.stringify(markers);
+
   useEffect(() => {
     if (markers.length > 0) {
       const bounds = L.latLngBounds(markers);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
     }
-  }, [markers, map]);
+  }, [markersStr, map]);
   
   return null;
 };
@@ -135,7 +137,7 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
       // Geocode orders
       for (const order of mappedOrders) {
         if (!mounted) break;
-        if (!newCoords[order.id!]) {
+        if (!newCoords[(order.id || order.order_number)]) {
           // Try full address first
           const parts = [
             order.destination_street,
@@ -167,7 +169,7 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
                }
             });
 
-            newCoords[order.id!] = [finalLat, finalLng];
+            newCoords[(order.id || order.order_number)] = [finalLat, finalLng];
             changed = true;
           }
         }
@@ -226,7 +228,7 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
 
     // Draw markers
     mappedOrders.forEach(order => {
-      const coords = coordsMap[order.id!];
+      const coords = coordsMap[(order.id || order.order_number)];
       if (coords) {
         hasPoints = true;
         const position = { lat: coords[0], lng: coords[1] };
@@ -405,7 +407,7 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
 
   const markersData = mappedOrders.filter(o => coordsMap[o.id!]).map(order => ({
     order,
-    coords: coordsMap[order.id!],
+    coords: coordsMap[(order.id || order.order_number)],
     isSelected: order.isSelected
   }));
 
@@ -461,13 +463,22 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
               </Marker>
             )}
 
-            {markersData.map((marker, idx) => (
-              <Marker 
-                key={marker.order.id || idx} 
-                position={marker.coords}
-                icon={marker.isSelected ? selectedIcon : unselectedIcon}
-                zIndexOffset={marker.isSelected ? 1000 : 0}
-              >
+            {markersData.map((marker, idx) => {
+              const selectedIndex = marker.isSelected 
+                ? selectedOrders.findIndex(o => (o.id === marker.order.id || o.order_number === marker.order.order_number))
+                : -1;
+              
+              const icon = marker.isSelected 
+                ? createCustomIcon('#10b981', selectedIndex >= 0 ? selectedIndex + 1 : undefined)
+                : unselectedIcon;
+
+              return (
+                <Marker 
+                  key={marker.order.id || idx} 
+                  position={marker.coords}
+                  icon={icon}
+                  zIndexOffset={marker.isSelected ? 1000 : 0}
+                >
                 <Popup>
                   <div className="p-1">
                     <p className="font-bold text-gray-900">{marker.order.order_number}</p>
@@ -481,7 +492,8 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ pendingOrders, selectedO
                   </div>
                 </Popup>
               </Marker>
-            ))}
+            );
+          })}
 
             {osrmRoute.length > 0 && (
               <Polyline 

@@ -1,0 +1,1 @@
+ALTER TABLE public.freight_rates DROP COLUMN IF EXISTS valor;

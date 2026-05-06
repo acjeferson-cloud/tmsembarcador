@@ -94,7 +94,7 @@ export const sapIntegrationService = {
         // Busca se já existe no banco
         const { data: existingBPData } = await supabase!
           .from('business_partners')
-          .select('id, razao_social, addresses:business_partner_addresses(zip_code, street, number, neighborhood, city, state)')
+          .select('id, razao_social, metadata, addresses:business_partner_addresses(zip_code, street, number, neighborhood, city, state)')
           .eq('cpf_cnpj', rawCnpj)
           .eq('organization_id', context?.organizationId || '')
           .maybeSingle();
@@ -104,6 +104,17 @@ export const sapIntegrationService = {
         if (existingBP) {
           finalBusinessPartnerId = existingBP.id;
           finalBusinessPartnerName = existingBP.razao_social;
+          
+          if (sapOrder.customer.cardCode) {
+            const currentMetadata = existingBP.metadata || {};
+            if (currentMetadata.sap_cardcode !== sapOrder.customer.cardCode) {
+              await supabase!
+                .from('business_partners')
+                .update({ metadata: { ...currentMetadata, sap_cardcode: sapOrder.customer.cardCode } })
+                .eq('id', existingBP.id);
+            }
+          }
+
           if (existingBP.addresses && existingBP.addresses.length > 0) {
              const addr = existingBP.addresses[0];
              finalBusinessPartnerZipCode = addr.zip_code;
@@ -127,6 +138,7 @@ export const sapIntegrationService = {
                 email: receitaData.email || '',
                 phone: receitaData.telefone || receitaData.ddd_telefone_1 || '',
                 taxRegime: receitaData.simples?.optante ? 'simples_nacional' : 'regime_normal',
+                metadata: sapOrder.customer.cardCode ? { sap_cardcode: sapOrder.customer.cardCode } : {},
                 addresses: [{
                   type: 'commercial',
                   street: receitaData.logradouro || '',
@@ -404,7 +416,7 @@ export const sapIntegrationService = {
             // First look up internally in Business Partners
             const { data: existingPartnerData } = await (supabase as any)
               .from('business_partners')
-              .select('id, razao_social, addresses:business_partner_addresses(zip_code, street, number, neighborhood, city, state)')
+              .select('id, razao_social, metadata, addresses:business_partner_addresses(zip_code, street, number, neighborhood, city, state)')
               .eq('cpf_cnpj', rawCnpj)
               .eq('organization_id', context?.organizationId || 0)
               .maybeSingle();
@@ -412,6 +424,16 @@ export const sapIntegrationService = {
             if (existingPartnerData) {
               finalBusinessPartnerId = existingPartnerData.id;
               finalBusinessPartnerName = existingPartnerData.razao_social || finalBusinessPartnerName;
+
+              if (sapInvoice.customer?.cardCode) {
+                const currentMetadata = existingPartnerData.metadata || {};
+                if (currentMetadata.sap_cardcode !== sapInvoice.customer.cardCode) {
+                  await (supabase as any)
+                    .from('business_partners')
+                    .update({ metadata: { ...currentMetadata, sap_cardcode: sapInvoice.customer.cardCode } })
+                    .eq('id', existingPartnerData.id);
+                }
+              }
 
               if (existingPartnerData.addresses && (existingPartnerData.addresses as any).length > 0) {
                  const addr = (existingPartnerData.addresses as any)[0];
@@ -439,6 +461,7 @@ export const sapIntegrationService = {
                 email: receitaData.email || '',
                 phone: receitaData.telefone || receitaData.ddd_telefone_1 || '',
                 taxRegime: receitaData.simples?.optante ? 'simples_nacional' : 'regime_normal',
+                metadata: sapInvoice.customer?.cardCode ? { sap_cardcode: sapInvoice.customer.cardCode } : {},
                 addresses: [{
                   type: 'commercial',
                   zipCode: receitaData.cep ? receitaData.cep.replace(/\D/g, '') : '',

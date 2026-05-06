@@ -135,10 +135,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
               <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">{getTipoAplicacaoLabel(rate.tipoAplicacao)}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.freightRates.view.value')}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(rate.valor)}</p>
-                </div>
+
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{t('carriers.freightRates.view.deliveryTime')}</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -184,20 +181,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
           </div>
         </div>
 
-        {/* Value Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('carriers.freightRates.view.valueInfo')}</h3>
-          
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <DollarSign size={32} className="text-blue-600" />
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(rate.valor)}</p>
-              <p className="text-gray-600 dark:text-gray-400">{t('carriers.freightRates.view.tariffValue')}</p>
-            </div>
-          </div>
-        </div>
+
 
         {/* Observations */}
         {rate.observacoes && (
@@ -219,10 +203,7 @@ export const FreightRateView: React.FC<FreightRateViewProps> = ({
                 {t('carriers.freightRates.view.aboutTariffsDesc')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-                  <p className="font-semibold text-blue-900">{t('carriers.freightRates.view.value')}</p>
-                  <p className="text-blue-700">{t('carriers.freightRates.view.valueDesc')}</p>
-                </div>
+
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
                   <p className="font-semibold text-blue-900">{t('carriers.freightRates.view.deliveryTime').split(' ')[0]}</p>
                   <p className="text-blue-700">{t('carriers.freightRates.view.prazoDesc')}</p>

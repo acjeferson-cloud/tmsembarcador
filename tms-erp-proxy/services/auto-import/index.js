@@ -1,0 +1,904 @@
+import crypto from 'crypto';
+
+import { createClient } from "@supabase/supabase-js";
+import { ImapFlow } from "imapflow";
+import { simpleParser } from "mailparser";
+import { XMLParser } from "fast-xml-parser";
+import { calculateBestFreight, calculateCteFreight } from "./freightQuoter.js";
+import { processDoccobExtracted } from "./doccobImporter.js";
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+const xmlParser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+    parseTagValue: false
+});
+export async function executeAutoImport(reqBody) {
+    const supabaseUrl = process.env['SUPABASE_URL'] || process.env['VITE_SUPABASE_URL'] || '';
+    const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || process.env['VITE_SUPABASE_ANON_KEY'] || process.env['SUPABASE_ANON_KEY'] || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    let logsTableExists = true;
+    const logId = crypto.randomUUID();
+    let details = [];
+    try {
+        const payload = reqBody || {};
+        // RLS bypass via Edge Function to stop executions
+        if (payload.action === 'stop' && payload.logId) {
+            const { error: updateError } = await supabase
+                .from('xml_auto_import_logs')
+                .update({
+                status: 'warning',
+                should_stop: true,
+                details: {
+                    message: 'Execução cancelada pelo usuário',
+                    stopped_at: new Date().toISOString(),
+                    forced_stop: true
+                }
+            })
+                .eq('id', payload.logId);
+            if (updateError)
+                throw updateError;
+            return { success: true, message: 'Execução interrompida com sucesso.' };
+        }
+        const startTime = new Date().toISOString();
+        // Check if the xml logs table exists.
+        const { error: probeError } = await supabase.from('xml_auto_import_logs').select('id').limit(1);
+        if (probeError && probeError.code === '42P01') {
+            logsTableExists = false;
+            console.warn("Table xml_auto_import_logs does not exist. Skipping logging.");
+        }
+        
+        if (logsTableExists) {
+            // VERIFY CONCURRENT EXECUTION
+            const { data: runningLogs } = await supabase.from('xml_auto_import_logs').select('id, execution_time').eq('status', 'running');
+            if (runningLogs && runningLogs.length > 0) {
+                 const runningTime = new Date(runningLogs[0].execution_time).getTime();
+                 const nowTime = new Date().getTime();
+                 if (nowTime - runningTime < 10 * 60 * 1000) {
+                     return { success: false, message: 'Já existe um processo de importação em andamento.' };
+                 } else {
+                     // Clean up stale lock
+                     await supabase.from('xml_auto_import_logs').update({ status: 'error', error_message: 'Timeout (Stale Lock)' }).eq('id', runningLogs[0].id);
+                 }
+            }
+
+            const { error: insertError } = await supabase.from('xml_auto_import_logs').insert({
+                id: logId,
+                execution_time: startTime,
+                status: 'running',
+                nfe_imported: 0,
+                cte_imported: 0,
+                total_processed: 0,
+                emails_checked: 0,
+                details: [{ message: 'Iniciando processamento das contas de email...' }],
+                error_message: null
+            });
+            if (insertError) {
+                console.error("Failed to insert running log:", insertError);
+                details.push({ message: 'Erro ao inserir log', error: insertError.message, code: insertError.code });
+            }
+        }
+        const { data: establishments, error: estabError } = await supabase
+            .from('establishments')
+            .select('id, cnpj, organization_id, environment_id, metadata, razao_social, codigo');
+        if (estabError)
+            throw new Error(`Erro estabelecimentos: ${estabError.message}`);
+
+        const estabCnpjMap = {};
+        establishments.forEach(e => {
+            if (e.cnpj) {
+                const cleanCnpj = String(e.cnpj).replace(/\D/g, '');
+                if (cleanCnpj) {
+                    estabCnpjMap[e.organization_id] = estabCnpjMap[e.organization_id] || {};
+                    estabCnpjMap[e.organization_id][cleanCnpj] = e;
+                }
+            }
+        });
+
+        const activeConfigs = establishments.filter((e) => {
+            let metadata = e.metadata;
+            if (typeof metadata === 'string') {
+                try {
+                    metadata = JSON.parse(metadata);
+                }
+                catch (err) { }
+            }
+            let email_config = e.email_config;
+            if (typeof email_config === 'string') {
+                try {
+                    email_config = JSON.parse(email_config);
+                }
+                catch (err) { }
+            }
+            const config = email_config || metadata?.email_config;
+            return config?.autoDownloadEnabled === true || config?.autoDownloadEnabled === 'true' || config?.autoDownloadEnabled === 1;
+        });
+        let totalNfe = 0;
+        let totalCte = 0;
+        let emailsChecked = 0;
+        const flushLogs = async (status = 'running', msg = '') => {
+            if (msg)
+                details.push({ message: msg, time: new Date().toISOString() });
+            if (logsTableExists) {
+                await supabase.from('xml_auto_import_logs').update({
+                    status,
+                    nfe_imported: totalNfe,
+                    cte_imported: totalCte,
+                    total_processed: totalNfe + totalCte,
+                    emails_checked: emailsChecked,
+                    details
+                }).eq('id', logId);
+            }
+        };
+        await flushLogs('running', 'Iniciando processamento de estabelecimentos...');
+        for (const estab of activeConfigs) {
+            const config = estab.email_config || estab.metadata?.email_config || {};
+            let estabNfes = 0;
+            let estabCtes = 0;
+            let estabEmailsChecked = 0;
+            if (!config.host || !config.email) {
+                console.warn(`Establecimento ${estab.razao_social} skipped due to missing host or email.`);
+                details.push({
+                    establishment: estab.razao_social,
+                    status: 'warning',
+                    error: 'Host ou Email não preenchido corretamente na configuração.'
+                });
+                continue;
+            }
+            try {
+                const mailClient = new ImapFlow({
+                    host: config.host,
+                    port: parseInt(config.port, 10) || 993,
+                    secure: config.useSSL !== false,
+                    auth: { user: config.email, pass: String(config.password || '') },
+                    logger: false,
+                    verifyOnly: false
+                });
+                await flushLogs('running', `Conectando ao IMAP: ${config.host}:${config.port} para ${config.email}...`);
+                // Wrap connect in a timeout
+                await Promise.race([
+                    mailClient.connect(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('IMAP Connection Timeout após 15s')), 15000))
+                ]);
+                await flushLogs('running', `IMAP Conectado! Criando pasta 'Processados' se não existir...`);
+                try {
+                    await mailClient.mailboxCreate('Processados');
+                }
+                catch (e) {
+                    // Ignore error, folder probably exists
+                }
+                await flushLogs('running', `Obtendo lock INBOX...`);
+                let lock;
+                try {
+                    lock = await Promise.race([
+                        mailClient.getMailboxLock('INBOX'),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout obtendo lock INBOX após 10s')), 10000))
+                    ]);
+                }
+                catch (lockErr) {
+                    await flushLogs('running', `Erro ao abrir INBOX: ${lockErr.message}`);
+                    throw lockErr;
+                }
+                await flushLogs('running', `Lock INBOX obtido! Buscando emails unread...`);
+                try {
+                    const messageGenerator = mailClient.fetch({ unseen: true }, { envelope: true, flags: true, uid: true, size: true });
+                    const messagesToProcess = [];
+                    for await (let msg of messageGenerator) {
+                        messagesToProcess.push(msg);
+                    }
+                    for (let msg of messagesToProcess) {
+                        estabEmailsChecked++;
+                        emailsChecked++;
+                        await flushLogs('running', `Lendo UID/Seq ${msg.seq}... Baixando código-fonte completo.`);
+                        
+                        let sourceMsg;
+                        try {
+                            sourceMsg = await Promise.race([
+                                mailClient.fetchOne(msg.uid, { source: true, uid: true }),
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 20s baixando fonte do email')), 20000))
+                            ]);
+                        } catch(err) {
+                            await flushLogs('running', `Erro fatal baixando email UID ${msg.uid}: ${err.message}`);
+                            continue;
+                        }
+                        
+                        if (!sourceMsg || !sourceMsg.source) {
+                            details.push({ message: `Source vazio para UID ${msg.uid}` });
+                            continue;
+                        }
+                        msg.source = sourceMsg.source;
+
+                        try {
+                            await flushLogs('running', `Fazendo parse estrutural do email com simpleParser...`);
+                            const parsed = await simpleParser(msg.source);
+                            const validAttachmentsInfo = parsed.attachments.filter((a) => {
+                                const name = (a.filename || '').toLowerCase();
+                                const type = (a.contentType || '').toLowerCase();
+                                return type.includes('xml') || name.endsWith('.xml') || name.endsWith('.txt') || name.endsWith('.edi');
+                            });
+                            const assunto = parsed.subject || msg.envelope?.subject || 'Sem Assunto';
+                            const hasValidFiles = validAttachmentsInfo.length > 0;
+                            details.push({
+                                message: `Lendo email ${msg.seq}`,
+                                assunto: assunto,
+                                anexos: validAttachmentsInfo.map((a) => a.filename),
+                                tem_arquivos_suportados: hasValidFiles
+                            });
+                            validAttachmentsInfo.sort((a, b) => {
+                                const aName = (a.filename || '').toLowerCase();
+                                const bName = (b.filename || '').toLowerCase();
+                                const aIsNfe = aName.includes('nfe') || (!aName.includes('cte') && aName.includes('nf'));
+                                const bIsNfe = bName.includes('nfe') || (!bName.includes('cte') && bName.includes('nf'));
+                                if (aIsNfe && !bIsNfe)
+                                    return -1;
+                                if (!aIsNfe && bIsNfe)
+                                    return 1;
+                                return 0;
+                            });
+                            for (const attachmentInfo of validAttachmentsInfo) {
+                                const currFilename = attachmentInfo.filename ? attachmentInfo.filename.toLowerCase() : '';
+                                if (currFilename.endsWith('.xml') || currFilename.endsWith('.txt') || currFilename.endsWith('.edi')) {
+                                    let payloadString = '';
+                                    if (attachmentInfo.content) {
+                                        payloadString = attachmentInfo.content.toString('utf8');
+                                    }
+                                    else {
+                                        details.push({ establishment: estab.razao_social, warning: `Anexo ${attachmentInfo.filename} vazio ou sem conteúdo.` });
+                                        continue;
+                                    }
+                                    if (currFilename.endsWith('.txt') || currFilename.endsWith('.edi')) {
+                                        const firstLine = payloadString.split('\n')[0] || '';
+                                        if (firstLine.includes('DOCCOB') || firstLine.includes('FATURA') || firstLine.includes('COB') || firstLine.startsWith('350')) {
+                                            details.push({ message: `Identificado arquivo EDI DOCCOB: ${attachmentInfo.filename}` });
+                                            await processDoccobExtracted(supabase, payloadString, estab, details);
+                                        }
+                                        else {
+                                            details.push({ message: `Ignorando TXT não reconhecido no formato DOCCOB: ${attachmentInfo.filename}` });
+                                        }
+                                        continue;
+                                    }
+                                    let xmlString = payloadString;
+                                    let xmlObj;
+                                    try {
+                                        xmlObj = xmlParser.parse(xmlString);
+                                    }
+                                    catch (e) {
+                                        details.push({ establishment: estab.razao_social, warning: 'Falha no parser do XML', file: attachmentInfo.filename });
+                                        continue;
+                                    }
+                                    const nfeRoot = xmlObj.nfeProc?.NFe || xmlObj.NFe;
+                                    const cteRoot = xmlObj.cteProc?.CTe || xmlObj.CTe;
+                                    let modelo = '0';
+                                    if (nfeRoot?.infNFe?.ide?.mod)
+                                        modelo = String(nfeRoot.infNFe.ide.mod);
+                                    else if (cteRoot?.infCte?.ide?.mod)
+                                        modelo = String(cteRoot.infCte.ide.mod);
+                                    details.push({ message: `Arquivo XML encontrado: ${attachmentInfo.filename}`, modelo });
+                                    // NFe - Modelo 55
+                                    if (modelo === '55' || (nfeRoot && nfeRoot.infNFe)) {
+                                        const infNFe = nfeRoot?.infNFe;
+                                        if (!infNFe) {
+                                            details.push({ message: 'NFe inválida ou sem infNFe', file: attachmentInfo.filename });
+                                            continue;
+                                        }
+                                        const accessKey = infNFe["@_Id"]?.replace('NFe', '') || 'Desconhecida';
+                                        // Verifica duplicidade
+                                        const { data: existing } = await supabase.from('invoices_nfe').select('id').eq('chave_acesso', accessKey).maybeSingle();
+                                        if (existing) {
+                                            details.push({ message: `NFe já importada: ${accessKey}` });
+                                            continue;
+                                        }
+                                        // Extract complete NFe Data
+                                        const ide = nfeRoot.infNFe.ide;
+                                        const dest = nfeRoot.infNFe.dest;
+                                        const emit = nfeRoot.infNFe.emit;
+
+                                        let routedEstab = estab;
+                                        const orgMap = estabCnpjMap[estab.organization_id] || {};
+                                        const emitCnpj = String(emit?.CNPJ || emit?.CPF || '').replace(/\D/g, '');
+                                        const destCnpj = String(dest?.CNPJ || dest?.CPF || '').replace(/\D/g, '');
+                                        if (emitCnpj && orgMap[emitCnpj]) {
+                                            routedEstab = orgMap[emitCnpj];
+                                        } else if (destCnpj && orgMap[destCnpj]) {
+                                            routedEstab = orgMap[destCnpj];
+                                        }
+
+                                        const enderDest = dest?.enderDest;
+                                        const transp = nfeRoot.infNFe.transp;
+                                        const transporta = transp?.transporta;
+                                        const total = nfeRoot.infNFe.total?.ICMSTot;
+                                        const vol = transp?.vol;
+                                        const nNF = String(ide?.nNF || '0');
+                                        const serie = String(ide?.serie || '0');
+                                        const dhEmi = ide?.dhEmi || new Date().toISOString();
+                                        const natOp = String(ide?.natOp || '');
+                                        const finNFe = String(ide?.finNFe || '1');
+                                        let directionValue = 'outbound';
+                                        if (finNFe === '4' || natOp.toLowerCase().includes('devolu') || natOp.toLowerCase().includes('retorno')) {
+                                            directionValue = 'reverse';
+                                        }
+                                        const totalValue = parseFloat(total?.vNF || '0');
+                                        const icmsValue = parseFloat(total?.vICMS || '0') + parseFloat(total?.vST || '0');
+                                        const weight = parseFloat(vol?.pesoB || '0');
+                                        const volumes = parseInt(vol?.qVol || '1');
+                                        const customer = {
+                                            name: String(dest?.xNome || 'Desconhecido'),
+                                            cnpj: String(dest?.CNPJ || dest?.CPF || '00000000000000'),
+                                            stateRegistration: String(dest?.IE || ''),
+                                            address: String(enderDest?.xLgr || ''),
+                                            number: String(enderDest?.nro || ''),
+                                            complement: String(enderDest?.xCpl || ''),
+                                            neighborhood: String(enderDest?.xBairro || ''),
+                                            city: String(enderDest?.xMun || ''),
+                                            state: String(enderDest?.UF || ''),
+                                            zipCode: String(enderDest?.CEP || ''),
+                                            country: String(enderDest?.xPais || 'Brasil'),
+                                            phone: String(enderDest?.fone || ''),
+                                            email: String(dest?.email || '')
+                                        };
+                                        // Carrier Lookup
+                                        let carrierId = null;
+                                        if (transporta && transporta.CNPJ) {
+                                            const cleanCnpj = String(transporta.CNPJ).replace(/\D/g, '');
+                                            let { data: foundCarrier } = await supabase
+                                                .from('carriers')
+                                                .select('id')
+                                                .eq('organization_id', routedEstab.organization_id)
+                                                .like('cnpj', `%${cleanCnpj}%`)
+                                                .limit(1)
+                                                .maybeSingle();
+                                            if (!foundCarrier && cleanCnpj.length >= 8) {
+                                                const rootCnpj = cleanCnpj.substring(0, 8);
+                                                const { data: rootCarrier } = await supabase
+                                                    .from('carriers')
+                                                    .select('id')
+                                                    .eq('organization_id', routedEstab.organization_id)
+                                                    .like('cnpj', `%${rootCnpj}%`)
+                                                    .limit(1)
+                                                    .maybeSingle();
+                                                if (rootCarrier)
+                                                    foundCarrier = rootCarrier;
+                                            }
+                                            if (foundCarrier)
+                                                carrierId = foundCarrier.id;
+                                        }
+                                        // Customer Lookup
+                                        let destinatarioNome = customer.name;
+                                        if (customer.cnpj) {
+                                            const cleanCnpj = customer.cnpj.replace(/\D/g, '');
+                                            const { data: foundPartner } = await supabase
+                                                .from('business_partners')
+                                                .select('razao_social')
+                                                .eq('organization_id', routedEstab.organization_id)
+                                                .like('cpf_cnpj', `%${cleanCnpj}%`)
+                                                .limit(1)
+                                                .maybeSingle();
+                                            if (foundPartner && foundPartner.razao_social) {
+                                                destinatarioNome = foundPartner.razao_social;
+                                            }
+                                        }
+                                        // Calculate freights
+                                        let freightResults = [];
+                                        let bestCarrierId = carrierId;
+                                        let valorFrete = 0;
+                                        try {
+                                            freightResults = await calculateBestFreight(supabase, customer.city, customer.state, weight, volumes, totalValue, 0);
+                                            // If we didn't have a explicitly defined carrier in the XML, use the cheapest from quotes
+                                            if (!bestCarrierId && freightResults.length > 0) {
+                                                bestCarrierId = freightResults[0].carrierId;
+                                            }
+                                            // If we have results matching our carrier (explicit or best), use it
+                                            if (bestCarrierId && freightResults.length > 0) {
+                                                const matchedResult = freightResults.find((r) => r.carrierId === bestCarrierId);
+                                                if (matchedResult) {
+                                                    valorFrete = matchedResult.totalValue;
+                                                }
+                                                else if (!carrierId) {
+                                                    valorFrete = freightResults[0].totalValue;
+                                                }
+                                            }
+                                        }
+                                        catch (calcErr) {
+                                            console.error("Auto calculation error:", calcErr);
+                                        }
+                                        // Insert NFe
+                                        const { data: insertedNfe, error: insertError } = await supabase
+                                            .from('invoices_nfe')
+                                            .insert({
+                                            organization_id: routedEstab.organization_id,
+                                            environment_id: routedEstab.environment_id,
+                                            establishment_id: routedEstab.id,
+                                            numero: nNF,
+                                            serie: serie,
+                                            chave_acesso: accessKey,
+                                            data_emissao: dhEmi,
+                                            natureza_operacao: natOp,
+                                            modelo: '55',
+                                            destinatario_cnpj: customer.cnpj,
+                                            destinatario_nome: destinatarioNome,
+                                            valor_total: totalValue,
+                                            valor_produtos: totalValue - icmsValue,
+                                            valor_icms: icmsValue,
+                                            peso_total: weight,
+                                            quantidade_volumes: volumes,
+                                            cubagem_total: 0,
+                                            situacao: 'emitida',
+                                            xml_content: xmlString,
+                                            carrier_id: bestCarrierId,
+                                            valor_frete: valorFrete,
+                                            freight_results: freightResults,
+                                            direction: directionValue
+                                        })
+                                            .select()
+                                            .single();
+                                        if (insertError) {
+                                            console.error("NFe Insert error:", insertError);
+                                            details.push({ message: `Erro DB ao inserir NFe ${accessKey}`, error: insertError.message });
+                                            continue;
+                                        }
+                                        const invoiceId = insertedNfe.id;
+                                        // Insert Customer
+                                        const { error: custError } = await supabase.from('invoices_nfe_customers').insert({
+                                            invoice_nfe_id: invoiceId,
+                                            organization_id: routedEstab.organization_id,
+                                            environment_id: routedEstab.environment_id,
+                                            cnpj_cpf: customer.cnpj,
+                                            razao_social: destinatarioNome,
+                                            inscricao_estadual: customer.stateRegistration,
+                                            logradouro: customer.address,
+                                            numero: customer.number,
+                                            complemento: customer.complement,
+                                            bairro: customer.neighborhood,
+                                            cidade: customer.city,
+                                            estado: customer.state,
+                                            cep: customer.zipCode,
+                                            telefone: customer.phone,
+                                            email: customer.email
+                                        });
+                                        if (custError) {
+                                            details.push({ message: `Aviso: Falha ao inserir cliente da NFe ${accessKey}`, error: custError.message });
+                                        }
+                                        // Insert Products
+                                        const detNode = nfeRoot.infNFe.det;
+                                        const detArray = Array.isArray(detNode) ? detNode : (detNode ? [detNode] : []);
+                                        const productsToInsert = detArray.map((d, index) => {
+                                            const prod = d.prod;
+                                            return {
+                                                invoice_nfe_id: invoiceId,
+                                                organization_id: routedEstab.organization_id,
+                                                environment_id: routedEstab.environment_id,
+                                                numero_item: parseInt(d["@_nItem"] || String(index + 1)),
+                                                codigo_produto: String(prod?.cProd || ''),
+                                                descricao: String(prod?.xProd || ''),
+                                                quantidade: parseFloat(prod?.qCom || '0'),
+                                                unidade: String(prod?.uCom || 'UN'),
+                                                peso: prod?.pesoB ? parseFloat(prod.pesoB) : (detArray.length > 0 ? (weight / detArray.length) : 0),
+                                                cubagem: 0,
+                                                valor_unitario: parseFloat(prod?.vUnCom || '0'),
+                                                valor_total: parseFloat(prod?.vProd || '0'),
+                                                ncm: String(prod?.NCM || '')
+                                            };
+                                        });
+                                        if (productsToInsert.length > 0) {
+                                            const { error: prodError } = await supabase.from('invoices_nfe_products').insert(productsToInsert);
+                                            if (prodError) {
+                                                details.push({ message: `Aviso: Falha ao inserir produtos da NFe ${accessKey}`, error: prodError.message });
+                                            }
+                                        }
+                                        // Insert Electronic Document
+                                        const { error: edocError } = await supabase.from('electronic_documents').insert({
+                                            organization_id: routedEstab.organization_id,
+                                            environment_id: routedEstab.environment_id,
+                                            document_type: 'NFe',
+                                            model: '55',
+                                            document_number: nNF,
+                                            series: serie,
+                                            access_key: accessKey,
+                                            status: 'authorized',
+                                            issuer_name: String(emit?.xNome || ''),
+                                            issuer_document: String(emit?.CNPJ || ''),
+                                            recipient_name: customer.name,
+                                            recipient_document: customer.cnpj,
+                                            total_value: totalValue,
+                                            icms_value: icmsValue,
+                                            total_weight: weight,
+                                            transport_mode: 'Rodoviário',
+                                            xml_content: xmlString
+                                        });
+                                        if (edocError) {
+                                            details.push({ message: `Aviso: Falha ao inserir doc eletronico NFe ${accessKey}`, error: edocError.message });
+                                        }
+                                        totalNfe++;
+                                        estabNfes++;
+                                        details.push({ message: `NFe modelo 55 importada com sucesso: ${accessKey}` });
+                                    }
+                                    // CTe - Modelo 57
+                                    else if (modelo === '57' || (cteRoot && cteRoot.infCte)) {
+                                        const infCte = cteRoot?.infCte;
+                                        if (!infCte) {
+                                            details.push({ message: 'CTe inválido ou sem infCte', file: attachmentInfo.filename });
+                                            continue;
+                                        }
+                                        const accessKey = infCte["@_Id"]?.replace('CTe', '') || 'Desconhecida';
+                                        const nNF = infCte.ide?.nCT || '0';
+                                        const serie = infCte.ide?.serie || '0';
+                                        const vTPrest = infCte.vPrest?.vTPrest || infCte.vPrest?.vRec || 0;
+                                        const xNome = infCte.rem?.xNome || infCte.dest?.xNome || 'Desconhecido';
+                                        const dhEmi = infCte.ide?.dhEmi || new Date().toISOString();
+                                        const cteNatOp = String(infCte.ide?.natOp || '').toLowerCase();
+                                        let cteDirection = 'outbound';
+                                        if (cteNatOp.includes('devolu') || cteNatOp.includes('reversa') || cteNatOp.includes('retorno')) {
+                                            cteDirection = 'reverse';
+                                        }
+
+                                        let routedEstabCte = estab;
+                                        const orgMapCte = estabCnpjMap[estab.organization_id] || {};
+                                        // Priority: Remetente > Destinatário > Expedidor > Recebedor > Tomador/Emitente
+                                        const remCnpj = String(infCte.rem?.CNPJ || infCte.rem?.CPF || '').replace(/\D/g, '');
+                                        const destCnpj = String(infCte.dest?.CNPJ || infCte.dest?.CPF || '').replace(/\D/g, '');
+                                        const expedCnpj = String(infCte.exped?.CNPJ || infCte.exped?.CPF || '').replace(/\D/g, '');
+                                        const recebCnpj = String(infCte.receb?.CNPJ || infCte.receb?.CPF || '').replace(/\D/g, '');
+                                        const tomaCnpj = String(infCte.ide?.toma4?.CNPJ || infCte.ide?.toma4?.CPF || infCte.ide?.toma03?.toma || '').replace(/\D/g, '');
+                                        const emitCnpj = String(infCte.emit?.CNPJ || infCte.emit?.CPF || '').replace(/\D/g, '');
+
+                                        if (remCnpj && orgMapCte[remCnpj]) routedEstabCte = orgMapCte[remCnpj];
+                                        else if (destCnpj && orgMapCte[destCnpj]) routedEstabCte = orgMapCte[destCnpj];
+                                        else if (expedCnpj && orgMapCte[expedCnpj]) routedEstabCte = orgMapCte[expedCnpj];
+                                        else if (recebCnpj && orgMapCte[recebCnpj]) routedEstabCte = orgMapCte[recebCnpj];
+                                        else if (tomaCnpj && orgMapCte[tomaCnpj]) routedEstabCte = orgMapCte[tomaCnpj];
+                                        else if (emitCnpj && orgMapCte[emitCnpj]) routedEstabCte = orgMapCte[emitCnpj];
+
+                                        // Extração da Transportadora (Emitente do CT-e)
+                                        let cteCarrierId = null;
+                                        if (infCte.emit && infCte.emit.CNPJ) {
+                                            const emitCnpj = String(infCte.emit.CNPJ).replace(/\D/g, '');
+                                            const { data: foundCarrier } = await supabase
+                                                .from('carriers')
+                                                .select('id')
+                                                .eq('organization_id', routedEstabCte.organization_id)
+                                                .like('cnpj', `%${emitCnpj}%`)
+                                                .limit(1)
+                                                .maybeSingle();
+                                            if (foundCarrier)
+                                                cteCarrierId = foundCarrier.id;
+                                        }
+                                        // Extração de Cidade/UF de Destino
+                                        const destCity = infCte.dest?.enderDest?.xMun || '';
+                                        const destState = infCte.dest?.enderDest?.UF || '';
+                                        const destName = infCte.dest?.xNome || '';
+                                        const destDoc = infCte.dest?.CNPJ || infCte.dest?.CPF || '';
+                                        // Extração de Cidade/UF de Origem (Remetente)
+                                        const origCity = infCte.rem?.enderReme?.xMun || '';
+                                        const origState = infCte.rem?.enderReme?.UF || '';
+                                        const origName = infCte.rem?.xNome || '';
+                                        const origDoc = infCte.rem?.CNPJ || infCte.rem?.CPF || '';
+                                        // Extração de Peso e Valor da Carga
+                                        const vCarga = infCte.infCTeNorm?.infCarga?.vCarga || 0;
+                                        let pesoReal = 0;
+                                        let pesoBruto = 0;
+                                        let pesoCubadoXml = 0;
+                                        let cargaVolume = 0;
+                                        let cargaM3 = 0;
+                                        let cargaPeso = 0;
+                                        const infQNode = infCte.infCTeNorm?.infCarga?.infQ;
+                                        if (infQNode) {
+                                            const infQArray = Array.isArray(infQNode) ? infQNode : [infQNode];
+                                            infQArray.forEach((q) => {
+                                                const cUnid = String(q.cUnid || '');
+                                                const tpMed = String(q.tpMed || '').toUpperCase();
+                                                const qCarga = parseFloat(q.qCarga || '0');
+                                                if (tpMed.includes('PESO REAL') || tpMed === 'REAL') {
+                                                    pesoReal = qCarga;
+                                                }
+                                                else if (tpMed.includes('PESO CUBADO') || tpMed.includes('CUBADO')) {
+                                                    pesoCubadoXml = qCarga;
+                                                }
+                                                else if (tpMed.includes('PESO BRUTO') || tpMed.includes('BRUTO')) {
+                                                    pesoBruto = qCarga;
+                                                }
+                                                else if (!cargaPeso && cUnid === '01' && tpMed.includes('PESO')) {
+                                                    cargaPeso = qCarga;
+                                                }
+                                                else if (cUnid === '00' && tpMed.includes('VOLUME')) {
+                                                    cargaM3 = qCarga;
+                                                }
+                                                else if (cUnid === '03' && tpMed.includes('VOLUMES')) {
+                                                    cargaVolume = qCarga;
+                                                }
+                                            });
+                                            if (pesoReal > 0)
+                                                cargaPeso = pesoReal;
+                                            else if (pesoBruto > 0)
+                                                cargaPeso = pesoBruto;
+                                            else if (!cargaPeso && infQArray.length > 0) {
+                                                const firstKg = infQArray.find((q) => String(q.cUnid) === '01');
+                                                if (firstKg)
+                                                    cargaPeso = parseFloat(firstKg.qCarga || '0');
+                                            }
+                                        }
+                                        const pesoCubadoCalculado = cargaM3 > 0 ? cargaM3 * 250 : 0;
+                                        const pesoCubadoFinal = pesoCubadoXml > 0 ? pesoCubadoXml : pesoCubadoCalculado;
+                                        const pesoParaCalculo = Math.max(cargaPeso, pesoCubadoFinal);
+                                        // Componentes de Valor
+                                        let freteValor = 0, fretePeso = 0, seccat = 0, despacho = 0, ademe = 0, pedagio = 0, tas = 0, outrosValores = 0;
+                                        const compNode = infCte.vPrest?.Comp;
+                                        const componentes = Array.isArray(compNode) ? compNode : (compNode ? [compNode] : []);
+                                        componentes.forEach((comp) => {
+                                            const nome = String(comp.xNome || '').toUpperCase();
+                                            const valor = parseFloat(comp.vComp || '0');
+                                            if (nome.includes('FRETE VALOR') || nome.includes('AD VALOREM'))
+                                                freteValor += valor;
+                                            else if (nome.includes('FRETE PESO') || nome.includes('FRETE-PESO'))
+                                                fretePeso += valor;
+                                            else if (nome.includes('SECCAT') || nome.includes('SEC/CAT'))
+                                                seccat += valor;
+                                            else if (nome.includes('DESPACHO'))
+                                                despacho += valor;
+                                            else if (nome.includes('ADEME') || nome.includes('GRIS'))
+                                                ademe += valor;
+                                            else if (nome.includes('PEDAGIO') || nome.includes('PEDÁGIO'))
+                                                pedagio += valor;
+                                            else if (nome.includes('TAS') || nome.includes('TX-ADM'))
+                                                tas += valor;
+                                            else if (nome.includes('OUTROS VALORES') || nome.includes('OUTROS'))
+                                                outrosValores += valor;
+                                        });
+                                        // ICMS
+                                        const impNode = infCte.imp;
+                                        const icmsNode = impNode?.ICMS || impNode?.ICMS00 || impNode?.ICMS20 || impNode?.ICMS45 || impNode?.ICMS60 || impNode?.ICMS90 || impNode?.ICMSOutraUF || impNode?.ICMSSN;
+                                        const vBC = parseFloat(icmsNode?.vBC || '0');
+                                        const pICMS = parseFloat(icmsNode?.pICMS || '0');
+                                        const vICMS = parseFloat(icmsNode?.vICMS || '0');
+                                        const tpCTe = String(infCte.ide?.tpCTe ?? '0');
+
+                                        const { data: existing } = await supabase.from('ctes_complete').select('id').eq('access_key', accessKey).maybeSingle();
+                                        if (!existing) {
+                                            const { error: cteInsertError } = await supabase.from('ctes_complete').insert({
+                                                organization_id: routedEstabCte.organization_id,
+                                                environment_id: routedEstabCte.environment_id,
+                                                establishment_id: routedEstabCte.id,
+                                                carrier_id: cteCarrierId,
+                                                access_key: accessKey,
+                                                number: String(nNF),
+                                                series: String(serie),
+                                                xml_data: { original: xmlString, parsed: new Date().toISOString(), tpCTe },
+                                                issue_date: dhEmi,
+                                                status: 'importado',
+                                                freight_type: 'Normal',
+                                                total_value: parseFloat(vTPrest),
+                                                sender_name: origName,
+                                                sender_document: origDoc,
+                                                sender_city: origCity,
+                                                sender_state: origState,
+                                                recipient_name: destName,
+                                                recipient_document: destDoc,
+                                                recipient_city: destCity,
+                                                recipient_state: destState,
+                                                cargo_weight: cargaPeso,
+                                                cargo_weight_for_calculation: pesoParaCalculo,
+                                                cargo_weight_cubed: pesoCubadoFinal,
+                                                cargo_volume: cargaVolume,
+                                                cargo_m3: cargaM3,
+                                                cubing_factor: 250,
+                                                cargo_value: parseFloat(vCarga),
+                                                freight_weight_value: fretePeso,
+                                                freight_value_value: freteValor,
+                                                seccat_value: seccat,
+                                                dispatch_value: despacho,
+                                                ademe_gris_value: ademe,
+                                                tas_value: tas,
+                                                other_tax_value: outrosValores,
+                                                toll_value: pedagio,
+                                                icms_rate: pICMS,
+                                                icms_base: vBC,
+                                                icms_value: vICMS,
+                                                direction: cteDirection
+                                            });
+                                            if (cteInsertError) {
+                                                details.push({ message: `Erro DB ao inserir CTe ${accessKey}`, error: cteInsertError.message });
+                                            }
+                                            else {
+                                                // Run freight audit calculation for CT-e
+                                                if (existing === null || existing === undefined) {
+                                                    const { data: fetchInserted } = await supabase.from('ctes_complete').select('id').eq('access_key', accessKey).maybeSingle();
+                                                    if (fetchInserted) {
+                                                        // Extract and link NF-es
+                                                        try {
+                                                            const infDoc = infCte.infCTeNorm?.infDoc;
+                                                            const infNFeNodes = infDoc?.infNFe || infDoc?.infNF;
+                                                            if (infNFeNodes) {
+                                                                const nfeArray = Array.isArray(infNFeNodes) ? infNFeNodes : [infNFeNodes];
+                                                                const nfeKeys = nfeArray.map((n) => String(n.chave || '')).filter((k) => k.length === 44);
+                                                                if (nfeKeys.length > 0) {
+                                                                    const { data: nfesFromDB } = await supabase
+                                                                        .from('invoices_nfe')
+                                                                        .select('chave_acesso, total_value, serie, numero, establishment_id, invoice_type')
+                                                                        .in('chave_acesso', nfeKeys);
+                                                                    const dbNfes = nfesFromDB || [];
+                                                                    const invoicesToInsert = nfeArray.map((n) => {
+                                                                        const chave = String(n.chave || '');
+                                                                        const match = dbNfes.find((db) => db.chave_acesso === chave);
+                                                                        if (match) {
+                                                                            const matchedEstab = establishments.find((e) => e.id === match.establishment_id) || estab;
+                                                                            const establishmentCode = `${matchedEstab.codigo || ''} - ${matchedEstab.razao_social}`.replace(/^ - /, '');
+                                                                            return {
+                                                                                cte_id: fetchInserted.id,
+                                                                                establishment_code: establishmentCode,
+                                                                                invoice_type: match.invoice_type || 'Saída',
+                                                                                series: match.serie || (chave ? chave.substring(22, 25) : ''),
+                                                                                number: match.numero || (chave ? chave.substring(25, 34) : ''),
+                                                                                cost_value: match.total_value || 0,
+                                                                                observations: `Vinculada automaticamente - Chave: ${chave}`
+                                                                            };
+                                                                        }
+                                                                        else {
+                                                                            const rawNum = String(n.nDoc || (chave ? chave.substring(25, 34) : ''));
+                                                                            const numDoc = rawNum.replace(/^0+/, '');
+                                                                            const establishmentCode = `${routedEstabCte.codigo || ''} - ${routedEstabCte.razao_social}`.replace(/^ - /, '');
+                                                                            return {
+                                                                                cte_id: fetchInserted.id,
+                                                                                establishment_code: establishmentCode,
+                                                                                invoice_type: 'Saída',
+                                                                                series: String(n.serie || (chave ? chave.substring(22, 25) : '')),
+                                                                                number: numDoc,
+                                                                                cost_value: 0,
+                                                                                observations: `NF-e não localizada no banco - Chave: ${chave || numDoc}`
+                                                                            };
+                                                                        }
+                                                                    });
+                                                                    if (invoicesToInsert.length > 0) {
+                                                                        const { error: invErr } = await supabase.from('ctes_invoices').insert(invoicesToInsert);
+                                                                        if (invErr) {
+                                                                            details.push({ message: `Aviso: Falha ao vincular NF-es ao CT-e ${accessKey}`, error: invErr.message });
+                                                                        }
+                                                                        else {
+                                                                            details.push({ message: `Vinculadas ${invoicesToInsert.length} NF-es ao CT-e ${accessKey}` });
+                                                                            // Parity with manual import: copy to electronic_documents unified view
+                                                                            try {
+                                                                                await supabase.from('electronic_documents').insert({
+                                                                                    organization_id: routedEstabCte.organization_id,
+                                                                                    environment_id: routedEstabCte.environment_id,
+                                                                                    document_type: 'CTe',
+                                                                                    model: '57',
+                                                                                    document_number: String(nNF),
+                                                                                    series: String(serie),
+                                                                                    access_key: accessKey,
+                                                                                    status: 'authorized',
+                                                                                    issuer_name: String(infCte.emit?.xNome || ''),
+                                                                                    issuer_document: String(infCte.emit?.CNPJ || ''),
+                                                                                    recipient_name: destName || origName,
+                                                                                    recipient_document: destDoc || origDoc,
+                                                                                    total_value: parseFloat(vTPrest),
+                                                                                    icms_value: vICMS,
+                                                                                    freight_value: parseFloat(vTPrest),
+                                                                                    total_weight: pesoParaCalculo || cargaPeso || 0,
+                                                                                    transport_mode: 'Rodoviário',
+                                                                                    xml_content: xmlString
+                                                                                });
+                                                                            }
+                                                                            catch (e) { }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        catch (linkErr) {
+                                                            details.push({ message: `Aviso: Erro no parse de infDoc (NFe) no CTe ${accessKey}`, error: linkErr.message });
+                                                        }
+                                                        try {
+                                                            const calcResult = await calculateCteFreight(supabase, fetchInserted.id);
+                                                            details.push({
+                                                                message: `Status do cálculo CT-e ${accessKey}: ${calcResult.success ? 'Sucesso' : 'Falha'}${calcResult.error ? ' (' + calcResult.error + ')' : ''}${calcResult.icmsLog ? ' [Logs: ' + calcResult.icmsLog + ']' : ''}`
+                                                            });
+                                                        }
+                                                        catch (calcError) {
+                                                            details.push({
+                                                                message: `Erro Exception no cálculo CT-e ${accessKey}: ${calcError.message}`
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                                totalCte++;
+                                                estabCtes++;
+                                                details.push({ message: `CTe modelo 57 importado com sucesso: ${accessKey}` });
+                                            }
+                                        }
+                                        else {
+                                            details.push({ message: `CTe já importado: ${accessKey}` });
+                                        }
+                                    }
+                                    else {
+                                        details.push({ message: `XML de modelo não suportado ou tag raiz desconhecida. Modelo: ${modelo}`, file: attachmentInfo.filename });
+                                    }
+                                }
+                            }
+                            // Move to processed folder instead of just marking as seen
+                            try {
+                                try {
+                                    await mailClient.mailboxCreate('processados');
+                                }
+                                catch (e) { /* ignore if already exists */ }
+                                await mailClient.messageMove(msg.uid, 'processados', { uid: true });
+                                await flushLogs('running', `Email UID ${msg.uid} movido para pasta processados.`);
+                            }
+                            catch (moveErr) {
+                                console.warn(`Erro ao mover mensagem UID ${msg.uid}:`, moveErr);
+                                await flushLogs('running', `Aviso: Falha ao mover email UID ${msg.uid}: ${moveErr.message}. Marcando como lido.`);
+                                try {
+                                    await mailClient.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true });
+                                }
+                                catch (flagErr) {
+                                    console.error('Erro ao marcar como lido:', flagErr);
+                                }
+                            }
+                        }
+                        catch (emailError) {
+                            console.error("Erro no email:", emailError);
+                            await flushLogs('running', `Erro fatal ao processar email ${msg.seq}: ${emailError.message}`);
+                        }
+                    }
+                }
+                finally {
+                    if (lock)
+                        lock.release();
+                }
+                await mailClient.logout();
+                const newEmailConfig = { ...config, lastAutoDownload: new Date().toISOString() };
+                estab.metadata.email_config = newEmailConfig;
+                await supabase.from('establishments').update({ metadata: estab.metadata }).eq('id', estab.id);
+                details.push({
+                    establishment: estab.razao_social,
+                    emailsChecked: estabEmailsChecked,
+                    nfeImported: estabNfes,
+                    cteImported: estabCtes,
+                    status: 'success'
+                });
+            }
+            catch (err) {
+                details.push({
+                    establishment: estab.razao_social,
+                    status: 'error',
+                    error: err.message
+                });
+            }
+        }
+        if (logsTableExists) {
+            const { error: updateError } = await supabase.from('xml_auto_import_logs')
+                .update({
+                status: totalNfe > 0 || totalCte > 0 ? 'success' : 'warning',
+                nfe_imported: totalNfe,
+                cte_imported: totalCte,
+                total_processed: totalNfe + totalCte,
+                emails_checked: emailsChecked,
+                details: details,
+                error_message: null
+            })
+                .eq('id', logId);
+            if (updateError) {
+                console.error("Failed to update final log:", updateError);
+                details.push({ message: 'Erro ao atualizar log final', error: updateError.message });
+            }
+        }
+        return {
+            success: true, nfeImported: totalNfe, cteImported: totalCte, total: totalNfe + totalCte, logs: details
+        };
+    }
+    catch (globalError) {
+        console.error("Global Error:", globalError);
+        try {
+            if (logsTableExists) {
+                await supabase.from('xml_auto_import_logs')
+                    .update({
+                    status: 'error',
+                    error_message: globalError.message,
+                    details: { error: globalError.stack || globalError.message, logs: details }
+                })
+                    .eq('id', logId);
+            }
+        }
+        catch (e) { }
+        return { success: false, error: globalError.message, logs: details };
+    }
+}

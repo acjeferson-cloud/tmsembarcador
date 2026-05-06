@@ -208,6 +208,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
                   >
                     <option value="peso_calculo">{t('carriers.freightRates.values.pesoCalculo')}</option>
                     <option value="peso_real">{t('carriers.freightRates.values.pesoReal')}</option>
+                    <option value="peso_cubado">{t('carriers.freightRates.values.pesoCubado')}</option>
                   </select>
                 </div>
 

@@ -424,7 +424,7 @@ export const FreightRateForm: React.FC<FreightRateFormProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="Peso cálculo">Peso cálculo</option>
-                  <option value="Peso real">Peso real</option>
+                  <option value="Peso real">Peso nota (Real)</option>
                   <option value="Peso cubado">Peso cubado</option>
                 </select>
               </div>

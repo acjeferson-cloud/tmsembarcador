@@ -158,15 +158,15 @@ export const Carriers: React.FC = () => {
     if (confirmDialog.carrierId) {
       try {
         const carrier = carriersList.find(c => c.id === confirmDialog.carrierId);
-        const success = await carriersService.delete(confirmDialog.carrierId);
-        if (success) {
+        const result = await carriersService.delete(confirmDialog.carrierId);
+        if (result.success) {
           if (carrier) {
             await logDelete('carrier', confirmDialog.carrierId, carrier, 1, 'Administrador');
           }
           setToast({ message: t('carriers.messages.deleteSuccess'), type: 'success' });
           await loadCarriers();
         } else {
-          setToast({ message: t('carriers.messages.deleteError'), type: 'error' });
+          setToast({ message: result.error || t('carriers.messages.deleteError'), type: 'error' });
         }
       } catch (error) {
         setToast({ message: t('carriers.messages.deleteError'), type: 'error' });

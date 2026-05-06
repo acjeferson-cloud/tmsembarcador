@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Edit, DollarSign, CheckSquare, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { additionalFeesService, AdditionalFee } from '../../services/additionalFeesService';
+import { taxExceptionService, TaxExceptionGroup } from '../../services/taxExceptionService';
 import { businessPartnersService } from '../../services/businessPartnersService';
 import { statesService } from '../../services/statesService';
 import { fetchCities } from '../../services/citiesService';
@@ -9,6 +10,7 @@ import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { AutocompleteSelect } from '../common/AutocompleteSelect';
 import { formatCNPJInput, formatCPF } from '../../utils/formatters';
+import { supabase } from '../../lib/supabase';
 
 interface AdditionalFeesModalProps {
   freightRateTableId: string;
@@ -90,11 +92,12 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+  const [exceptionGroups, setExceptionGroups] = useState<TaxExceptionGroup[]>([]);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; feeId?: string }>({ isOpen: false });
 
   const [formData, setFormData] = useState({
-    fee_type: 'TDA' as 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'ADICIONAL_QUIMICO',
+    fee_type: 'TDA' as 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG' | 'EMEX',
     business_partner_id: '',
     consider_cnpj_root: false,
     state_id: '',
@@ -102,6 +105,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     fee_value: 0,
     value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms',
     minimum_value: 0,
+    exception_group_id: '',
   });
 
   useEffect(() => {
@@ -141,14 +145,22 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         setCityNamesMap(newCityMap);
       }
 
+      // Load exception groups (we'll load all for now since we don't have carrierId directly here)
+      // Or we can get the table first:
+      const { data: tableData } = await supabase.from('freight_rate_tables').select('transportador_id').eq('id', freightRateTableId).single();
+      if (tableData && tableData.transportador_id) {
+        const groups = await taxExceptionService.getGroupsByCarrier(tableData.transportador_id);
+        setExceptionGroups(groups || []);
+      }
+
     } catch (error) {
-
-
-
-
-      setFees([]);
-      setBusinessPartners([]);
-      setStates([]);
+      console.error("Error loading data in AdditionalFeesModal:", error);
+      setToast({ 
+        message: `Erro ao carregar alguns dados: ${error instanceof Error ? error.message : 'Tente novamente'}`, 
+        type: 'error' 
+      });
+      // Do not clear fees if they were successfully loaded!
+      // setFees([]); 
     } finally {
       setLoading(false);
     }
@@ -185,7 +197,14 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         business_partner_id: formData.business_partner_id?.trim() || null,
         state_id: formData.state_id?.trim() || null,
         city_id: formData.city_id?.trim() || null,
+        exception_group_id: formData.exception_group_id?.trim() || null,
       };
+
+      // Limpar conflitos lógicos
+      if (dataToSave.exception_group_id) {
+        dataToSave.business_partner_id = null; // Se usa grupo, ignora parceiro avulso
+        dataToSave.consider_cnpj_root = false;
+      }
 
 
       if (editingFee) {
@@ -222,6 +241,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       fee_value: fee.fee_value,
       value_type: fee.value_type,
       minimum_value: fee.minimum_value,
+      exception_group_id: fee.exception_group_id || '',
     });
     setIsEditing(true);
   };
@@ -255,6 +275,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       fee_value: 0,
       value_type: 'fixed',
       minimum_value: 0,
+      exception_group_id: '',
     });
     setEditingFee(null);
     setIsEditing(false);
@@ -266,7 +287,10 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       TDE: t('carriers.freightRates.additionalFees.tde'),
       TRT: t('carriers.freightRates.additionalFees.trt'),
       TEC: t('carriers.freightRates.additionalFees.tec'),
-      ADICIONAL_QUIMICO: 'Adicional Produto Químico',
+      TCD: 'TCD – Taxa de Carga e Descarga',
+      TAG: 'TAG – Taxa de Agendamento',
+      TCP: 'TCP – Taxa de Carga Perigosa',
+      EMEX: 'EMEX – Taxa de Emergência Excepcional',
     };
     return types[type] || type;
   };
@@ -406,7 +430,10 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     <option value="TDE">{t('carriers.freightRates.additionalFees.tde')}</option>
                     <option value="TRT">{t('carriers.freightRates.additionalFees.trt')}</option>
                     <option value="TEC">{t('carriers.freightRates.additionalFees.tec')}</option>
-                    <option value="ADICIONAL_QUIMICO">Adicional Produto Químico</option>
+                    <option value="TCD">TCD – Taxa de Carga e Descarga</option>
+                    <option value="TAG">TAG – Taxa de Agendamento</option>
+                    <option value="TCP">TCP – Taxa de Carga Perigosa</option>
+                    <option value="EMEX">EMEX – Taxa de Emergência Excepcional</option>
                   </select>
                 </div>
 
@@ -414,28 +441,37 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('carriers.freightRates.additionalFees.businessPartner')} <span className="text-gray-400 text-xs">{t('carriers.freightRates.additionalFees.optional')}</span>
                   </label>
-                  <AutocompleteSelect
-                    options={businessPartners.map((bp) => ({
-                      value: bp.id || '',
-                      label: `${bp.document ? formatDocumentDisplay(bp.document) + ' - ' : ''}${bp.name}`
-                    }))}
-                    value={formData.business_partner_id}
-                    onChange={(value) => setFormData({ ...formData, business_partner_id: value })}
-                    placeholder={t('carriers.freightRates.additionalFees.allPartners')}
-                  />
-                  {editingFee?.business_partner_document && !formData.business_partner_id && !findBusinessPartner(null, editingFee.business_partner_document) && (
-                    <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-                      <strong>Documento importado:</strong> {
-                        formatDocumentDisplay(editingFee.business_partner_document)
-                      } (Não cadastrado).
-                      <br/>
-                      <span className="text-xs text-amber-700">Selecione um parceiro na lista acima para vinculá-lo, ou deixe em branco para mantê-lo avulso.</span>
-                    </p>
+                  
+                  {formData.exception_group_id ? (
+                    <div className="p-3 bg-blue-50 text-blue-800 rounded-lg border border-blue-200 text-sm">
+                      Esta taxa está vinculada a um <strong>Grupo de Exceção</strong>. O parceiro de negócio individual será ignorado.
+                    </div>
+                  ) : (
+                    <>
+                      <AutocompleteSelect
+                        options={businessPartners.map((bp) => ({
+                          value: bp.id || '',
+                          label: `${bp.document ? formatDocumentDisplay(bp.document) + ' - ' : ''}${bp.name}`
+                        }))}
+                        value={formData.business_partner_id}
+                        onChange={(value) => setFormData({ ...formData, business_partner_id: value })}
+                        placeholder={t('carriers.freightRates.additionalFees.allPartners')}
+                      />
+                      {editingFee?.business_partner_document && !formData.business_partner_id && !findBusinessPartner(null, editingFee.business_partner_document) && (
+                        <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                          <strong>Documento importado:</strong> {
+                            formatDocumentDisplay(editingFee.business_partner_document)
+                          } (Não cadastrado).
+                          <br/>
+                          <span className="text-xs text-amber-700">Selecione um parceiro na lista acima para vinculá-lo, ou deixe em branco para mantê-lo avulso.</span>
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
-                {formData.business_partner_id && (
-                  <div className="col-span-2">
+                {formData.business_partner_id && !formData.exception_group_id && (
+                  <div className="col-span-1 md:col-span-2">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -449,6 +485,23 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     </label>
                   </div>
                 )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Grupo de Exceção (Lote Excel) <span className="text-gray-400 text-xs">Opcional</span>
+                  </label>
+                  <select
+                    value={formData.exception_group_id}
+                    onChange={(e) => setFormData({ ...formData, exception_group_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-orange-50"
+                  >
+                    <option value="">-- Selecione ou deixe em branco --</option>
+                    {exceptionGroups.map(group => (
+                      <option key={group.id} value={group.id}>{group.name} ({group.type})</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">Se selecionado, a taxa será aplicada para todos os CNPJs dentro da lista.</p>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -617,7 +670,11 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               <div>
-                                {bp?.name ? (
+                                {fee.exception_group_id ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                    Grupo: {exceptionGroups.find(g => g.id === fee.exception_group_id)?.name || 'Lista de Exceção'}
+                                  </span>
+                                ) : bp?.name ? (
                                   <div className="flex flex-col">
                                     <span className="font-medium text-gray-900 dark:text-gray-100">{bp.name}</span>
                                     <span className="text-xs text-gray-500">{bp.document ? formatDocumentDisplay(bp.document) : ''}</span>
