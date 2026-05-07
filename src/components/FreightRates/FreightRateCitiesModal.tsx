@@ -21,6 +21,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
   const [linkedCities, setLinkedCities] = useState<FreightRateCity[]>([]);
   const [availableCities, setAvailableCities] = useState<CityAvailability[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterUf, setFilterUf] = useState('');
   const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
   const [selectedLinkedCities, setSelectedLinkedCities] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -226,8 +227,27 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       .trim();
   };
 
+  const handleSearchChange = (value: string) => {
+    // Smart Filter: Extrai UF se o usuário digitar algo como "sao;SP", "sao/SP" ou "sao - SP"
+    const match = value.match(/(?:[;\/\-]\s*)([a-zA-Z]{2})$/);
+    if (match) {
+      const uf = match[1].toUpperCase();
+      const ufs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+      if (ufs.includes(uf)) {
+        setFilterUf(uf);
+        setSearchTerm(value.replace(match[0], '').trim());
+        return;
+      }
+    }
+    setSearchTerm(value);
+  };
+
+  const availableUfs = Array.from(new Set(availableCities.map(c => c.city_state).filter(Boolean))).sort();
+  const linkedUfs = Array.from(new Set(linkedCities.map(c => c.city_state).filter(Boolean))).sort();
+
   const filteredAvailableCities = availableCities.filter(city => {
     if (!city.is_available) return false;
+    if (filterUf && city.city_state !== filterUf) return false;
     if (!searchTerm.trim()) return true;
     
     // Split search term by ; or ,
@@ -237,13 +257,13 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
 
     return searchTerms.some(term => 
       (city.city_name && normalizeText(city.city_name).includes(term)) ||
-      (city.city_state && normalizeText(city.city_state).includes(term)) ||
       (city.city_ibge_code && city.city_ibge_code.includes(term))
     );
   });
 
   // Filtro local apenas para cidades vinculadas (menor volume)
   const filteredLinkedCities = linkedCities.filter(city => {
+    if (filterUf && city.city_state !== filterUf) return false;
     if (!searchTerm.trim()) return true;
     
     const searchTerms = searchTerm.split(/[;,]/).map(t => normalizeText(t)).filter(t => t.length > 0);
@@ -252,7 +272,6 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
 
     return searchTerms.some(term => 
       (city.city_name && normalizeText(city.city_name).includes(term)) ||
-      (city.city_state && normalizeText(city.city_state).includes(term)) ||
       (city.city_ibge_code && city.city_ibge_code.includes(term))
     );
   });
@@ -300,6 +319,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
                     setShowAddMode(false);
                     setSelectedCities(new Set());
                     setSearchTerm('');
+                    setFilterUf('');
                     setBulkDeliveryDays(null);
                   }}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white"
@@ -309,15 +329,27 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={t('carriers.freightRates.cities.searchCity') + " (ex: São Paulo; Campinas; MG)"}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      placeholder={t('carriers.freightRates.cities.searchCity') + " (ex: São Paulo; Campinas)"}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={filterUf}
+                    onChange={(e) => setFilterUf(e.target.value)}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="">UF (Todas)</option>
+                    {availableUfs.map(uf => (
+                      <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -430,15 +462,27 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
               </div>
 
               {linkedCities.length > 0 && (
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={t('carriers.freightRates.cities.searchLinkedCity') + " (ex: São Paulo; Campinas; MG)"}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      placeholder={t('carriers.freightRates.cities.searchLinkedCity') + " (ex: São Paulo; Campinas)"}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={filterUf}
+                    onChange={(e) => setFilterUf(e.target.value)}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="">UF (Todas)</option>
+                    {linkedUfs.map(uf => (
+                      <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                  </select>
                 </div>
               )}
 

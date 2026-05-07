@@ -399,6 +399,15 @@ export const implementationService = {
       // Processar arquivo Excel
       const carrierData = await processCarriersFile(file);
 
+      if (!carrierData || carrierData.length === 0) {
+        return { success: false, message: 'O arquivo importado está vazio ou não possui registros válidos.' };
+      }
+
+      const firstRow = carrierData[0];
+      if (!('razao_social' in firstRow) || !('cnpj' in firstRow)) {
+        return { success: false, message: 'Layout de arquivo inválido. Faltam colunas como "razao_social" e "cnpj". Você importou o arquivo de Transportadoras correto?' };
+      }
+
       let recordsSuccess = 0;
       let recordsError = 0;
       const errors: string[] = [];
@@ -553,6 +562,15 @@ export const implementationService = {
       }
 
       const flatData = await processFreightRatesFile(file);
+
+      if (!flatData || flatData.length === 0) {
+        return { success: false, message: 'O arquivo importado está vazio ou não possui registros válidos.' };
+      }
+
+      const firstRow = flatData[0];
+      if (!('codigo_transportador' in firstRow) || !('nome_tabela' in firstRow) || !('origem_uf' in firstRow)) {
+        return { success: false, message: 'Layout de arquivo inválido. Faltam colunas como "codigo_transportador", "nome_tabela" e "origem_uf". Você importou o arquivo de Tabela de Frete correto?' };
+      }
 
       const tenantContext: any = {};
       
@@ -728,6 +746,16 @@ export const implementationService = {
       const { supabase } = await import('../lib/supabase');
       const { TenantContextHelper } = await import('../utils/tenantContext');
       const citiesData = await processFreightRateCitiesFile(file);
+
+      if (!citiesData || citiesData.length === 0) {
+        return { success: false, message: 'O arquivo importado está vazio ou não possui registros válidos.' };
+      }
+
+      const firstRow = citiesData[0];
+      if (!('transportador_codigo' in firstRow) || !('tabela_nome' in firstRow) || !('cidade_ibge' in firstRow)) {
+        return { success: false, message: 'Layout de arquivo inválido. Faltam colunas como "transportador_codigo", "tabela_nome" e "cidade_ibge". Você importou o arquivo de Cidades correto?' };
+      }
+
       const ctx = await TenantContextHelper.getCurrentContext();
 
       let recordsSuccess = 0;
@@ -1029,6 +1057,16 @@ export const implementationService = {
       const { supabase } = await import('../lib/supabase');
 
       const feesData = await processAdditionalFeesFile(file);
+
+      if (!feesData || feesData.length === 0) {
+        return { success: false, message: 'O arquivo importado está vazio ou não possui registros válidos.' };
+      }
+
+      const firstRow = feesData[0];
+      if (!('tipo_taxa' in firstRow) || !('valor_taxa' in firstRow) || !('tabela_nome' in firstRow)) {
+        return { success: false, message: 'Layout de arquivo inválido. Faltam colunas como "tipo_taxa", "valor_taxa" e "tabela_nome". Você importou o arquivo de Taxas Adicionais correto?' };
+      }
+
       const ctx = await TenantContextHelper.getCurrentContext();
 
       // Criar log inicial

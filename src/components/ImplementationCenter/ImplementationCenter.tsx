@@ -1,3 +1,4 @@
+// Invalidação forçada do cache do Vite
 import React, { useState, useEffect } from 'react';
 import Breadcrumbs from '../Layout/Breadcrumbs';
 import { Upload, Download, FileSpreadsheet, Truck, DollarSign, MapPin, CheckCircle, AlertCircle, Info, Shield, Percent, Settings, Save, Bot, Plug, Lock, ChevronDown, ChevronUp, Activity, Globe } from 'lucide-react';
