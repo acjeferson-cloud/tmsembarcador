@@ -377,7 +377,13 @@ export const freightCostCalculator = {
           if (!recipientDocument) continue; // Não aplica se não tem o documento de destino
 
           // Limpa o documento para comparação (remove pontuação)
-          const cleanDoc = recipientDocument.replace(/[^\d]/g, '');
+          let cleanDoc = recipientDocument.replace(/[^\d]/g, '');
+          
+          if (cleanDoc.length > 11 && cleanDoc.length < 14) {
+            cleanDoc = cleanDoc.padStart(14, '0');
+          } else if (cleanDoc.length > 0 && cleanDoc.length < 11) {
+            cleanDoc = cleanDoc.padStart(11, '0');
+          }
           
           const { data: memberExists, error: memberError } = await supabase
             .from('taxation_members')
