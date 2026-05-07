@@ -606,9 +606,64 @@ export const implementationService = {
 
       try {
         if (parseInfo.tables && parseInfo.tables.length > 0) {
-          const { error: tablesError, data: createdTables } = await supabase.from('freight_rate_tables').insert(parseInfo.tables).select();
-          if (tablesError) throw tablesError;
-          tablesCount = createdTables?.length || 0;
+          const createdTables = [];
+          
+          // Otimização: buscar todas as tabelas das transportadoras envolvidas para comparar em memória
+          // Isso resolve problemas de case sensitivity e espaços duplos entre o Excel e o Banco.
+          const uniqueCarrierIds = [...new Set(parseInfo.tables.map(t => t.transportador_id))];
+          let baseQuery = supabase.from('freight_rate_tables').select('id, nome, transportador_id, data_inicio, data_fim').in('transportador_id', uniqueCarrierIds);
+          if (tenantContext.organization_id) {
+            baseQuery = baseQuery.eq('organization_id', tenantContext.organization_id);
+          }
+          const { data: allExistingTables } = await baseQuery;
+          
+          const normalizeString = (str: string) => String(str).replace(/\s+/g, ' ').trim().toLowerCase();
+
+          for (const tableToInsert of parseInfo.tables) {
+            const tableNorm = normalizeString(tableToInsert.nome);
+            const dateIn = String(tableToInsert.data_inicio).split('T')[0];
+            const dateOut = String(tableToInsert.data_fim).split('T')[0];
+
+            const existingTable = allExistingTables?.find(t => 
+               normalizeString(t.nome) === tableNorm &&
+               t.transportador_id === tableToInsert.transportador_id &&
+               String(t.data_inicio).startsWith(dateIn) &&
+               String(t.data_fim).startsWith(dateOut)
+            );
+
+            if (existingTable) {
+              const { data: updatedTable, error: updateError } = await supabase
+                .from('freight_rate_tables')
+                .update(tableToInsert)
+                .eq('id', existingTable.id)
+                .select()
+                .single();
+              
+              if (updateError) throw updateError;
+              createdTables.push(updatedTable);
+              
+              const { data: oldRates } = await supabase.from('freight_rates').select('id').eq('freight_rate_table_id', existingTable.id);
+              if (oldRates && oldRates.length > 0) {
+                const oldRateIds = oldRates.map(r => r.id);
+                for (let i = 0; i < oldRateIds.length; i += 100) {
+                  const batch = oldRateIds.slice(i, i + 100);
+                  await supabase.from('freight_rate_cities').delete().in('freight_rate_id', batch);
+                  await supabase.from('freight_rate_details').delete().in('freight_rate_id', batch);
+                }
+              }
+              await supabase.from('freight_rates').delete().eq('freight_rate_table_id', existingTable.id);
+            } else {
+              const { data: newTable, error: insertError } = await supabase
+                .from('freight_rate_tables')
+                .insert(tableToInsert)
+                .select()
+                .single();
+
+              if (insertError) throw insertError;
+              createdTables.push(newTable);
+            }
+          }
+          tablesCount = createdTables.length;
           
           // Re-mapear rate._tableKey pro novo ID
           if (parseInfo.rates && parseInfo.rates.length > 0 && createdTables) {
