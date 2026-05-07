@@ -390,6 +390,7 @@ export const freightCostCalculator = {
             .select('id')
             .eq('group_id', fee.taxation_group_id)
             .eq('document', cleanDoc)
+            .limit(1)
             .maybeSingle();
 
           if (memberError || !memberExists) {
