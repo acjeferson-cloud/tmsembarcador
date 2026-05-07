@@ -16,6 +16,7 @@ export interface QuoteParams {
   cargoValue: number;
   establishmentId?: string;
   businessPartnerId?: string;
+  recipientDocument?: string;
   selectedModals?: string[];
   items?: Array<{
     itemCode?: string;
@@ -325,12 +326,26 @@ export const freightQuoteService = {
 
         let additionalFees: any[] = [];
         try {
+          // Se tiver Parceiro mas não tiver recipientDocument, busca o doc do Parceiro
+          let documentToEvaluate = params.recipientDocument;
+          if (!documentToEvaluate && params.businessPartnerId) {
+            const { data: partner } = await supabase
+              .from('business_partners')
+              .select('documento')
+              .eq('id', params.businessPartnerId)
+              .maybeSingle();
+            if (partner && partner.documento) {
+              documentToEvaluate = partner.documento;
+            }
+          }
+
           if (rateData.freight_rate_table_id) {
             additionalFees = await freightCostCalculator.findAdditionalFees(
               rateData.freight_rate_table_id,
               cityId,
               stateId,
-              params.businessPartnerId
+              params.businessPartnerId,
+              documentToEvaluate
             );
           }
         } catch (err) {

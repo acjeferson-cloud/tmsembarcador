@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Edit, DollarSign, CheckSquare, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { additionalFeesService, AdditionalFee } from '../../services/additionalFeesService';
-import { taxExceptionService, TaxExceptionGroup } from '../../services/taxExceptionService';
+import { taxationService, TaxationGroup } from '../../services/taxationService';
 import { businessPartnersService } from '../../services/businessPartnersService';
 import { statesService } from '../../services/statesService';
 import { fetchCities } from '../../services/citiesService';
@@ -92,7 +92,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  const [exceptionGroups, setExceptionGroups] = useState<TaxExceptionGroup[]>([]);
+  const [taxationGroups, setTaxationGroups] = useState<TaxationGroup[]>([]);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; feeId?: string }>({ isOpen: false });
 
@@ -105,7 +105,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     fee_value: 0,
     value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg',
     minimum_value: 0,
-    exception_group_id: '',
+    taxation_group_id: '',
   });
 
   useEffect(() => {
@@ -149,8 +149,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       // Or we can get the table first:
       const { data: tableData } = await supabase.from('freight_rate_tables').select('transportador_id').eq('id', freightRateTableId).single();
       if (tableData && tableData.transportador_id) {
-        const groups = await taxExceptionService.getGroupsByCarrier(tableData.transportador_id);
-        setExceptionGroups(groups || []);
+        const groups = await taxationService.getGroupsByCarrier(tableData.transportador_id);
+        setTaxationGroups(groups || []);
       }
 
     } catch (error) {
@@ -197,11 +197,11 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
         business_partner_id: formData.business_partner_id?.trim() || null,
         state_id: formData.state_id?.trim() || null,
         city_id: formData.city_id?.trim() || null,
-        exception_group_id: formData.exception_group_id?.trim() || null,
+        taxation_group_id: formData.taxation_group_id?.trim() || null,
       };
 
       // Limpar conflitos lógicos
-      if (dataToSave.exception_group_id) {
+      if (dataToSave.taxation_group_id) {
         dataToSave.business_partner_id = null; // Se usa grupo, ignora parceiro avulso
         dataToSave.consider_cnpj_root = false;
       }
@@ -241,7 +241,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       fee_value: fee.fee_value,
       value_type: fee.value_type,
       minimum_value: fee.minimum_value,
-      exception_group_id: fee.exception_group_id || '',
+      taxation_group_id: fee.taxation_group_id || '',
     });
     setIsEditing(true);
   };
@@ -275,7 +275,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       fee_value: 0,
       value_type: 'fixed',
       minimum_value: 0,
-      exception_group_id: '',
+      taxation_group_id: '',
     });
     setEditingFee(null);
     setIsEditing(false);
@@ -444,9 +444,9 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     {t('carriers.freightRates.additionalFees.businessPartner')} <span className="text-gray-400 text-xs">{t('carriers.freightRates.additionalFees.optional')}</span>
                   </label>
                   
-                  {formData.exception_group_id ? (
+                  {formData.taxation_group_id ? (
                     <div className="p-3 bg-blue-50 text-blue-800 rounded-lg border border-blue-200 text-sm">
-                      Esta taxa está vinculada a um <strong>Grupo de Exceção</strong>. O parceiro de negócio individual será ignorado.
+                      Esta taxa está vinculada a um <strong>Grupo de Taxação</strong>. O parceiro de negócio individual será ignorado.
                     </div>
                   ) : (
                     <>
@@ -472,7 +472,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   )}
                 </div>
 
-                {formData.business_partner_id && !formData.exception_group_id && (
+                {formData.business_partner_id && !formData.taxation_group_id && (
                   <div className="col-span-1 md:col-span-2">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -490,15 +490,15 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Grupo de Exceção (Lote Excel) <span className="text-gray-400 text-xs">Opcional</span>
+                    Grupo de Taxação (Lote Excel) <span className="text-gray-400 text-xs">Opcional</span>
                   </label>
                   <select
-                    value={formData.exception_group_id}
-                    onChange={(e) => setFormData({ ...formData, exception_group_id: e.target.value })}
+                    value={formData.taxation_group_id}
+                    onChange={(e) => setFormData({ ...formData, taxation_group_id: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-orange-50"
                   >
                     <option value="">-- Selecione ou deixe em branco --</option>
-                    {exceptionGroups.map(group => (
+                    {taxationGroups.map(group => (
                       <option key={group.id} value={group.id}>{group.name} ({group.type})</option>
                     ))}
                   </select>
@@ -673,9 +673,9 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               <div>
-                                {fee.exception_group_id ? (
+                                {fee.taxation_group_id ? (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                                    Grupo: {exceptionGroups.find(g => g.id === fee.exception_group_id)?.name || 'Lista de Exceção'}
+                                    Grupo: {taxationGroups.find(g => g.id === fee.taxation_group_id)?.name || 'Lista de Taxação'}
                                   </span>
                                 ) : bp?.name ? (
                                   <div className="flex flex-col">

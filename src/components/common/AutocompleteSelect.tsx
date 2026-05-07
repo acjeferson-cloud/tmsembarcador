@@ -12,6 +12,8 @@ interface AutocompleteSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  allowCustomValue?: boolean;
+  customValueLabel?: (val: string) => string;
 }
 
 export const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
@@ -19,7 +21,9 @@ export const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
   value,
   onChange,
   placeholder = 'Selecione...',
-  disabled = false
+  disabled = false,
+  allowCustomValue = false,
+  customValueLabel
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +39,7 @@ export const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedOption = options.find((opt) => opt.value === value) || (allowCustomValue && value ? { value, label: value } : undefined);
   const displayValue = isOpen ? searchTerm : (selectedOption ? selectedOption.label : '');
 
   const filteredOptions = options.filter((opt) =>
@@ -97,8 +101,23 @@ export const AutocompleteSelect: React.FC<AutocompleteSelectProps> = ({
               </div>
             ))
           ) : (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
-              Nenhum resultado encontrado
+            allowCustomValue && searchTerm.trim().length > 0 ? null : (
+              <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                Nenhum resultado encontrado
+              </div>
+            )
+          )}
+          {allowCustomValue && searchTerm.trim().length > 0 && !options.some(opt => opt.label.toLowerCase() === searchTerm.toLowerCase()) && (
+            <div
+              className="px-4 py-3 text-sm cursor-pointer transition-colors text-blue-600 dark:text-blue-400 font-medium hover:bg-blue-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(searchTerm);
+                setIsOpen(false);
+                setSearchTerm('');
+              }}
+            >
+              {customValueLabel ? customValueLabel(searchTerm) : `Usar "${searchTerm}"`}
             </div>
           )}
         </div>

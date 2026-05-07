@@ -19,7 +19,7 @@ export interface AdditionalFee {
   updated_at: string;
   created_by: string;
   updated_by: string;
-  exception_group_id: string | null;
+  taxation_group_id: string | null;
 }
 
 export const additionalFeesService = {

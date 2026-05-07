@@ -8,7 +8,7 @@ import { generateERPIntegrationTemplate, processERPIntegrationFile, ERPIntegrati
 import { implementationService } from '../../services/implementationService';
 import { carriersService, Carrier } from '../../services/carriersService';
 import { freightRatesService, FreightRateTable } from '../../services/freightRatesService';
-import { TaxExceptionGroupsTab } from './TaxExceptionGroupsTab';
+import { TaxationGroupsTab } from './TaxationGroupsTab';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { Toast } from '../common/Toast';
@@ -872,7 +872,7 @@ const ImplementationCenter: React.FC = () => {
     { id: 'freight', label: t('implementationCenter.tabs.freightTables'), icon: DollarSign },
     { id: 'cities', label: t('implementationCenter.tabs.cities'), icon: MapPin },
     { id: 'table-fees', label: t('implementationCenter.tabs.tableFees'), icon: FileSpreadsheet },
-    { id: 'tax-exceptions', label: 'Listas de Exceção', icon: Globe },
+    { id: 'tax-exceptions', label: 'Grupos de Taxação (TDE/TDA)', icon: Globe },
     { id: 'adjust-tables', label: t('implementationCenter.tabs.adjustTables'), icon: Percent }
   ];
 
@@ -1532,7 +1532,7 @@ const ImplementationCenter: React.FC = () => {
         {activeTab === 'adjust-tables' && renderAdjustmentSection()}
         
         {activeTab === 'tax-exceptions' && (
-          <TaxExceptionGroupsTab />
+          <TaxationGroupsTab />
         )}
       </div>
 

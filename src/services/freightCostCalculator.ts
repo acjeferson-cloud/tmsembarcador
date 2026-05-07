@@ -15,7 +15,7 @@ interface AdditionalFee {
   fee_value: number;
   value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg';
   minimum_value: number;
-  exception_group_id?: string | null;
+  taxation_group_id?: string | null;
 }
 
 interface CalculationResult {
@@ -373,16 +373,16 @@ export const freightCostCalculator = {
 
       for (const fee of fees) {
         // Se a taxa está vinculada a um grupo de exceção, verificar se o CNPJ/CPF está no grupo
-        if (fee.exception_group_id) {
+        if (fee.taxation_group_id) {
           if (!recipientDocument) continue; // Não aplica se não tem o documento de destino
 
           // Limpa o documento para comparação (remove pontuação)
           const cleanDoc = recipientDocument.replace(/[^\d]/g, '');
           
           const { data: memberExists, error: memberError } = await supabase
-            .from('tax_exception_members')
+            .from('taxation_members')
             .select('id')
-            .eq('group_id', fee.exception_group_id)
+            .eq('group_id', fee.taxation_group_id)
             .eq('document', cleanDoc)
             .maybeSingle();
 
