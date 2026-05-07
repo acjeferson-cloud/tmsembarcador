@@ -29,6 +29,26 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
   const [carriers, setCarriers] = useState<any[]>([]);
   const [selectedCarrier, setSelectedCarrier] = useState(carrierId || '');
 
+
+  const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(false);
+
+  // Auto-generate name when carrier or type changes
+  useEffect(() => {
+    if (isNameManuallyEdited) return;
+
+    const finalCarrierId = carrierId || selectedCarrier;
+    if (!finalCarrierId) {
+      if (!isNameManuallyEdited) setFormData(prev => ({ ...prev, name: '' }));
+      return;
+    }
+
+    const carrier = carriers.find(c => c.id === finalCarrierId);
+    if (carrier) {
+      const carrierName = carrier.nome_fantasia || carrier.razao_social;
+      const carrierCode = carrier.codigo ? `${carrier.codigo} - ` : '';
+      setFormData(prev => ({ ...prev, name: `${carrierCode}${carrierName} - ${formData.type}` }));
+    }
+  }, [carrierId, selectedCarrier, formData.type, carriers, isNameManuallyEdited]);
   useEffect(() => {
     if (user?.organization_id) {
       loadGroups();
@@ -216,7 +236,10 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
                 type="text"
                 required
                 value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
+                onChange={e => {
+                    setIsNameManuallyEdited(true);
+                    setFormData({...formData, name: e.target.value});
+                  }}
                 placeholder="Ex: Planilha TDE - Correios"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               />
