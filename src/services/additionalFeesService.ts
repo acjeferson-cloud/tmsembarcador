@@ -13,7 +13,7 @@ export interface AdditionalFee {
   state_id: string | null;
   city_id: string | null;
   fee_value: number;
-  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms';
+  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg';
   minimum_value: number;
   created_at: string;
   updated_at: string;

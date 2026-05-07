@@ -103,7 +103,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     state_id: '',
     city_id: '',
     fee_value: 0,
-    value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms',
+    value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg',
     minimum_value: 0,
     exception_group_id: '',
   });
@@ -303,6 +303,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       percent_weight_value: 'Pct s/ Peso+Valor',
       percent_cte: t('carriers.freightRates.additionalFees.pctCteShort'),
       percent_freight_without_icms: 'Pct s/ Frete sem ICMS',
+      per_kg: 'R$ / KG Físico',
     };
     return types[type] || type;
   };
@@ -315,6 +316,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       percent_weight_value: t('carriers.freightRates.additionalFees.percentWeightValue'),
       percent_cte: t('carriers.freightRates.additionalFees.percentCte'),
       percent_freight_without_icms: 'Percentual sobre Frete sem ICMS',
+      per_kg: 'Valor Fixo multiplicado pelo KG Físico',
     };
     return types[type] || type;
   };
@@ -564,6 +566,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     <option value="percent_weight_value">{getValueTypeFullLabel('percent_weight_value')}</option>
                     <option value="percent_cte">{getValueTypeFullLabel('percent_cte')}</option>
                     <option value="percent_freight_without_icms">{getValueTypeFullLabel('percent_freight_without_icms')}</option>
+                    <option value="per_kg">{getValueTypeFullLabel('per_kg')}</option>
                   </select>
                 </div>
 
@@ -703,7 +706,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                               {getValueTypeLabel(fee.value_type)}
                             </td>
                             <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                              {fee.value_type === 'fixed' 
+                              {fee.value_type === 'fixed' || fee.value_type === 'per_kg'
                                 ? formatCurrency(fee.fee_value)
                                 : `${fee.fee_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}
                             </td>

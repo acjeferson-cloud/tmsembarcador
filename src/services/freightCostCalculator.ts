@@ -13,7 +13,7 @@ interface AdditionalFee {
   id: string;
   fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG';
   fee_value: number;
-  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms';
+  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg';
   minimum_value: number;
   exception_group_id?: string | null;
 }
@@ -675,7 +675,8 @@ export const freightCostCalculator = {
     freteValor: number,
     valorMercadoria: number,
     valorCTe: number,
-    freteSemIcms: number = 0
+    freteSemIcms: number = 0,
+    pesoConsiderado: number = 0
   ): number {
     let calculated = 0;
 
@@ -697,6 +698,9 @@ export const freightCostCalculator = {
         break;
       case 'percent_freight_without_icms':
         calculated = (freteSemIcms * fee.fee_value) / 100;
+        break;
+      case 'per_kg':
+        calculated = pesoConsiderado * fee.fee_value;
         break;
     }
 
@@ -787,7 +791,8 @@ export const freightCostCalculator = {
             freteValor,
             invoiceData.value,
             valorCTeParaCalculo,
-            freteSemIcms
+            freteSemIcms,
+            pesoConsiderado
           )
         );
 
