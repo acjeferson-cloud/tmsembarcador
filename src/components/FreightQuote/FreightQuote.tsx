@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Calculator, MapPin, Package, DollarSign, Search, History, Users, Plus, Trash2, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import { freightQuoteService, QuoteParams, QuoteResult, FreightQuoteHistory } from '../../services/freightQuoteService';
 import { getAllStates, getCitiesByState } from '../../services/citiesService';
@@ -695,7 +695,7 @@ const FreightQuote: React.FC = () => {
                 <div className="lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
                     <Users className="w-4 h-4 inline mr-1 text-gray-500" />
-                    {t('freightQuote.form.partner')} / CNPJ/CPF / C�d.
+                    {t('freightQuote.form.partner')} / CNPJ/CPF / Cod.
                   </label>
                   <AutocompleteSelect
                     options={businessPartners.map(partner => ({
@@ -1025,3 +1025,4 @@ const FreightQuote: React.FC = () => {
 };
 
 export default FreightQuote;
+
