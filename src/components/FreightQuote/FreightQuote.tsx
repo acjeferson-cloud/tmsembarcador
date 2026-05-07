@@ -695,7 +695,7 @@ const FreightQuote: React.FC = () => {
                 <div className="lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
                     <Users className="w-4 h-4 inline mr-1 text-gray-500" />
-                    {t('freightQuote.form.partner')} / CNPJ/CPF
+                    {t('freightQuote.form.partner')} / CNPJ/CPF / C�d.
                   </label>
                   <AutocompleteSelect
                     options={businessPartners.map(partner => ({
@@ -712,7 +712,7 @@ const FreightQuote: React.FC = () => {
                         setFormData(prev => ({ ...prev, recipientDocument: val.replace(/\D/g, '') }));
                       }
                     }}
-                    placeholder="Selecione ou digite CNPJ..."
+                    placeholder="Selecione ou digite..."
                     allowCustomValue={true}
                     customValueLabel={(val) => `Simular Grupo: ${val}`}
                   />
