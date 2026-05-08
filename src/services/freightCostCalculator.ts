@@ -11,11 +11,13 @@ interface InvoiceData {
 
 interface AdditionalFee {
   id: string;
-  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG';
+  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG' | 'EMEX' | 'DESPACHO';
   fee_value: number;
   value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg';
   minimum_value: number;
   taxation_group_id?: string | null;
+  min_weight_kg?: number | null;
+  max_weight_kg?: number | null;
 }
 
 interface CalculationResult {
@@ -760,7 +762,7 @@ export const freightCostCalculator = {
     const seccat = this.roundValue(semTaxas ? 0 : (tariff.seccat || 0));
 
     // 7. DESPACHO (arredondar individualmente)
-    const despacho = this.roundValue(semTaxas ? 0 : (tariff.despacho || 0));
+    let despacho = this.roundValue(semTaxas ? 0 : (tariff.despacho || 0));
 
     // 8. ITR (arredondar individualmente)
     const itr = this.roundValue(semTaxas ? 0 : (tariff.itr || 0));
@@ -791,6 +793,10 @@ export const freightCostCalculator = {
       const freteSemIcms = fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + coletaEntrega + taxaAdicional;
 
       additionalFees.forEach(fee => {
+        // Verificar restrições de peso
+        if (fee.min_weight_kg && pesoConsiderado < fee.min_weight_kg) return;
+        if (fee.max_weight_kg && pesoConsiderado > fee.max_weight_kg) return;
+
         const feeValue = this.roundValue(
           this.calculateAdditionalFeeValue(
             fee,
@@ -829,6 +835,9 @@ export const freightCostCalculator = {
             break;
           case 'EMEX':
             emex += feeValue;
+            break;
+          case 'DESPACHO':
+            despacho += feeValue;
             break;
         }
       });

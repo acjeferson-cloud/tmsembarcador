@@ -6,12 +6,14 @@ export interface AdditionalFee {
   id: string;
   freight_rate_table_id: string;
   freight_rate_id: string | null;
-  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG' | 'EMEX';
+  fee_type: 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG' | 'EMEX' | 'DESPACHO';
   business_partner_id: string | null;
   business_partner_document: string | null;
   consider_cnpj_root: boolean;
   state_id: string | null;
   city_id: string | null;
+  min_weight_kg: number | null;
+  max_weight_kg: number | null;
   fee_value: number;
   value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg';
   minimum_value: number;
@@ -51,12 +53,12 @@ export const additionalFeesService = {
     const { data: { user } } = await supabase.auth.getUser();
 
     const ctx = await TenantContextHelper.getCurrentContext();
-      if (!ctx || !ctx.organizationId || !ctx.environmentId) {
+      if (!ctx || !ctx.organizationId) {
         throw new Error('Sessão inválida ou contexto não selecionado.');
       }
       const userData = {
         organization_id: ctx.organizationId,
-        environment_id: ctx.environmentId,
+        environment_id: ctx.environmentId || null,
         establishment_id: ctx.establishmentId || null
       };
     const organizationId = userData.organization_id;

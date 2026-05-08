@@ -97,7 +97,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; feeId?: string }>({ isOpen: false });
 
   const [formData, setFormData] = useState({
-    fee_type: 'TDA' as 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG' | 'EMEX',
+    fee_type: 'TDA' as 'TDA' | 'TDE' | 'TRT' | 'TEC' | 'TCP' | 'TCD' | 'TAG' | 'EMEX' | 'DESPACHO',
     business_partner_id: '',
     consider_cnpj_root: false,
     state_id: '',
@@ -106,6 +106,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg',
     minimum_value: 0,
     taxation_group_id: '',
+    min_weight_kg: null as number | null,
+    max_weight_kg: null as number | null,
   });
 
   useEffect(() => {
@@ -242,6 +244,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       value_type: fee.value_type,
       minimum_value: fee.minimum_value,
       taxation_group_id: fee.taxation_group_id || '',
+      min_weight_kg: fee.min_weight_kg || null,
+      max_weight_kg: fee.max_weight_kg || null,
     });
     setIsEditing(true);
   };
@@ -276,6 +280,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       value_type: 'fixed',
       minimum_value: 0,
       taxation_group_id: '',
+      min_weight_kg: null,
+      max_weight_kg: null,
     });
     setEditingFee(null);
     setIsEditing(false);
@@ -291,6 +297,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       TAG: 'TAG – Taxa de Agendamento',
       TCP: 'TCP – Taxa de Carga Perigosa',
       EMEX: 'EMEX – Taxa de Emergência Excepcional',
+      DESPACHO: 'DESPACHO – Taxa de Despacho',
     };
     return types[type] || type;
   };
@@ -436,6 +443,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     <option value="TAG">TAG – Taxa de Agendamento</option>
                     <option value="TCP">TCP – Taxa de Carga Perigosa</option>
                     <option value="EMEX">EMEX – Taxa de Emergência Excepcional</option>
+                    <option value="DESPACHO">DESPACHO – Taxa de Despacho</option>
                   </select>
                 </div>
 
@@ -594,6 +602,34 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     value={formData.minimum_value}
                     onChange={(e) => setFormData({ ...formData, minimum_value: parseFloat(e.target.value) || 0 })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Aplicar a partir de (Kg) <span className="text-gray-400 text-xs">Opcional</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.min_weight_kg ?? ''}
+                    onChange={(e) => setFormData({ ...formData, min_weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-purple-50"
+                    placeholder="Ex: 100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Até (Kg) <span className="text-gray-400 text-xs">Opcional</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.max_weight_kg ?? ''}
+                    onChange={(e) => setFormData({ ...formData, max_weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-purple-50"
+                    placeholder="Ex: 5000"
                   />
                 </div>
               </div>
