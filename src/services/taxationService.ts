@@ -16,6 +16,7 @@ export interface TaxationMember {
   group_id: string;
   document: string;
   name?: string;
+  cep?: string;
 }
 
 export const taxationService = {
@@ -97,6 +98,22 @@ export const taxationService = {
       
     if (error) throw error;
     return count || 0;
+  },
+
+  async getCepByDocument(document: string, orgId: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('taxation_members')
+      .select('cep')
+      .eq('document', document)
+      .not('cep', 'is', null)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return null;
+    }
+
+    return data?.cep || null;
   }
 };
 

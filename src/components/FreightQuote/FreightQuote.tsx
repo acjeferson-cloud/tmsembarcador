@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calculator, MapPin, Package, DollarSign, Search, History, Users, Plus, Trash2, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import { freightQuoteService, QuoteParams, QuoteResult, FreightQuoteHistory } from '../../services/freightQuoteService';
 import { getAllStates, getCitiesByState } from '../../services/citiesService';
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { BrazilianCity } from '../../types/cities';
 import { cepService } from '../../services/cepService';
 import { catalogItemsService, CatalogItem } from '../../services/catalogItemsService';
+import { taxationService } from '../../services/taxationService';
 import { AutocompleteSelect } from '../common/AutocompleteSelect';
 import { FreightRateValuesForm } from '../FreightRates/FreightRateValuesForm';
 import { freightRatesService } from '../../services/freightRatesService';
@@ -188,11 +189,13 @@ const FreightQuote: React.FC = () => {
 
   const handleCityChange = (type: 'origin' | 'destination', cityId: string) => {
     if (type === 'origin') {
+      const city = originCities.find(c => c.id === cityId || c.ibgeCode === cityId);
       setOriginCity(cityId);
-      setFormData({ ...formData, originCityId: cityId });
+      setFormData({ ...formData, originCityId: city?.ibgeCode || cityId });
     } else {
+      const city = destinationCities.find(c => c.id === cityId || c.ibgeCode === cityId);
       setDestinationCity(cityId);
-      setFormData({ ...formData, destinationCityId: cityId });
+      setFormData({ ...formData, destinationCityId: city?.ibgeCode || cityId });
     }
   };
 
@@ -202,12 +205,14 @@ const FreightQuote: React.FC = () => {
       try {
         let stateAbbr = '';
         let ibgeCode = '';
+        let exactCityId = '';
         
         // Tentar banco de dados primeiro
         const city = await freightQuoteService.findCityByZipCode(cleanZip);
         if (city && city.state_abbreviation && city.ibge_code) {
           stateAbbr = city.state_abbreviation;
           ibgeCode = city.ibge_code;
+          exactCityId = city.id || '';
         } else {
           // Fallback para ViaCEP
           const cepData = await cepService.searchByCEP(cleanZip);
@@ -220,7 +225,6 @@ const FreightQuote: React.FC = () => {
         if (stateAbbr && ibgeCode) {
           if (type === 'origin') {
             setOriginState(stateAbbr);
-            setOriginCity(ibgeCode);
             setFormData(prev => ({ ...prev, originCityId: ibgeCode }));
             
             // Carregar dados das cidades do estado para preencher o input (Cidade Automático)
@@ -228,9 +232,11 @@ const FreightQuote: React.FC = () => {
             const cities = await getCitiesByState(stateAbbr);
             setOriginCities(cities);
             setLoadingOriginCities(false);
+            
+            const matchedCity = exactCityId ? cities.find((c: any) => c.id === exactCityId) : cities.find((c: any) => c.ibgeCode === ibgeCode);
+            setOriginCity(matchedCity?.id || ibgeCode);
           } else {
             setDestinationState(stateAbbr);
-            setDestinationCity(ibgeCode);
             setFormData(prev => ({ ...prev, destinationCityId: ibgeCode }));
             
             // Carregar dados das cidades do estado para preencher o input (Cidade Automático)
@@ -238,6 +244,9 @@ const FreightQuote: React.FC = () => {
             const cities = await getCitiesByState(stateAbbr);
             setDestinationCities(cities);
             setLoadingDestCities(false);
+            
+            const matchedCity = exactCityId ? cities.find((c: any) => c.id === exactCityId) : cities.find((c: any) => c.ibgeCode === ibgeCode);
+            setDestinationCity(matchedCity?.id || ibgeCode);
           }
         }
       } catch (error) {
@@ -254,6 +263,37 @@ const FreightQuote: React.FC = () => {
         return [...prev, modal];
       }
     });
+  };
+
+  const handleCustomDocumentChange = async (documentStr: string) => {
+    const cleanDoc = documentStr.replace(/\D/g, '');
+    setFormData(prev => ({ ...prev, recipientDocument: cleanDoc }));
+    
+    // Prioritize Business Partners by matching the cleaned document
+    const partner = businessPartners.find(p => 
+      p.document?.replace(/\D/g, '') === cleanDoc || 
+      p.codigo?.replace(/\D/g, '') === cleanDoc
+    );
+    
+    if (partner && partner.id) {
+      handleBusinessPartnerChange(partner.id);
+      return;
+    }
+
+    if (cleanDoc.length >= 11 && user?.organization_id) {
+      try {
+        const cep = await taxationService.getCepByDocument(cleanDoc, user.organization_id);
+        if (cep) {
+          const cleanZip = formatZipCode(cep);
+          setDestinationMode('cep');
+          localStorage.setItem('freightQuote_destinationMode', 'cep');
+          setFormData(prev => ({ ...prev, destinationZipCode: cleanZip }));
+          await handleZipCodeSearch('destination', cleanZip);
+        }
+      } catch (error) {
+        // Falha silenciosa caso não encontre
+      }
+    }
   };
 
   const handleBusinessPartnerChange = async (partnerId: string | undefined) => {
@@ -285,7 +325,7 @@ const FreightQuote: React.FC = () => {
           
           const cityData = cities.find((c: BrazilianCity) => c.name.toLowerCase() === address.city.toLowerCase());
           if (cityData) {
-            setDestinationCity(cityData.ibgeCode);
+            setDestinationCity(cityData.id || cityData.ibgeCode);
             setFormData(prev => ({ ...prev, destinationCityId: cityData.ibgeCode }));
           }
         }
@@ -508,7 +548,7 @@ const FreightQuote: React.FC = () => {
                         >
                           <option value="">{loadingOriginCities ? t('freightQuote.form.loading') : t('freightQuote.form.selectCity')}</option>
                           {sortedOriginCities.map(city => (
-                            <option key={city.ibgeCode} value={city.ibgeCode}>{city.name}</option>
+                            <option key={city.id || city.ibgeCode} value={city.id || city.ibgeCode}>{city.name}</option>
                           ))}
                         </select>
                       </div>
@@ -549,7 +589,7 @@ const FreightQuote: React.FC = () => {
                             <label className="block text-xs font-medium text-gray-500 mb-1">{t('freightQuote.form.cityAuto')}</label>
                             <input
                               type="text"
-                              value={originCities.find(c => c.ibgeCode === originCity)?.name || ''}
+                              value={originCities.find(c => c.id === originCity || c.ibgeCode === originCity)?.name || ''}
                               readOnly
                               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 cursor-not-allowed"
                             />
@@ -632,7 +672,7 @@ const FreightQuote: React.FC = () => {
                         >
                           <option value="">{loadingDestCities ? t('freightQuote.form.loading') : t('freightQuote.form.selectCity')}</option>
                           {sortedDestinationCities.map(city => (
-                            <option key={city.ibgeCode} value={city.ibgeCode}>{city.name}</option>
+                            <option key={city.id || city.ibgeCode} value={city.id || city.ibgeCode}>{city.name}</option>
                           ))}
                         </select>
                       </div>
@@ -675,7 +715,7 @@ const FreightQuote: React.FC = () => {
                             <label className="block text-xs font-medium text-gray-500 mb-1">{t('freightQuote.form.cityAuto')}</label>
                             <input
                               type="text"
-                              value={destinationCities.find(c => c.ibgeCode === destinationCity)?.name || ''}
+                              value={destinationCities.find(c => c.id === destinationCity || c.ibgeCode === destinationCity)?.name || ''}
                               readOnly
                               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-400 cursor-not-allowed"
                             />
@@ -695,7 +735,7 @@ const FreightQuote: React.FC = () => {
                 <div className="lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
                     <Users className="w-4 h-4 inline mr-1 text-gray-500" />
-                    {t('freightQuote.form.partner')} / CNPJ/CPF / Cod.
+                    Parceiro de Negócios
                   </label>
                   <AutocompleteSelect
                     options={businessPartners.map(partner => ({
@@ -708,8 +748,7 @@ const FreightQuote: React.FC = () => {
                         handleBusinessPartnerChange(val);
                         setFormData(prev => ({ ...prev, recipientDocument: '' }));
                       } else {
-                        handleBusinessPartnerChange(undefined);
-                        setFormData(prev => ({ ...prev, recipientDocument: val.replace(/\D/g, '') }));
+                        handleCustomDocumentChange(val);
                       }
                     }}
                     placeholder="Selecione ou digite..."

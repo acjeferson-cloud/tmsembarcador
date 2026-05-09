@@ -74,6 +74,7 @@ export const freightQuoteService = {
     if (!city) return null;
 
     return {
+      id: city.id,
       ibge_code: city.ibgeCode,
       state_abbreviation: city.stateAbbreviation,
       nome: city.name
@@ -161,8 +162,8 @@ export const freightQuoteService = {
       throw new Error('Cidade de destino não identificada');
     }
 
-    // Buscar cidade de destino com JOIN de states
-    const { data: cityData } = await supabase
+    // Buscar cidades de destino com JOIN de states (Pode ser array p/ DF)
+    const { data: cityDataArray, error: cityFetchError } = await supabase
       .from('cities')
       .select(`
         id,
@@ -174,16 +175,16 @@ export const freightQuoteService = {
           sigla
         )
       `)
-      .eq('codigo_ibge', destinationCityId)
-      .maybeSingle();
+      .eq('codigo_ibge', destinationCityId);
 
-    if (!cityData) {
+    if (cityFetchError || !cityDataArray || cityDataArray.length === 0) {
       throw new Error('Dados da cidade de destino não encontrados');
     }
 
-    const cityId = cityData.id; // UUID
-    const stateAbbr = (cityData as any).states?.sigla;
-    const stateId = cityData.state_id; // UUID
+    const cityIds = cityDataArray.map(c => c.id);
+    const cityId = cityIds[0]; // Usado para chamadas legadas que precisam apenas de um
+    const stateAbbr = (cityDataArray[0] as any).states?.sigla;
+    const stateId = cityDataArray[0].state_id; // UUID
 
 
 
@@ -193,7 +194,7 @@ export const freightQuoteService = {
 
 
     const { data: ratesData, error: ratesError } = await supabase.rpc('calculate_freight_quotes', {
-      p_destination_city_id: cityId,
+      p_destination_city_ids: cityIds,
       p_selected_modals: selectedModals,
       p_organization_id: ctx?.organizationId || null,
       p_environment_id: ctx?.environmentId || null,
@@ -396,7 +397,30 @@ export const freightQuoteService = {
     });
 
     const calculatedResults = await Promise.all(calculationPromises);
-    results.push(...calculatedResults.filter(r => r !== null) as QuoteResult[]);
+    const validResults = calculatedResults.filter(r => r !== null) as QuoteResult[];
+
+    // Deduplicate: Keep only the cheapest rate per Freight Table
+    // This is especially important for DF where multiple cities share the same IBGE code,
+    // which could cause multiple internal freight rates from the same table to match.
+    const tableMap = new Map<string, QuoteResult>();
+    const noTableResults: QuoteResult[] = [];
+
+    for (const res of validResults) {
+      if (!res.freightRateTableId) {
+        // Exato duplicate check for no-table results just in case
+        const isDup = noTableResults.some(r => r.carrierId === res.carrierId && r.totalValue === res.totalValue);
+        if (!isDup) noTableResults.push(res);
+        continue;
+      }
+      
+      const existing = tableMap.get(res.freightRateTableId);
+      // Keep the cheapest one if multiple match
+      if (!existing || res.totalValue < existing.totalValue) {
+        tableMap.set(res.freightRateTableId, res);
+      }
+    }
+
+    results.push(...Array.from(tableMap.values()), ...noTableResults);
 
     // Ordenar por valor
     results.sort((a, b) => a.totalValue - b.totalValue);

@@ -122,6 +122,7 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
         // Look for CNPJ/CPF column (can be named different ways)
         const docKey = Object.keys(row).find(k => k.toUpperCase().includes('CNPJ') || k.toUpperCase().includes('CPF') || k.toUpperCase().includes('DOC'));
         const nameKey = Object.keys(row).find(k => k.toUpperCase().includes('NOME') || k.toUpperCase().includes('RAZAO') || k.toUpperCase().includes('CLIENTE'));
+        const cepKey = Object.keys(row).find(k => k.toUpperCase().includes('CEP'));
 
         if (docKey) {
           const rawDoc = String(row[docKey] || '');
@@ -135,9 +136,18 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
           }
           
           if (cleanDoc.length === 11 || cleanDoc.length === 14) {
+            let cleanCep = undefined;
+            if (cepKey && row[cepKey]) {
+              const rawCep = String(row[cepKey]).replace(/\D/g, '');
+              if (rawCep.length > 0) {
+                cleanCep = rawCep.padStart(8, '0').substring(0, 8);
+              }
+            }
+
             members.push({
               document: cleanDoc,
-              name: nameKey ? String(row[nameKey] || '').substring(0, 100) : 'Importado via Planilha'
+              name: nameKey ? String(row[nameKey] || '').substring(0, 100) : 'Importado via Planilha',
+              cep: cleanCep
             });
           } else {
             invalidCount++;
@@ -189,7 +199,7 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { CNPJ_CPF: '12345678901234', Nome_Cliente: 'Empresa Exemplo LTDA' }
+      { CNPJ_CPF: '12345678901234', Nome_Cliente: 'Empresa Exemplo LTDA', CEP: '01000-000' }
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');

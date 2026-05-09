@@ -127,7 +127,9 @@ export const fetchCities = async (
       `, { count: 'exact' });
 
     if (filters?.searchTerm) {
-      query = query.or(`nome.ilike.%${filters.searchTerm}%,codigo_ibge.ilike.%${filters.searchTerm}%`);
+      // Normalize term to remove accents
+      const normalizedSearchTerm = filters.searchTerm.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      query = query.or(`nome.ilike.%${filters.searchTerm}%,nome_sem_acento.ilike.%${normalizedSearchTerm}%,codigo_ibge.ilike.%${filters.searchTerm}%`);
     }
 
     if (filters?.stateFilter && filters.stateFilter !== 'Todos') {
@@ -666,7 +668,7 @@ export const findCityByCEPFromDatabase = async (zipCode: string) => {
       return null;
     }
     // Busca diretamente nas faixas detalhadas de CEP
-    const { data: detailedRange, error: detailError } = await supabase
+    const { data: detailedRanges, error: detailError } = await supabase
       .from('zip_code_ranges')
       .select(`
         *,
@@ -681,13 +683,20 @@ export const findCityByCEPFromDatabase = async (zipCode: string) => {
         )
       `)
       .lte('start_zip', cleanZip)
-      .gte('end_zip', cleanZip)
-      .limit(1)
-      .maybeSingle();
+      .gte('end_zip', cleanZip);
 
-    if (detailError) {
+    if (detailError || !detailedRanges || detailedRanges.length === 0) {
       return null;
     }
+
+    // Priorizar a faixa mais específica (menor diferença entre end_zip e start_zip)
+    detailedRanges.sort((a, b) => {
+      const diffA = parseInt(a.end_zip) - parseInt(a.start_zip);
+      const diffB = parseInt(b.end_zip) - parseInt(b.start_zip);
+      return diffA - diffB;
+    });
+
+    const detailedRange = detailedRanges[0];
 
     if (detailedRange && detailedRange.cities) {
       const city = dbRecordToCity(

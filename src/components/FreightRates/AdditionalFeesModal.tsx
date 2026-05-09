@@ -612,9 +612,13 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   <input
                     type="number"
                     step="0.01"
-                    max="999999999.99"
+                    max="999999.99"
                     value={formData.min_weight_kg ?? ''}
-                    onChange={(e) => setFormData({ ...formData, min_weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (val > 999999.99) return;
+                      setFormData({ ...formData, min_weight_kg: e.target.value ? val : null });
+                    }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-purple-50"
                     placeholder="Ex: 100"
                   />
@@ -627,9 +631,13 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   <input
                     type="number"
                     step="0.01"
-                    max="999999999.99"
+                    max="999999.99"
                     value={formData.max_weight_kg ?? ''}
-                    onChange={(e) => setFormData({ ...formData, max_weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (val > 999999.99) return;
+                      setFormData({ ...formData, max_weight_kg: e.target.value ? val : null });
+                    }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-purple-50"
                     placeholder="Ex: 5000"
                   />
