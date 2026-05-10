@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, RotateCw, AlertTriangle, CheckCircle, Loader } from 'lucide-react';
+import { X, RotateCw, AlertTriangle, CheckCircle, Loader, RefreshCw } from 'lucide-react';
 import { ApiKeyConfig, apiKeysService } from '../../services/apiKeysService';
 import { useTranslation } from 'react-i18next';
 import { Toast, ToastType } from '../common/Toast';
@@ -26,6 +26,15 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
   const [testResult, setTestResult] = useState<{ valid: boolean; message: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const generateSecureKey = () => {
+    const env = apiKey.environment || 'production';
+    const prefix = env === 'production' ? 'ak_prod' : env === 'staging' ? 'ak_test' : 'ak_dev';
+    const randomArray = new Uint8Array(24);
+    window.crypto.getRandomValues(randomArray);
+    const randomStr = Array.from(randomArray).map(b => b.toString(16).padStart(2, '0')).join('');
+    setNewApiKey(`${prefix}_${randomStr}`);
+  };
 
   const handleTestKey = async () => {
     if (!newApiKey.trim()) {
@@ -147,16 +156,34 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('apiKeys.rotationModal.newKey')}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('apiKeys.rotationModal.newKey')}
+                </label>
+                {apiKey.key_type === 'inbound_api' && (
+                  <button
+                    type="button"
+                    onClick={generateSecureKey}
+                    className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Gerar Nova Chave
+                  </button>
+                )}
+              </div>
               <textarea
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${apiKey.key_type === 'inbound_api' ? 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : ''}`}
                 rows={3}
                 placeholder={t('apiKeys.rotationModal.newKeyPlaceholder')}
+                readOnly={apiKey.key_type === 'inbound_api'}
               />
+              {apiKey.key_type === 'inbound_api' && (
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  A chave antiga será revogada imediatamente após a rotação. Atualize seu ERP com a nova chave.
+                </p>
+              )}
             </div>
 
             {testResult && (
@@ -176,25 +203,27 @@ export const ApiKeyRotationModal: React.FC<ApiKeyRotationModalProps> = ({
               </div>
             )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={handleTestKey}
-                disabled={isTesting || !newApiKey.trim()}
-                className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isTesting ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    {t('apiKeys.rotationModal.testing')}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    {t('apiKeys.rotationModal.testKey')}
-                  </>
-                )}
-              </button>
-            </div>
+            {apiKey.key_type !== 'inbound_api' && (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleTestKey}
+                  disabled={isTesting || !newApiKey.trim()}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isTesting ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      {t('apiKeys.rotationModal.testing')}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      {t('apiKeys.rotationModal.testKey')}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

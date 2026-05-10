@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Key, Plus, RefreshCw, Search, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Key, Plus, RefreshCw, Search, TrendingUp, AlertTriangle, BookOpen } from 'lucide-react';
 import { ApiKeyConfig, apiKeysService, ApiKeyUsageStats } from '../../services/apiKeysService';
 import { ApiKeyCard } from './ApiKeyCard';
 import { ApiKeyRotationModal } from './ApiKeyRotationModal';
@@ -150,6 +150,15 @@ export const ApiKeysManagement: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-3">
+          <a
+            href="/docs/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors border border-gray-300 dark:border-gray-600"
+          >
+            <BookOpen size={20} />
+            <span>Documentação da API</span>
+          </a>
           <button
             onClick={handleRefresh}
             className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"

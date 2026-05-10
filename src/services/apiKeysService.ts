@@ -4,7 +4,7 @@ import { TenantContextHelper } from '../utils/tenantContext';
 export interface ApiKeyConfig {
   id: string;
   estabelecimento_id: string | null;
-  key_type: 'google_maps' | 'recaptcha_site' | 'recaptcha_secret' | 'openai' | 'whatsapp' | 'supabase_service_role' | 'smtp' | 'custom';
+  key_type: 'google_maps' | 'recaptcha_site' | 'recaptcha_secret' | 'openai' | 'whatsapp' | 'supabase_service_role' | 'smtp' | 'inbound_api' | 'custom';
   key_name: string;
   description: string | null;
   api_key: string;
@@ -387,6 +387,7 @@ class ApiKeysService {
       whatsapp: 'WhatsApp Business API',
       supabase_service_role: 'Supabase Service Role',
       smtp: 'SMTP/Email',
+      inbound_api: 'API Embarcador (Inbound)',
       custom: 'Customizada'
     };
 
@@ -402,6 +403,7 @@ class ApiKeysService {
       whatsapp: '💬',
       supabase_service_role: '⚡',
       smtp: '📧',
+      inbound_api: '🔌',
       custom: '🔑'
     };
 

@@ -1,0 +1,243 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Log Axis TMS - API B2B",
+    "description": "Documentação oficial das APIs de integração do TMS Embarcador para Sistemas ERP, WMS e E-commerces.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Equipe de Integração Log Axis",
+      "email": "integracao@logaxis.com.br"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://[SEU_PROJETO].supabase.co/functions/v1",
+      "description": "Ambiente de Produção (Edge Functions)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Chave de API gerada no Painel do TMS (Prefixo ak_prod_, ak_test_ ou ak_dev_)"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/quotes-calculate": {
+      "post": {
+        "summary": "Cálculo e Cotação de Frete",
+        "description": "Calcula valores de frete e prazos de entrega baseados no CEP de origem e destino, considerando tabelas de frete negociadas.",
+        "operationId": "calculateFreight",
+        "tags": [
+          "Cotação de Frete"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "origin",
+                  "destination",
+                  "volumes",
+                  "invoiceValue"
+                ],
+                "properties": {
+                  "origin": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string",
+                        "example": "01001000"
+                      }
+                    }
+                  },
+                  "destination": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string",
+                        "example": "20040002"
+                      }
+                    }
+                  },
+                  "invoiceValue": {
+                    "type": "number",
+                    "example": 1500.5
+                  },
+                  "volumes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "weight": {
+                          "type": "number",
+                          "description": "Peso real em Kg",
+                          "example": 10.5
+                        },
+                        "width": {
+                          "type": "number",
+                          "description": "Largura em cm",
+                          "example": 20
+                        },
+                        "height": {
+                          "type": "number",
+                          "description": "Altura em cm",
+                          "example": 15
+                        },
+                        "length": {
+                          "type": "number",
+                          "description": "Comprimento em cm",
+                          "example": 30
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cotação realizada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "quoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "carrierId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "carrierName": {
+                            "type": "string",
+                            "example": "Loggi Express"
+                          },
+                          "modal": {
+                            "type": "string",
+                            "example": "rodoviario"
+                          },
+                          "deliveryDays": {
+                            "type": "integer",
+                            "example": 3
+                          },
+                          "totalValue": {
+                            "type": "number",
+                            "example": 45.9
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Payload inválido"
+          },
+          "401": {
+            "description": "API Key ausente ou inválida"
+          }
+        }
+      }
+    },
+    "/tracking-events": {
+      "post": {
+        "summary": "Envio de Eventos de Rastreamento (Tracking)",
+        "description": "Endpoint para que transportadoras ou APIs parceiras injetem o andamento das entregas em tempo real. Os eventos são registrados e enviados ativamente para o webhook do ERP.",
+        "operationId": "submitTrackingEvent",
+        "tags": [
+          "Tracking"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "carrierCnpj",
+                  "invoiceNumber",
+                  "statusCode",
+                  "eventDate"
+                ],
+                "properties": {
+                  "carrierCnpj": {
+                    "type": "string",
+                    "description": "CNPJ da transportadora contendo 14 dígitos",
+                    "example": "00000000000191"
+                  },
+                  "invoiceNumber": {
+                    "type": "string",
+                    "description": "Número da Nota Fiscal Eletrônica",
+                    "example": "12345"
+                  },
+                  "statusCode": {
+                    "type": "string",
+                    "description": "Código de status padronizado. Ex: DELIVERED, OUT_FOR_DELIVERY",
+                    "example": "DELIVERED"
+                  },
+                  "eventDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Data e Hora do evento em ISO8601",
+                    "example": "2026-05-10T14:30:00Z"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "description": "Opcional: Latitude do local do evento",
+                    "example": -23.5505
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "description": "Opcional: Longitude do local do evento",
+                    "example": -46.6333
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Opcional: Observação. Ex: Recebido por João",
+                    "example": "Recebido pelo porteiro João da Silva"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Evento de tracking registrado e processado com sucesso"
+          },
+          "400": {
+            "description": "Payload inválido"
+          },
+          "401": {
+            "description": "API Key ausente ou inválida"
+          },
+          "404": {
+            "description": "Nota fiscal não encontrada ou sem vínculo com a transportadora"
+          }
+        }
+      }
+    }
+  }
+}

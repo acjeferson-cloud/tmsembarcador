@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Loader } from 'lucide-react';
+import { X, Plus, Loader, RefreshCw } from 'lucide-react';
 import { apiKeysService } from '../../services/apiKeysService';
 import { useTranslation } from 'react-i18next';
 import { Toast, ToastType } from '../common/Toast';
@@ -33,6 +33,32 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
     expires_at: '',
     alert_emails: ''
   });
+
+  const generateSecureKey = (env: string) => {
+    const prefix = env === 'production' ? 'ak_prod' : env === 'staging' ? 'ak_test' : 'ak_dev';
+    const randomArray = new Uint8Array(24);
+    window.crypto.getRandomValues(randomArray);
+    const randomStr = Array.from(randomArray).map(b => b.toString(16).padStart(2, '0')).join('');
+    return `${prefix}_${randomStr}`;
+  };
+
+  const handleKeyTypeChange = (newType: string) => {
+    let newApiKey = formData.api_key;
+    if (newType === 'inbound_api') {
+      newApiKey = generateSecureKey(formData.environment);
+    } else if (formData.key_type === 'inbound_api') {
+      newApiKey = ''; // Clear if switching away from inbound
+    }
+    setFormData({ ...formData, key_type: newType as any, api_key: newApiKey });
+  };
+
+  const handleEnvironmentChange = (newEnv: string) => {
+    let newApiKey = formData.api_key;
+    if (formData.key_type === 'inbound_api') {
+      newApiKey = generateSecureKey(newEnv);
+    }
+    setFormData({ ...formData, environment: newEnv as any, api_key: newApiKey });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,11 +150,12 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
               </label>
               <select
                 value={formData.key_type}
-                onChange={(e) => setFormData({ ...formData, key_type: e.target.value as any })}
+                onChange={(e) => handleKeyTypeChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
                 <option value="custom">Customizada</option>
+                <option value="inbound_api">API Embarcador (Inbound)</option>
                 <option value="google_maps">Google Maps API</option>
                 <option value="recaptcha_site">reCAPTCHA Site Key</option>
                 <option value="recaptcha_secret">reCAPTCHA Secret Key</option>
@@ -145,7 +172,7 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
               </label>
               <select
                 value={formData.environment}
-                onChange={(e) => setFormData({ ...formData, environment: e.target.value as any })}
+                onChange={(e) => handleEnvironmentChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
@@ -184,17 +211,35 @@ export const ApiKeyFormModal: React.FC<ApiKeyFormModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('apiKeys.form.apiKey')}
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('apiKeys.form.apiKey')}
+              </label>
+              {formData.key_type === 'inbound_api' && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, api_key: generateSecureKey(formData.environment) })}
+                  className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Regerar Chave
+                </button>
+              )}
+            </div>
             <textarea
               value={formData.api_key}
               onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${formData.key_type === 'inbound_api' ? 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : ''}`}
               rows={3}
               placeholder={t('apiKeys.form.apiKeyPlaceholder')}
+              readOnly={formData.key_type === 'inbound_api'}
               required
             />
+            {formData.key_type === 'inbound_api' && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                Copie e armazene esta chave com segurança. Ela será usada pelo seu ERP para consumir as APIs.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
