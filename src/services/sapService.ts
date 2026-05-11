@@ -38,6 +38,7 @@ export const sapIntegrationService = {
         password: erpConfig.password,
         companyDb: erpConfig.database,
         sap_bpl_id: erpConfig.sap_bpl_id || null,
+        sap_fetch_drafts: erpConfig.sap_fetch_drafts || false,
         lastSyncTime: null // Manual fetch pulls last 3 days
       };
 
@@ -683,6 +684,7 @@ export const sapIntegrationService = {
       cte_integration_type: config.cte_integration_type,
       cte_model: config.cte_model,
       fiscal_module: config.fiscal_module,
+      sap_fetch_drafts: config.sap_fetch_drafts || false,
       organization_id: context?.organizationId,
       environment_id: context?.environmentId
     };

@@ -36,6 +36,7 @@ interface ERPIntegrationConfig {
   created_by?: string;
   updated_by?: string;
   metadata?: any;
+  sap_fetch_drafts?: boolean;
 }
 
 interface ImportLog {

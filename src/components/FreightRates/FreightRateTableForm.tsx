@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Plus, Trash2, DollarSign, Info, MapPin, User, Package, Edit, Settings, Map, Receipt, AlertTriangle, Copy, RefreshCcw, Search } from 'lucide-react';
 import { freightRatesService, FreightRateTable, FreightRate } from '../../services/freightRatesService';
@@ -59,6 +59,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   const [showRestrictedItemsModal, setShowRestrictedItemsModal] = useState(false);
   const [showReturnsModal, setShowReturnsModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const ratesSectionRef = useRef<HTMLDivElement>(null);
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -229,6 +230,9 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     });
     setEditingRateId(rate.id);
     setShowRateForm(true);
+    setTimeout(() => {
+      ratesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleDeleteRate = async (rateId: string) => {
@@ -730,7 +734,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
         </div>
 
         {/* Rates Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div ref={ratesSectionRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 scroll-mt-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.form.rates')}</h2>
             <div className="flex items-center space-x-4">

@@ -131,7 +131,7 @@ app.post('/api/test-connection', async (req, res) => {
 // Endpoint 2: Fetch SAP Order
 app.post('/api/fetch-sap-order', async (req, res) => {
   try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime, sap_bpl_id } = req.body;
+    const { endpointSystem, port, username, password, companyDb, lastSyncTime, sap_bpl_id, sap_fetch_drafts } = req.body;
 
     if (!endpointSystem || !username || !companyDb) {
       return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
@@ -216,7 +216,16 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       // Order ascending so the oldest changes are processed first
       dateFilter += `&$orderby=DocEntry asc`;
       
-      const orderEndpoint = `${serviceLayerUrl}/Orders${dateFilter}`;
+      const entity = sap_fetch_drafts ? 'Drafts' : 'Orders';
+      if (sap_fetch_drafts) {
+         if (dateFilter.includes('?$filter=')) {
+             dateFilter = dateFilter.replace('?$filter=', `?$filter=DocObjectCode eq '17' and `);
+         } else {
+             dateFilter = `?$filter=DocObjectCode eq '17'` + dateFilter.replace('?', '&');
+         }
+      }
+      
+      const orderEndpoint = `${serviceLayerUrl}/${entity}${dateFilter}`;
       console.log(`[Proxy][DEBUG-ORDERS] Buscando orders em: ${orderEndpoint}`);
       
       orderResponse = await fetch(orderEndpoint, {
@@ -381,7 +390,7 @@ app.post('/api/fetch-sap-order', async (req, res) => {
 // Endpoint 2.5: Fetch Specific SAP Order By ID
 app.post('/api/fetch-sap-order-by-id', async (req, res) => {
   try {
-    const { endpointSystem, port, username, password, companyDb, orderId } = req.body;
+    const { endpointSystem, port, username, password, companyDb, orderId, sap_fetch_drafts } = req.body;
 
     if (!endpointSystem || !username || !companyDb || !orderId) {
       return res.status(400).json({ success: false, error: 'Parâmetros de conexão ou ID do pedido ausentes.' });
@@ -446,7 +455,11 @@ app.post('/api/fetch-sap-order-by-id', async (req, res) => {
     
     let orderResponse;
     try {
-      const orderEndpoint = `${serviceLayerUrl}/Orders?$filter=DocNum eq ${orderId}`;
+      const entity = sap_fetch_drafts ? 'Drafts' : 'Orders';
+      const orderEndpoint = sap_fetch_drafts 
+        ? `${serviceLayerUrl}/${entity}?$filter=DocObjectCode eq '17' and DocNum eq ${orderId}`
+        : `${serviceLayerUrl}/${entity}?$filter=DocNum eq ${orderId}`;
+        
       console.log(`[Proxy][DEBUG-ORDERS] Buscando pedido especifico em: ${orderEndpoint}`);
       
       orderResponse = await fetch(orderEndpoint, {

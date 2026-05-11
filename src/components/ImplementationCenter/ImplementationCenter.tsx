@@ -101,6 +101,7 @@ const ImplementationCenter: React.FC = () => {
     password: '',
     database: '',
     sapBplId: '',
+    sapFetchDrafts: false,
     cteTaxCode: '',
     cteIntegrationType: 'draft',
     cteModel: '',
@@ -189,6 +190,7 @@ const ImplementationCenter: React.FC = () => {
         password: config.password || '',
         database: config.database || '',
         sapBplId: config.sap_bpl_id || '',
+        sapFetchDrafts: config.sap_fetch_drafts || false,
         cteIntegrationType: config.cte_integration_type || 'draft',
         cteModel: config.cte_model || '',
         billingNFeItem: config.billing_nfe_item || '',
@@ -690,6 +692,7 @@ const ImplementationCenter: React.FC = () => {
         password: erpConfig.password,
         database: erpConfig.database,
         sap_bpl_id: erpConfig.sapBplId,
+        sap_fetch_drafts: erpConfig.sapFetchDrafts,
         cte_integration_type: erpConfig.cteIntegrationType,
         cte_model: erpConfig.cteModel,
         billing_nfe_item: erpConfig.billingNFeItem,
@@ -1094,6 +1097,20 @@ const ImplementationCenter: React.FC = () => {
                             ATENÇÃO: Essencial para evitar mistura de dados. Preencha com o BPLId correto desta filial (Ex: 1). Repita o processo em cada filial no TMS.
                           </p>
                         )}
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="flex items-center space-x-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={erpConfig.sapFetchDrafts}
+                            onChange={(e) => handleErpConfigChange('sapFetchDrafts', e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span>Importar Esboço de Venda (Draft) ao invés de Pedido de Venda (Order)</span>
+                        </label>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Quando ativado, o sistema buscará os rascunhos de pedidos (Drafts com DocObjectCode '17') no SAP ao invés de buscar os Pedidos de Venda efetivados.
+                        </p>
                       </div>
                     </div>
                   )}

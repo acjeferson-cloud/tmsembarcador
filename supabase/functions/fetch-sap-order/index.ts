@@ -6,6 +6,7 @@ interface ERPConnectionPayload {
   username: string;
   password?: string;
   companyDb: string;
+  sap_fetch_drafts?: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -16,7 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const payload: ERPConnectionPayload = await req.json();
-    const { endpointSystem, port, username, password, companyDb } = payload;
+    const { endpointSystem, port, username, password, companyDb, sap_fetch_drafts } = payload;
 
     if (!endpointSystem || !username || !companyDb) {
       return new Response(
@@ -113,7 +114,11 @@ Deno.serve(async (req) => {
     
     let orderResponse;
     try {
-      const orderEndpoint = `${serviceLayerUrl}/Orders?$orderby=DocEntry desc&$top=1`;
+      // 17 represents Sales Orders in Drafts
+      const orderEndpoint = sap_fetch_drafts 
+        ? `${serviceLayerUrl}/Drafts?$filter=DocObjectCode eq '17'&$orderby=DocEntry desc&$top=1`
+        : `${serviceLayerUrl}/Orders?$orderby=DocEntry desc&$top=1`;
+      
       console.log(`Buscando orders em: ${orderEndpoint}`);
       
       orderResponse = await fetch(orderEndpoint, {

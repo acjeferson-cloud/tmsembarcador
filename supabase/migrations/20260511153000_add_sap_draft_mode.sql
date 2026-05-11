@@ -1,0 +1,1 @@
+ALTER TABLE erp_integration_config ADD COLUMN IF NOT EXISTS sap_fetch_drafts BOOLEAN DEFAULT FALSE;
