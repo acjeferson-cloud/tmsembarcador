@@ -15,7 +15,7 @@ export interface AdditionalFee {
   min_weight_kg: number | null;
   max_weight_kg: number | null;
   fee_value: number;
-  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg';
+  value_type: 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg' | 'percent_invoice';
   minimum_value: number;
   created_at: string;
   updated_at: string;

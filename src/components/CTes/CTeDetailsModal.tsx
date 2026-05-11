@@ -472,8 +472,12 @@ export const CTeDetailsModal: React.FC<CTeDetailsModalProps> = ({
                       <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(cte.tas_value)}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-                      <span className="text-gray-600 dark:text-gray-400">Coleta/Entrega</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(cte.collection_delivery_value)}</span>
+                      <span className="text-gray-600 dark:text-gray-400">Taxa de Coleta</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(cte.collection_fee_value)}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+                      <span className="text-gray-600 dark:text-gray-400">Taxa de Entrega</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(cte.delivery_fee_value)}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
                       <span className="text-gray-600 dark:text-gray-400">Pedagio</span>

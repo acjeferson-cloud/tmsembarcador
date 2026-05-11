@@ -727,7 +727,8 @@ export interface FlatFreightRateTemplate {
   taxa_adicional: number;
   
   // Valores da Tarifa (Taxas Extras Padrão 2)
-  coleta_entrega: number;
+  taxa_coleta: number;
+  taxa_entrega: number;
   tde_trt: number;
   tas: number;
   taxa_suframa: number;
@@ -801,7 +802,8 @@ export const generateFreightRatesTemplate = (): void => {
       itr: 0,
       taxa_adicional: 0,
       
-      coleta_entrega: 0,
+      taxa_coleta: 0,
+      taxa_entrega: 0,
       tde_trt: 0,
       tas: 0,
       taxa_suframa: 0,
@@ -867,7 +869,8 @@ export const generateFreightRatesTemplate = (): void => {
       itr: 0,
       taxa_adicional: 0,
       
-      coleta_entrega: 0,
+      taxa_coleta: 0,
+      taxa_entrega: 0,
       tde_trt: 0,
       tas: 0,
       taxa_suframa: 0,
@@ -968,7 +971,7 @@ export const processFreightRatesFile = (file: File): Promise<FlatFreightRateTemp
           throw new Error('Aba principal nao encontrada na planilha.');
         }
 
-        const flatData = XLSX.utils.sheet_to_json(worksheet) as FlatFreightRateTemplate[];
+        const flatData = XLSX.utils.sheet_to_json(worksheet, { raw: false }) as FlatFreightRateTemplate[];
         resolve(flatData);
       } catch (error) {
         reject(new Error('Erro ao processar arquivo: ' + (error as Error).message));

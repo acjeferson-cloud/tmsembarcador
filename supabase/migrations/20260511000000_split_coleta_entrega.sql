@@ -1,7 +1,16 @@
--- Migration for calculate_freight_b2b RPC
+-- Migration to split coleta_entrega into taxa_coleta and taxa_entrega
 
--- Drop the old function signature to prevent ambiguity
-DROP FUNCTION IF EXISTS public.calculate_freight_b2b(text, text, numeric, numeric, uuid);
+ALTER TABLE public.freight_rates 
+ADD COLUMN IF NOT EXISTS taxa_coleta NUMERIC(15,2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS taxa_entrega NUMERIC(15,2) DEFAULT 0;
+
+-- Optional: if data exists, maybe we split it evenly or leave it. We'll leave it 0 and preserve coleta_entrega for backward compatibility just in case, but new frontend will use taxa_coleta and taxa_entrega.
+-- Wait, the user specifically wants to "somente separarmos esse campo em dois? Um sendo a Coleta e outro a entrega?".
+-- I'll keep the columns separate.
+
+-- Also need to update the calculate_freight_b2b to include these.
+DROP FUNCTION IF EXISTS public.calculate_freight_b2b(text, text, text, numeric, numeric, integer, numeric, uuid);
+
 CREATE OR REPLACE FUNCTION public.calculate_freight_b2b(
     p_origin_zip text,
     p_dest_zip text,
@@ -53,8 +62,11 @@ BEGIN
             c.nome_fantasia as carrier_name,
             c.modal_principal as modal,
             COALESCE(frc.delivery_days, fr.prazo_entrega) as delivery_days,
-            -- Simplified basic calc: fixed + (weight * rate) + (value * advalorem)
+            -- Simplified basic calc: fixed + coleta + entrega + (weight * rate) + (value * advalorem)
             (COALESCE(fr.taxa_fixa, 0) + 
+             COALESCE(fr.taxa_coleta, 0) + 
+             COALESCE(fr.taxa_entrega, 0) + 
+             COALESCE(fr.coleta_entrega, 0) + 
              (p_weight * COALESCE(fr.frete_peso, 0)) + 
              (p_value * (COALESCE(fr.advalorem, 0) / 100.0)) + 
              COALESCE(fr.gris, 0) + 
@@ -81,6 +93,5 @@ BEGIN
 END;
 $$;
 
--- Grant access
 GRANT EXECUTE ON FUNCTION public.calculate_freight_b2b(text, text, text, numeric, numeric, integer, numeric, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.calculate_freight_b2b(text, text, text, numeric, numeric, integer, numeric, uuid) TO service_role;

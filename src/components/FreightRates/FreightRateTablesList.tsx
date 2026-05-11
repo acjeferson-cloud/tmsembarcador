@@ -207,8 +207,30 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, index) => (
+            <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-2/3">
+                  <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Tables Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {!isLoading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredTables.map((table) => (
           <div key={table.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
@@ -323,9 +345,10 @@ export const FreightRateTablesList: React.FC<FreightRateTablesListProps> = ({ ca
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
-      {filteredTables.length === 0 && (
+      {!isLoading && filteredTables.length === 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
             <DollarSign size={48} />

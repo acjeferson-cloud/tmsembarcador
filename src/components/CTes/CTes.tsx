@@ -1199,7 +1199,8 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
           seccat: getPersistCost('seccat'),
           despacho: getPersistCost('dispatch'),
           itr: getPersistCost('itr'),
-          coletaEntrega: getPersistCost('collection_delivery'),
+          taxaColeta: getPersistCost('collection_fee'),
+          taxaEntrega: getPersistCost('delivery_fee'),
           icmsValor: getPersistCost('icms_value'),
           outrosValores: getPersistCost('other_value')
       };      const costMapping = [
@@ -1211,7 +1212,8 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         { key: 'seccat', xmlField: 'seccat_value', name: 'SECCAT' },
         { key: 'despacho', xmlField: 'dispatch_value', name: 'Despacho' },
         { key: 'itr', xmlField: 'itr_value', name: 'ITR' },
-        { key: 'coletaEntrega', xmlField: 'collection_delivery_value', name: 'Coleta/Entrega' },
+        { key: 'taxaColeta', xmlField: 'collection_fee_value', name: 'Taxa Coleta' },
+        { key: 'taxaEntrega', xmlField: 'delivery_fee_value', name: 'Taxa Entrega' },
         { key: 'icmsValor', xmlField: 'icms_value', name: 'ICMS' },
         { key: 'outrosValores', xmlField: 'other_value', name: 'Outros Valores' }
       ];

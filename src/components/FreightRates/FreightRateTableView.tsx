@@ -374,7 +374,11 @@ export const FreightRateTableView: React.FC<FreightRateTableViewProps> = ({ onBa
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                  {rates.map((rate) => (
+                  {[...rates].sort((a, b) => {
+                    const codeA = a.codigo || '';
+                    const codeB = b.codigo || '';
+                    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+                  }).map((rate) => (
                     <tr key={rate.id} className="hover:bg-gray-50 dark:bg-gray-900">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {rate.codigo}

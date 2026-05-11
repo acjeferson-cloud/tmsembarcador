@@ -229,6 +229,7 @@ export const Carriers: React.FC = () => {
         sap_cardcode: carrierData.sapCardCode || null,
         sap_bpl_id: carrierData.sapBplId || null,
         sap_due_days: carrierData.sapDueDays ? parseInt(carrierData.sapDueDays.toString(), 10) : 0,
+        regime_tributario: carrierData.regime_tributario || 'regime_normal',
         contacts: carrierData.contacts || [],
       };
       if (editingCarrier) {

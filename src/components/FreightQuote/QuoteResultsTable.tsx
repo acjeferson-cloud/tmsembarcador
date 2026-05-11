@@ -259,8 +259,12 @@ export const QuoteResultsTable: React.FC<QuoteResultsTableProps> = ({ results, c
                             <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.itr)}</div>
                           </div>
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.pickupDelivery')}</div>
-                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.coletaEntrega)}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Taxa Coleta</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.taxaColeta)}</div>
+                          </div>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Taxa Entrega</div>
+                            <div className="font-medium text-gray-900 dark:text-white mt-1">{formatCurrency(result.calculationDetails.taxaEntrega)}</div>
                           </div>
                           <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-500 dark:text-gray-400">{t('freightQuote.results.columns.otherValues')}</div>

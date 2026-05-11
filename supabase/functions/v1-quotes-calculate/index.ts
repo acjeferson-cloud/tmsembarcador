@@ -21,15 +21,20 @@ serve(async (req: Request) => {
     // 2. Extrai e valida o corpo da requisição B2B
     const body = await req.json();
     
-    if (!body.origin?.zipCode || !body.destination?.zipCode || !body.volumes || !body.invoiceValue) {
+    if (
+      !body.origin?.zipCode || 
+      !body.destination?.zipCode || 
+      body.invoiceValue === undefined ||
+      body.totalWeight === undefined ||
+      body.volumes === undefined ||
+      body.cubicMeters === undefined ||
+      !body.businessPartner
+    ) {
       return new Response(
-        JSON.stringify({ error: 'Payload inválido. Certifique-se de enviar origin.zipCode, destination.zipCode, volumes e invoiceValue.' }),
+        JSON.stringify({ error: 'Payload inválido. Certifique-se de enviar origin.zipCode, destination.zipCode, businessPartner, invoiceValue, totalWeight, volumes e cubicMeters.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Calcula peso total
-    const totalWeight = body.volumes.reduce((acc: number, vol: any) => acc + (vol.weight || 0), 0);
 
     // 3. Executa a procedure no banco de dados. 
     // NOTA: Como o 'supabase' client tem o JWT do tenant injetado, o RLS fará com que essa query
@@ -37,8 +42,11 @@ serve(async (req: Request) => {
     const { data: quotes, error } = await supabase.rpc('calculate_freight_b2b', {
       p_origin_zip: body.origin.zipCode,
       p_dest_zip: body.destination.zipCode,
-      p_weight: totalWeight,
+      p_business_partner: body.businessPartner,
       p_value: body.invoiceValue,
+      p_weight: body.totalWeight,
+      p_volumes: body.volumes,
+      p_cubic_meters: body.cubicMeters,
       p_org_id: organizationId // Pode passar opcionalmente se a procedure quiser, mas o RLS já isola.
     });
 

@@ -41,6 +41,7 @@ export interface Carrier {
   created_by?: string;
   updated_by?: string;
   scope?: 'ESTABLISHMENT' | 'ENVIRONMENT' | 'ORGANIZATION';
+  regime_tributario?: 'regime_normal' | 'simples_nacional' | 'isento';
   exige_seguro_obrigatorio?: boolean;
   tipos_seguro_exigidos?: string[];
   sap_cardcode?: string;
@@ -98,6 +99,7 @@ export const carriersService = {
       sap_cardcode: carrier.sap_cardcode,
       sap_bpl_id: carrier.sap_bpl_id,
       sap_due_days: carrier.sap_due_days || 0,
+      regime_tributario: carrier.regime_tributario || 'regime_normal',
       contacts: carrier.contacts || []
     };
   },
@@ -377,6 +379,7 @@ export const carriersService = {
         sap_cardcode: carrier.sap_cardcode,
         sap_bpl_id: carrier.sap_bpl_id,
         sap_due_days: carrier.sap_due_days,
+        regime_tributario: carrier.regime_tributario || 'regime_normal',
         metadata: metadata
       };
       const { data, error } = await supabase
@@ -498,6 +501,7 @@ export const carriersService = {
       if (carrier.sap_cardcode !== undefined) updateData.sap_cardcode = carrier.sap_cardcode;
       if (carrier.sap_bpl_id !== undefined) updateData.sap_bpl_id = carrier.sap_bpl_id;
       if (carrier.sap_due_days !== undefined) updateData.sap_due_days = carrier.sap_due_days;
+      if (carrier.regime_tributario !== undefined) updateData.regime_tributario = carrier.regime_tributario;
       if (carrier.scope !== undefined) updateData.scope = carrier.scope;
       const { data, error } = await supabase
         .from('carriers')

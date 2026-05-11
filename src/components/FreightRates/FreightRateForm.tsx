@@ -56,7 +56,8 @@ export const FreightRateForm: React.FC<FreightRateFormProps> = ({
     despacho: 0,
     itr: 0,
     taxaAdicional: 0,
-    coletaEntrega: 0,
+    taxaColeta: 0,
+    taxaEntrega: 0,
     tde: 0,
     taxaSuframa: 0,
     valorOutros: 0,
@@ -596,12 +597,27 @@ export const FreightRateForm: React.FC<FreightRateFormProps> = ({
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Coleta/Entrega
+                  Taxa Coleta
                 </label>
                 <input
                   type="number"
-                  name="coletaEntrega"
-                  value={formData.coletaEntrega}
+                  name="taxaColeta"
+                  value={formData.taxaColeta}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Taxa Entrega
+                </label>
+                <input
+                  type="number"
+                  name="taxaEntrega"
+                  value={formData.taxaEntrega}
                   onChange={handleInputChange}
                   step="0.01"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

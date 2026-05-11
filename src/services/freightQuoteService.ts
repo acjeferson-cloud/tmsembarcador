@@ -311,6 +311,21 @@ export const freightQuoteService = {
       }
     }
 
+    // Fetch carriers regime tributario
+    const validCarrierIds = filteredRatesData.map((r: any) => r.carrier_id).filter(Boolean);
+    const carriersMap: Record<string, any> = {};
+    if (validCarrierIds.length > 0) {
+      const uniqueCarrierIds = [...new Set(validCarrierIds)];
+      const { data: carriersInfo } = await supabase
+        .from('carriers')
+        .select('id, regime_tributario')
+        .in('id', uniqueCarrierIds);
+
+      if (carriersInfo) {
+        carriersInfo.forEach(c => carriersMap[c.id] = { regime_tributario: c.regime_tributario });
+      }
+    }
+
     // Processar todas as tarifas em paralelo
     const calculationPromises = filteredRatesData.map(async (rateData: any) => {
       try {
@@ -363,7 +378,8 @@ export const freightQuoteService = {
             hasChemical: params.hasChemical
           },
           null,
-          additionalFees
+          additionalFees,
+          carriersMap[rateData.carrier_id]
         );
 
         let deliveryDeadline: string | undefined;

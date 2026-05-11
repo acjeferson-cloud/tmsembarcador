@@ -66,7 +66,8 @@ export const CarrierForm: React.FC<CarrierFormProps> = ({ onBack, onSave, carrie
     scope: carrier?.scope || 'ESTABLISHMENT',
     sapCardCode: carrier?.sap_cardcode || '',
     sapBplId: carrier?.sap_bpl_id || '',
-    sapDueDays: carrier?.sap_due_days || ''
+    sapDueDays: carrier?.sap_due_days || '',
+    regimeTributario: carrier?.regime_tributario || 'regime_normal'
   });
 
   const [logoPreview, setLogoPreview] = useState<string | null>(carrier?.logotipo || null);
@@ -430,6 +431,7 @@ isOpen: false, missing: []});
       sapCardCode: formData.sapCardCode,
       sapBplId: formData.sapBplId,
       sapDueDays: formData.sapDueDays,
+      regime_tributario: formData.regimeTributario,
       contacts: contacts
     };
 
@@ -1045,6 +1047,23 @@ isOpen: false, missing: []});
                 >
                   <option value="ativo">{t('carriers.form.activeText')}</option>
                   <option value="inativo">{t('carriers.form.inactiveText')}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Regime Tributário
+                </label>
+                <select
+                  name="regimeTributario"
+                  value={formData.regimeTributario}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="regime_normal">Regime Normal (Lucro Real/Presumido)</option>
+                  <option value="simples_nacional">Simples Nacional (Zera ICMS Comercial)</option>
+                  <option value="isento">Isento / Autônomo</option>
                 </select>
               </div>
             </div>

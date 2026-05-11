@@ -503,6 +503,10 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
       rate.descricao?.toLowerCase().includes(searchLower) ||
       rate.prazo_entrega?.toString().includes(searchLower)
     );
+  }).sort((a, b) => {
+    const codeA = a.codigo || '';
+    const codeB = b.codigo || '';
+    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   return (

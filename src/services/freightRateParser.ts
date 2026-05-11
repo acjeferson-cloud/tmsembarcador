@@ -10,6 +10,17 @@ export interface ParseResult {
   details?: Omit<FreightRateDetail, 'id'>[];
 }
 
+const parseNumber = (val: any): number => {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') {
+    const cleanStr = val.replace(/\s/g, '').replace('R$', '').replace('%', '').replace(',', '.');
+    const num = Number(cleanStr);
+    return isNaN(num) ? 0 : num;
+  }
+  return 0;
+};
+
 export const parseBulkFreightRates = async (
   flatData: FlatFreightRateTemplate[],
   tenantContext: { organization_id: string; environment_id: string; establishment_id: string; created_by?: string }
@@ -129,47 +140,48 @@ export const parseBulkFreightRates = async (
         tipo_aplicacao: row.destino_cidade ? 'cidade' : 'estado',
         data_inicio: dateInicio,
         data_fim: dateFim,
-        prazo_entrega: Number(row.prazo_entrega) || 0,
+        prazo_entrega: parseNumber(row.prazo_entrega),
         
-        pedagio_minimo: Number(row.pedagio_minimo) || 0,
-        pedagio_por_kg: Number(row.pedagio_por_kg) || 0,
-        pedagio_a_cada_kg: Number(row.pedagio_a_cada_kg) || 0,
+        pedagio_minimo: parseNumber(row.pedagio_minimo),
+        pedagio_por_kg: parseNumber(row.pedagio_por_kg),
+        pedagio_a_cada_kg: parseNumber(row.pedagio_a_cada_kg),
         pedagio_tipo_kg: row.pedagio_tipo_kg || 'peso_calculo',
         
         icms_embutido_tabela: row.icms_embutido_tabela || 'nao_embutido',
-        aliquota_icms: Number(row.aliquota_icms) || 0,
+        aliquota_icms: parseNumber(row.aliquota_icms),
         
-        fator_m3: Number(row.fator_m3) || 0,
-        fator_m3_apartir_kg: Number(row.fator_m3_apartir_kg) || 0,
-        fator_m3_apartir_m3: Number(row.fator_m3_apartir_m3) || 0,
-        fator_m3_apartir_valor: Number(row.fator_m3_apartir_valor) || 0,
+        fator_m3: parseNumber(row.fator_m3),
+        fator_m3_apartir_kg: parseNumber(row.fator_m3_apartir_kg),
+        fator_m3_apartir_m3: parseNumber(row.fator_m3_apartir_m3),
+        fator_m3_apartir_valor: parseNumber(row.fator_m3_apartir_valor),
         
-        percentual_gris: Number(row.percentual_gris) || 0,
-        gris_minimo: Number(row.gris_minimo) || 0,
-        seccat: Number(row.seccat) || 0,
-        despacho: Number(row.despacho) || 0,
-        itr: Number(row.itr) || 0,
-        taxa_adicional: Number(row.taxa_adicional) || 0,
-        coleta_entrega: Number(row.coleta_entrega) || 0,
-        tde_trt: Number(row.tde_trt) || 0,
-        tas: Number(row.tas) || 0,
-        taxa_suframa: Number(row.taxa_suframa) || 0,
+        percentual_gris: parseNumber(row.percentual_gris),
+        gris_minimo: parseNumber(row.gris_minimo),
+        seccat: parseNumber(row.seccat),
+        despacho: parseNumber(row.despacho),
+        itr: parseNumber(row.itr),
+        taxa_adicional: parseNumber(row.taxa_adicional),
+        taxa_coleta: parseNumber(row.taxa_coleta),
+        taxa_entrega: parseNumber(row.taxa_entrega),
+        tde_trt: parseNumber(row.tde_trt),
+        tas: parseNumber(row.tas),
+        taxa_suframa: parseNumber(row.taxa_suframa),
         
-        valor_outros_percent: Number(row.valor_outros_percent) || 0,
-        valor_outros_minimo: Number(row.valor_outros_minimo) || 0,
-        taxa_outros_valor: Number(row.taxa_outros_valor) || 0,
+        valor_outros_percent: parseNumber(row.valor_outros_percent),
+        valor_outros_minimo: parseNumber(row.valor_outros_minimo),
+        taxa_outros_valor: parseNumber(row.taxa_outros_valor),
         taxa_outros_tipo_valor: row.taxa_outros_tipo_valor || 'valor',
-        taxa_apartir_de: Number(row.taxa_apartir_de) || 0,
+        taxa_apartir_de: parseNumber(row.taxa_apartir_de),
         taxa_apartir_de_tipo: row.taxa_apartir_de_tipo || 'sem_apartir',
-        taxa_outros_a_cada: Number(row.taxa_outros_a_cada) || 0,
-        taxa_outros_minima: Number(row.taxa_outros_minima) || 0,
+        taxa_outros_a_cada: parseNumber(row.taxa_outros_a_cada),
+        taxa_outros_minima: parseNumber(row.taxa_outros_minima),
         
-        frete_peso_minimo: Number(row.frete_peso_minimo) || 0,
-        frete_valor_minimo: Number(row.frete_valor_minimo) || 0,
-        frete_tonelada_minima: Number(row.frete_tonelada_minima) || 0,
-        frete_percentual_minimo: Number(row.frete_percentual_minimo) || 0,
-        frete_m3_minimo: Number(row.frete_m3_minimo) || 0,
-        valor_total_minimo: Number(row.valor_total_minimo) || 0,
+        frete_peso_minimo: parseNumber(row.frete_peso_minimo),
+        frete_valor_minimo: parseNumber(row.frete_valor_minimo),
+        frete_tonelada_minima: parseNumber(row.frete_tonelada_minima),
+        frete_percentual_minimo: parseNumber(row.frete_percentual_minimo),
+        frete_m3_minimo: parseNumber(row.frete_m3_minimo),
+        valor_total_minimo: parseNumber(row.valor_total_minimo),
 
         _origem: row.origem_uf,
         _destino: row.destino_uf,
@@ -181,27 +193,27 @@ export const parseBulkFreightRates = async (
     }
 
     // 3. Faixas (Details)
-    let peso_ate = Number(row.faixa_peso_ate);
-    if (isNaN(peso_ate) || peso_ate > 99000) peso_ate = 999999;
+    let peso_ate = parseNumber(row.faixa_peso_ate);
+    if (isNaN(peso_ate) || peso_ate > 99000 || peso_ate === 0) peso_ate = 999999;
     
-    let fracao_base = row.fracao_base ? Number(row.fracao_base) : null;
-    if (fracao_base !== null && isNaN(fracao_base)) fracao_base = null;
+    let fracao_base = row.fracao_base ? parseNumber(row.fracao_base) : null;
+    if (fracao_base !== null && (isNaN(fracao_base) || fracao_base === 0)) fracao_base = null;
 
     detailsList.push({
       _rateKey: rateKey,
-      ordem: Number(row.detalhe_ordem) || detailsList.filter(d => d._rateKey === rateKey).length + 1,
+      ordem: parseNumber(row.detalhe_ordem) || detailsList.filter(d => d._rateKey === rateKey).length + 1,
       peso_ate: peso_ate,
-      m3_ate: Number(row.faixa_m3_ate) || 0,
-      volume_ate: Number(row.faixa_volume_ate) || 0,
-      valor_ate: Number(row.faixa_valor_ate) || 0,
-      valor_faixa: Number(row.valor_faixa) || 0,
+      m3_ate: parseNumber(row.faixa_m3_ate),
+      volume_ate: parseNumber(row.faixa_volume_ate),
+      valor_ate: parseNumber(row.faixa_valor_ate),
+      valor_faixa: parseNumber(row.valor_faixa),
       fracao_base: fracao_base,
       tipo_calculo: row.tipo_calculo || 'valor_faixa',
       tipo_frete: row.tipo_frete || 'normal',
-      frete_valor: Number(row.frete_valor) || 0,
-      frete_minimo: Number(row.frete_minimo_faixa) || 0,
+      frete_valor: parseNumber(row.frete_valor),
+      frete_minimo: parseNumber(row.frete_minimo_faixa),
       tipo_taxa: row.tipo_taxa || 'com_taxas',
-      taxa_minima: Number(row.taxa_minima) || 0
+      taxa_minima: parseNumber(row.taxa_minima)
     });
   });
 

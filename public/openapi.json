@@ -48,8 +48,11 @@
                 "required": [
                   "origin",
                   "destination",
+                  "businessPartner",
+                  "invoiceValue",
+                  "totalWeight",
                   "volumes",
-                  "invoiceValue"
+                  "cubicMeters"
                 ],
                 "properties": {
                   "origin": {
@@ -70,37 +73,30 @@
                       }
                     }
                   },
+                  "businessPartner": {
+                    "type": "string",
+                    "description": "Parceiro de Negócios (CNPJ/CPF)",
+                    "example": "00000000000191"
+                  },
                   "invoiceValue": {
                     "type": "number",
+                    "description": "Valor de Mercadoria",
                     "example": 1500.5
                   },
+                  "totalWeight": {
+                    "type": "number",
+                    "description": "Peso Real (kg)",
+                    "example": 10.5
+                  },
                   "volumes": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "weight": {
-                          "type": "number",
-                          "description": "Peso real em Kg",
-                          "example": 10.5
-                        },
-                        "width": {
-                          "type": "number",
-                          "description": "Largura em cm",
-                          "example": 20
-                        },
-                        "height": {
-                          "type": "number",
-                          "description": "Altura em cm",
-                          "example": 15
-                        },
-                        "length": {
-                          "type": "number",
-                          "description": "Comprimento em cm",
-                          "example": 30
-                        }
-                      }
-                    }
+                    "type": "integer",
+                    "description": "Volumes (Qtd)",
+                    "example": 2
+                  },
+                  "cubicMeters": {
+                    "type": "number",
+                    "description": "M³ (Cubagem) (Total)",
+                    "example": 0.05
                   }
                 }
               }
@@ -235,6 +231,90 @@
           },
           "404": {
             "description": "Nota fiscal não encontrada ou sem vínculo com a transportadora"
+          }
+        }
+      }
+    },
+    "/tracking-events/{invoiceNumber}": {
+      "get": {
+        "summary": "Consulta de Rastreamento (Embarcador -> Sistemas Externos)",
+        "description": "Endpoint para que sistemas internos ou parceiros do Embarcador (ex: CRM, E-commerce, SAC) consultem o status atual e o histórico completo de rastreamento de uma entrega, baseando-se no número da Nota Fiscal ou Pedido.",
+        "operationId": "getTrackingHistory",
+        "tags": [
+          "Tracking"
+        ],
+        "parameters": [
+          {
+            "name": "invoiceNumber",
+            "in": "path",
+            "required": true,
+            "description": "Número da Nota Fiscal ou Pedido associado ao transporte.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "carrierCnpj",
+            "in": "query",
+            "required": false,
+            "description": "CNPJ da transportadora (opcional, para diferenciar caso haja o mesmo número de NF em transportadoras distintas).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Histórico de rastreamento retornado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoiceNumber": {
+                      "type": "string",
+                      "example": "12345"
+                    },
+                    "carrierName": {
+                      "type": "string",
+                      "example": "Loggi Express"
+                    },
+                    "currentStatus": {
+                      "type": "string",
+                      "description": "Status mais recente da entrega",
+                      "example": "DELIVERED"
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "statusCode": {
+                            "type": "string",
+                            "example": "DELIVERED"
+                          },
+                          "eventDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-05-10T14:30:00Z"
+                          },
+                          "notes": {
+                            "type": "string",
+                            "example": "Recebido pelo porteiro João da Silva"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "API Key ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhum registro de transporte encontrado para a Nota Fiscal informada"
           }
         }
       }

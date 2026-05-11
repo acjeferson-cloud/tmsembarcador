@@ -7,7 +7,7 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'GET') {
     return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
   }
 
@@ -15,6 +15,71 @@ serve(async (req: Request) => {
     // 1. O middleware valida a key, cria o tenant JWT e injeta no Supabase client
     const apiContext = await authenticateApiKey(req);
     const { supabase, organizationId, environmentId } = apiContext;
+
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      const pathParts = url.pathname.split('/');
+      const invoiceNumber = pathParts[pathParts.length - 1];
+      const carrierCnpj = url.searchParams.get('carrierCnpj');
+
+      if (!invoiceNumber || invoiceNumber === 'v1-tracking-events' || invoiceNumber === 'tracking-events') {
+        return new Response(
+          JSON.stringify({ error: 'Número da Nota Fiscal não informado na URL.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let query = supabase
+        .from('invoices_nfe')
+        .select(`
+          id,
+          numero,
+          carrier_cnpj,
+          situacao,
+          carriers ( nome_fantasia )
+        `)
+        .eq('numero', invoiceNumber);
+
+      if (carrierCnpj) {
+        query = query.eq('carrier_cnpj', carrierCnpj);
+      }
+
+      const { data: invoices, error: invoiceError } = await query;
+      
+      if (invoiceError) throw invoiceError;
+      if (!invoices || invoices.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Nenhum registro encontrado.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const invoice = invoices[0];
+      
+      // Fetch events
+      const { data: events, error: eventsError } = await supabase
+        .from('tracking_events')
+        .select('status_code, event_date, metadata')
+        .eq('invoice_id', invoice.id)
+        .order('event_date', { ascending: false });
+
+      if (eventsError) throw eventsError;
+
+      const responseBody = {
+        invoiceNumber: invoice.numero,
+        carrierName: invoice.carriers?.[0]?.nome_fantasia || invoice.carriers?.nome_fantasia || 'Desconhecida',
+        currentStatus: invoice.situacao,
+        history: (events || []).map((e: any) => ({
+          statusCode: e.status_code,
+          eventDate: e.event_date,
+          notes: e.metadata?.notes
+        }))
+      };
+
+      return new Response(JSON.stringify(responseBody), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // POST FLOW (Inbound Tracking Event)
 
     // 2. Extrai e valida o corpo da requisição B2B
     const body = await req.json();

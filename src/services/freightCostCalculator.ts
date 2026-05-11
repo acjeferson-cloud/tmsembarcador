@@ -29,7 +29,8 @@ interface CalculationResult {
   seccat: number;
   despacho: number;
   itr: number;
-  coletaEntrega: number;
+  taxaColeta: number;
+  taxaEntrega: number;
   tda: number;
   tde: number;
   trt: number;
@@ -171,8 +172,15 @@ export const freightCostCalculator = {
       }
     }
 
+    // Fetch the carrier object to get regime_tributario
+    const { data: carrier } = await supabase
+      .from('carriers')
+      .select('regime_tributario')
+      .eq('id', carrierId)
+      .maybeSingle();
+
     // 7. Calcular todas as taxas (Isto representa o Fallback base da Rota Origem x Destino)
-    const baseResult = this.performCalculation(tariff, invoiceData, cte, additionalFees);
+    const baseResult = this.performCalculation(tariff, invoiceData, cte, additionalFees, carrier);
 
     // 8. INTEGRAÇÃO: Identificar se o Processo é Especial (Devolução ou Reentrega)
     const xmlData = typeof cte.xml_data === 'string' ? JSON.parse(cte.xml_data || '{}') : (cte.xml_data || {});
@@ -283,7 +291,8 @@ export const freightCostCalculator = {
       seccat: 0,
       despacho: 0,
       itr: 0,
-      coletaEntrega: 0,
+      taxaColeta: 0,
+      taxaEntrega: 0,
       tda: 0,
       tde: 0,
       trt: 0,
@@ -314,7 +323,8 @@ export const freightCostCalculator = {
       seccat: 0,
       despacho: 0,
       itr: 0,
-      coletaEntrega: 0,
+      taxaColeta: 0,
+      taxaEntrega: 0,
       tda: 0,
       tde: 0,
       trt: 0,
@@ -711,6 +721,9 @@ export const freightCostCalculator = {
       case 'per_kg':
         calculated = pesoConsiderado * fee.fee_value;
         break;
+      case 'percent_invoice':
+        calculated = (valorMercadoria * fee.fee_value) / 100;
+        break;
     }
 
     return Math.max(calculated, fee.minimum_value || 0);
@@ -723,7 +736,8 @@ export const freightCostCalculator = {
     tariff: FreightRate,
     invoiceData: InvoiceData,
     cte: CTeWithRelations | null,
-    additionalFees: AdditionalFee[] = []
+    additionalFees: AdditionalFee[] = [],
+    carrier?: any
   ): CalculationResult {
     // Calcular o Peso Considerado (Priorizar o maior entre Regra de Cubagem e Peso Real)
     let pesoConsiderado = invoiceData.weight;
@@ -767,8 +781,11 @@ export const freightCostCalculator = {
     // 8. ITR (arredondar individualmente)
     const itr = this.roundValue(semTaxas ? 0 : (tariff.itr || 0));
 
-    // 9. COLETA/ENTREGA (arredondar individualmente)
-    const coletaEntrega = this.roundValue(semTaxas ? 0 : (tariff.coleta_entrega || 0));
+    // 9. TAXA COLETA (arredondar individualmente)
+    const taxaColeta = this.roundValue(semTaxas ? 0 : (tariff.taxa_coleta || 0));
+
+    // 9.1 TAXA ENTREGA (arredondar individualmente)
+    const taxaEntrega = this.roundValue(semTaxas ? 0 : (tariff.taxa_entrega || 0));
 
     // 9.1 TAXA ADICIONAL (da tabela)
     const taxaAdicional = this.roundValue(semTaxas ? 0 : (tariff.taxa_adicional || 0));
@@ -790,7 +807,7 @@ export const freightCostCalculator = {
       const valorCTeParaCalculo = fretePeso + freteValor;
       
       // Base sem ICMS (todas as rubricas antes de taxas adicionais e impostos)
-      const freteSemIcms = fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + coletaEntrega + taxaAdicional;
+      const freteSemIcms = fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + taxaColeta + taxaEntrega + taxaAdicional;
 
       additionalFees.forEach(fee => {
         // Verificar restrições de peso
@@ -845,11 +862,17 @@ export const freightCostCalculator = {
 
     // 11. BASE DE CÁLCULO (sem outros valores) - somar valores já arredondados
     const baseCalculo = semTaxas ? 0 : 
-                      (fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + coletaEntrega + tda + tde + trt + tec + tcd + tag + tcp + emex + taxaAdicional);
+                      (fretePeso + freteValor + gris + pedagio + tas + seccat + despacho + itr + taxaColeta + taxaEntrega + tda + tde + trt + tec + tcd + tag + tcp + emex + taxaAdicional);
 
     // 13. ICMS - Calcular ANTES de "outros valores"
-    const icmsAliquota = parseFloat(tariff.aliquota_icms?.toString() || '0');
+    let icmsAliquota = parseFloat(tariff.aliquota_icms?.toString() || '0');
     const icmsEmbutido = tariff.icms_embutido_tabela === 'embutido';
+
+    // REGRA DE REGIME TRIBUTÁRIO: Simples Nacional e Isento não tem destaque de ICMS comercial
+    if (carrier && (carrier.regime_tributario === 'simples_nacional' || carrier.regime_tributario === 'isento')) {
+      icmsAliquota = 0;
+    }
+
     let icmsBase = 0;
     let icmsValor = 0;
     let outrosValores = 0;
@@ -924,7 +947,8 @@ export const freightCostCalculator = {
       seccat,
       despacho,
       itr,
-      coletaEntrega,
+      taxaColeta,
+      taxaEntrega,
       tda,
       tde,
       trt,
@@ -1164,7 +1188,8 @@ export const freightCostCalculator = {
       { cte_id: cteId, cost_type: 'seccat', cost_value: calculation.seccat },
       { cte_id: cteId, cost_type: 'dispatch', cost_value: calculation.despacho },
       { cte_id: cteId, cost_type: 'itr', cost_value: calculation.itr },
-      { cte_id: cteId, cost_type: 'collection_delivery', cost_value: calculation.coletaEntrega },
+      { cte_id: cteId, cost_type: 'collection_fee', cost_value: calculation.taxaColeta },
+      { cte_id: cteId, cost_type: 'delivery_fee', cost_value: calculation.taxaEntrega },
       { cte_id: cteId, cost_type: 'tda', cost_value: calculation.tda },
       { cte_id: cteId, cost_type: 'tde', cost_value: calculation.tde },
       { cte_id: cteId, cost_type: 'trt', cost_value: calculation.trt },

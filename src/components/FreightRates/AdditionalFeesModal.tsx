@@ -103,7 +103,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     state_id: '',
     city_id: '',
     fee_value: 0,
-    value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg',
+    value_type: 'fixed' as 'fixed' | 'percent_weight' | 'percent_value' | 'percent_weight_value' | 'percent_cte' | 'percent_freight_without_icms' | 'per_kg' | 'percent_invoice',
     minimum_value: 0,
     taxation_group_id: '',
     min_weight_kg: null as number | null,
@@ -311,6 +311,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       percent_cte: t('carriers.freightRates.additionalFees.pctCteShort'),
       percent_freight_without_icms: 'Pct s/ Frete sem ICMS',
       per_kg: 'R$ / KG Físico',
+      percent_invoice: 'Percentual sobre a Nota',
     };
     return types[type] || type;
   };
@@ -324,6 +325,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
       percent_cte: t('carriers.freightRates.additionalFees.percentCte'),
       percent_freight_without_icms: 'Percentual sobre Frete sem ICMS',
       per_kg: 'Valor Fixo multiplicado pelo KG Físico',
+      percent_invoice: 'Percentual sobre o Valor da Nota',
     };
     return types[type] || type;
   };
@@ -575,6 +577,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     <option value="percent_cte">{getValueTypeFullLabel('percent_cte')}</option>
                     <option value="percent_freight_without_icms">{getValueTypeFullLabel('percent_freight_without_icms')}</option>
                     <option value="per_kg">{getValueTypeFullLabel('per_kg')}</option>
+                    <option value="percent_invoice">{getValueTypeFullLabel('percent_invoice')}</option>
                   </select>
                 </div>
 

@@ -181,7 +181,8 @@ export const invoicesCostService = {
                         calculation.gris + calculation.pedagio +
                         calculation.tas + calculation.seccat +
                         calculation.despacho + calculation.itr +
-                        calculation.coletaEntrega;
+                        calculation.taxaColeta +
+                        calculation.taxaEntrega;
 
     const pisValor = freightCostCalculator.roundValue((baseCalculo * 1.65) / 100);
     const cofinsValor = freightCostCalculator.roundValue((baseCalculo * 7.6) / 100);
@@ -201,7 +202,8 @@ export const invoicesCostService = {
       ademe_gris_value: calculation.gris,
       itr_value: calculation.itr,
       tas_value: calculation.tas,
-      collection_delivery_value: calculation.coletaEntrega,
+      collection_fee_value: calculation.taxaColeta,
+      delivery_fee_value: calculation.taxaEntrega,
       other_tax_value: 0,
       toll_value: calculation.pedagio,
       icms_rate: calculation.icmsAliquota,
