@@ -728,7 +728,11 @@ export interface FlatFreightRateTemplate {
   
   // Valores da Tarifa (Taxas Extras Padrão 2)
   taxa_coleta: number;
+  coleta_franquia_kg: number;
+  coleta_excedente_kg: number;
   taxa_entrega: number;
+  entrega_franquia_kg: number;
+  entrega_excedente_kg: number;
   tde_trt: number;
   tas: number;
   taxa_suframa: number;
@@ -803,7 +807,11 @@ export const generateFreightRatesTemplate = (): void => {
       taxa_adicional: 0,
       
       taxa_coleta: 0,
+      coleta_franquia_kg: 0,
+      coleta_excedente_kg: 0,
       taxa_entrega: 0,
+      entrega_franquia_kg: 0,
+      entrega_excedente_kg: 0,
       tde_trt: 0,
       tas: 0,
       taxa_suframa: 0,
@@ -870,7 +878,11 @@ export const generateFreightRatesTemplate = (): void => {
       taxa_adicional: 0,
       
       taxa_coleta: 0,
+      coleta_franquia_kg: 0,
+      coleta_excedente_kg: 0,
       taxa_entrega: 0,
+      entrega_franquia_kg: 0,
+      entrega_excedente_kg: 0,
       tde_trt: 0,
       tas: 0,
       taxa_suframa: 0,
@@ -935,6 +947,10 @@ export const generateFreightRatesTemplate = (): void => {
     { Campo: 'despacho / seccat / etc', Descrição: 'Demais taxas fixas em R$', Obrigatório: 'Não', Exemplo: '25.00' },
     { Campo: 'frete_***_minimo', Descrição: 'Definições de frete mínimo em Reais, KG ou %', Obrigatório: 'Não', Exemplo: '150.00' },
     { Campo: '---', Descrição: 'A PARTIR DAQUI: Configuração da Faixa de Peso (Detalhes)', Obrigatório: '---', Exemplo: '---' },
+    { Campo: 'coleta_franquia_kg', Descrição: 'Franquia de peso da Coleta em KG', Obrigatório: 'Não', Exemplo: '10' },
+    { Campo: 'coleta_excedente_kg', Descrição: 'Taxa excedente da Coleta em R$ / KG', Obrigatório: 'Não', Exemplo: '0.79' },
+    { Campo: 'entrega_franquia_kg', Descrição: 'Franquia de peso da Entrega em KG', Obrigatório: 'Não', Exemplo: '10' },
+    { Campo: 'entrega_excedente_kg', Descrição: 'Taxa excedente da Entrega em R$ / KG', Obrigatório: 'Não', Exemplo: '0.79' },
     { Campo: 'detalhe_ordem', Descrição: 'Número sequencial da faixa para a rota (1, 2, 3...)', Obrigatório: 'Sim', Exemplo: '1' },
     { Campo: 'faixa_peso_ate', Descrição: 'Limite de peso em KG (ex: 50). Para kg infinito informe 99999', Obrigatório: 'Sim', Exemplo: '50' },
     { Campo: 'valor_faixa', Descrição: 'Custo R$ desta faixa. Ex: 45.00 para R$ 45 fixo ou 1.25 para R$ 1,25 / KG excedente', Obrigatório: 'Sim', Exemplo: '45.00' },
