@@ -787,8 +787,20 @@ export const freightCostCalculator = {
     // 9.1 TAXA ENTREGA (arredondar individualmente)
     const taxaEntrega = this.roundValue(semTaxas ? 0 : (tariff.taxa_entrega || 0));
 
-    // 9.1 TAXA ADICIONAL (da tabela)
-    const taxaAdicional = this.roundValue(semTaxas ? 0 : (tariff.taxa_adicional || 0));
+    // 9.1 TAXA ADICIONAL (da tabela + excedentes de coleta e entrega)
+    let taxaAdicionalBase = this.roundValue(semTaxas ? 0 : (tariff.taxa_adicional || 0));
+    
+    let excedenteColeta = 0;
+    if (!semTaxas && tariff.coleta_franquia_kg && pesoConsiderado > tariff.coleta_franquia_kg && tariff.coleta_excedente_kg) {
+      excedenteColeta = this.roundValue((pesoConsiderado - tariff.coleta_franquia_kg) * tariff.coleta_excedente_kg);
+    }
+
+    let excedenteEntrega = 0;
+    if (!semTaxas && tariff.entrega_franquia_kg && pesoConsiderado > tariff.entrega_franquia_kg && tariff.entrega_excedente_kg) {
+      excedenteEntrega = this.roundValue((pesoConsiderado - tariff.entrega_franquia_kg) * tariff.entrega_excedente_kg);
+    }
+
+    const taxaAdicional = this.roundValue(taxaAdicionalBase + excedenteColeta + excedenteEntrega);
 
     // 10. TAXAS ADICIONAIS (TDA, TDE, TRT) - arredondar individualmente
     let tda = 0;

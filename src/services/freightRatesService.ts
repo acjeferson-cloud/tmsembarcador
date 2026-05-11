@@ -9,7 +9,7 @@ const VALID_FREIGHT_RATE_FIELDS = [
   'pedagio_tipo_kg', 'icms_embutido_tabela', 'aliquota_icms', 'fator_m3',
   'fator_m3_apartir_kg', 'fator_m3_apartir_m3', 'fator_m3_apartir_valor',
   'percentual_gris', 'gris_minimo', 'seccat', 'despacho', 'itr', 'taxa_adicional',
-  'taxa_coleta', 'taxa_entrega', 'tde_trt', 'tas', 'taxa_suframa', 'valor_outros_percent',
+  'taxa_coleta', 'taxa_entrega', 'coleta_franquia_kg', 'coleta_excedente_kg', 'entrega_franquia_kg', 'entrega_excedente_kg', 'tde_trt', 'tas', 'taxa_suframa', 'valor_outros_percent',
   'valor_outros_minimo', 'taxa_outros_valor', 'taxa_outros_tipo_valor',
   'taxa_apartir_de', 'taxa_apartir_de_tipo', 'taxa_outros_a_cada',
   'taxa_outros_minima', 'frete_peso_minimo', 'frete_valor_minimo',
@@ -102,6 +102,10 @@ export interface FreightRate {
   taxa_adicional?: number;
   taxa_coleta?: number;
   taxa_entrega?: number;
+  coleta_franquia_kg?: number;
+  coleta_excedente_kg?: number;
+  entrega_franquia_kg?: number;
+  entrega_excedente_kg?: number;
   tde_trt?: number;
   tas?: number;
   taxa_suframa?: number;

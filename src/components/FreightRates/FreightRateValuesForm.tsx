@@ -44,7 +44,11 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
     itr: rate.itr || 0,
     taxa_adicional: rate.taxa_adicional || 0,
     taxa_coleta: rate.taxa_coleta || 0,
+    coleta_franquia_kg: rate.coleta_franquia_kg || 0,
+    coleta_excedente_kg: rate.coleta_excedente_kg || 0,
     taxa_entrega: rate.taxa_entrega || 0,
+    entrega_franquia_kg: rate.entrega_franquia_kg || 0,
+    entrega_excedente_kg: rate.entrega_excedente_kg || 0,
     tde_trt: rate.tde_trt || 0,
     tas: rate.tas || 0,
     taxa_suframa: rate.taxa_suframa || 0,
@@ -71,7 +75,7 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
       'pedagio_minimo', 'pedagio_por_kg', 'pedagio_a_cada_kg', 'aliquota_icms',
       'fator_m3', 'fator_m3_apartir_kg', 'fator_m3_apartir_m3', 'fator_m3_apartir_valor',
       'percentual_gris', 'gris_minimo', 'seccat', 'despacho', 'itr', 'taxa_adicional',
-      'taxa_coleta', 'taxa_entrega', 'tde_trt', 'tas', 'taxa_suframa', 'valor_outros_percent',
+      'taxa_coleta', 'taxa_entrega', 'coleta_franquia_kg', 'coleta_excedente_kg', 'entrega_franquia_kg', 'entrega_excedente_kg', 'tde_trt', 'tas', 'taxa_suframa', 'valor_outros_percent',
       'valor_outros_minimo', 'taxa_outros_valor', 'taxa_apartir_de', 'taxa_outros_a_cada',
       'taxa_outros_minima', 'frete_peso_minimo', 'frete_valor_minimo', 'frete_tonelada_minima',
       'frete_percentual_minimo', 'frete_m3_minimo', 'valor_total_minimo'
@@ -423,12 +427,68 @@ export const FreightRateValuesForm: React.FC<FreightRateValuesFormProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Franquia Coleta (kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="coleta_franquia_kg"
+                    value={formData.coleta_franquia_kg}
+                    onChange={handleInputChange}
+                    step="any"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Exc. Coleta (R$/kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="coleta_excedente_kg"
+                    value={formData.coleta_excedente_kg}
+                    onChange={handleInputChange}
+                    step="any"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Taxa Entrega
                   </label>
                   <input
                     type="number"
                     name="taxa_entrega"
                     value={formData.taxa_entrega}
+                    onChange={handleInputChange}
+                    step="any"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Franquia Entrega (kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="entrega_franquia_kg"
+                    value={formData.entrega_franquia_kg}
+                    onChange={handleInputChange}
+                    step="any"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Exc. Entrega (R$/kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="entrega_excedente_kg"
+                    value={formData.entrega_excedente_kg}
                     onChange={handleInputChange}
                     step="any"
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
