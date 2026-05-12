@@ -668,14 +668,13 @@ export const cteXmlService = {
 
     const cleanSessionCnpj = currentEstablishment.cnpj.replace(/\D/g, '');
     
-    // Lista de CNPJs envolvidos no CTE
-    const involvedCnpjs = [
-      parsedData.sender_document?.replace(/\D/g, '') || '',
-      parsedData.recipient_document?.replace(/\D/g, '') || '',
-      parsedData.shipper_document?.replace(/\D/g, '') || '',
-      parsedData.receiver_document?.replace(/\D/g, '') || '',
-      parsedData.payer_document?.replace(/\D/g, '') || ''
-    ].filter(cnpj => cnpj.length > 0);
+    // Lista de CNPJs envolvidos no CTE usando Regex direto no XML bruto para evitar falhas do parser
+    const xmlString = parsedData.xml_data?.original || '';
+    const allCnpjsMatch = xmlString.match(/<CNPJ>(\d+)<\/CNPJ>/g) || [];
+    const allCpfsMatch = xmlString.match(/<CPF>(\d+)<\/CPF>/g) || [];
+    const involvedCnpjs = [...allCnpjsMatch, ...allCpfsMatch]
+      .map(tag => tag.replace(/\D/g, ''))
+      .filter(doc => doc.length > 0);
 
     const isValidBranch = involvedCnpjs.some(cnpj => cnpj === cleanSessionCnpj || Number(cnpj) === Number(cleanSessionCnpj));
 

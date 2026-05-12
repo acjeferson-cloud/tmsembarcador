@@ -645,23 +645,31 @@ serve(async (req) => {
                         let targetEstabId = estab.id;
                         let targetEnvironmentId = estab.environment_id;
                         
-                        const candidateDocs = [
-                           tomadorCnpj,
-                           infCte.rem?.CNPJ || infCte.rem?.CPF || '',
-                           infCte.dest?.CNPJ || infCte.dest?.CPF || '',
-                           infCte.exped?.CNPJ || infCte.exped?.CPF || '',
-                           infCte.receb?.CNPJ || infCte.receb?.CPF || ''
-                        ].filter(doc => !!doc).map(doc => String(doc).replace(/\D/g, ''));
+                        // Roteamento à prova de falhas usando Regex direto na string XML
+                        const allCnpjsMatch = xmlString.match(/<CNPJ>(\d+)<\/CNPJ>/g) || [];
+                        const candidateDocs = allCnpjsMatch.map(tag => tag.replace(/\D/g, ''));
+                        
+                        // Também adiciona CPFs caso seja pessoa física
+                        const allCpfsMatch = xmlString.match(/<CPF>(\d+)<\/CPF>/g) || [];
+                        candidateDocs.push(...allCpfsMatch.map(tag => tag.replace(/\D/g, '')));
 
                         let matchedEstab = null;
                         for (const doc of candidateDocs) {
                            matchedEstab = establishments.find((e: any) => {
                               if (e.organization_id !== estab.organization_id || !e.cnpj) return false;
-                              const cleanDB = e.cnpj.replace(/\D/g, '');
+                              const cleanDB = String(e.cnpj).replace(/\D/g, '');
                               return cleanDB === doc || Number(cleanDB) === Number(doc);
                            });
                            if (matchedEstab) break;
                         }
+
+                        details.push({ 
+                           message: `Debug Roteamento CT-e ${nNF}`, 
+                           candidateDocs, 
+                           matchedEstabCode: matchedEstab?.codigo, 
+                           fallbackEstab: estab.codigo,
+                           tomadorCnpj
+                        });
 
                         if (matchedEstab) {
                            targetEstabId = matchedEstab.id;
