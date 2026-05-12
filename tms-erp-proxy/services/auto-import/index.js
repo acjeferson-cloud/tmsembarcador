@@ -297,12 +297,15 @@ export async function executeAutoImport(reqBody) {
 
                                         let routedEstab = estab;
                                         const orgMap = estabCnpjMap[estab.organization_id] || {};
-                                        const emitCnpj = String(emit?.CNPJ || emit?.CPF || '').replace(/\D/g, '');
-                                        const destCnpj = String(dest?.CNPJ || dest?.CPF || '').replace(/\D/g, '');
-                                        if (emitCnpj && orgMap[emitCnpj]) {
-                                            routedEstab = orgMap[emitCnpj];
-                                        } else if (destCnpj && orgMap[destCnpj]) {
-                                            routedEstab = orgMap[destCnpj];
+                                        const allCnpjsMatchNfe = xmlString.match(/<CNPJ>(\d+)<\/CNPJ>/g) || [];
+                                        const allCpfsMatchNfe = xmlString.match(/<CPF>(\d+)<\/CPF>/g) || [];
+                                        const candidateDocsNfe = [...allCnpjsMatchNfe, ...allCpfsMatchNfe].map(tag => tag.replace(/\D/g, ''));
+                                        
+                                        for (const doc of candidateDocsNfe) {
+                                            if (orgMap[doc]) {
+                                                routedEstab = orgMap[doc];
+                                                break;
+                                            }
                                         }
 
                                         const enderDest = dest?.enderDest;
@@ -535,20 +538,17 @@ export async function executeAutoImport(reqBody) {
 
                                         let routedEstabCte = estab;
                                         const orgMapCte = estabCnpjMap[estab.organization_id] || {};
-                                        // Priority: Remetente > Destinatário > Expedidor > Recebedor > Tomador/Emitente
-                                        const remCnpj = String(infCte.rem?.CNPJ || infCte.rem?.CPF || '').replace(/\D/g, '');
-                                        const destCnpj = String(infCte.dest?.CNPJ || infCte.dest?.CPF || '').replace(/\D/g, '');
-                                        const expedCnpj = String(infCte.exped?.CNPJ || infCte.exped?.CPF || '').replace(/\D/g, '');
-                                        const recebCnpj = String(infCte.receb?.CNPJ || infCte.receb?.CPF || '').replace(/\D/g, '');
-                                        const tomaCnpj = String(infCte.ide?.toma4?.CNPJ || infCte.ide?.toma4?.CPF || infCte.ide?.toma03?.toma || '').replace(/\D/g, '');
-                                        const emitCnpj = String(infCte.emit?.CNPJ || infCte.emit?.CPF || '').replace(/\D/g, '');
-
-                                        if (remCnpj && orgMapCte[remCnpj]) routedEstabCte = orgMapCte[remCnpj];
-                                        else if (destCnpj && orgMapCte[destCnpj]) routedEstabCte = orgMapCte[destCnpj];
-                                        else if (expedCnpj && orgMapCte[expedCnpj]) routedEstabCte = orgMapCte[expedCnpj];
-                                        else if (recebCnpj && orgMapCte[recebCnpj]) routedEstabCte = orgMapCte[recebCnpj];
-                                        else if (tomaCnpj && orgMapCte[tomaCnpj]) routedEstabCte = orgMapCte[tomaCnpj];
-                                        else if (emitCnpj && orgMapCte[emitCnpj]) routedEstabCte = orgMapCte[emitCnpj];
+                                        
+                                        const allCnpjsMatchCte = xmlString.match(/<CNPJ>(\d+)<\/CNPJ>/g) || [];
+                                        const allCpfsMatchCte = xmlString.match(/<CPF>(\d+)<\/CPF>/g) || [];
+                                        const candidateDocsCte = [...allCnpjsMatchCte, ...allCpfsMatchCte].map(tag => tag.replace(/\D/g, ''));
+                                        
+                                        for (const doc of candidateDocsCte) {
+                                            if (orgMapCte[doc]) {
+                                                routedEstabCte = orgMapCte[doc];
+                                                break;
+                                            }
+                                        }
 
                                         // Extração da Transportadora (Emitente do CT-e)
                                         let cteCarrierId = null;
