@@ -717,8 +717,8 @@ export const sapIntegrationService = {
       };
 
     } catch (e: any) {
-
-      return { success: false, error: 'Ocorreu um erro interno ao processar a importação da última Nota Fiscal do SAP B1. Tente novamente mais tarde.' };
+      console.error('ERRO FATAL NA INTEGRAÇÃO SAP INVOICES:', e);
+      return { success: false, error: `Erro Interno: ${e.message || e}` };
     }
   },
   /**
