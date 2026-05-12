@@ -361,21 +361,46 @@ export const sapIntegrationService = {
 
       // 2. Invoke Node.js Proxy (Cloud Run VPC)
       const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
-      const payload = {
+      
+      const invoicePayloads = [];
+      
+      // Sempre criar payload para NF Real
+      invoicePayloads.push({
         endpointSystem: erpConfig.service_layer_address,
         port: erpConfig.port,
         username: erpConfig.username,
         password: erpConfig.password,
         companyDb: erpConfig.database,
         sap_bpl_id: erpConfig.sap_bpl_id || null,
+        sap_fetch_drafts: false,
         lastSyncTime: null
-      };
-
-      const response = await fetch(`${proxyUrl}/api/fetch-sap-invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
       });
+
+      // Se a flag estiver ativa, adicionar payload para Esboços (Drafts)
+      if (erpConfig.sap_fetch_drafts) {
+        invoicePayloads.push({
+          endpointSystem: erpConfig.service_layer_address,
+          port: erpConfig.port,
+          username: erpConfig.username,
+          password: erpConfig.password,
+          companyDb: erpConfig.database,
+          sap_bpl_id: erpConfig.sap_bpl_id || null,
+          sap_fetch_drafts: true,
+          lastSyncTime: null
+        });
+      }
+
+      let insertedCountInvoice = 0;
+      let lastInvoiceMessage = '';
+
+      for (const payload of invoicePayloads) {
+        const isDraftRun = payload.sap_fetch_drafts;
+        
+        const response = await fetch(`${proxyUrl}/api/fetch-sap-invoice`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
       
       let data;
       try {
@@ -385,16 +410,13 @@ export const sapIntegrationService = {
       }
 
       if (!data?.success) {
-        return { success: false, error: data?.error || 'Erro desconhecido retornado pelo Proxy SAP.' };
+        continue;
       }
 
       const sapInvoices = data.invoices;
       if (!sapInvoices || sapInvoices.length === 0) {
-        return { success: false, error: 'A lista de Notas Fiscais retornada pelo SAP está vazia.' };
+        continue;
       }
-
-      let insertedCountInvoice = 0;
-      let lastInvoiceMessage = '';
 
       for (const sapInvoice of sapInvoices) {
 
@@ -564,12 +586,39 @@ export const sapIntegrationService = {
 
       // 6. Check if Invoice already exists
       const invNum = String(sapInvoice.invoice_number || sapInvoice.DocNum || sapInvoice.order_number || '');
-      const { data: existingInvoice } = await (supabase as any)
-        .from('invoices_nfe')
-        .select('id')
-        .eq('numero', invNum)
-        .eq('organization_id', context?.organizationId || 0)
-        .maybeSingle();
+      
+      let existingInvoice = null;
+
+      // Update logica de Draft -> Real Invoice!
+      if (!isDraftRun && sapInvoice.order_number) {
+        const { data: draftInv } = await (supabase as any)
+          .from('invoices_nfe')
+          .select('id')
+          .eq('order_number', sapInvoice.order_number)
+          .eq('is_draft', true)
+          .eq('organization_id', context?.organizationId || 0)
+          .maybeSingle();
+
+        if (draftInv) {
+          existingInvoice = draftInv;
+          await (supabase as any).from('invoices_nfe').update({
+             is_draft: false,
+             numero: invNum,
+             situacao: 'Emitida',
+             data_emissao: sapInvoice.issue_date || new Date().toISOString().split('T')[0]
+          }).eq('id', existingInvoice.id);
+        }
+      }
+
+      if (!existingInvoice) {
+        const { data: standardInv } = await (supabase as any)
+          .from('invoices_nfe')
+          .select('id')
+          .eq('numero', invNum)
+          .eq('organization_id', context?.organizationId || 0)
+          .maybeSingle();
+        existingInvoice = standardInv;
+      }
 
       if (existingInvoice) {
         continue;
@@ -592,7 +641,8 @@ export const sapIntegrationService = {
         peso_total: sapInvoice.weight || 0,
         quantidade_volumes: Math.ceil(sapInvoice.volume_qty || 1),
         carrier_id: calculatedBestCarrier || null,
-        situacao: 'Emitida',
+        situacao: isDraftRun ? 'Aguardando Faturamento' : 'Emitida',
+        is_draft: isDraftRun,
         invoice_type: 'NFe',
         order_number: sapInvoice.order_number || ''
       };
@@ -640,7 +690,8 @@ export const sapIntegrationService = {
       insertedCountInvoice++;
       lastInvoiceMessage = `Nota Fiscal ${invNum} importada com sucesso!`;
 
-      }
+      } // close inner loop
+      } // close outer loop (payloads)
 
       return { 
         success: true, 
