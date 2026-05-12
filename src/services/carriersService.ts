@@ -27,6 +27,7 @@ export interface Carrier {
   status: 'ativo' | 'inativo';
   rating?: number;
   active_shipments?: number;
+  active_freight_tables?: number;
   modal_rodoviario?: boolean;
   modal_aereo?: boolean;
   modal_aquaviario?: boolean;
@@ -182,7 +183,14 @@ export const carriersService = {
         .not('nota', 'is', null)
         .order('data_resposta', { ascending: false });
 
-      // Agrupar NPS por transportador
+      // Buscar quantidade de tabelas de frete ativas por transportador
+      const { data: freightTablesData } = await supabase
+        .from('freight_rate_tables')
+        .select('transportador_id')
+        .in('transportador_id', carrierIds)
+        .eq('status', 'ativo');
+
+      // Agrupar NPS e tabelas por transportador
       const npsInternoMap = new Map<string, number[]>();
       const npsExternoMap = new Map<string, number[]>();
 
@@ -206,6 +214,11 @@ export const carriersService = {
         }
       });
 
+      const freightTablesMap = new Map<string, number>();
+      (freightTablesData || []).forEach(item => {
+        freightTablesMap.set(item.transportador_id, (freightTablesMap.get(item.transportador_id) || 0) + 1);
+      });
+
       // Calcular médias e transformar dados
       const carriersWithNPS = carriers.map(carrier => {
         const npsInternoList = npsInternoMap.get(carrier.id) || [];
@@ -224,6 +237,7 @@ export const carriersService = {
           ...transformedCarrier,
           nps_interno: Math.round(avgInterno * 10) / 10,
           nps_externo: Math.round(avgExterno * 10) / 10,
+          active_freight_tables: freightTablesMap.get(carrier.id) || 0,
         };
       });
 

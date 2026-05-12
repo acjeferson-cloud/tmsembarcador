@@ -144,6 +144,15 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   const [showRateForm, setShowRateForm] = useState(false);
   const [editingRateId, setEditingRateId] = useState<string | null>(null);
   const [rateSearchTerm, setRateSearchTerm] = useState('');
+  
+  // Paginação das tarifas
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Voltar para a página 1 sempre que a busca mudar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rateSearchTerm]);
   const [rateFormData, setRateFormData] = useState({
     descricao: '',
     tipo_aplicacao: 'cidade' as 'cidade' | 'cliente' | 'produto',
@@ -513,6 +522,12 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
     return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredTarifas.length / ITEMS_PER_PAGE));
+  const paginatedTarifas = filteredTarifas.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
@@ -735,30 +750,30 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
 
         {/* Rates Section */}
         <div ref={ratesSectionRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 scroll-mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('carriers.freightRates.form.rates')}</h2>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Buscar tarifa..."
-                  value={rateSearchTerm}
-                  onChange={(e) => setRateSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-                />
-              </div>
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={() => setShowRateForm(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-                >
-                  <Plus size={16} />
-                  <span>{t('carriers.freightRates.form.addRate')}</span>
-                </button>
-              )}
+          <div className="flex items-center space-x-4 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white whitespace-nowrap">{t('carriers.freightRates.form.rates')}</h2>
+            
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Buscar tarifa por código, descrição ou prazo..."
+                value={rateSearchTerm}
+                onChange={(e) => setRateSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+              />
             </div>
+
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => setShowRateForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors whitespace-nowrap"
+              >
+                <Plus size={16} />
+                <span>{t('carriers.freightRates.form.addRate')}</span>
+              </button>
+            )}
           </div>
 
           {/* Rate Form */}
@@ -888,7 +903,7 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                  {filteredTarifas.map((rate) => (
+                  {paginatedTarifas.map((rate) => (
                     <tr key={rate.id} className="hover:bg-gray-50 dark:bg-gray-900">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {rate.codigo}
@@ -958,6 +973,36 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Mostrando <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> até <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredTarifas.length)}</span> de <span className="font-medium">{filteredTarifas.length}</span> tarifas
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-900 dark:disabled:text-gray-600 transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <div className="flex items-center px-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      {currentPage} / {totalPages}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-900 dark:disabled:text-gray-600 transition-colors"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">

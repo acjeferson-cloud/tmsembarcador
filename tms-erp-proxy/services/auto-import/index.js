@@ -183,7 +183,7 @@ export async function executeAutoImport(reqBody) {
                 }
                 await flushLogs('running', `Lock INBOX obtido! Buscando emails unread...`);
                 try {
-                    const messageGenerator = mailClient.fetch({ unseen: true }, { envelope: true, flags: true, uid: true, size: true });
+                    const messageGenerator = mailClient.fetch({ unseen: true }, { envelope: true, flags: true, uid: true, size: true, source: true });
                     const messagesToProcess = [];
                     for await (let msg of messageGenerator) {
                         messagesToProcess.push(msg);
@@ -191,28 +191,18 @@ export async function executeAutoImport(reqBody) {
                     for (let msg of messagesToProcess) {
                         estabEmailsChecked++;
                         emailsChecked++;
-                        await flushLogs('running', `Lendo UID/Seq ${msg.seq}... Baixando código-fonte completo.`);
+                        await flushLogs('running', `Lendo UID/Seq ${msg.seq}... Analisando anexos (Source em memória).`);
                         
-                        let sourceMsg;
-                        try {
-                            sourceMsg = await Promise.race([
-                                mailClient.fetchOne(msg.uid, { source: true, uid: true }),
-                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 20s baixando fonte do email')), 20000))
-                            ]);
-                        } catch(err) {
-                            await flushLogs('running', `Erro fatal baixando email UID ${msg.uid}: ${err.message}`);
-                            continue;
-                        }
+                        let sourceMsg = msg;
                         
                         if (!sourceMsg || !sourceMsg.source) {
                             details.push({ message: `Source vazio para UID ${msg.uid}` });
                             continue;
                         }
-                        msg.source = sourceMsg.source;
-
+                        
                         try {
                             await flushLogs('running', `Fazendo parse estrutural do email com simpleParser...`);
-                            const parsed = await simpleParser(msg.source);
+                            const parsed = await simpleParser(sourceMsg.source);
                             const validAttachmentsInfo = parsed.attachments.filter((a) => {
                                 const name = (a.filename || '').toLowerCase();
                                 const type = (a.contentType || '').toLowerCase();
@@ -549,6 +539,13 @@ export async function executeAutoImport(reqBody) {
                                                 break;
                                             }
                                         }
+
+                                        details.push({
+                                            message: `DEBUG ROUTE CT-e ${accessKey}`,
+                                            candidateDocsCte,
+                                            routedEstabCnpj: routedEstabCte.cnpj,
+                                            orgId: estab.organization_id
+                                        });
 
                                         // Extração da Transportadora (Emitente do CT-e)
                                         let cteCarrierId = null;

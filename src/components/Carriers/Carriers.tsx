@@ -499,8 +499,8 @@ export const Carriers: React.FC = () => {
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">{t('carriers.view.activeShipments')}:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white ml-1">{carrier.active_shipments || 0}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Tabelas de Frete Ativas:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white ml-1">{carrier.active_freight_tables || 0}</span>
                 </div>
                 <div className="text-right flex items-center space-x-2">
                   {carrier.exige_seguro_obrigatorio && (

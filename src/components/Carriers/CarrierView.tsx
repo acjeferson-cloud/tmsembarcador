@@ -203,8 +203,8 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
               {/* Stats */}
               <div className="text-center">
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-2xl font-bold text-blue-600">{carrier.active_shipments || 0}</p>
-                  <p className="text-sm text-blue-700">{t('carriers.view.activeDeliveries')}</p>
+                  <p className="text-2xl font-bold text-blue-600">{carrier.active_freight_tables || 0}</p>
+                  <p className="text-sm text-blue-700">Tabelas de Frete Ativas</p>
                 </div>
               </div>
             </div>
@@ -385,8 +385,8 @@ export const CarrierView: React.FC<CarrierViewProps> = ({ onBack, onEdit, carrie
                 <p className="text-sm text-blue-700">{t('carriers.view.averageRating')}</p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">{carrier.active_shipments || 0}</p>
-                <p className="text-sm text-green-700">{t('carriers.view.activeDeliveries')}</p>
+                <p className="text-2xl font-bold text-green-600">{carrier.active_freight_tables || 0}</p>
+                <p className="text-sm text-green-700">Tabelas de Frete Ativas</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
                 <p className="text-2xl font-bold text-purple-600">{carrier.taxa_entrega ? `${carrier.taxa_entrega}%` : 'S/N'}</p>

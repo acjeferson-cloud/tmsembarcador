@@ -1073,7 +1073,6 @@ app.post('/api/integrate-cte', async (req, res) => {
       Usage: parseInt(cte_usage) || undefined,
       SequenceModel: String(cte_model || '57'),
       SequenceSerial: parseInt(cte_data.number || cte_data.numero) || undefined,
-      Series: cte_data.series || undefined,
       
       // Skill Module Flag (if configured)
       ...(fiscal_module === 'skill' ? { U_SKL25NFE: '1' } : {}),
