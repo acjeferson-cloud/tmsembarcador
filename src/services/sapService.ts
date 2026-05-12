@@ -590,17 +590,35 @@ export const sapIntegrationService = {
       let existingInvoice = null;
 
       // Update logica de Draft -> Real Invoice!
-      if (!isDraftRun && sapInvoice.order_number) {
-        const { data: draftInv } = await (supabase as any)
-          .from('invoices_nfe')
-          .select('id')
-          .eq('order_number', sapInvoice.order_number)
-          .eq('is_draft', true)
-          .eq('organization_id', context?.organizationId || 0)
-          .maybeSingle();
+      if (!isDraftRun) {
+        // Tentativa 1: Vínculo exato via draft_entry do SAP
+        if (sapInvoice.draft_entry) {
+          const { data: draftInv } = await (supabase as any)
+            .from('invoices_nfe')
+            .select('id')
+            .eq('numero', `DRAFT-${sapInvoice.draft_entry}`)
+            .eq('is_draft', true)
+            .eq('organization_id', context?.organizationId || 0)
+            .maybeSingle();
 
-        if (draftInv) {
-          existingInvoice = draftInv;
+          if (draftInv) existingInvoice = draftInv;
+        }
+        
+        // Tentativa 2: Vínculo antigo via order_number (fallback)
+        if (!existingInvoice && sapInvoice.order_number) {
+          const { data: draftInvFallback } = await (supabase as any)
+            .from('invoices_nfe')
+            .select('id')
+            .eq('order_number', sapInvoice.order_number)
+            .eq('is_draft', true)
+            .eq('organization_id', context?.organizationId || 0)
+            .maybeSingle();
+
+          if (draftInvFallback) existingInvoice = draftInvFallback;
+        }
+
+        // Se encontrou o Draft, converte ele para NF Emitida
+        if (existingInvoice) {
           await (supabase as any).from('invoices_nfe').update({
              is_draft: false,
              numero: invNum,

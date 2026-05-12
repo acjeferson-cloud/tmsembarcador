@@ -720,6 +720,7 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
     }
 
     const invoiceData = await invoiceResponse.json();
+    console.log(`[Proxy] Resposta SAP para Drafts/Invoices:`, JSON.stringify(invoiceData).substring(0, 1000));
     const invoicesList = invoiceData.value || [];
 
     if (invoicesList.length === 0) {
@@ -817,7 +818,10 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
 
       const mappedInvoice = {
         order_number: relatedOrderNum,
-        invoice_number: latestInvoice.U_SKL25NFE?.toString() || latestInvoice.SequenceSerial?.toString() || latestInvoice.Serial?.toString() || latestInvoice.FolioNumber?.toString() || latestInvoice.DocNum?.toString() || '',
+        invoice_number: (sap_fetch_drafts ? `DRAFT-${latestInvoice.DocEntry}` : null) || latestInvoice.U_SKL25NFE?.toString() || latestInvoice.SequenceSerial?.toString() || latestInvoice.Serial?.toString() || latestInvoice.FolioNumber?.toString() || latestInvoice.DocNum?.toString() || '',
+        doc_entry: latestInvoice.DocEntry?.toString() || '',
+        doc_num: latestInvoice.DocNum?.toString() || '',
+        draft_entry: latestInvoice.DraftEntry?.toString() || '',
         issue_date: latestInvoice.DocDate || new Date().toISOString().split('T')[0],
         entry_date: latestInvoice.DocDate || new Date().toISOString().split('T')[0],
         expected_delivery: latestInvoice.DocDueDate || '',

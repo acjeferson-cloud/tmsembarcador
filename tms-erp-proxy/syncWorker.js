@@ -399,17 +399,35 @@ export async function runCronSync(port = 8080) {
           
           let existingInv = null;
 
-          if (!isDraftRun && sapInvoice.order_number) {
-             const { data: draftInv } = await supabase
-                .from('invoices_nfe')
-                .select('id, valor_frete, carrier_id')
-                .eq('order_number', sapInvoice.order_number)
-                .eq('is_draft', true)
-                .eq('organization_id', config.organization_id)
-                .maybeSingle();
+          if (!isDraftRun) {
+             // Tentativa 1: Vinculo por draft_entry (DocEntry do Esboço no SAP)
+             if (sapInvoice.draft_entry) {
+                const { data: draftByEntry } = await supabase
+                   .from('invoices_nfe')
+                   .select('id, valor_frete, carrier_id')
+                   .eq('numero', `DRAFT-${sapInvoice.draft_entry}`)
+                   .eq('is_draft', true)
+                   .eq('organization_id', config.organization_id)
+                   .maybeSingle();
                 
-             if (draftInv) {
-                existingInv = draftInv;
+                if (draftByEntry) existingInv = draftByEntry;
+             }
+
+             // Tentativa 2: Vinculo legado pelo order_number do pedido
+             if (!existingInv && sapInvoice.order_number) {
+                const { data: draftInvFallback } = await supabase
+                   .from('invoices_nfe')
+                   .select('id, valor_frete, carrier_id')
+                   .eq('order_number', sapInvoice.order_number)
+                   .eq('is_draft', true)
+                   .eq('organization_id', config.organization_id)
+                   .maybeSingle();
+                   
+                if (draftInvFallback) existingInv = draftInvFallback;
+             }
+
+             // Se encontrou, atualiza e converte o rascunho em NF real
+             if (existingInv) {
                 await supabase.from('invoices_nfe').update({
                    is_draft: false,
                    numero: sapInvoice.invoice_number,
@@ -418,7 +436,7 @@ export async function runCronSync(port = 8080) {
                    data_emissao: sapInvoice.issue_date ? sapInvoice.issue_date + 'T00:00:00Z' : new Date().toISOString()
                 }).eq('id', existingInv.id);
                 
-                logsBuffer.push(`Draft do pedido ${sapInvoice.order_number} convertido para NFe ${sapInvoice.invoice_number}`);
+                logsBuffer.push(`Esboço convertido para NFe ${sapInvoice.invoice_number}`);
              }
           }
 
