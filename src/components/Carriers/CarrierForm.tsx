@@ -532,7 +532,7 @@ isOpen: false, missing: []});
       if (!permiteImportacao) {
         setCnpjMessage({
           type: 'error',
-          text: t('carriers.importNotAllowed', { status: mensagemStatus })
+          text: t('carriers.form.importNotAllowed', { status: mensagemStatus })
         });
         setIsLoadingCNPJ(false);
         return;
