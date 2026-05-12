@@ -655,7 +655,11 @@ serve(async (req) => {
 
                         let matchedEstab = null;
                         for (const doc of candidateDocs) {
-                           matchedEstab = establishments.find((e: any) => e.organization_id === estab.organization_id && e.cnpj && e.cnpj.replace(/\D/g, '') === doc);
+                           matchedEstab = establishments.find((e: any) => {
+                              if (e.organization_id !== estab.organization_id || !e.cnpj) return false;
+                              const cleanDB = e.cnpj.replace(/\D/g, '');
+                              return cleanDB === doc || Number(cleanDB) === Number(doc);
+                           });
                            if (matchedEstab) break;
                         }
 

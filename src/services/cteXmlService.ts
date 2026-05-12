@@ -451,8 +451,8 @@ export const cteXmlService = {
         await TenantContextHelper.setSessionContext(ctx);
       }
 
-      // Validação Estrita de Estabelecimento (Segurança)
-      await this.validateEstablishmentPermission(parsedData, ctx?.establishmentId);
+      // Validação Estrita de Estabelecimento (Segurança) e Auto-Roteamento
+      const resolvedEstablishmentId = await this.validateEstablishmentPermission(parsedData, ctx?.establishmentId) || establishmentId;
 
       // Descobrir carrier_id (transportador) baseado no emitente
       let carrierId = null;
@@ -474,7 +474,7 @@ export const cteXmlService = {
           carrier_id: carrierId,
           organization_id: ctx?.organizationId,
           environment_id: ctx?.environmentId,
-          establishment_id: establishmentId,
+          establishment_id: resolvedEstablishmentId,
           number: parsedData.number,
           series: parsedData.series,
           access_key: parsedData.access_key,
@@ -652,7 +652,7 @@ export const cteXmlService = {
     }
   },
 
-  async validateEstablishmentPermission(parsedData: ParsedCTeData, establishmentId?: string | null): Promise<void> {
+  async validateEstablishmentPermission(parsedData: ParsedCTeData, establishmentId?: string | null): Promise<string | undefined> {
     if (!establishmentId) {
       throw new Error('Acesso negado: ID da filial logada não identificado ou ausente no contexto.');
     }
@@ -677,22 +677,18 @@ export const cteXmlService = {
       parsedData.payer_document?.replace(/\D/g, '') || ''
     ].filter(cnpj => cnpj.length > 0);
 
-    const isValidBranch = involvedCnpjs.includes(cleanSessionCnpj);
+    const isValidBranch = involvedCnpjs.some(cnpj => cnpj === cleanSessionCnpj || Number(cnpj) === Number(cleanSessionCnpj));
 
     if (!isValidBranch) {
       // Buscar se existe ALGUMA filial que seja a dona correta
       const correctEstablishment = allEstablishments.find((est: any) => {
         const estCnpj = est.cnpj?.replace(/\D/g, '');
-        return estCnpj && involvedCnpjs.includes(estCnpj);
+        return estCnpj && involvedCnpjs.some(cnpj => cnpj === estCnpj || Number(cnpj) === Number(estCnpj));
       });
 
       if (correctEstablishment) {
-        throw new Error(
-          `Acesso negado: Arquivo incompatível com a filial logada! ⚠️\n\n` +
-          `Você está logado em: ${currentEstablishment.codigo} - ${currentEstablishment.razao_social} (CNPJ: ${currentEstablishment.cnpj})\n` +
-          `Este arquivo pertence à filial: ${correctEstablishment.codigo} - ${correctEstablishment.razao_social} (CNPJ: ${correctEstablishment.cnpj}).\n\n` +
-          `➡️ Por favor, altere sua filial logada (menu no canto superior direito) para a ${correctEstablishment.codigo} antes de importar.`
-        );
+        // Auto-rotear para a filial correta
+        return correctEstablishment.id;
       } else {
         throw new Error(
           `Acesso negado: CNPJ não reconhecido! 🚫\n\n` +
@@ -702,5 +698,7 @@ export const cteXmlService = {
         );
       }
     }
+    
+    return currentEstablishment.id;
   }
 };
