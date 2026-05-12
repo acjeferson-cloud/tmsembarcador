@@ -764,6 +764,7 @@ const ImplementationCenter: React.FC = () => {
         password: erpConfig.password,
         database: erpConfig.database,
         sap_bpl_id: erpConfig.sapBplId,
+        sap_fetch_drafts: erpConfig.sapFetchDrafts,
         metadata: { 
           cte_tax_code: erpConfig.cteTaxCode
         },
