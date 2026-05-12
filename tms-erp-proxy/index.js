@@ -216,14 +216,7 @@ app.post('/api/fetch-sap-order', async (req, res) => {
       // Order ascending so the oldest changes are processed first
       dateFilter += `&$orderby=DocEntry asc`;
       
-      const entity = sap_fetch_drafts ? 'Drafts' : 'Orders';
-      if (sap_fetch_drafts) {
-         if (dateFilter.includes('?$filter=')) {
-             dateFilter = dateFilter.replace('?$filter=', `?$filter=DocObjectCode eq '17' and `);
-         } else {
-             dateFilter = `?$filter=DocObjectCode eq '17'` + dateFilter.replace('?', '&');
-         }
-      }
+      const entity = 'Orders';
       
       const orderEndpoint = `${serviceLayerUrl}/${entity}${dateFilter}`;
       console.log(`[Proxy][DEBUG-ORDERS] Buscando orders em: ${orderEndpoint}`);
@@ -455,10 +448,8 @@ app.post('/api/fetch-sap-order-by-id', async (req, res) => {
     
     let orderResponse;
     try {
-      const entity = sap_fetch_drafts ? 'Drafts' : 'Orders';
-      const orderEndpoint = sap_fetch_drafts 
-        ? `${serviceLayerUrl}/${entity}?$filter=DocObjectCode eq '17' and DocNum eq ${orderId}`
-        : `${serviceLayerUrl}/${entity}?$filter=DocNum eq ${orderId}`;
+      const entity = 'Orders';
+      const orderEndpoint = `${serviceLayerUrl}/${entity}?$filter=DocNum eq ${orderId}`;
         
       console.log(`[Proxy][DEBUG-ORDERS] Buscando pedido especifico em: ${orderEndpoint}`);
       
@@ -610,7 +601,7 @@ app.post('/api/fetch-sap-order-by-id', async (req, res) => {
 // Endpoint 3: Fetch SAP Invoice
 app.post('/api/fetch-sap-invoice', async (req, res) => {
   try {
-    const { endpointSystem, port, username, password, companyDb, lastSyncTime, sap_bpl_id } = req.body;
+    const { endpointSystem, port, username, password, companyDb, lastSyncTime, sap_bpl_id, sap_fetch_drafts } = req.body;
 
     if (!endpointSystem || !username || !companyDb) {
       return res.status(400).json({ success: false, error: 'Parâmetros de conexão ausentes na requisição.' });
@@ -694,7 +685,16 @@ app.post('/api/fetch-sap-invoice', async (req, res) => {
       // Invoice ascending
       dateFilter += `&$orderby=DocEntry asc`;
       
-      const invoiceEndpoint = `${serviceLayerUrl}/Invoices${dateFilter}`;
+      const entity = sap_fetch_drafts ? 'Drafts' : 'Invoices';
+      if (sap_fetch_drafts) {
+         if (dateFilter.includes('?$filter=')) {
+             dateFilter = dateFilter.replace('?$filter=', `?$filter=DocObjectCode eq '13' and `);
+         } else {
+             dateFilter = `?$filter=DocObjectCode eq '13'` + dateFilter.replace('?', '&');
+         }
+      }
+      
+      const invoiceEndpoint = `${serviceLayerUrl}/${entity}${dateFilter}`;
       console.log(`[Proxy] Buscando invoices em: ${invoiceEndpoint}`);
       
       invoiceResponse = await fetch(invoiceEndpoint, {

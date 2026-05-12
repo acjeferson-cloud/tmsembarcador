@@ -22,6 +22,7 @@ interface Invoice {
   chaveAcesso?: string;
   tolerancia_valor_fatura?: number;
   tolerancia_percentual_fatura?: number;
+  is_draft?: boolean;
 }
 
 interface InvoicesTableProps {
@@ -542,11 +543,18 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                     {invoice.serie}
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    <div className="flex items-center space-x-2">
-                      <span>{invoice.numero}</span>
-                      {invoice.direction === 'reverse' && (
-                        <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800" title="Logística Reversa">
-                          ⮌ Reversa
+                    <div className="flex flex-col items-start space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span>{invoice.numero}</span>
+                        {invoice.direction === 'reverse' && (
+                          <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800" title="Logística Reversa">
+                            ⮌ Reversa
+                          </span>
+                        )}
+                      </div>
+                      {invoice.is_draft && (
+                        <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800" title="Esboço de Nota Fiscal (Rascunho SAP)">
+                          📄 ESBOÇO
                         </span>
                       )}
                     </div>

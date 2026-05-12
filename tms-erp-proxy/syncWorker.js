@@ -253,6 +253,7 @@ export async function runCronSync(port = 8080) {
         password: config.password,
         companyDb: config.database || config.metadata?.database,
         sap_bpl_id: config.sap_bpl_id || null,
+        sap_fetch_drafts: config.sap_fetch_drafts || false,
         lastSyncTime: config.last_sync_time || null
       };
 
@@ -377,23 +378,59 @@ export async function runCronSync(port = 8080) {
       } catch (err) { logsBuffer.push(`Erro Pedido Sistêmico: ${err.message}`); console.error('[SyncWorker] Order Error:', err); }
 
       // == Process Invoices ==
-      try {
-        const fetchResInv = await fetch(`http://localhost:${port}/api/fetch-sap-invoice`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify(payload)
-        });
-        const sapInvResp = await fetchResInv.json();
-        console.log('[SyncWorker] Nota Fiscal Fetch Response:', sapInvResp);
-        if (sapInvResp && sapInvResp.success && sapInvResp.invoices) {
-          for (const sapInvoice of sapInvResp.invoices) {
+      const invoicePayloads = [payload];
+      if (config.sap_fetch_drafts) {
+         // Se a flag estiver ligada, o payload principal busca Drafts, então também criamos um payload para Invoices Reais (false).
+         invoicePayloads.push({ ...payload, sap_fetch_drafts: false });
+      }
+
+      for (const invPayload of invoicePayloads) {
+        try {
+          const fetchResInv = await fetch(`http://localhost:${port}/api/fetch-sap-invoice`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(invPayload)
+          });
+          const sapInvResp = await fetchResInv.json();
+          const isDraftRun = invPayload.sap_fetch_drafts === true;
+          console.log(`[SyncWorker] Nota Fiscal Fetch Response (Draft: ${isDraftRun}):`, sapInvResp);
+          if (sapInvResp && sapInvResp.success && sapInvResp.invoices) {
+            for (const sapInvoice of sapInvResp.invoices) {
           
-          const { data: existingInv } = await supabase
-            .from('invoices_nfe')
-            .select('id, valor_frete, carrier_id')
-            .eq('numero', sapInvoice.invoice_number)
-            .eq('organization_id', config.organization_id)
-            .maybeSingle();
+          let existingInv = null;
+
+          if (!isDraftRun && sapInvoice.order_number) {
+             const { data: draftInv } = await supabase
+                .from('invoices_nfe')
+                .select('id, valor_frete, carrier_id')
+                .eq('order_number', sapInvoice.order_number)
+                .eq('is_draft', true)
+                .eq('organization_id', config.organization_id)
+                .maybeSingle();
+                
+             if (draftInv) {
+                existingInv = draftInv;
+                await supabase.from('invoices_nfe').update({
+                   is_draft: false,
+                   numero: sapInvoice.invoice_number,
+                   chave_acesso: 'SAPB1-' + Date.now() + '-' + sapInvoice.invoice_number,
+                   situacao: 'Emitida',
+                   data_emissao: sapInvoice.issue_date ? sapInvoice.issue_date + 'T00:00:00Z' : new Date().toISOString()
+                }).eq('id', existingInv.id);
+                
+                logsBuffer.push(`Draft do pedido ${sapInvoice.order_number} convertido para NFe ${sapInvoice.invoice_number}`);
+             }
+          }
+
+          if (!existingInv) {
+             const { data: standardInv } = await supabase
+                .from('invoices_nfe')
+                .select('id, valor_frete, carrier_id')
+                .eq('numero', sapInvoice.invoice_number)
+                .eq('organization_id', config.organization_id)
+                .maybeSingle();
+             existingInv = standardInv;
+          }
 
           let finalCarrierId = null;
           if (sapInvoice.carrier_document) {
@@ -434,13 +471,14 @@ export async function runCronSync(port = 8080) {
                 establishment_id: config.establishment_id,
                 numero: sapInvoice.invoice_number,
                 serie: sapInvoice.serie || '1',
-                chave_acesso: 'SAPB1-' + Date.now() + '-' + sapInvoice.invoice_number,
+                chave_acesso: isDraftRun ? null : ('SAPB1-' + Date.now() + '-' + sapInvoice.invoice_number),
                 data_emissao: sapInvoice.issue_date ? sapInvoice.issue_date + 'T00:00:00Z' : new Date().toISOString(),
                 valor_total: parseFloat(sapInvoice.invoice_value || '0'),
                 valor_produtos: parseFloat(sapInvoice.invoice_value || '0'),
                 peso_total: w,
                 quantidade_volumes: Math.ceil(sapInvoice.volume_qty || 1),
-                situacao: 'Emitida',
+                situacao: isDraftRun ? 'Aguardando Faturamento' : 'Emitida',
+                is_draft: isDraftRun,
                 invoice_type: 'NFe',
                 order_number: sapInvoice.order_number || '',
                 carrier_id: calculatedBestCarrier,
@@ -516,6 +554,7 @@ export async function runCronSync(port = 8080) {
            errorCount++;
         }
       } catch (err) { logsBuffer.push(`Erro NFe Sistêmico: ${err.message}`); console.error('[SyncWorker] Invoice Error:', err); }
+      } // close payloads for loop
 
       // Finish log and update config
       await supabase.from('erp_integration_config').update({ last_sync_time: new Date().toISOString() }).eq('id', config.id);

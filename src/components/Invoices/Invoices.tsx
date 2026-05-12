@@ -55,7 +55,8 @@ const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   tolerancia_valor_fatura: nfe.carrier?.metadata?.tolerancia_valor_fatura || 0,
   tolerancia_percentual_fatura: nfe.carrier?.metadata?.tolerancia_percentual_fatura || 0,
   order_number: (nfe as any).order_number || (nfe as any).numero_pedido,
-  order_serie: (nfe as any).order_serie
+  order_serie: (nfe as any).order_serie,
+  is_draft: (nfe as any).is_draft || false
 });
 
 const mapNFeToElectronicDoc = (nfe: any): any => {

@@ -1107,10 +1107,10 @@ const ImplementationCenter: React.FC = () => {
                             onChange={(e) => handleErpConfigChange('sapFetchDrafts', e.target.checked)}
                             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                           />
-                          <span>Importar Esboço de Venda (Draft) ao invés de Pedido de Venda (Order)</span>
+                          <span>Importar Esboço de Nota Fiscal (Draft) para Antecipação de Carga</span>
                         </label>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Quando ativado, o sistema buscará os rascunhos de pedidos (Drafts com DocObjectCode '17') no SAP ao invés de buscar os Pedidos de Venda efetivados.
+                          Quando ativado, a sincronização buscará rascunhos de Notas Fiscais de Saída (Drafts com DocObjectCode '13') no SAP.
                         </p>
                       </div>
                     </div>
