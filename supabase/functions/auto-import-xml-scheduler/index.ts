@@ -645,13 +645,23 @@ serve(async (req) => {
                         let targetEstabId = estab.id;
                         let targetEnvironmentId = estab.environment_id;
                         
-                        if (tomadorCnpj) {
-                           const cleanTomadorCnpj = tomadorCnpj.replace(/\D/g, '');
-                           const matchedEstab = establishments.find((e: any) => e.organization_id === estab.organization_id && e.cnpj && e.cnpj.replace(/\D/g, '') === cleanTomadorCnpj);
-                           if (matchedEstab) {
-                              targetEstabId = matchedEstab.id;
-                              targetEnvironmentId = matchedEstab.environment_id;
-                           }
+                        const candidateDocs = [
+                           tomadorCnpj,
+                           infCte.rem?.CNPJ || infCte.rem?.CPF || '',
+                           infCte.dest?.CNPJ || infCte.dest?.CPF || '',
+                           infCte.exped?.CNPJ || infCte.exped?.CPF || '',
+                           infCte.receb?.CNPJ || infCte.receb?.CPF || ''
+                        ].filter(doc => !!doc).map(doc => String(doc).replace(/\D/g, ''));
+
+                        let matchedEstab = null;
+                        for (const doc of candidateDocs) {
+                           matchedEstab = establishments.find((e: any) => e.organization_id === estab.organization_id && e.cnpj && e.cnpj.replace(/\D/g, '') === doc);
+                           if (matchedEstab) break;
+                        }
+
+                        if (matchedEstab) {
+                           targetEstabId = matchedEstab.id;
+                           targetEnvironmentId = matchedEstab.environment_id;
                         }
 
                         const { error: cteInsertError } = await supabase.from('ctes_complete').insert({
