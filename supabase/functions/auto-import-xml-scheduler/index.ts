@@ -80,7 +80,7 @@ serve(async (req) => {
 
     const { data: establishments, error: estabError } = await supabase
       .from('establishments')
-      .select('id, organization_id, environment_id, metadata, razao_social, codigo');
+      .select('id, organization_id, environment_id, metadata, razao_social, codigo, cnpj');
 
     if (estabError) throw new Error(`Erro estabelecimentos: ${estabError.message}`);
 
@@ -633,10 +633,31 @@ serve(async (req) => {
                      const { data: existing } = await supabase.from('ctes_complete').select('id').eq('access_key', accessKey).maybeSingle();
                      
                      if (!existing) {
+                        // Resolução do Tomador
+                        const tomaTag = String(infCte.ide?.toma3?.toma ?? infCte.ide?.toma4?.toma ?? '0');
+                        let tomadorCnpj = '';
+                        if (tomaTag === '0') tomadorCnpj = infCte.rem?.CNPJ || infCte.rem?.CPF || '';
+                        else if (tomaTag === '1') tomadorCnpj = infCte.exped?.CNPJ || infCte.exped?.CPF || '';
+                        else if (tomaTag === '2') tomadorCnpj = infCte.receb?.CNPJ || infCte.receb?.CPF || '';
+                        else if (tomaTag === '3') tomadorCnpj = infCte.dest?.CNPJ || infCte.dest?.CPF || '';
+                        else if (tomaTag === '4') tomadorCnpj = infCte.ide?.toma4?.CNPJ || infCte.ide?.toma4?.CPF || '';
+                        
+                        let targetEstabId = estab.id;
+                        let targetEnvironmentId = estab.environment_id;
+                        
+                        if (tomadorCnpj) {
+                           const cleanTomadorCnpj = tomadorCnpj.replace(/\D/g, '');
+                           const matchedEstab = establishments.find((e: any) => e.organization_id === estab.organization_id && e.cnpj && e.cnpj.replace(/\D/g, '') === cleanTomadorCnpj);
+                           if (matchedEstab) {
+                              targetEstabId = matchedEstab.id;
+                              targetEnvironmentId = matchedEstab.environment_id;
+                           }
+                        }
+
                         const { error: cteInsertError } = await supabase.from('ctes_complete').insert({
                            organization_id: estab.organization_id,
-                           environment_id: estab.environment_id,
-                           establishment_id: estab.id,
+                           environment_id: targetEnvironmentId,
+                           establishment_id: targetEstabId,
                            carrier_id: cteCarrierId,
                            access_key: accessKey,
                            number: String(nNF),
@@ -739,7 +760,7 @@ serve(async (req) => {
                                            try {
                                               await supabase.from('electronic_documents').insert({
                                                 organization_id: estab.organization_id,
-                                                environment_id: estab.environment_id,
+                                                environment_id: targetEnvironmentId,
                                                 document_type: 'CTe',
                                                 model: '57',
                                                 document_number: String(nNF),
