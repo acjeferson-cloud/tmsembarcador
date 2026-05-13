@@ -1,10 +1,10 @@
-import { jsPDF } from 'jspdf';
 import { ElectronicDocument } from '../data/electronicDocumentsData';
 import { formatCurrency, formatAccessKey } from '../utils/formatters';
 
 // Função para gerar PDF de DANFE ou DACTE
-export const generatePDF = (document: ElectronicDocument, type: 'danfe' | 'dacte'): string => {
+export const generatePDF = async (document: ElectronicDocument, type: 'danfe' | 'dacte'): Promise<string> => {
   // Cria uma nova instância do jsPDF
+  const { jsPDF } = await import('jspdf');
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

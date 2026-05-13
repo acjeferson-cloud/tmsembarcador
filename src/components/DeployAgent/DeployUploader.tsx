@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { deployAgentService } from '../../services/deployAgentService';
-import * as XLSX from 'xlsx';
+
 import { useTranslation } from 'react-i18next';
 
 interface DeployUploaderProps {
@@ -41,7 +41,7 @@ export const DeployUploader: React.FC<DeployUploaderProps> = ({ projectId, onClo
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = e.target?.result;
 

@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { formatCurrency } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
 import { SpotNegotiation } from './spotNegotiationService';
@@ -6,6 +5,7 @@ import { SpotNegotiation } from './spotNegotiationService';
 export const spotPdfService = {
   generateSpotPDF: async (spots: SpotNegotiation[], action: 'print' | 'download' = 'download', context?: { user?: any; establishment?: any }): Promise<string> => {
     // Retrato (Portrait) orientation
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',

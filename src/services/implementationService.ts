@@ -842,22 +842,34 @@ export const implementationService = {
         return String(d);
       };
 
+      // Pre-fetch all necessary data to avoid N+1 queries in the loop
+      const uniqueCarriers = [...new Set(citiesData.map((r: any) => String(r.transportador_codigo).trim().padStart(4, '0')))];
+      const uniqueIbges = [...new Set(citiesData.map((r: any) => String(r.cidade_ibge).trim()))].filter(Boolean);
+
+      // Pre-fetch carriers
+      if (uniqueCarriers.length > 0) {
+        let query = supabase.from('carriers').select('id, codigo').in('codigo', uniqueCarriers);
+        if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
+        const { data: carriersData } = await query;
+        carriersData?.forEach(c => carrierMap.set(c.codigo, c.id));
+      }
+
+      // Pre-fetch cities
+      for (let i = 0; i < uniqueIbges.length; i += 500) {
+        const batch = uniqueIbges.slice(i, i + 500);
+        const { data: citiesBatch } = await supabase.from('cities').select('id, codigo_ibge, state_id').in('codigo_ibge', batch);
+        citiesBatch?.forEach(c => cityMap.set(c.codigo_ibge, c));
+      }
+
       for (let i = 0; i < citiesData.length; i++) {
         const row = citiesData[i];
         const lineNumber = i + 2;
 
         try {
-          // 1. Resolve Transportador
           const carrierCodeStr = String(row.transportador_codigo).trim().padStart(4, '0');
           let carrierId = carrierMap.get(carrierCodeStr);
           if (!carrierId) {
-             let query = supabase.from('carriers').select('id').eq('codigo', carrierCodeStr);
-             if (ctx?.organizationId) query = query.eq('organization_id', ctx.organizationId);
-             const { data: carrierData } = await query.limit(1);
-             const carrier = carrierData?.[0];
-             if (!carrier) throw new Error(`Transportadora (código ${carrierCodeStr}) não encontrada no sistema`);
-             carrierId = carrier.id;
-             carrierMap.set(carrierCodeStr, carrier.id);
+             throw new Error(`Transportadora (código ${carrierCodeStr}) não encontrada no sistema`);
           }
 
           // 2. Resolve Tabela

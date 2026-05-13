@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 
 export interface ERPIntegrationTemplate {
   // Configurações Gerais
@@ -46,7 +45,7 @@ export interface ERPIntegrationTemplate {
   notification_email: string;
 }
 
-export const generateERPIntegrationTemplate = (): void => {
+export const generateERPIntegrationTemplate = async (): Promise<void> => {
   // Dados de exemplo para o template
   const templateData: ERPIntegrationTemplate[] = [
     {
@@ -97,6 +96,7 @@ export const generateERPIntegrationTemplate = (): void => {
   ];
 
   // Criar workbook
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
   
   // Criar worksheet com os dados
@@ -329,8 +329,9 @@ export const processERPIntegrationFile = (file: File): Promise<ERPIntegrationTem
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
@@ -383,7 +384,7 @@ interface CarrierTemplate {
   status: string;
 }
 
-export const generateCarriersTemplate = (): void => {
+export const generateCarriersTemplate = async (): Promise<void> => {
   // Dados de exemplo para o template
   const templateData: CarrierTemplate[] = [
     {
@@ -439,6 +440,7 @@ export const generateCarriersTemplate = (): void => {
   ];
 
   // Criar workbook
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   // Criar worksheet com os dados
@@ -660,8 +662,9 @@ export const processCarriersFile = (file: File): Promise<CarrierTemplate[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
@@ -771,7 +774,8 @@ export interface FlatFreightRateTemplate {
   taxa_minima: number;
 }
 
-export const generateFreightRatesTemplate = (): void => {
+export const generateFreightRatesTemplate = async (): Promise<void> => {
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   const tabelasData: FlatFreightRateTemplate[] = [
@@ -975,8 +979,9 @@ export const processFreightRatesFile = (file: File): Promise<FlatFreightRateTemp
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
@@ -1016,8 +1021,9 @@ interface FreightRateCityTemplate {
   prazo_entrega_dias: number;
 }
 
-export const generateFreightRateCitiesTemplate = (): void => {
+export const generateFreightRateCitiesTemplate = async (): Promise<void> => {
   try {
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
 
   // ABA 1: Cidades
@@ -1110,8 +1116,9 @@ export const processFreightRateCitiesFile = (file: File): Promise<FreightRateCit
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
@@ -1137,8 +1144,9 @@ export const processAdditionalFeesFile = (file: File): Promise<AdditionalFeeTemp
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import('xlsx');
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
@@ -1177,8 +1185,9 @@ interface AdditionalFeeTemplate {
   valor_minimo: number;
 }
 
-export const generateAdditionalFeesTemplate = (): void => {
+export const generateAdditionalFeesTemplate = async (): Promise<void> => {
   try {
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
 
     // ABA 1: Taxas Adicionais

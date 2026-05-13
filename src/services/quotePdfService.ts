@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { formatCurrency, formatPhone } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
 import { FreightQuoteHistory, QuoteResult } from './freightQuoteService';
@@ -33,6 +32,7 @@ export const quotePdfService = {
 
   generateQuotePDF: async (quotes: any[], action: 'print' | 'download' = 'download', context?: { user?: any; establishment?: any; filters?: any }): Promise<string> => {
     // Retrato (Portrait) orientation
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',

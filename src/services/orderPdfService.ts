@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { Order } from './ordersService';
 import { formatCurrency, formatPhone } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
@@ -42,6 +41,7 @@ const formatDateTime = (dateString: string | undefined) => {
 export const orderPdfService = {
   generateOrderPDF: async (orders: Order[], action: 'print' | 'download' = 'download', context?: { user?: any; establishment?: any; filters?: any }): Promise<string> => {
     // Cria instância do jsPDF em Portrait (Exigência do SKILL para pedidos)
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',

@@ -4,7 +4,6 @@ import { taxationService, TaxationGroup, TaxationMember } from '../../services/t
 import { useAuth } from '../../hooks/useAuth';
 import { Toast, ToastType } from '../common/Toast';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import * as XLSX from 'xlsx';
 
 import { carriersService } from '../../services/carriersService';
 
@@ -201,6 +200,7 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
     const ws = XLSX.utils.json_to_sheet([
       { CNPJ_CPF: '12345678901234', Nome_Cliente: 'Empresa Exemplo LTDA', CEP: '01000-000' }
     ]);
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     XLSX.writeFile(wb, 'Template_Excecoes.xlsx');

@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { formatCurrency } from '../utils/formatters';
 import { pickupsService } from './pickupsService';
 import { supabase } from '../lib/supabase';
@@ -38,6 +37,7 @@ const formatDateTime = (dateString: string | undefined) => {
 
 export const pickupPdfService = {
   generatePickupPDF: async (pickups: any[], action: 'print' | 'download' | 'base64' = 'download', context?: { user?: any; establishment?: any; filters?: any }): Promise<string> => {
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',

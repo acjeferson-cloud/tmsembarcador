@@ -208,10 +208,7 @@ function AppContent() {
     availableEstablishments,
     isLoading,
     showOrgEnvSelector,
-    selectOrganizationEnvironment,
-    logout
   } = useAuth();
-  const [refreshKey, setRefreshKey] = useState(0);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   useAutoXmlImport();
@@ -283,8 +280,6 @@ function AppContent() {
     
     setCurrentPage(page);
     setSelectedItemId(undefined);
-    // Increment refresh key to force component re-render
-    setRefreshKey(prevKey => prevKey + 1);
     // Salvar a página atual no localStorage
     localStorage.setItem('tms-current-page', page);
   };
@@ -355,100 +350,100 @@ function AppContent() {
       if (currentPage.startsWith('report-')) {
         const report = getCurrentReport();
         if (report) {
-          return <ReportViewer key={`${currentPage}-${refreshKey}`} report={report} onBack={() => handlePageChange('reports')} />;
+          // Mantém key baseada na URL para recarregar o report viewer ao mudar de relatório
+          return <ReportViewer key={currentPage} report={report} onBack={() => handlePageChange('reports')} />;
         }
       }
       
-      // Pass refreshKey to each component to force re-render when page changes
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard key={`dashboard-${refreshKey}`} />;
+        return <Dashboard />;
       case 'control-tower':
-        return <ControlTower key={`control-tower-${refreshKey}`} />;
+        return <ControlTower />;
       case 'calculator':
-        return <Calculator key={`calculator-${refreshKey}`} />;
+        return <Calculator />;
       case 'freight-quote':
-        return <FreightQuote key={`freight-quote-${refreshKey}`} />;
+        return <FreightQuote />;
       case 'spot-negotiations':
-        return <SpotNegotiations key={`spot-negotiations-${refreshKey}`} />;
+        return <SpotNegotiations />;
       case 'orders':
-        return <Orders key={`orders-${refreshKey}`} initialId={selectedItemId} />;
+        return <Orders initialId={selectedItemId} />;
       case 'invoices':
-        return <Invoices key={`invoices-${refreshKey}`} initialId={selectedItemId} />;
+        return <Invoices initialId={selectedItemId} />;
       case 'pickups':
-        return <Pickups key={`pickups-${refreshKey}`} initialId={selectedItemId} />;
+        return <Pickups initialId={selectedItemId} />;
       case 'ctes':
-        return <CTes key={`ctes-${refreshKey}`} initialId={selectedItemId} />;
+        return <CTes initialId={selectedItemId} />;
       case 'bills':
-        return <Bills key={`bills-${refreshKey}`} initialId={selectedItemId} />;
+        return <Bills initialId={selectedItemId} />;
       case 'delivery-tracking':
-        return <DeliveryTracking key={`delivery-tracking-${refreshKey}`} />;
+        return <DeliveryTracking />;
       case 'reverse-logistics':
-        return <ReverseLogistics key={`reverse-logistics-${refreshKey}`} />;
+        return <ReverseLogistics />;
       case 'electronic-docs':
-        return <ElectronicDocuments key={`electronic-docs-${refreshKey}`} />;
+        return <ElectronicDocuments />;
       case 'logistics-simulator':
-        return <LogisticsSimulator key={`logistics-simulator-${refreshKey}`} />;
+        return <LogisticsSimulator />;
       case 'edi-input':
-        return <EDIInput key={`edi-input-${refreshKey}`} />;
+        return <EDIInput />;
       case 'edi-output':
-        return <EDIOutput key={`edi-output-${refreshKey}`} />;
+        return <EDIOutput />;
       case 'carriers':
-        return <Carriers key={`carriers-${refreshKey}`} />;
+        return <Carriers />;
       case 'business-partners':
-        return <BusinessPartners key={`business-partners-${refreshKey}`} />;
+        return <BusinessPartners />;
       case 'freight-rates':
-        return <FreightRates key={`freight-rates-${refreshKey}`} />;
+        return <FreightRates />;
       case 'establishments':
-        return <Establishments key={`establishments-${refreshKey}`} />;
+        return <Establishments />;
       case 'users':
-        return <Users key={`users-${refreshKey}`} />;
+        return <Users />;
       case 'countries':
-        return <Countries key={`countries-${refreshKey}`} />;
+        return <Countries />;
       case 'states':
-        return <States key={`states-${refreshKey}`} />;
+        return <States />;
       case 'cities':
-        return <Cities key={`cities-${refreshKey}`} />;
+        return <Cities />;
       case 'occurrences':
-        return <Occurrences key={`occurrences-${refreshKey}`} />;
+        return <Occurrences />;
       case 'rejection-reasons':
-        return <RejectionReasons key={`rejection-reasons-${refreshKey}`} />;
+        return <RejectionReasons />;
       case 'implementation-center':
-        return <ImplementationCenter key={`implementation-center-${refreshKey}`} />;
+        return <ImplementationCenter />;
       case 'change-log':
-        return <ChangeLog key={`change-log-${refreshKey}`} />;
+        return <ChangeLog />;
       case 'license-management':
-        return <LicenseManagement key={`license-management-${refreshKey}`} />;
+        return <LicenseManagement />;
       case 'api-keys':
-        return <ApiKeysManagement key={`api-keys-${refreshKey}`} />;
+        return <ApiKeysManagement />;
       case 'holidays':
-        return <Holidays key={`holidays-${refreshKey}`} />;
+        return <Holidays />;
       case 'catalog-items':
-        return <CatalogItems key={`catalog-items-${refreshKey}`} />;
+        return <CatalogItems />;
       case 'rejection-history':
-        return <RejectionHistoryReport key={`rejection-history-${refreshKey}`} />;
+        return <RejectionHistoryReport />;
       case 'whatsapp-config':
-        return <WhatsAppConfig key={`whatsapp-config-${refreshKey}`} />;
+        return <WhatsAppConfig />;
       case 'google-maps-config':
-        return <GoogleMapsConfig key={`google-maps-config-${refreshKey}`} />;
+        return <GoogleMapsConfig />;
       case 'openai-config':
-        return <OpenAIConfig key={`openai-config-${refreshKey}`} />;
+        return <OpenAIConfig />;
       case 'nps-dashboard':
-        return <NPSDashboard key={`nps-dashboard-${refreshKey}`} />;
+        return <NPSDashboard />;
       case 'nps-config':
-        return <NPSConfiguration key={`nps-config-${refreshKey}`} />;
+        return <NPSConfiguration />;
       case 'notifications':
-        return <NotificationCenter key={`notifications-${refreshKey}`} />;
+        return <NotificationCenter />;
       case 'routing-tower':
-        return <RoutingTower key={`routing-tower-${refreshKey}`} />;
+        return <RoutingTower />;
       case 'trips':
-        return <Trips key={`trips-${refreshKey}`} />;
+        return <Trips />;
       case 'vehicles':
-        return <Vehicles key={`vehicles-${refreshKey}`} />;
+        return <Vehicles />;
       case 'drivers':
-        return <Drivers key={`drivers-${refreshKey}`} />;
+        return <Drivers />;
       default:
-        return <Dashboard key={`dashboard-${refreshKey}`} />;
+        return <Dashboard />;
       }
     };
 

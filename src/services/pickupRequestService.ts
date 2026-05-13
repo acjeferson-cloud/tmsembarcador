@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import jsPDF from 'jspdf';
 import emailOutgoingConfigService from './emailOutgoingConfigService';
 import { pickupsService } from './pickupsService';
 import { establishmentsService } from './establishmentsService';

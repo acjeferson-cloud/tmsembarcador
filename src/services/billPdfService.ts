@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { formatCurrency, formatPhone } from '../utils/formatters';
 import { supabase } from '../lib/supabase';
 import { billsService } from './billsService';
@@ -51,6 +50,7 @@ interface CTeItem {
 export const billPdfService = {
   generateBillPDF: async (bills: any[], action: 'print' | 'download' = 'download', context?: { user?: any; establishment?: any; filters?: any }): Promise<string> => {
     // Cria instância do jsPDF em Portrait (Exigência do SKILL para pedidos/faturas relizados em 1 por página)
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
