@@ -104,6 +104,7 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
       setUploading(true);
       
       // 1. Read Excel
+      const XLSX = await import('xlsx');
       const buffer = await selectedFile.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -196,11 +197,11 @@ export const TaxationGroupsTab: React.FC<TaxationGroupsTabProps> = ({ carrierId 
     }
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet([
       { CNPJ_CPF: '12345678901234', Nome_Cliente: 'Empresa Exemplo LTDA', CEP: '01000-000' }
     ]);
-    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     XLSX.writeFile(wb, 'Template_Excecoes.xlsx');
