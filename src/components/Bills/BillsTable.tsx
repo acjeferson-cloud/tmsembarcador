@@ -5,6 +5,7 @@ interface Bill {
   id: string | number;
   status: string;
   numero: string;
+  docErp?: string | number;
   dataEmissao: string;
   dataVencimento: string;
   dataEntrada: string;
@@ -240,6 +241,19 @@ export const BillsTable = React.memo<BillsTableProps>(({
                 </div>
               </th>
               
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('docErp' as keyof Bill)}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Doc. ERP</span>
+                  {sortField === 'docErp' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </th>
+
               <th 
                 scope="col" 
                 className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -492,6 +506,9 @@ export const BillsTable = React.memo<BillsTableProps>(({
 
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {bill.numero}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {bill.docErp || '-'}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(bill.dataEmissao)}

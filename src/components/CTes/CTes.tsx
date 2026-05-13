@@ -75,7 +75,8 @@ const convertCTeToDisplayFormat = (cte: CTeWithRelations) => {
     nfesReferenciadas: cte.invoices?.length || 0,
     tpCTe: cte.xml_data?.tpCTe || '0',
     tolerancia_valor_cte: cte.carrier?.metadata?.tolerancia_valor_cte || 0,
-    tolerancia_percentual_cte: cte.carrier?.metadata?.tolerancia_percentual_cte || 0
+    tolerancia_percentual_cte: cte.carrier?.metadata?.tolerancia_percentual_cte || 0,
+    docErp: cte.erp || cte.sap_doc_num || cte.sap_doc_entry || ''
   };
 };
 
@@ -562,6 +563,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                           await ctesCompleteService.update(cteId.toString(), { 
                             sap_doc_entry: integrationResult.sap_doc_entry || (integrationResult as any).docEntry,
                             sap_doc_num: integrationResult.sap_doc_num || (integrationResult as any).docNum,
+                            erp: integrationResult.sap_doc_num || (integrationResult as any).docNum || integrationResult.sap_doc_entry || (integrationResult as any).docEntry,
                             sap_integration_type: sapConfig.cte_integration_type,
                             status: 'auditado_aprovado'
                           });

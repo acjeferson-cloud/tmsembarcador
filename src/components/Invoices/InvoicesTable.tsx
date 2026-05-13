@@ -10,6 +10,7 @@ interface Invoice {
   baseCusto?: string;
   serie: string;
   numero: string;
+  docErp?: string | number;
   dataEmissao: string;
   dataEntrada: string;
   previsaoEntrega: string | null;
@@ -321,6 +322,18 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                 <th 
                   scope="col" 
                   className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('docErp' as keyof Invoice)}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Doc. ERP</span>
+                    {sortField === 'docErp' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('dataEmissao')}
                 >
                   <div className="flex items-center space-x-1">
@@ -558,6 +571,9 @@ export const InvoicesTable = React.memo<InvoicesTableProps>(({
                         </span>
                       )}
                     </div>
+                  </td>
+                  <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {invoice.docErp || '-'}
                   </td>
                   <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(invoice.dataEmissao)}

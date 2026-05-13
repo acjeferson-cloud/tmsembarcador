@@ -61,6 +61,7 @@ export interface CTe {
   sap_doc_entry?: number;
   sap_doc_num?: string;
   sap_integration_type?: string;
+  erp?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;

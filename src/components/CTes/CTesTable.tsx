@@ -9,6 +9,7 @@ interface CTe {
   dataEmissao: string;
   dataEntrada: string;
   dataAprovacao: string | null;
+  docErp?: string | number;
   tipoFrete: string;
   transportador: string;
   previsaoEntrega: string;
@@ -293,6 +294,18 @@ export const CTesTable = React.memo<CTesTableProps>(({
                 <div className="flex items-center space-x-1">
                   <span>Número</span>
                   {sortField === 'numero' && (
+                    sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                  )}
+                </div>
+              </th>
+              <th 
+                scope="col" 
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort('docErp' as keyof CTe)}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Doc. ERP</span>
+                  {sortField === 'docErp' && (
                     sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                   )}
                 </div>
@@ -616,6 +629,9 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       </span>
                     )}
                   </div>
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {cte.docErp || '-'}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(cte.dataEmissao)}

@@ -15,6 +15,7 @@ export interface Bill {
   paid_value?: number;
   discount_value?: number;
   status: string;
+  erp?: string;
   metadata?: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -174,6 +175,25 @@ export const billsService = {
       const { error } = await (supabase as any)
         .from('bills')
         .update({ status: status as any })
+        .eq('id', id);
+
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || 'Erro ao atualizar fatura' };
+    }
+  },
+
+  async update(id: string, data: Partial<Bill>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const ctx = await TenantContextHelper.getCurrentContext();
+      if (ctx && ctx.organizationId && ctx.environmentId) {
+        await TenantContextHelper.setSessionContext(ctx);
+      }
+
+      const { error } = await (supabase as any)
+        .from('bills')
+        .update(data)
         .eq('id', id);
 
       if (error) return { success: false, error: error.message };

@@ -36,6 +36,7 @@ const convertNFeToInvoiceFormat = (nfe: NFeWithCustomer) => ({
   dataEmissao: nfe.issue_date,
   dataEntrada: nfe.created_at,
   previsaoEntrega: (nfe as any).expected_delivery_date || (nfe as any).data_prevista_entrega || null,
+  docErp: (nfe as any).erp || '',
   transportador: nfe.carrier
     ? `${nfe.carrier.codigo} - ${nfe.carrier.razao_social}`
     : '',

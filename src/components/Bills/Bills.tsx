@@ -112,6 +112,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         id: bill.id,
         status: normalizeBillStatus(bill.status),
         numero: bill.bill_number,
+        docErp: bill.erp || bill.metadata?.sap_payment_entry || '',
         dataEmissao: bill.issue_date,
         dataVencimento: bill.due_date,
         dataEntrada: bill.created_at,
@@ -257,6 +258,10 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         for (const billId of selectedBills) {
           const result = await sapIntegrationService.integrateBill(billId.toString());
           if (result.success) {
+            await billsService.update(billId.toString(), {
+              erp: result.sap_payment_entry ? String(result.sap_payment_entry) : undefined,
+              status: 'Auditada e aprovada'
+            });
             successCount++;
           } else {
             failCount++;
@@ -328,6 +333,10 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         case 'approve':
           const integrationResult = await sapIntegrationService.integrateBill(billId.toString());
           if (integrationResult.success) {
+             await billsService.update(billId.toString(), {
+               erp: integrationResult.sap_payment_entry ? String(integrationResult.sap_payment_entry) : undefined,
+               status: 'Auditada e aprovada'
+             });
              setToast({ message: `Fatura ${bill.numero} integrada ao SAP (Contas a Pagar: ${integrationResult.sap_payment_entry}).`, type: 'success' });
              loadBills();
           } else {
