@@ -369,11 +369,19 @@ export const freightCostCalculator = {
 
       if (error) throw error;
       if (!fees || fees.length === 0) {
-
         return [];
       }
 
-      // Filtrar taxas aplicáveis seguindo ordem de prioridade:
+      // Buscar o IBGE da cidade para comparação, pois algumas taxas foram salvas com IBGE em vez de UUID
+      const { data: cityData } = await supabase
+        .from('cities')
+        .select('codigo_ibge')
+        .eq('id', cityId)
+        .maybeSingle();
+        
+      const cityIbge = cityData?.codigo_ibge;
+
+      // Classificar as taxas por prioridade (menor número = maior prioridade)
       // 1. Específica para cidade + parceiro
       // 2. Específica para cidade (sem parceiro)
       // 3. Específica para estado + parceiro
@@ -381,16 +389,13 @@ export const freightCostCalculator = {
       // 5. Genérica para parceiro (sem localização)
       // 6. Genérica (sem parceiro e sem localização)
 
-      const applicableFees = [];
+      const validFees = [];
 
       for (const fee of fees) {
-        // Se a taxa está vinculada a um grupo de exceção, verificar se o CNPJ/CPF está no grupo
         if (fee.taxation_group_id) {
-          if (!recipientDocument) continue; // Não aplica se não tem o documento de destino
+          if (!recipientDocument) continue;
 
-          // Limpa o documento para comparação (remove pontuação)
           let cleanDoc = recipientDocument.replace(/[^\d]/g, '');
-          
           if (cleanDoc.length > 11 && cleanDoc.length < 14) {
             cleanDoc = cleanDoc.padStart(14, '0');
           } else if (cleanDoc.length > 0 && cleanDoc.length < 11) {
@@ -406,37 +411,44 @@ export const freightCostCalculator = {
             .maybeSingle();
 
           if (memberError || !memberExists) {
-            continue; // Se não encontrou no grupo, descarta esta taxa
+            continue;
           }
-        } else {
-          // Lógica original de parceiro de negócio específico
-          if (fee.business_partner_id) {
-            if (!businessPartnerId) continue;
-  
-            if (fee.consider_cnpj_root) {
-              // TODO: Implementar lógica de raiz CNPJ se necessário
-              if (fee.business_partner_id !== businessPartnerId) continue;
-            } else {
-              if (fee.business_partner_id !== businessPartnerId) continue;
-            }
-          }
+        } else if (fee.business_partner_id) {
+          if (!businessPartnerId) continue;
+          if (fee.business_partner_id !== businessPartnerId) continue;
         }
 
-        // Se tem cidade especificada na taxa, deve ser a mesma cidade
-        if (fee.city_id && fee.city_id !== cityId) continue;
+        // Se tem cidade especificada na taxa, deve ser a mesma cidade (suporta UUID ou IBGE)
+        if (fee.city_id && fee.city_id !== cityId && fee.city_id !== cityIbge) continue;
 
         // Se tem estado especificado na taxa, deve ser o mesmo estado
         if (fee.state_id && fee.state_id !== stateId) continue;
 
-        applicableFees.push(fee);
+        // Determinar a prioridade
+        let priority = 6;
+        if (fee.city_id && fee.business_partner_id) priority = 1;
+        else if (fee.city_id) priority = 2;
+        else if (fee.state_id && fee.business_partner_id) priority = 3;
+        else if (fee.state_id) priority = 4;
+        else if (fee.business_partner_id) priority = 5;
+
+        validFees.push({ ...fee, _priority: priority });
       }
 
-
-      applicableFees.forEach(fee => {
-
+      // Agrupar por fee_type e pegar apenas o de maior prioridade para cada tipo
+      const bestFeesByType = new Map<string, any>();
+      
+      validFees.forEach(fee => {
+        const existing = bestFeesByType.get(fee.fee_type);
+        if (!existing || fee._priority < existing._priority) {
+          bestFeesByType.set(fee.fee_type, fee);
+        }
       });
 
-      return applicableFees;
+      return Array.from(bestFeesByType.values()).map(f => {
+        const { _priority, ...cleanFee } = f;
+        return cleanFee as AdditionalFee;
+      });
     } catch (error) {
 
       return [];

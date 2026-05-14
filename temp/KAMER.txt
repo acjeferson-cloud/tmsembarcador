@@ -1,0 +1,1462 @@
+356         Andarai                                                              M                   BA                        0
+355         Anage                                                                M                   BA                        0
+353         America Dourada                                              M                   BA                        0
+352         Amelia Rodrigues                                              M                   BA                        0
+351         Amargosa                                                          M                   BA                        0
+347         Almadina                                                           M                   BA                        0
+343         Alcobaca                                                           M                   BA                        0
+342         Alagoinhas                                                        M                   BA                        0
+341         Aiquara                                                              M                   BA                        0
+339         Agua Fria                                                           M                   BA                        0
+335         Adustina                                                            M                   BA                        0
+331         Acajutiba                                                           M                   BA                        0
+327         Abare                                                                 M                   BA                        0
+326         Abaira                                                                M                   BA                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: BA 2      INTERIOR BA2                                                           Prazo:    14
+834         Luis Eduardo Magalhaes                                  M                   BA                        0
+403         Barreiras                                                            M                   BA                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: BA 1      INTERIOR BA1                                                           Prazo:      9
+988         Salvador                                                            M                   BA                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: BA         CAPITAL                                                                     Prazo:    11
+6         Cruzeiro do Sul                                                 M                   AC                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: AC 2      INTERIOR AC2                                                           Prazo:    17
+22         Xapuri                                                                M                   AC                        0
+21         Tarauaca                                                           M                   AC                        0
+20         Senador Guiomard                                            M                   AC                        0
+19         Sena Madureira                                                 M                   AC                        0
+18         Santa Rosa do Purus                                        M                   AC                        0
+17         Rodrigues Alves                                                M                   AC                        0
+15         Porto Walter                                                      M                   AC                        0
+14         Porto Acre                                                         M                   AC                        0
+13         Placido de Castro                                              M                   AC                        0
+12         Marechal Thaumaturgo                                     M                   AC                        0
+11         Manoel Urbano                                                  M                   AC                        0
+10         Mancio Lima                                                      M                   AC                        0
+9         Jordao                                                               M                   AC                        0
+8         Feijo                                                                  M                   AC                        0
+7         Epitaciolandia                                                    M                   AC                        0
+5         Capixaba                                                           M                   AC                        0
+4         Bujari                                                                 M                   AC                        0
+3         Brasileia                                                            M                   AC                        0
+2         Assis Brasil                                                        M                   AC                        0
+1         Acrelandia                                                         M                   AC                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: AC 1      INTERIOR AC1                                                           Prazo:    16
+16         Rio Branco                                                        M                   AC                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: AC         CAPITAL                                                                     Prazo:    13
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   1
+Lynus
+----------------Page (0) Break----------------
+483         Canapolis                                                          M                   BA                        0
+479         Campo Formoso                                               M                   BA                        0
+478         Campo Alegre de Lourdes                                M                   BA                        0
+474         Camamu                                                            M                   BA                        0
+473         Camacari                                                           M                   BA                        0
+472         Camacan                                                           M                   BA                        0
+470         Caldeirao Grande                                              M                   BA                        0
+465         Cairu                                                                  M                   BA                        0
+462         Cafarnaum                                                        M                   BA                        0
+461         Caetite                                                               M                   BA                        0
+459         Caetanos                                                           M                   BA                        0
+458         Caem                                                                 M                   BA                        0
+457         Cacule                                                               M                   BA                        0
+455         Cachoeira                                                          M                   BA                        0
+452         Cabaceiras do Paraguacu                                 M                   BA                        0
+451         Caatiba                                                              M                   BA                        0
+450         Buritirama                                                          M                   BA                        0
+445         Buerarema                                                        M                   BA                        0
+443         Brumado                                                            M                   BA                        0
+442         Brotas de Macaubas                                         M                   BA                        0
+441         Brejolandia                                                        M                   BA                        0
+440         Brejoes                                                              M                   BA                        0
+434         Botupora                                                            M                   BA                        0
+433         Boquira                                                              M                   BA                        0
+432         Bonito                                                                M                   BA                        0
+431         Boninal                                                              M                   BA                        0
+428         Bom Jesus da Serra                                          M                   BA                        0
+427         Bom Jesus da Lapa                                          M                   BA                        0
+424         Boa Vista do Tupim                                           M                   BA                        0
+421         Boa Nova                                                          M                   BA                        0
+419         Biritinga                                                             M                   BA                        0
+414         Belo Campo                                                      M                   BA                        0
+413         Belmonte                                                           M                   BA                        0
+407         Barrocas                                                            M                   BA                        0
+405         Barro Preto                                                        M                   BA                        0
+404         Barro Alto                                                          M                   BA                        0
+400         Barra do Rocha                                                 M                   BA                        0
+398         Barra do Mendes                                               M                   BA                        0
+396         Barra do Choca                                                 M                   BA                        0
+395         Barra da Estiva                                                  M                   BA                        0
+394         Barra                                                                 M                   BA                        0
+391         Banzae                                                              M                   BA                        0
+382         Baixa Grande                                                    M                   BA                        0
+380         Baianopolis                                                        M                   BA                        0
+379         Aurelino Leal                                                     M                   BA                        0
+372         Aratuipe                                                             M                   BA                        0
+371         Arataca                                                              M                   BA                        0
+369         Aramari                                                              M                   BA                        0
+368         Araci                                                                  M                   BA                        0
+367         Aracatu                                                              M                   BA                        0
+366         Aracas                                                               M                   BA                        0
+365         Apuarema                                                          M                   BA                        0
+364         Apora                                                                 M                   BA                        0
+363         Antonio Goncalves                                            M                   BA                        0
+362         Antonio Cardoso                                               M                   BA                        0
+361         Antas                                                                 M                   BA                        0
+360         Anguera                                                             M                   BA                        0
+358         Angical                                                              M                   BA                        0
+357         Andorinha                                                          M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   2
+Lynus
+----------------Page (1) Break----------------
+586         Firmino Alves                                                    M                   BA                        0
+584         Filadelfia                                                            M                   BA                        0
+582         Feira de Santana                                               M                   BA                        0
+581         Feira da Mata                                                    M                   BA                        0
+580         Fatima                                                               M                   BA                        0
+579         Eunapolis                                                          M                   BA                        0
+578         Euclides da Cunha                                            M                   BA                        0
+577         Esplanada                                                         M                   BA                        0
+576         Erico Cardoso                                                   M                   BA                        0
+575         Entre Rios                                                         M                   BA                        0
+572         Encruzilhada                                                     M                   BA                        0
+571         Elisio Medrado                                                  M                   BA                        0
+568         Dom Macedo Costa                                          M                   BA                        0
+567         Dom Basilio                                                       M                   BA                        0
+565         Dias D'Avila                                                       M                   BA                        0
+561         Dario Meira                                                        M                   BA                        0
+559         Curaca                                                               M                   BA                        0
+556         Cruz das Almas                                                 M                   BA                        0
+554         Cristopolis                                                         M                   BA                        0
+552         Crisopolis                                                          M                   BA                        0
+551         Cravolandia                                                       M                   BA                        0
+549         Cotegipe                                                            M                   BA                        0
+547         Correntina                                                         M                   BA                        0
+546         Coronel Joao Sa                                               M                   BA                        0
+545         Coribe                                                                M                   BA                        0
+544         Cordeiros                                                           M                   BA                        0
+543         Coracao de Maria                                              M                   BA                        0
+539         Contendas do Sincora                                       M                   BA                        0
+538         Condeuba                                                          M                   BA                        0
+537         Conde                                                                M                   BA                        0
+536         Conceicao do Jacuipe                                       M                   BA                        0
+535         Conceicao do Coite                                           M                   BA                        0
+534         Conceicao do Almeida                                      M                   BA                        0
+533         Conceicao da Feira                                           M                   BA                        0
+530         Cocos                                                                M                   BA                        0
+529         Coaraci                                                              M                   BA                        0
+528         Cipo                                                                   M                   BA                        0
+526         Cicero Dantas                                                   M                   BA                        0
+525         Chorrocho                                                         M                   BA                        0
+523         Central                                                               M                   BA                        0
+521         Caturama                                                          M                   BA                        0
+519         Catu                                                                   M                   BA                        0
+516         Catolandia                                                         M                   BA                        0
+513         Castro Alves                                                      M                   BA                        0
+511         Casa Nova                                                        M                   BA                        0
+507         Carinhanha                                                        M                   BA                        0
+506         Cardeal da Silva                                                M                   BA                        0
+505         Caravelas                                                          M                   BA                        0
+501         Caraibas                                                            M                   BA                        0
+499         Capim Grosso                                                   M                   BA                        0
+498         Capela do Alto Alegre                                       M                   BA                        0
+495         Canudos                                                            M                   BA                        0
+493         Cansancao                                                        M                   BA                        0
+491         Candido Sales                                                   M                   BA                        0
+490         Candiba                                                             M                   BA                        0
+489         Candeias                                                           M                   BA                        0
+488         Candeal                                                             M                   BA                        0
+486         Canavieiras                                                       M                   BA                        0
+484         Canarana                                                          M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   3
+Lynus
+----------------Page (2) Break----------------
+712         Itape                                                                  M                   BA                        0
+711         Itaparica                                                            M                   BA                        0
+709         Itanhem                                                             M                   BA                        0
+708         Itanagra                                                             M                   BA                        0
+704         Itambe                                                               M                   BA                        0
+703         Itamari                                                               M                   BA                        0
+702         Itamaraju                                                           M                   BA                        0
+700         Itajuipe                                                               M                   BA                        0
+698         Itaju do Colonia                                                 M                   BA                        0
+692         Itaguacu da Bahia                                             M                   BA                        0
+691         Itagimirim                                                           M                   BA                        0
+690         Itagiba                                                               M                   BA                        0
+689         Itagi                                                                   M                   BA                        0
+688         Itaete                                                                 M                   BA                        0
+684         Itacare                                                               M                   BA                        0
+683         Itabuna                                                              M                   BA                        0
+682         Itaberaba                                                           M                   BA                        0
+681         Itabela                                                               M                   BA                        0
+678         Irece                                                                  M                   BA                        0
+677         Irara                                                                   M                   BA                        0
+676         Iraquara                                                             M                   BA                        0
+674         Iramaia                                                              M                   BA                        0
+673         Irajuba                                                               M                   BA                        0
+672         Ipupiara                                                             M                   BA                        0
+669         Ipira                                                                   M                   BA                        0
+668         Ipiau                                                                  M                   BA                        0
+667         Ipecaeta                                                            M                   BA                        0
+662         Inhambupe                                                        M                   BA                        0
+659         Ilheus                                                                 M                   BA                        0
+653         Iguai                                                                  M                   BA                        0
+651         Igrapiuna                                                           M                   BA                        0
+647         Igapora                                                              M                   BA                        0
+645         Ichu                                                                   M                   BA                        0
+644         Ibotirama                                                           M                   BA                        0
+640         Ibitita                                                                  M                   BA                        0
+637         Ibitiara                                                               M                   BA                        0
+636         Ibirataia                                                             M                   BA                        0
+635         Ibirapua                                                             M                   BA                        0
+634         Ibirapitanga                                                       M                   BA                        0
+630         Ibiquera                                                             M                   BA                        0
+629         Ibipitanga                                                           M                   BA                        0
+627         Ibipeba                                                              M                   BA                        0
+626         Ibicui                                                                  M                   BA                        0
+625         Ibicoara                                                             M                   BA                        0
+624         Ibicarai                                                               M                   BA                        0
+623         Ibiassuce                                                           M                   BA                        0
+618         Iacu                                                                   M                   BA                        0
+614         Heliopolis                                                           M                   BA                        0
+609         Guaratinga                                                        M                   BA                        0
+606         Guanambi                                                          M                   BA                        0
+605         Guajeru                                                             M                   BA                        0
+602         Governador Mangabeira                                   M                   BA                        0
+600         Gongogi                                                             M                   BA                        0
+599         Gloria                                                                 M                   BA                        0
+597         Gentio do Ouro                                                  M                   BA                        0
+596         Gaviao                                                               M                   BA                        0
+595         Gandu                                                               M                   BA                        0
+588         Formosa do Rio Preto                                       M                   BA                        0
+587         Floresta Azul                                                     M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   4
+Lynus
+----------------Page (3) Break----------------
+823         Mascote                                                             M                   BA                        0
+818         Marcionilio Souza                                              M                   BA                        0
+817         Marau                                                                M                   BA                        0
+815         Maragogipe                                                       M                   BA                        0
+814         Maracas                                                            M                   BA                        0
+811         Mansidao                                                           M                   BA                        0
+810         Manoel Vitorino                                                 M                   BA                        0
+806         Malhada de Pedras                                           M                   BA                        0
+805         Malhada                                                            M                   BA                        0
+804         Mairi                                                                  M                   BA                        0
+803         Maiquinique                                                       M                   BA                        0
+802         Maetinga                                                           M                   BA                        0
+801         Madre de Deus                                                  M                   BA                        0
+800         Macurure                                                           M                   BA                        0
+799         Macaubas                                                          M                   BA                        0
+798         Macarani                                                           M                   BA                        0
+797         Macajuba                                                           M                   BA                        0
+793         Livramento de Nossa Senhora                          M                   BA                        0
+791         Licinio de Almeida                                             M                   BA                        0
+790         Lencois                                                              M                   BA                        0
+789         Lauro de Freitas                                                M                   BA                        0
+787         Lapao                                                                M                   BA                        0
+785         Lamarao                                                            M                   BA                        0
+784         Lajedo do Tabocal                                             M                   BA                        0
+782         Lajedinho                                                           M                   BA                        0
+781         Lajedao                                                             M                   BA                        0
+779         Laje                                                                   M                   BA                        0
+778         Lagoa Real                                                        M                   BA                        0
+770         Lafaiete Coutinho                                              M                   BA                        0
+768         Jussiape                                                            M                   BA                        0
+767         Jussari                                                               M                   BA                        0
+766         Jussara                                                              M                   BA                        0
+760         Jucurucu                                                            M                   BA                        0
+759         Juazeiro                                                             M                   BA                        0
+756         Joao Dourado                                                    M                   BA                        0
+753         Jitauna                                                               M                   BA                        0
+751         Jeremoabo                                                        M                   BA                        0
+750         Jequirica                                                            M                   BA                        0
+749         Jequie                                                                M                   BA                        0
+745         Jandaira                                                            M                   BA                        0
+743         Jaguaripe                                                          M                   BA                        0
+742         Jaguarari                                                           M                   BA                        0
+740         Jaguaquara                                                       M                   BA                        0
+736         Jacobina                                                            M                   BA                        0
+735         Jacaraci                                                             M                   BA                        0
+734         Jaborandi                                                          M                   BA                        0
+733         Iuiu                                                                    M                   BA                        0
+731         Itubera                                                               M                   BA                        0
+730         Ituacu                                                                M                   BA                        0
+729         Itororo                                                                M                   BA                        0
+728         Itiuba                                                                 M                   BA                        0
+727         Itirucu                                                                M                   BA                        0
+725         Itatim                                                                 M                   BA                        0
+723         Itarantim                                                            M                   BA                        0
+721         Itaquara                                                             M                   BA                        0
+718         Itapitanga                                                          M                   BA                        0
+716         Itapicuru                                                            M                   BA                        0
+715         Itapetinga                                                          M                   BA                        0
+713         Itapebi                                                               M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   5
+Lynus
+----------------Page (4) Break----------------
+944         Porto Seguro                                                     M                   BA                        0
+942         Ponto Novo                                                       M                   BA                        0
+939         Pojuca                                                               M                   BA                        0
+937         Pocoes                                                              M                   BA                        0
+934         Planalto                                                             M                   BA                        0
+933         Planaltino                                                          M                   BA                        0
+931         Piritiba                                                               M                   BA                        0
+930         Piripa                                                                 M                   BA                        0
+926         Pirai do Norte                                                    M                   BA                        0
+924         Pintadas                                                            M                   BA                        0
+922         Pindobacu                                                         M                   BA                        0
+921         Pindai                                                                M                   BA                        0
+919         Pilao Arcado                                                      M                   BA                        0
+917         Piata                                                                  M                   BA                        0
+913         Pedro Alexandre                                               M                   BA                        0
+911         Pedrao                                                               M                   BA                        0
+910         Pe de Serra                                                       M                   BA                        0
+909         Paulo Afonso                                                     M                   BA                        0
+908         Pau Brasil                                                          M                   BA                        0
+904         Paripiranga                                                        M                   BA                        0
+903         Paratinga                                                           M                   BA                        0
+901         Paramirim                                                          M                   BA                        0
+899         Palmeiras                                                          M                   BA                        0
+898         Palmas de Monte Alto                                       M                   BA                        0
+893         Ourolandia                                                         M                   BA                        0
+891         Ouricangas                                                        M                   BA                        0
+886         Oliveira dos Brejinhos                                       M                   BA                        0
+885         Olindina                                                             M                   BA                        0
+880         Novo Triunfo                                                      M                   BA                        0
+879         Novo Horizonte                                                 M                   BA                        0
+877         Nova Vicosa                                                      M                   BA                        0
+876         Nova Soure                                                       M                   BA                        0
+875         Nova Redencao                                                M                   BA                        0
+873         Nova Itarana                                                      M                   BA                        0
+871         Nova Ibia                                                           M                   BA                        0
+870         Nova Fatima                                                      M                   BA                        0
+869         Nova Canaa                                                      M                   BA                        0
+866         Nordestina                                                         M                   BA                        0
+865         Nilo Pecanha                                                     M                   BA                        0
+864         Nazare                                                               M                   BA                        0
+861         Mutuipe                                                             M                   BA                        0
+859         Muritiba                                                             M                   BA                        0
+858         Muquem de Sao Francisco                               M                   BA                        0
+857         Muniz Ferreira                                                   M                   BA                        0
+856         Mundo Novo                                                      M                   BA                        0
+855         Mulungu do Morro                                             M                   BA                        0
+854         Mucuri                                                               M                   BA                        0
+853         Mucuge                                                             M                   BA                        0
+852         Mortugaba                                                         M                   BA                        0
+851         Morro do Chapeu                                              M                   BA                        0
+847         Morpara                                                             M                   BA                        0
+846         Monte Santo                                                      M                   BA                        0
+840         Mirante                                                              M                   BA                        0
+839         Mirangaba                                                         M                   BA                        0
+833         Milagres                                                             M                   BA                        0
+832         Miguel Calmon                                                  M                   BA                        0
+831         Medeiros Neto                                                   M                   BA                        0
+829         Matina                                                               M                   BA                        0
+827         Mata de Sao Joao                                             M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   6
+Lynus
+----------------Page (5) Break----------------
+1037         Sento Se                                                           M                   BA                        0
+1036         Senhor do Bonfim                                             M                   BA                        0
+1035         Sebastiao Laranjeiras                                       M                   BA                        0
+1034         Seabra                                                               M                   BA                        0
+1033         Saude                                                                M                   BA                        0
+1031         Saubara                                                             M                   BA                        0
+1030         Satiro Dias                                                         M                   BA                        0
+1029         Sapeacu                                                            M                   BA                        0
+1027         Sao Sebastiao do Passe                                   M                   BA                        0
+1024         Sao Miguel das Matas                                       M                   BA                        0
+1021         Sao Jose do Jacuipe                                         M                   BA                        0
+1019         Sao Jose da Vitoria                                           M                   BA                        0
+1016         Sao Goncalo dos Campos                                M                   BA                        0
+1015         Sao Gabriel                                                       M                   BA                        0
+1014         Sao Francisco do Conde                                   M                   BA                        0
+1013         Sao Felix do Coribe                                           M                   BA                        0
+1012         Sao Felix                                                           M                   BA                        0
+1011         Sao Felipe                                                         M                   BA                        0
+1010         Sao Domingos                                                   M                   BA                        0
+1009         Sao Desiderio                                                    M                   BA                        0
+1007         Santo Estevao                                                   M                   BA                        0
+1006         Santo Antonio de Jesus                                    M                   BA                        0
+1004         Santo Amaro                                                     M                   BA                        0
+1002         Santanopolis                                                     M                   BA                        0
+1000         Santana                                                             M                   BA                        0
+999         Santaluz                                                            M                   BA                        0
+998         Santa Terezinha                                                M                   BA                        0
+997         Santa Rita de Cassia                                        M                   BA                        0
+996         Santa Maria da Vitoria                                       M                   BA                        0
+995         Santa Luzia                                                       M                   BA                        0
+994         Santa Ines                                                         M                   BA                        0
+993         Santa Cruz da Vitoria                                        M                   BA                        0
+992         Santa Cruz Cabralia                                          M                   BA                        0
+991         Santa Brigida                                                     M                   BA                        0
+990         Santa Barbara                                                   M                   BA                        0
+985         Salinas da Margarida                                        M                   BA                        0
+982         Ruy Barbosa                                                     M                   BA                        0
+981         Rodelas                                                             M                   BA                        0
+980         Rio Real                                                            M                   BA                        0
+978         Rio do Pires                                                       M                   BA                        0
+975         Rio do Antonio                                                   M                   BA                        0
+974         Rio de Contas                                                   M                   BA                        0
+971         Ribeirao do Largo                                              M                   BA                        0
+970         Ribeira do Pombal                                             M                   BA                        0
+969         Ribeira do Amparo                                            M                   BA                        0
+967         Riacho de Santana                                            M                   BA                        0
+964         Riachao do Jacuipe                                           M                   BA                        0
+963         Riachao das Neves                                           M                   BA                        0
+962         Retirolandia                                                       M                   BA                        0
+960         Remanso                                                           M                   BA                        0
+958         Rafael Jambeiro                                                M                   BA                        0
+957         Quixabeira                                                         M                   BA                        0
+955         Quijingue                                                           M                   BA                        0
+954         Queimadas                                                        M                   BA                        0
+951         Presidente Tancredo Neves                              M                   BA                        0
+950         Presidente Janio Quadros                                 M                   BA                        0
+949         Presidente Dutra                                               M                   BA                        0
+948         Prado                                                                 M                   BA                        0
+946         Potiragua                                                           M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   7
+Lynus
+----------------Page (6) Break----------------
+1778         Brasilia                                                              M                   DF                        6
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: DF02      DF DEMAIS CIDADES                                               Prazo:      0
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: DF01      DF CAPITAL                                                               Prazo:      6
+1121         Xique-Xique                                                       M                   BA                        0
+1120         Wenceslau Guimaraes                                      M                   BA                        0
+1119         Wanderley                                                         M                   BA                        0
+1118         Wagner                                                              M                   BA                        0
+1116         Vitoria da Conquista                                          M                   BA                        0
+1114         Vereda                                                               M                   BA                        0
+1113         Vera Cruz                                                          M                   BA                        0
+1110         Varzedo                                                             M                   BA                        0
+1108         Varzea Nova                                                     M                   BA                        0
+1107         Varzea do Poco                                                 M                   BA                        0
+1104         Varzea da Roca                                                M                   BA                        0
+1103         Valente                                                              M                   BA                        0
+1102         Valenca                                                             M                   BA                        0
+1100         Utinga                                                                M                   BA                        0
+1099         Urucuca                                                             M                   BA                        0
+1098         Urandi                                                                M                   BA                        0
+1097         Una                                                                    M                   BA                        0
+1095         Umburanas                                                        M                   BA                        0
+1094         Uibai                                                                  M                   BA                        0
+1091         Ubata                                                                 M                   BA                        0
+1090         Ubaitaba                                                            M                   BA                        0
+1089         Ubaira                                                                M                   BA                        0
+1088         Uaua                                                                  M                   BA                        0
+1087         Tucano                                                              M                   BA                        0
+1085         Tremedal                                                           M                   BA                        0
+1082         Terra Nova                                                        M                   BA                        0
+1081         Teolandia                                                          M                   BA                        0
+1080         Teofilandia                                                         M                   BA                        0
+1079         Teodoro Sampaio                                              M                   BA                        0
+1078         Teixeira de Freitas                                            M                   BA                        0
+1071         Tapiramuta                                                        M                   BA                        0
+1068         Taperoa                                                             M                   BA                        0
+1066         Tanquinho                                                         M                   BA                        0
+1065         Tanque Novo                                                     M                   BA                        0
+1064         Tanhacu                                                            M                   BA                        0
+1059         Tabocas do Brejo Velho                                    M                   BA                        0
+1056         Souto Soares                                                    M                   BA                        0
+1055         Sobradinho                                                        M                   BA                        0
+1051         Sitio do Quinto                                                   M                   BA                        0
+1049         Sitio do Mato                                                     M                   BA                        0
+1047         Simoes Filho                                                     M                   BA                        0
+1046         Serrolandia                                                        M                   BA                        0
+1045         Serrinha                                                             M                   BA                        0
+1044         Serra Preta                                                        M                   BA                        0
+1041         Serra Dourada                                                   M                   BA                        0
+1040         Serra do Ramalho                                             M                   BA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   8
+Lynus
+----------------Page (7) Break----------------
+2135         Cidade Ocidental                                               M                   GO                       7
+2131         Cezarina                                                            M                   GO                       7
+2130         Ceres                                                                 M                   GO                       7
+2126         Caturai                                                               M                   GO                       7
+2125         Catalao                                                              M                   GO                       0
+2123         Castelandia                                                       M                   GO                       7
+2122         Carmo do Rio Verde                                         M                   GO                       7
+2110         Campestre de Goias                                         M                   GO                       7
+2108         Caldazinha                                                        M                   GO                       6
+2107         Caldas Novas                                                    M                   GO                       7
+2106         Calcilandia                                                         D                   GO                       8
+2102         Cachoeira Dourada                                           M                   GO                       7
+2101         Cachoeira de Goias                                          M                   GO                       7
+2100         Cachoeira Alta                                                   M                   GO                       7
+2097         Buriti de Goias                                                   M                   GO                       7
+2096         Buriti Alegre                                                       M                   GO                       7
+2093         Brazabrantes                                                     M                   GO                       7
+2091         Bonfinopolis                                                       M                   GO                       7
+2090         Bom Jesus                                                        M                   GO                       7
+2088         Bela Vista de Goias                                           M                   GO                       7
+2087         Barro Alto                                                          M                   GO                       7
+2082         Avelinopolis                                                       M                   GO                       7
+2080         Aurilandia                                                          M                   GO                       7
+2079         Aruana                                                               M                   GO                       7
+2078         Arenopolis                                                         M                   GO                       7
+2077         Araguapaz                                                         M                   GO                       8
+2076         Aragoiania                                                         M                   GO                       7
+2074         Aracu                                                                 M                   GO                       7
+2067         Anicuns                                                             M                   GO                       7
+2065         Anapolis                                                            M                   GO                       6
+2064         Amorinopolis                                                     M                   GO                       7
+2063         Americano do Brasil                                          M                   GO                       7
+2057         Aloandia                                                            M                   GO                       7
+2056         Alexania                                                            M                   GO                       7
+2055         Aguas Lindas de Goias                                     M                   GO                       7
+2054         Agua Limpa                                                       M                   GO                       7
+2052         Adelandia                                                          M                   GO                       7
+2051         Acreuna                                                             M                   GO                       7
+2050         Abadiania                                                          M                   GO                       7
+2049         Abadia de Goias                                                M                   GO                       7
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: GO         GO DEMAIS CIDADES                                               Prazo:      7
+13552         Planaltina                                                          M                   AC                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+1778         Brasilia                                                              M                   DF                        6
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:   9
+Lynus
+----------------Page (8) Break----------------
+2241         Morro Agudo de Goias                                      M                   GO                       0
+2240         Morrinhos                                                          M                   GO                       0
+2239         Montividiu do Norte                                           M                   GO                       0
+2238         Montividiu                                                          M                   GO                       0
+2235         Moipora                                                             M                   GO                       0
+2229         Maurilandia                                                        M                   GO                       0
+2228         Matrincha                                                          M                   GO                       0
+2227         Marzagao                                                          M                   GO                       0
+2223         Mairipotaba                                                       M                   GO                       0
+2222         Luziania                                                             M                   GO                       0
+2220         Leopoldo de Bulhoes                                        M                   GO                       0
+2217         Jussara                                                              M                   GO                       0
+2214         Joviania                                                             M                   GO                       0
+2212         Jesupolis                                                           M                   GO                       0
+2210         Jaupaci                                                              M                   GO                       0
+2208         Jaragua                                                             M                   GO                       0
+2207         Jandaia                                                              M                   GO                       0
+2205         Ivolandia                                                            M                   GO                       0
+2204         Itumbiara                                                           M                   GO                       0
+2203         Itaucu                                                                M                   GO                       0
+2201         Itapuranga                                                         M                   GO                       0
+2200         Itapirapua                                                          M                   GO                       0
+2199         Itapaci                                                                M                   GO                       0
+2197         Itaguaru                                                             M                   GO                       0
+2196         Itaguari                                                              M                   GO                       0
+2194         Itaberai                                                              M                   GO                       0
+2193         Israelandia                                                         M                   GO                       0
+2192         Ipora                                                                  M                   GO                       0
+2191         Ipameri                                                              M                   GO                       0
+2189         Inhumas                                                            M                   GO                       0
+2188         Indiara                                                               M                   GO                       0
+2185         Hidrolina                                                            M                   GO                       0
+2184         Hidrolandia                                                        M                   GO                       0
+2183         Heitorai                                                              M                   GO                       0
+2182         Guarinos                                                            M                   GO                       0
+2180         Guaraita                                                            M                   GO                       0
+2179         Guapo                                                               M                   GO                       0
+2177         Goiatuba                                                            M                   GO                       0
+2176         Goias                                                                 M                   GO                       0
+2175         Goianira                                                             M                   GO                       0
+2173         Goianesia                                                          M                   GO                       0
+2171         Goianapolis                                                       M                   GO                       0
+2168         Gameleira de Goias                                          M                   GO                       0
+2165         Formosa                                                            M                   GO                       0
+2163         Firminopolis                                                       M                   GO                       0
+2162         Fazenda Nova                                                   M                   GO                       0
+2161         Faina                                                                 M                   GO                       0
+2159         Edeia                                                                 M                   GO                       0
+2158         Edealina                                                            M                   GO                       0
+2154         Diorama                                                             M                   GO                       0
+2150         Damolandia                                                       M                   GO                       0
+2148         Cumari                                                               M                   GO                       0
+2146         Crominia                                                            M                   GO                       0
+2144         Cristianopolis                                                     M                   GO                       0
+2143         Cristalina                                                           M                   GO                       7
+2142         Corumbaiba                                                       M                   GO                       7
+2141         Corumba de Goias                                            M                   GO                       7
+2139         Corrego do Ouro                                               M                   GO                       7
+2137         Cocalzinho de Goias                                         M                   GO                       7
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  10
+Lynus
+----------------Page (9) Break----------------
+2358         Urutai                                                                 M                   GO                       0
+2357         Uruita                                                                 D                   GO                       0
+2353         Turvelandia                                                       M                   GO                       0
+2352         Turvania                                                            M                   GO                       0
+2349         Trindade                                                            M                   GO                       0
+2346         Terezopolis de Goias                                        M                   GO                       0
+2343         Taquaral de Goias                                             M                   GO                       0
+2339         Silvania                                                              M                   GO                       0
+2336         Senador Canedo                                               M                   GO                       0
+2331         Sao Patricio                                                       M                   GO                       0
+2330         Sao Miguel do Passa Quatro                            M                   GO                       0
+2327         Sao Luiz do Norte                                             M                   GO                       0
+2326         Sao Luis de Montes Belos                                M                   GO                       0
+2325         Sao Joao da Parauna                                       M                   GO                       0
+2321         Sao Francisco de Goias                                    M                   GO                       0
+2318         Santo Antonio do Descoberto                           M                   GO                       0
+2317         Santo Antonio de Goias                                    M                   GO                       0
+2316         Santo Antonio da Barra                                     M                   GO                       0
+2313         Santa Rosa de Goias                                        M                   GO                       0
+2311         Santa Rita do Novo Destino                              M                   GO                       0
+2310         Santa Rita do Araguaia                                     M                   GO                       0
+2309         Santa Isabel                                                      M                   GO                       0
+2308         Santa Helena de Goias                                     M                   GO                       0
+2307         Santa Fe de Goias                                            M                   GO                       0
+2306         Santa Cruz de Goias                                         M                   GO                       0
+2304         Santa Barbara de Goias                                    M                   GO                       0
+2303         Sanclerlandia                                                    M                   GO                       0
+2302         Rubiataba                                                          M                   GO                       0
+2301         Rosalandia                                                        D                   GO                       0
+2300         Campo Limpo de Goias                                    M                   GO                       0
+2298         Rio Verde                                                          M                   GO                       0
+2297         Rio Quente                                                        M                   GO                       0
+2295         Rianapolis                                                         M                   GO                       0
+2292         Professor Jamil                                                 M                   GO                       0
+2288         Porteirao                                                            M                   GO                       0
+2286         Pontalina                                                           M                   GO                       0
+2285         Planaltina                                                          M                   GO                       0
+2284         Pires do Rio                                                       M                   GO                       0
+2282         Pirenopolis                                                        M                   GO                       0
+2281         Piranhas                                                            M                   GO                       0
+2280         Piracanjuba                                                       M                   GO                       0
+2278         Pilar de Goias                                                    M                   GO                       0
+2277         Petrolina de Goias                                             M                   GO                       0
+2273         Parauna                                                             M                   GO                       0
+2271         Panama                                                             M                   GO                       0
+2270         Palminopolis                                                      M                   GO                       0
+2269         Palmelo                                                             M                   GO                       0
+2268         Palmeiras de Goias                                           M                   GO                       0
+2266         Padre Bernardo                                                 M                   GO                       0
+2263         Ouro Verde de Goias                                        M                   GO                       0
+2262         Orizona                                                              M                   GO                       0
+2258         Novo Gama                                                       M                   GO                       0
+2257         Novo Brasil                                                        M                   GO                       0
+2256         Nova Veneza                                                     M                   GO                       0
+2253         Nova Gloria                                                       M                   GO                       0
+2250         Nova America                                                    M                   GO                       0
+2248         Neropolis                                                           M                   GO                       0
+2247         Nazario                                                              M                   GO                       0
+2242         Mossamedes                                                     M                   GO                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  11
+Lynus
+----------------Page (10) Break----------------
+2236         Monte Alegre de Goias                                     M                   GO                       8
+2234         Mineiros                                                             M                   GO                       8
+2233         Minacu                                                               M                   GO                       8
+2232         Mimoso de Goias                                              M                   GO                       8
+2225         Mara Rosa                                                         M                   GO                       8
+2224         Mambai                                                             M                   GO                       8
+2209         Jatai                                                                   M                   GO                       8
+2202         Itaruma                                                              M                   GO                       8
+2198         Itaja                                                                   M                   GO                       8
+2187         Inaciolandia                                                       M                   GO                       8
+2186         Iaciara                                                               M                   GO                       8
+2181         Guarani de Goias                                              M                   GO                       8
+2178         Gouvelandia                                                      M                   GO                       8
+2172         Goiandira                                                           M                   GO                     10
+2166         Formoso                                                            M                   GO                       8
+2164         Flores de Goias                                                 M                   GO                       8
+2160         Estrela do Norte                                                M                   GO                       8
+2157         Doverlandia                                                       M                   GO                       8
+2155         Divinopolis de Goias                                         M                   GO                       8
+2152         Davinopolis                                                        M                   GO                       8
+2149         Damianopolis                                                    M                   GO                       8
+2145         Crixas                                                                M                   GO                       8
+2138         Colinas do Sul                                                   M                   GO                       8
+2132         Chapadao do Ceu                                             M                   GO                       8
+2127         Cavalcante                                                        M                   GO                       8
+2117         Campos Verdes                                                M                   GO                       8
+2116         Campos Belos                                                   M                   GO                       8
+2113         Campo Alegre de Goias                                    M                   GO                       8
+2112         Campinorte                                                        M                   GO                       8
+2111         Campinacu                                                        M                   GO                       8
+2104         Caiaponia                                                          M                   GO                       8
+2103         Cacu                                                                  M                   GO                       8
+2099         Cabeceiras                                                        M                   GO                       8
+2098         Buritinopolis                                                       M                   GO                       8
+2094         Britania                                                              M                   GO                       8
+2092         Bonopolis                                                          M                   GO                       8
+2089         Bom Jardim de Goias                                        M                   GO                       8
+2084         Baliza                                                                M                   GO                       8
+2075         Aragarcas                                                          M                   GO                       8
+2073         Apore                                                                 M                   GO                       8
+2072         Aparecida do Rio Doce                                     M                   GO                       8
+2066         Anhanguera                                                       M                   GO                       8
+2062         Amaralina                                                          M                   GO                       8
+2061         Alvorada do Norte                                             M                   GO                       8
+2060         Alto Paraiso de Goias                                       M                   GO                       8
+2059         Alto Horizonte                                                    M                   GO                       8
+2053         Agua Fria de Goias                                           M                   GO                       8
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: GOII       INTERIOR GOII                                                           Prazo:      0
+11521         Souzalandia                                                      D                   GO                       0
+10144         Rialma                                                               M                   GO                       0
+10090         Ipiranga de Goias                                              M                   GO                       0
+2367         Vila Propicio                                                      M                   GO                       0
+2364         Vicentinopolis                                                    M                   GO                       0
+2363         Vianopolis                                                          M                   GO                       0
+2362         Varjao                                                                M                   GO                       0
+2361         Valparaiso de Goias                                          M                   GO                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  12
+Lynus
+----------------Page (11) Break----------------
+3689         Ribeirao das Neves                                           M                   MG                       0
+3667         Prudente de Morais                                           M                   MG                       0
+3571         Pedro Leopoldo                                                 M                   MG                       0
+3480         Nova Lima                                                         M                   MG                       0
+3401         Matozinhos                                                        M                   MG                       0
+3332         Lagoa Santa                                                      M                   MG                       0
+3211         Igarape                                                              M                   MG                       0
+3206         Ibirite                                                                 M                   MG                       0
+2971         Confins                                                              M                   MG                       0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: MG 1      INTERIOR MG1                                                          Prazo:      7
+2980         Contagem                                                          M                   MG                       6
+2762         Betim                                                                 M                   MG                       6
+2754         Belo Horizonte                                                   M                   MG                       6
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: MG         CAPITAL                                                                     Prazo:      6
+2174         Goiania                                                              M                   GO                       5
+2070         Aparecida de Goias                                           D                   GO                       5
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: GOIP     GO CAPITAL                                                              Prazo:    13
+2365         Vila Boa                                                             M                   GO                       8
+2356         Uruana                                                              M                   GO                       8
+2355         Uruacu                                                               M                   GO                       8
+2354         Uirapuru                                                            M                   GO                       8
+2350         Trombas                                                            M                   GO                       8
+2348         Tres Ranchos                                                    M                   GO                       8
+2347         Lagoa Santa                                                      M                   GO                       8
+2345         Teresina de Goias                                             M                   GO                       8
+2341         Sitio D'Abadia                                                    M                   GO                       8
+2340         Simolandia                                                        M                   GO                       8
+2338         Serranopolis                                                      M                   GO                       8
+2333         Sao Simao                                                         M                   GO                       8
+2329         Sao Miguel do Araguaia                                    M                   GO                       8
+2324         Sao Joao D'Alianca                                           M                   GO                       8
+2320         Sao Domingos                                                   M                   GO                       8
+2315         Santa Terezinha de Goias                                M                   GO                       8
+2314         Santa Tereza de Goias                                     M                   GO                       8
+2293         Quirinopolis                                                       M                   GO                       8
+2290         Posse                                                                M                   GO                       8
+2289         Portelandia                                                        M                   GO                       8
+2287         Porangatu                                                          M                   GO                       8
+2276         Perolandia                                                         M                   GO                       8
+2272         Paranaiguara                                                     M                   GO                       8
+2267         Palestina de Goias                                            M                   GO                       8
+2265         Ouvidor                                                              M                   GO                       8
+2259         Novo Planalto                                                    M                   GO                       8
+2255         Nova Roma                                                       M                   GO                       8
+2254         Nova Iguacu de Goias                                       M                   GO                       8
+2252         Nova Crixas                                                       M                   GO                       8
+2251         Nova Aurora                                                      M                   GO                       8
+2249         Niquelandia                                                       M                   GO                       8
+2245         Mutunopolis                                                       M                   GO                       8
+2244         Mundo Novo                                                      M                   GO                       8
+2243         Mozarlandia                                                       M                   GO                       8
+2237         Montes Claros de Goias                                    M                   GO                       8
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  13
+Lynus
+----------------Page (12) Break----------------
+2873         Capetinga                                                          M                   MG                       0
+2865         Canapolis                                                          M                   MG                       0
+2861         Cana Verde                                                       M                   MG                       0
+2860         Campos Gerais                                                 M                   MG                       0
+2859         Campos Altos                                                    M                   MG                       0
+2856         Campo Florido                                                   M                   MG                       0
+2855         Campo do Meio                                                 M                   MG                       0
+2854         Campo Belo                                                      M                   MG                       0
+2850         Campina Verde                                                 M                   MG                       0
+2848         Campestre                                                         M                   MG                       0
+2847         Campanha                                                         M                   MG                       0
+2845         Cambuquira                                                       M                   MG                       0
+2844         Cambui                                                              M                   MG                       0
+2842         Camanducaia                                                    M                   MG                       0
+2839         Caldas                                                               M                   MG                       0
+2830         Cachoeira Dourada                                           M                   MG                       0
+2822         Cachoeira de Minas                                          M                   MG                       0
+2816         Cabo Verde                                                       M                   MG                       0
+2815         Cabeceira Grande                                             M                   MG                       0
+2812         Buritis                                                                M                   MG                       0
+2809         Bueno Brandao                                                 M                   MG                       0
+2799         Brasopolis                                                         M                   MG                       0
+2797         Brasilandia de Minas                                         M                   MG                       0
+2794         Botelhos                                                            M                   MG                       0
+2793         Borda da Mata                                                   M                   MG                       0
+2790         Bonfinopolis de Minas                                       M                   MG                       0
+2786         Bom Sucesso                                                    M                   MG                       0
+2784         Bom Repouso                                                   M                   MG                       0
+2777         Bom Jesus da Penha                                        M                   MG                       0
+2768         Boa Esperanca                                                  M                   MG                       0
+2731         Bandeira do Sul                                                 M                   MG                       0
+2723         Baependi                                                           M                   MG                       0
+2712         Arinos                                                                M                   MG                       0
+2708         Areado                                                               M                   MG                       0
+2706         Arceburgo                                                          M                   MG                       0
+2704         Araxa                                                                 M                   MG                       0
+2701         Arapua                                                               M                   MG                       0
+2700         Arapora                                                             M                   MG                       0
+2695         Araguari                                                             M                   MG                       0
+2676         Andrelandia                                                       M                   MG                       0
+2675         Andradas                                                           M                   MG                       0
+2657         Alterosa                                                             M                   MG                       0
+2656         Alpinopolis                                                         M                   MG                       0
+2651         Alfenas                                                              M                   MG                       0
+2643         Albertina                                                            M                   MG                       0
+2641         Aiuruoca                                                            M                   MG                       0
+2632         Agua Comprida                                                 M                   MG                       0
+2620         Abadia dos Dourados                                        M                   MG                       0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: MG 2      INTERIOR MG2                                                          Prazo:      8
+4081         Vespasiano                                                       M                   MG                       0
+4048         Uberlandia                                                         M                   MG                       0
+3949         Sarzedo                                                             M                   MG                       0
+3872         Sao Jose da Lapa                                             M                   MG                       0
+3869         Sao Joaquim de Bicas                                      M                   MG                       0
+3749         Santa Luzia                                                       M                   MG                       0
+3724         Sabara                                                               M                   MG                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  14
+Lynus
+----------------Page (13) Break----------------
+3208         Ibitiura de Minas                                                M                   MG                       0
+3205         Ibiraci                                                                 M                   MG                       0
+3202         Ibia                                                                    M                   MG                       0
+3196         Heliodora                                                           M                   MG                       0
+3195         Gurinhata                                                          M                   MG                       0
+3192         Guimarania                                                        M                   MG                       0
+3190         Guaxupe                                                            M                   MG                       0
+3187         Guarda-Mor                                                       M                   MG                       0
+3181         Guaranesia                                                        M                   MG                       0
+3178         Guape                                                               M                   MG                       0
+3174         Grupiara                                                            M                   MG                       0
+3164         Goncalves                                                         M                   MG                       0
+3146         Frutal                                                                 M                   MG                       0
+3143         Fronteira                                                            M                   MG                       0
+3130         Fortaleza de Minas                                            M                   MG                       0
+3129         Formoso                                                            M                   MG                       0
+3105         Fama                                                                 M                   MG                       0
+3104         Extrema                                                             M                   MG                       0
+3098         Estrela do Sul                                                    M                   MG                       0
+3093         Estiva                                                                M                   MG                       0
+3090         Espirito Santo do Dourado                                M                   MG                       0
+3073         Eloi Mendes                                                      M                   MG                       0
+3068         Douradoquara                                                   M                   MG                       0
+3058         Dom Vicoso                                                       M                   MG                       0
+3052         Dom Bosco                                                        M                   MG                       0
+3049         Divisa Nova                                                       M                   MG                       0
+3027         Delta                                                                  M                   MG                       0
+3025         Delfim Moreira                                                   M                   MG                       0
+3017         Cruzilia                                                              M                   MG                       0
+3015         Cruzeiro da Fortaleza                                        M                   MG                       0
+3013         Cristina                                                              M                   MG                       0
+3010         Cristais                                                              M                   MG                       0
+2996         Corrego do Bom Jesus                                     M                   MG                       0
+2989         Coromandel                                                       M                   MG                       0
+2986         Cordislandia                                                      M                   MG                       0
+2983         Coqueiral                                                           M                   MG                       0
+2979         Consolacao                                                       M                   MG                       0
+2975         Conquista                                                          M                   MG                       0
+2972         Congonhal                                                         M                   MG                       0
+2966         Conceicao dos Ouros                                        M                   MG                       0
+2965         Conceicao do Rio Verde                                   M                   MG                       0
+2954         Conceicao das Pedras                                      M                   MG                       0
+2953         Conceicao das Alagoas                                    M                   MG                       0
+2948         Conceicao da Aparecida                                   M                   MG                       0
+2946         Comendador Gomes                                         M                   MG                       0
+2929         Chapada Gaucha                                              M                   MG                       0
+2923         Centralina                                                          M                   MG                       0
+2918         Caxambu                                                           M                   MG                       0
+2907         Cassia                                                               M                   MG                       0
+2906         Cascalho Rico                                                   M                   MG                       0
+2904         Carvalhos                                                          M                   MG                       0
+2903         Carvalhopolis                                                    M                   MG                       0
+2900         Carneirinho                                                        M                   MG                       0
+2898         Carmo do Rio Claro                                          M                   MG                       0
+2897         Carmo do Paranaiba                                         M                   MG                       0
+2895         Carmo de Minas                                                M                   MG                       0
+2893         Carmo da Cachoeira                                         M                   MG                       0
+2888         Careacu                                                             M                   MG                       0
+2875         Capinopolis                                                       M                   MG                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  15
+Lynus
+----------------Page (14) Break----------------
+3570         Pedrinopolis                                                      M                   MG                       0
+3568         Pedralva                                                            M                   MG                       0
+3551         Patrocinio                                                          M                   MG                       0
+3549         Patos de Minas                                                 M                   MG                       0
+3547         Passos                                                              M                   MG                       0
+3542         Passa Quatro                                                    M                   MG                       0
+3536         Paraisopolis                                                       M                   MG                       0
+3533         Paraguacu                                                         M                   MG                       0
+3532         Paracatu                                                            M                   MG                       0
+3506         Ouro Fino                                                          M                   MG                       0
+3499         Olimpio Noronha                                               M                   MG                       0
+3485         Nova Resende                                                  M                   MG                       0
+3483         Nova Ponte                                                       M                   MG                       0
+3473         Nepomuceno                                                     M                   MG                       0
+3470         Nazareno                                                           M                   MG                       0
+3468         Natercia                                                             M                   MG                       0
+3467         Natalandia                                                         M                   MG                       0
+3462         Muzambinho                                                      M                   MG                       0
+3458         Munhoz                                                             M                   MG                       0
+3446         Monte Siao                                                        M                   MG                       0
+3445         Monte Santo de Minas                                      M                   MG                       0
+3441         Monte Carmelo                                                  M                   MG                       0
+3440         Monte Belo                                                        M                   MG                       0
+3438         Monte Alegre de Minas                                     M                   MG                       0
+3436         Monsenhor Paulo                                              M                   MG                       0
+3417         Minduri                                                              M                   MG                       0
+3402         Matutina                                                            M                   MG                       0
+3381         Maria da Fe                                                       M                   MG                       0
+3363         Machado                                                           M                   MG                       0
+3358         Luminarias                                                         M                   MG                       0
+3348         Limeira do Oeste                                               M                   MG                       0
+3341         Lavras                                                               M                   MG                       0
+3334         Lambari                                                             M                   MG                       0
+3331         Lagoa Grande                                                   M                   MG                       0
+3330         Lagoa Formosa                                                 M                   MG                       0
+3325         Lagamar                                                            M                   MG                       0
+3319         Juruaia                                                              M                   MG                       0
+3305         Joao Pinheiro                                                    M                   MG                       0
+3301         Jesuania                                                            M                   MG                       0
+3284         Jacutinga                                                           M                   MG                       0
+3283         Jacui                                                                  M                   MG                       0
+3278         Itutinga                                                              M                   MG                       0
+3277         Iturama                                                              M                   MG                       0
+3276         Itumirim                                                             M                   MG                       0
+3275         Ituiutaba                                                            M                   MG                       0
+3266         Itau de Minas                                                     M                   MG                       0
+3262         Itapeva                                                              M                   MG                       0
+3259         Itapagipe                                                           M                   MG                       0
+3256         Itanhandu                                                          M                   MG                       0
+3254         Itamonte                                                            M                   MG                       0
+3253         Itamogi                                                              M                   MG                       0
+3245         Itajuba                                                               M                   MG                       0
+3233         Irai de Minas                                                      M                   MG                       0
+3232         Ipuiuna                                                              M                   MG                       0
+3230         Ipiacu                                                                 M                   MG                       0
+3221         Indianopolis                                                       M                   MG                       0
+3218         Inconfidentes                                                     M                   MG                       0
+3216         Ilicinea                                                               M                   MG                       0
+3209         Ibituruna                                                            M                   MG                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  16
+Lynus
+----------------Page (15) Break----------------
+4047         Uberaba                                                            M                   MG                       0
+4042         Turvolandia                                                       M                   MG                       0
+4039         Tupaciguara                                                      M                   MG                       0
+4035         Tres Pontas                                                       M                   MG                       0
+4034         Tres Marias                                                       M                   MG                       0
+4032         Tres Coracoes                                                   M                   MG                       0
+4026         Toledo                                                               M                   MG                       0
+4025         Tocos do Moji                                                    M                   MG                       0
+4021         Tiros                                                                  M                   MG                       0
+4008         Tapira                                                                M                   MG                       0
+4000         Soledade de Minas                                           M                   MG                       0
+3994         Silvianopolis                                                      M                   MG                       0
+3980         Serrania                                                             M                   MG                       0
+3976         Serra do Salitre                                                 M                   MG                       0
+3955         Senador Jose Bento                                          M                   MG                       0
+3952         Senador Amaral                                                M                   MG                       0
+3943         Sapucai-Mirim                                                   M                   MG                       0
+3938         Sao Vicente de Minas                                       M                   MG                       0
+3935         Sao Thome das Letras                                      M                   MG                       0
+3934         Sao Tomas de Aquino                                       M                   MG                       0
+3927         Sao Sebastiao do Rio Verde                             M                   MG                       0
+3909         Sao Sebastiao da Bela Vista                             M                   MG                       0
+3897         Sao Pedro da Uniao                                          M                   MG                       0
+3892         Sao Lourenco                                                    M                   MG                       0
+3878         Sao Jose do Alegre                                           M                   MG                       0
+3870         Sao Jose da Barra                                            M                   MG                       0
+3850         Sao Joao da Mata                                             M                   MG                       0
+3847         Sao Joao Batista do Gloria                               M                   MG                       0
+3845         Sao Gotardo                                                      M                   MG                       0
+3844         Sao Goncalo do Sapucai                                  M                   MG                       0
+3838         Sao Goncalo do Abaete                                    M                   MG                       0
+3828         Sao Francisco de Sales                                    M                   MG                       0
+3816         Sao Bento Abade                                              M                   MG                       0
+3793         Santo Antonio do Amparo                                 M                   MG                       0
+3783         Santana do Jacare                                            M                   MG                       0
+3772         Santana da Vargem                                          M                   MG                       0
+3771         Santa Vitoria                                                      M                   MG                       0
+3766         Santa Rosa da Serra                                         M                   MG                       0
+3764         Santa Rita do Sapucai                                      M                   MG                       0
+3756         Santa Rita de Caldas                                        M                   MG                       0
+3748         Santa Juliana                                                    M                   MG                       0
+3726         Sacramento                                                       M                   MG                       0
+3717         Romaria                                                             M                   MG                       0
+3703         Rio Paranaiba                                                   M                   MG                       0
+3691         Ribeirao Vermelho                                            M                   MG                       0
+3686         Riachinho                                                          M                   MG                       0
+3663         Presidente Olegario                                          M                   MG                       0
+3659         Pratinha                                                             M                   MG                       0
+3658         Pratapolis                                                          M                   MG                       0
+3657         Prata                                                                  M                   MG                       0
+3655         Pouso Alto                                                         M                   MG                       0
+3632         Pocos de Caldas                                               M                   MG                       0
+3630         Poco Fundo                                                       M                   MG                       0
+3627         Planura                                                              M                   MG                       0
+3615         Piranguinho                                                       M                   MG                       0
+3614         Pirangucu                                                          M                   MG                       0
+3612         Pirajuba                                                             M                   MG                       0
+3586         Perdoes                                                             M                   MG                       0
+3585         Perdizes                                                            M                   MG                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  17
+Lynus
+----------------Page (16) Break----------------
+4656         Jacunda                                                             M                   PA                        0
+4654         Itupiranga                                                          M                   PA                        0
+4650         Irituia                                                                 M                   PA                        0
+4649         Ipixuna do Para                                                 M                   PA                        0
+4648         Inhangapi                                                          M                   PA                        0
+4646         Igarape-Miri                                                       M                   PA                        0
+4645         Igarape-Acu                                                       M                   PA                        0
+4635         Goianesia do Para                                            M                   PA                        0
+4634         Garrafao do Norte                                             M                   PA                        0
+4633         Floresta do Araguaia                                         M                   PA                        0
+4626         Eldorado dos Carajas                                        M                   PA                        0
+4625         Dom Eliseu                                                        M                   PA                        0
+4622         Curuca                                                               M                   PA                        0
+4618         Curionopolis                                                      M                   PA                        0
+4617         Cumaru do Norte                                               M                   PA                        0
+4611         Concordia do Para                                            M                   PA                        0
+4610         Conceicao do Araguaia                                     M                   PA                        0
+4605         Castanhal                                                          M                   PA                        0
+4597         Capitao Poco                                                     M                   PA                        0
+4596         Capanema                                                         M                   PA                        0
+4595         Canaa dos Carajas                                           M                   PA                        0
+4585         Bujaru                                                                M                   PA                        0
+4583         Breu Branco                                                      M                   PA                        0
+4582         Brejo Grande do Araguaia                                M                   PA                        0
+4579         Brasil Novo                                                        M                   PA                        0
+4578         Braganca                                                           M                   PA                        0
+4577         Bonito                                                                M                   PA                        0
+4576         Bom Jesus do Tocantins                                   M                   PA                        0
+4567         Benevides                                                         M                   PA                        0
+4566         Belterra                                                              M                   PA                        0
+4558         Barcarena                                                          M                   PA                        0
+4553         Aurora do Para                                                  M                   PA                        0
+4552         Augusto Correa                                                 M                   PA                        0
+4540         Anapu                                                                M                   PA                        0
+4539         Ananindeua                                                       M                   PA                        0
+4534         Altamira                                                             M                   PA                        0
+4527         Agua Azul do Norte                                           M                   PA                        0
+4524         Acara                                                                 M                   PA                        0
+4523         Abel Figueiredo                                                 M                   PA                        0
+4522         Abaetetuba                                                        M                   PA                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: PA 1      INTERIOR PA1                                                           Prazo:    23
+4565         Belem                                                                M                   PA                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: PA         CAPITAL                                                                     Prazo:    15
+98545         Pouso Alegre                                                     M                   MG                       0
+4099         Wenceslau Braz                                                M                   MG                       0
+4091         Virginia                                                              M                   MG                       0
+4077         Verissimo                                                          M                   MG                       0
+4071         Vazante                                                             M                   MG                       0
+4067         Varjao de Minas                                                M                   MG                       0
+4066         Varginha                                                            M                   MG                       0
+4055         Urucuia                                                              M                   MG                       0
+4053         Uruana de Minas                                               M                   MG                       0
+4052         Uniao de Minas                                                 M                   MG                       0
+4051         Unai                                                                   M                   MG                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  18
+Lynus
+----------------Page (17) Break----------------
+4845         Vitoria do Xingu                                                 M                   PA                        0
+4842         Viseu                                                                 M                   PA                        0
+4831         Vigia                                                                  M                   PA                        0
+4825         Ulianopolis                                                         M                   PA                        0
+4824         Tucurui                                                              M                   PA                        0
+4823         Tucuma                                                             M                   PA                        0
+4821         Tracuateua                                                        M                   PA                        0
+4820         Tome-Acu                                                          M                   PA                        0
+4816         Terra Alta                                                          M                   PA                        0
+4811         Tailandia                                                            M                   PA                        0
+4808         Senador Jose Porfirio                                        M                   PA                        0
+4807         Sapucaia                                                           M                   PA                        0
+4797         Sao Miguel do Guama                                      M                   PA                        0
+4789         Sao Joao do Araguaia                                       M                   PA                        0
+4787         Sao Joao de Pirabas                                         M                   PA                        0
+4786         Sao Joao da Ponta                                            M                   PA                        0
+4785         Sao Geraldo do Araguaia                                  M                   PA                        0
+4784         Sao Francisco do Para                                      M                   PA                        0
+4781         Sao Felix do Xingu                                            M                   PA                        0
+4780         Sao Domingos do Capim                                  M                   PA                        0
+4779         Sao Domingos do Araguaia                              M                   PA                        0
+4778         Sao Caetano de Odivelas                                 M                   PA                        0
+4777         Santo Antonio do Taua                                     M                   PA                        0
+4775         Santarem Novo                                                 M                   PA                        0
+4773         Santana do Araguaia                                        M                   PA                        0
+4770         Santa Maria do Para                                         M                   PA                        0
+4769         Santa Maria das Barreiras                                M                   PA                        0
+4767         Santa Luzia do Para                                          M                   PA                        0
+4766         Santa Isabel do Para                                         M                   PA                        0
+4764         Santa Barbara do Para                                     M                   PA                        0
+4762         Salinopolis                                                         M                   PA                        0
+4760         Rondon do Para                                                M                   PA                        0
+4757         Rio Maria                                                           M                   PA                        0
+4754         Redencao                                                          M                   PA                        0
+4752         Quatipuru                                                          M                   PA                        0
+4751         Primavera                                                          M                   PA                        0
+4738         Picarra                                                               M                   PA                        0
+4733         Peixe-Boi                                                           M                   PA                        0
+4731         Pau D'Arco                                                        M                   PA                        0
+4730         Parauapebas                                                     M                   PA                        0
+4728         Paragominas                                                     M                   PA                        0
+4727         Palestina do Para                                              M                   PA                        0
+4725         Pacaja                                                               M                   PA                        0
+4723         Ourilandia do Norte                                           M                   PA                        0
+4722         Ourem                                                               M                   PA                        0
+4715         Novo Repartimento                                           M                   PA                        0
+4712         Nova Timboteua                                                M                   PA                        0
+4710         Nova Ipixuna                                                     M                   PA                        0
+4709         Nova Esperanca do Piria                                  M                   PA                        0
+4701         Mojui dos Campos                                            M                   PA                        0
+4693         Moju                                                                  M                   PA                        0
+4685         Medicilandia                                                      M                   PA                        0
+4681         Marituba                                                            M                   PA                        0
+4680         Marapanim                                                        M                   PA                        0
+4678         Maracana                                                          M                   PA                        0
+4677         Maraba                                                              M                   PA                        0
+4674         Magalhaes Barata                                             M                   PA                        0
+4673         Mae do Rio                                                        M                   PA                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  19
+Lynus
+----------------Page (18) Break----------------
+7314         Alvorada D'Oeste                                              M                   RO                       0
+7313         Alto Paraiso                                                       M                   RO                       0
+7312         Alta Floresta D'Oeste                                        M                   RO                       0
+7311         Alto Alegre dos Parecis                                     M                   RO                       0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: RO 1      INTERIOR 1                                                                Prazo:    14
+7352         Porto Velho                                                       M                   RO                       0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: RO         CAPITAL                                                                     Prazo:    12
+4826         Uruara                                                               M                   PA                        0
+4822         Trairao                                                               M                   PA                        0
+4817         Terra Santa                                                       M                   PA                        0
+4810         Soure                                                                 M                   PA                        0
+4805         Sao Sebastiao da Boa Vista                             M                   PA                        0
+4774         Santarem                                                           M                   PA                        0
+4765         Santa Cruz do Arari                                           M                   PA                        0
+4763         Salvaterra                                                          M                   PA                        0
+4761         Ruropolis                                                           M                   PA                        0
+4750         Prainha                                                              M                   PA                        0
+4747         Porto de Moz                                                     M                   PA                        0
+4746         Portel                                                                 M                   PA                        0
+4744         Ponta de Pedras                                               M                   PA                        0
+4743         Placas                                                               M                   PA                        0
+4719         Oriximina                                                           M                   PA                        0
+4718         Oeiras do Para                                                  M                   PA                        0
+4717         Obidos                                                               M                   PA                        0
+4714         Novo Progresso                                                M                   PA                        0
+4700         Muana                                                               M                   PA                        0
+4695         Monte Alegre                                                     M                   PA                        0
+4691         Mocajuba                                                           M                   PA                        0
+4686         Melgaco                                                             M                   PA                        0
+4672         Limoeiro do Ajuru                                              M                   PA                        0
+4667         Juruti                                                                 M                   PA                        0
+4655         Jacareacanga                                                    M                   PA                        0
+4651         Itaituba                                                              M                   PA                        0
+4639         Gurupa                                                              M                   PA                        0
+4629         Faro                                                                   M                   PA                        0
+4620         Curua                                                                M                   PA                        0
+4619         Curralinho                                                          M                   PA                        0
+4608         Colares                                                              M                   PA                        0
+4607         Chaves                                                              M                   PA                        0
+4593         Cameta                                                              M                   PA                        0
+4587         Cachoeira do Arari                                            M                   PA                        0
+4586         Cachoeira do Piria                                             M                   PA                        0
+4584         Breves                                                               M                   PA                        0
+4557         Bannach                                                            M                   PA                        0
+4556         Baiao                                                                 M                   PA                        0
+4555         Bagre                                                                 M                   PA                        0
+4554         Aveiro                                                                M                   PA                        0
+4538         Anajas                                                               M                   PA                        0
+4531         Almeirim                                                            M                   PA                        0
+4529         Alenquer                                                            M                   PA                        0
+4525         Afua                                                                   M                   PA                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: PA 2      INTERIOR FLUVIAL                                                   Prazo:    23
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  20
+Lynus
+----------------Page (19) Break----------------
+9794         Almas                                                                M                   TO                        0
+9793         Alianca do Tocantins                                         M                   TO                        0
+9792         Aguiarnopolis                                                    M                   TO                        0
+9791         Abreulandia                                                       M                   TO                        0
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: TO 1      INTERIOR TO1                                                           Prazo:    12
+9899         Palmas                                                              M                   TO                        8
+Cidade          Descrição                                                         MDP              Estado            Prazo
+Tarifa: TO         CAPITAL                                                                     Prazo:      8
+7371         Vilhena                                                              M                   RO                       0
+7369         Vale do Paraiso                                                 M                   RO                       0
+7368         Vale do Anari                                                     M                   RO                       0
+7367         Urupa                                                                M                   RO                       0
+7366         Theobroma                                                        M                   RO                       0
+7365         Teixeiropolis                                                      M                   RO                       0
+7363         Seringueiras                                                      M                   RO                       0
+7362         Sao Miguel do Guapore                                    M                   RO                       0
+7361         Sao Francisco do Guapore                               M                   RO                       0
+7360         Sao Felipe D'Oeste                                           M                   RO                       0
+7359         Santa Luzia D'Oeste                                         M                   RO                       0
+7358         Rolim de Moura                                                 M                   RO                       0
+7356         Rio Crespo                                                        M                   RO                       0
+7354         Primavera de Rondonia                                    M                   RO                       0
+7353         Presidente Medici                                              M                   RO                       0
+7351         Pimenteiras do Oeste                                        M                   RO                       0
+7350         Pimenta Bueno                                                  M                   RO                       0
+7348         Parecis                                                              M                   RO                       0
+7347         Ouro Preto do Oeste                                         M                   RO                       0
+7346         Novo Horizonte do Oeste                                  M                   RO                       0
+7344         Nova Uniao                                                       M                   RO                       0
+7343         Nova Mamore                                                    M                   RO                       0
+7342         Nova Brasilandia D'Oeste                                 M                   RO                       0
+7341         Monte Negro                                                     M                   RO                       0
+7340         Mirante da Serra                                               M                   RO                       0
+7339         Ministro Andreazza                                           M                   RO                       0
+7337         Machadinho D'Oeste                                         M                   RO                       0
+7336         Ji-Parana                                                           M                   RO                       0
+7335         Jaru                                                                   M                   RO                       0
+7334         Itapua do Oeste                                                 M                   RO                       0
+7332         Guajara-Mirim                                                   M                   RO                       0
+7331         Governador Jorge Teixeira                               M                   RO                       0
+7330         Espigao do Oeste                                              M                   RO                       0
+7329         Cujubim                                                             M                   RO                       0
+7328         Costa Marques                                                  M                   RO                       0
+7327         Corumbiara                                                       M                   RO                       0
+7326         Colorado do Oeste                                            M                   RO                       0
+7325         Chupinguaia                                                      M                   RO                       0
+7324         Cerejeiras                                                          M                   RO                       0
+7323         Castanheiras                                                     M                   RO                       0
+7322         Candeias do Jamari                                          M                   RO                       0
+7321         Campo Novo de Rondonia                                M                   RO                       0
+7319         Cacoal                                                               M                   RO                       0
+7318         Cacaulandia                                                      M                   RO                       0
+7317         Cabixi                                                                M                   RO                       0
+7316         Buritis                                                                M                   RO                       0
+7315         Ariquemes                                                         M                   RO                       0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  21
+Lynus
+----------------Page (20) Break----------------
+9867         Itapiratins                                                           M                   TO                        0
+9866         Itaguatins                                                           M                   TO                        0
+9865         Itacaja                                                                M                   TO                        0
+9864         Ipueiras                                                             M                   TO                        0
+9862         Gurupi                                                               M                   TO                        0
+9861         Guarai                                                               M                   TO                        0
+9860         Goiatins                                                             M                   TO                        0
+9859         Goianorte                                                          M                   TO                        0
+9858         Fortaleza do Tabocao                                       M                   TO                        0
+9857         Formoso do Araguaia                                        M                   TO                        0
+9856         Filadelfia                                                            M                   TO                        0
+9855         Figueiropolis                                                      M                   TO                        0
+9854         Fatima                                                               M                   TO                        0
+9853         Esperantina                                                       M                   TO                        0
+9851         Duere                                                                M                   TO                        0
+9850         Dois Irmaos do Tocantins                                 M                   TO                        0
+9849         Divinopolis do Tocantins                                   M                   TO                        0
+9848         Dianopolis                                                         M                   TO                        0
+9847         Darcinopolis                                                      M                   TO                        0
+9846         Crixas do Tocantins                                          M                   TO                        0
+9844         Cristalandia                                                       M                   TO                        0
+9842         Couto de Magalhaes                                         M                   TO                        0
+9840         Conceicao do Tocantins                                    M                   TO                        0
+9839         Combinado                                                        M                   TO                        0
+9838         Colmeia                                                             M                   TO                        0
+9837         Colinas do Tocantins                                         M                   TO                        0
+9834         Chapada da Natividade                                     M                   TO                        0
+9833         Chapada de Areia                                             M                   TO                        0
+9832         Centenario                                                         M                   TO                        0
+9831         Caseara                                                             M                   TO                        0
+9829         Carrasco Bonito                                                M                   TO                        0
+9828         Carmolandia                                                      M                   TO                        0
+9827         Cariri do Tocantins                                            M                   TO                        0
+9825         Campos Lindos                                                 M                   TO                        0
+9824         Cachoeirinha                                                     M                   TO                        0
+9823         Buriti do Tocantins                                            M                   TO                        0
+9822         Brejinho de Nazare                                           M                   TO                        0
+9821         Brasilandia do Tocantins                                   M                   TO                        0
+9819         Bom Jesus do Tocantins                                   M                   TO                        0
+9818         Bernardo Sayao                                                M                   TO                        0
+9817         Barrolandia                                                        M                   TO                        0
+9816         Barra do Ouro                                                   M                   TO                        0
+9814         Bandeirantes do Tocantins                               M                   TO                        0
+9813         Babaculandia                                                    M                   TO                        0
+9812         Axixa do Tocantins                                            M                   TO                        0
+9811         Aurora do Tocantins                                          M                   TO                        0
+9810         Augustinopolis                                                   M                   TO                        0
+9809         Arraias                                                               M                   TO                        0
+9808         Arapoema                                                          M                   TO                        0
+9807         Araguatins                                                         M                   TO                        0
+9806         Araguana                                                           M                   TO                        0
+9805         Araguaina                                                          M                   TO                        0
+9804         Araguacu                                                           M                   TO                        0
+9803         Araguacema                                                      M                   TO                        0
+9802         Aragominas                                                       M                   TO                        0
+9799         Aparecida do Rio Negro                                    M                   TO                        0
+9798         Angico                                                               M                   TO                        0
+9797         Ananas                                                              M                   TO                        0
+9795         Alvorada                                                            M                   TO                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  22
+Lynus
+----------------Page (21) Break----------------
+9940         Sao Felix do Tocantins                                      M                   TO                        0
+9939         Sao Bento do Tocantins                                    M                   TO                        0
+9938         Santa Terezinha do Tocantins                          M                   TO                        0
+9937         Santa Tereza do Tocantins                               M                   TO                        0
+9936         Santa Rosa do Tocantins                                  M                   TO                        0
+9935         Santa Rita do Tocantins                                    M                   TO                        0
+9934         Santa Maria do Tocantins                                 M                   TO                        0
+9933         Santa Fe do Araguaia                                       M                   TO                        0
+9932         Sandolandia                                                      M                   TO                        0
+9931         Sampaio                                                            M                   TO                        0
+9930         Rio Sono                                                           M                   TO                        0
+9929         Rio dos Bois                                                      M                   TO                        0
+9928         Rio da Conceicao                                              M                   TO                        0
+9927         Riachinho                                                          M                   TO                        0
+9926         Recursolandia                                                   M                   TO                        0
+9925         Pugmil                                                               M                   TO                        0
+9923         Presidente Kennedy                                          M                   TO                        0
+9922         Praia Norte                                                        M                   TO                        0
+9921         Porto Nacional                                                   M                   TO                        0
+9919         Porto Alegre do Tocantins                                 M                   TO                        0
+9916         Ponte Alta do Tocantins                                    M                   TO                        0
+9915         Ponte Alta do Bom Jesus                                  M                   TO                        0
+9914         Pium                                                                  M                   TO                        0
+9913         Piraque                                                              M                   TO                        0
+9912         Pindorama do Tocantins                                   M                   TO                        0
+9910         Pequizeiro                                                         M                   TO                        0
+9908         Peixe                                                                 M                   TO                        0
+9906         Pedro Afonso                                                    M                   TO                        0
+9904         Pau D'Arco                                                        M                   TO                        0
+9903         Parana                                                               M                   TO                        0
+9902         Paraiso do Tocantins                                        M                   TO                        0
+9901         Palmeiropolis                                                     M                   TO                        0
+9900         Palmeirante                                                       M                   TO                        0
+9898         Oliveira de Fatima                                             M                   TO                        0
+9897         Novo Jardim                                                      M                   TO                        0
+9895         Novo Alegre                                                      M                   TO                        0
+9894         Novo Acordo                                                     M                   TO                        0
+9893         Nova Rosalandia                                               M                   TO                        0
+9892         Nova Olinda                                                      M                   TO                        0
+9891         Nazare                                                               M                   TO                        0
+9890         Natividade                                                         M                   TO                        0
+9888         Muricilandia                                                       M                   TO                        0
+9887         Palmeiras do Tocantins                                     M                   TO                        0
+9886         Monte Santo do Tocantins                                M                   TO                        0
+9884         Monte do Carmo                                               M                   TO                        0
+9883         Miranorte                                                           M                   TO                        0
+9881         Miracema do Tocantins                                     M                   TO                        0
+9880         Maurilandia do Tocantins                                  M                   TO                        0
+9879         Mateiros                                                            M                   TO                        0
+9878         Marianopolis do Tocantins                                M                   TO                        0
+9877         Luzinopolis                                                        M                   TO                        0
+9876         Lizarda                                                              M                   TO                        0
+9875         Lavandeira                                                        M                   TO                        0
+9874         Lajeado                                                             M                   TO                        0
+9873         Lagoa do Tocantins                                           M                   TO                        0
+9872         Lagoa da Confusao                                           M                   TO                        0
+9870         Juarina                                                              M                   TO                        0
+9869         Jau do Tocantins                                               M                   TO                        0
+9868         Itapora do Tocantins                                         M                   TO                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  23
+Lynus
+----------------Page (22) Break----------------
+9961         Xambioa                                                            M                   TO                        0
+9961         Xambioa                                                            M                   TO                        0
+9960         Wanderlandia                                                    M                   TO                        0
+9958         Tupiratins                                                          M                   TO                        0
+9956         Tupirama                                                           M                   TO                        0
+9955         Tocantinopolis                                                   M                   TO                        0
+9954         Tocantinia                                                          M                   TO                        0
+9950         Talisma                                                              M                   TO                        0
+9949         Taipas do Tocantins                                          M                   TO                        0
+9948         Taguatinga                                                        M                   TO                        0
+9947         Sucupira                                                            M                   TO                        0
+9946         Sitio Novo do Tocantins                                    M                   TO                        0
+9945         Silvanopolis                                                       M                   TO                        0
+9944         Sao Valerio da Natividade                                 M                   TO                        0
+9943         Sao Sebastiao do Tocantins                             M                   TO                        0
+9942         Sao Salvador do Tocantins                               M                   TO                        0
+9941         Sao Miguel do Tocantins                                   M                   TO                        0
+Transportador: 001 KAMER CARGO LTDA ME     Data de inicio da validade:01/03/22
+Relação de tarifas por transportador                                       SPS2 TMS.RCAD009b
+Emissão: 13/05/26 13:45      Pág:  24
+Lynus
+----------------Page (23) Break----------------
