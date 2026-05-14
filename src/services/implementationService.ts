@@ -858,7 +858,7 @@ export const implementationService = {
       for (let i = 0; i < uniqueIbges.length; i += 500) {
         const batch = uniqueIbges.slice(i, i + 500);
         const { data: citiesBatch } = await supabase.from('cities').select('id, codigo_ibge, state_id').in('codigo_ibge', batch);
-        citiesBatch?.forEach(c => cityMap.set(c.codigo_ibge, c));
+        citiesBatch?.forEach(c => cityMap.set(c.codigo_ibge, c.id));
       }
 
       for (let i = 0; i < citiesData.length; i++) {
@@ -968,9 +968,9 @@ export const implementationService = {
         recordsProcessed,
         errors: errors.length > 0 ? errors : undefined
       };
-    } catch (error) {
-
-      return { success: false, message: 'Erro ao processar arquivo' };
+    } catch (error: any) {
+      console.error('Error during processCitiesImport:', error);
+      return { success: false, message: 'Erro ao processar arquivo: ' + error.message };
     }
   },
 

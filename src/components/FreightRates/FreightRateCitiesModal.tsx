@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Upload, Search, AlertCircle, CheckCircle, Edit2, Check
 import { useTranslation } from 'react-i18next';
 import { freightRateCitiesService, FreightRateCity, CityAvailability } from '../../services/freightRateCitiesService';
 import { FreightRate } from '../../services/freightRatesService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface FreightRateCitiesModalProps {
   rate: FreightRate;
@@ -33,6 +34,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
   const [editingDeliveryDays, setEditingDeliveryDays] = useState<number | null>(null);
   const [bulkDeliveryDays, setBulkDeliveryDays] = useState<number | null>(null);
   const [linkedBulkDeliveryDays, setLinkedBulkDeliveryDays] = useState<number | null>(null);
+  const [confirmDeleteDialog, setConfirmDeleteDialog] = useState<{ isOpen: boolean; cityId?: string }>({ isOpen: false });
 
   useEffect(() => {
     loadData();
@@ -137,12 +139,16 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     }
   };
 
-  const handleRemoveCity = async (id: string) => {
-    if (!confirm(t('carriers.freightRates.cities.confirmUnlinkMessage'))) return;
+  const handleRemoveCity = (id: string) => {
+    setConfirmDeleteDialog({ isOpen: true, cityId: id });
+  };
+
+  const confirmRemoveCity = async () => {
+    if (!confirmDeleteDialog.cityId) return;
 
     try {
       setIsSaving(true);
-      await freightRateCitiesService.removeCityFromRate(id);
+      await freightRateCitiesService.removeCityFromRate(confirmDeleteDialog.cityId);
       showToast('success', t('carriers.freightRates.cities.successUnlink'));
       await loadData();
       onUpdate();
@@ -150,6 +156,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       showToast('error', t('carriers.freightRates.cities.errorUnlink'));
     } finally {
       setIsSaving(false);
+      setConfirmDeleteDialog({ isOpen: false });
     }
   };
 
@@ -218,12 +225,15 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     }
   };
 
-  // Função para normalizar texto removendo acentos
+  // Função para normalizar texto removendo acentos e caracteres especiais
   const normalizeText = (text: string): string => {
+    if (!text) return '';
     return text
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // remove special chars except spaces and hyphens
+      .replace(/\s+/g, ' ') // normalize multiple spaces
       .trim();
   };
 
@@ -250,15 +260,29 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     if (filterUf && city.city_state !== filterUf) return false;
     if (!searchTerm.trim()) return true;
     
-    // Split search term by ; or ,
-    const searchTerms = searchTerm.split(/[;,]/).map(t => normalizeText(t)).filter(t => t.length > 0);
+    // Split search term by ;, ,, \n, \t, or |
+    const isExactMatch = /[;,\n\t|]/.test(searchTerm);
+    const searchTerms = searchTerm.split(/[;,\n\t|]/).map(t => normalizeText(t)).filter(t => t.length > 0);
     
     if (searchTerms.length === 0) return true;
 
-    return searchTerms.some(term => 
-      (city.city_name && normalizeText(city.city_name).includes(term)) ||
-      (city.city_ibge_code && city.city_ibge_code.includes(term))
-    );
+    return searchTerms.some(term => {
+      const normalizedCityName = city.city_name ? normalizeText(city.city_name) : '';
+      const ibgeCode = city.city_ibge_code || '';
+      
+      if (isExactMatch) {
+        // Allow match if term is exactly the city name, OR if term has the city name followed by space/hyphen (e.g. "Parau RN" or "Parau-RN")
+        return normalizedCityName === term || 
+               ibgeCode === term || 
+               term.startsWith(normalizedCityName + ' ') || 
+               term.startsWith(normalizedCityName + '-');
+      }
+      return normalizedCityName.includes(term) || ibgeCode.includes(term);
+    });
+  }).sort((a, b) => {
+    const stateCompare = (a.city_state || '').localeCompare(b.city_state || '');
+    if (stateCompare !== 0) return stateCompare;
+    return (a.city_name || '').localeCompare(b.city_name || '');
   });
 
   // Filtro local apenas para cidades vinculadas (menor volume)
@@ -266,14 +290,27 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
     if (filterUf && city.city_state !== filterUf) return false;
     if (!searchTerm.trim()) return true;
     
-    const searchTerms = searchTerm.split(/[;,]/).map(t => normalizeText(t)).filter(t => t.length > 0);
+    const isExactMatch = /[;,\n\t|]/.test(searchTerm);
+    const searchTerms = searchTerm.split(/[;,\n\t|]/).map(t => normalizeText(t)).filter(t => t.length > 0);
     
     if (searchTerms.length === 0) return true;
 
-    return searchTerms.some(term => 
-      (city.city_name && normalizeText(city.city_name).includes(term)) ||
-      (city.city_ibge_code && city.city_ibge_code.includes(term))
-    );
+    return searchTerms.some(term => {
+      const normalizedCityName = city.city_name ? normalizeText(city.city_name) : '';
+      const ibgeCode = city.city_ibge_code || '';
+      
+      if (isExactMatch) {
+        return normalizedCityName === term || 
+               ibgeCode === term || 
+               term.startsWith(normalizedCityName + ' ') || 
+               term.startsWith(normalizedCityName + '-');
+      }
+      return normalizedCityName.includes(term) || ibgeCode.includes(term);
+    });
+  }).sort((a, b) => {
+    const stateCompare = (a.city_state || '').localeCompare(b.city_state || '');
+    if (stateCompare !== 0) return stateCompare;
+    return (a.city_name || '').localeCompare(b.city_name || '');
   });
 
   return (
@@ -642,6 +679,15 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDeleteDialog.isOpen}
+        title={t('carriers.freightRates.cities.unlinkCityTitle', 'Desvincular Cidade')}
+        message={t('carriers.freightRates.cities.confirmUnlinkMessage')}
+        onConfirm={confirmRemoveCity}
+        onCancel={() => setConfirmDeleteDialog({ isOpen: false })}
+        type="danger"
+      />
     </div>
   );
 };

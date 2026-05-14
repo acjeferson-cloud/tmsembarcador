@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit, DollarSign, CheckSquare, Search } from 'lucide-react';
+import { X, Plus, Trash2, Edit, DollarSign, CheckSquare, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { additionalFeesService, AdditionalFee } from '../../services/additionalFeesService';
 import { taxationService, TaxationGroup } from '../../services/taxationService';
@@ -35,35 +35,7 @@ interface City {
   name: string;
 }
 
-const CityName: React.FC<{ cityId: string | null; stateId: string | null }> = ({ cityId, stateId }) => {
-  const { t } = useTranslation();
-  const [cityName, setCityName] = useState<string>(t('carriers.freightRates.additionalFees.loading'));
 
-  useEffect(() => {
-    if (!cityId || !stateId) {
-      setCityName(t('carriers.freightRates.additionalFees.allCities'));
-      return;
-    }
-
-    const loadCity = async () => {
-      try {
-        const result = await fetchCities(1, 1, { searchTerm: cityId });
-        if (result.cities.length > 0) {
-          setCityName(result.cities[0].name);
-        } else {
-          setCityName('N/A');
-        }
-      } catch (error) {
-
-        setCityName('N/A');
-      }
-    };
-
-    loadCity();
-  }, [cityId, stateId, t]);
-
-  return <>{cityName}</>;
-};
 
 const formatDocumentDisplay = (doc: string) => {
   if (!doc) return '';
@@ -88,6 +60,12 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editingFee, setEditingFee] = useState<AdditionalFee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const [businessPartners, setBusinessPartners] = useState<BusinessPartner[]>([]);
   const [states, setStates] = useState<State[]>([]);
@@ -118,38 +96,52 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
     setLoading(true);
 
     try {
-      // Load fees
-      const feesData = await additionalFeesService.getByFreightRateTable(freightRateTableId);
+      // Load data in parallel for much faster performance
+      const [feesData, bpData, statesData, tableDataResponse] = await Promise.all([
+        additionalFeesService.getByFreightRateTable(freightRateTableId),
+        businessPartnersService.getAll(),
+        statesService.getAll(),
+        supabase.from('freight_rate_tables').select('transportador_id').eq('id', freightRateTableId).single()
+      ]);
+
       setFees(feesData || []);
-
-      // Load business partners
-      const bpData = await businessPartnersService.getAll();
       setBusinessPartners(bpData || []);
-
-      // Load states
-      const statesData = await statesService.getAll();
       setStates(statesData || []);
+
+      const tableData = tableDataResponse.data;
 
       // Pre-load city names for search
       if (feesData && feesData.length > 0) {
         const uniqueCityIds = Array.from(new Set(feesData.map(f => f.city_id).filter(Boolean))) as string[];
         const newCityMap = { ...cityNamesMap };
-        for (const id of uniqueCityIds) {
-          if (!newCityMap[id]) {
-            try {
-               const result = await fetchCities(1, 1, { searchTerm: id });
-               if (result.cities.length > 0) {
-                 newCityMap[id] = result.cities[0].name;
-               }
-            } catch (e) {}
-          }
+        const idsToFetch = uniqueCityIds.filter(id => !newCityMap[id]);
+        if (idsToFetch.length > 0) {
+          try {
+            const uuids = idsToFetch.filter(id => id.includes('-'));
+            const ibges = idsToFetch.filter(id => !id.includes('-'));
+            
+            let query = supabase.from('cities').select('id, codigo_ibge, nome');
+            
+            if (uuids.length > 0 && ibges.length > 0) {
+              query = query.or(`id.in.(${uuids.join(',')}),codigo_ibge.in.(${ibges.join(',')})`);
+            } else if (uuids.length > 0) {
+              query = query.in('id', uuids);
+            } else if (ibges.length > 0) {
+              query = query.in('codigo_ibge', ibges);
+            }
+            
+            const { data } = await query;
+            if (data) {
+              data.forEach(city => {
+                if (city.id) newCityMap[city.id] = city.nome;
+                if (city.codigo_ibge) newCityMap[city.codigo_ibge] = city.nome;
+              });
+            }
+          } catch (e) {}
         }
         setCityNamesMap(newCityMap);
       }
 
-      // Load exception groups (we'll load all for now since we don't have carrierId directly here)
-      // Or we can get the table first:
-      const { data: tableData } = await supabase.from('freight_rate_tables').select('transportador_id').eq('id', freightRateTableId).single();
       if (tableData && tableData.transportador_id) {
         const groups = await taxationService.getGroupsByCarrier(tableData.transportador_id);
         setTaxationGroups(groups || []);
@@ -390,6 +382,12 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
            cityName.includes(searchLower) ||
            fee.fee_type.toLowerCase().includes(searchLower);
   });
+
+  const totalPages = Math.ceil(filteredFees.length / ITEMS_PER_PAGE);
+  const paginatedFees = filteredFees.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -696,7 +694,8 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                   <p className="text-gray-500 dark:text-gray-400">{t('carriers.freightRates.additionalFees.loading')}</p>
                 </div>
               ) : fees.length > 0 ? (
-                <div className="overflow-x-auto">
+                <>
+                  <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
@@ -711,7 +710,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
-                      {filteredFees.map((fee) => {
+                      {paginatedFees.map((fee) => {
                         const bp = findBusinessPartner(fee.business_partner_id, fee.business_partner_document);
                         const state = states.find(s => s.id === fee.state_id);
 
@@ -749,7 +748,7 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{state?.abbreviation || t('carriers.freightRates.additionalFees.all')}</td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                              {fee.city_id ? <CityName cityId={fee.city_id} stateId={fee.state_id} /> : t('carriers.freightRates.additionalFees.allCities')}
+                              {fee.city_id ? (cityNamesMap[fee.city_id] || fee.city_id) : t('carriers.freightRates.additionalFees.allCities')}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                               {getValueTypeLabel(fee.value_type)}
@@ -786,6 +785,42 @@ export const AdditionalFeesModal: React.FC<AdditionalFeesModalProps> = ({
                     </tbody>
                   </table>
                 </div>
+                
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 sm:px-6 mt-4 rounded-b-lg">
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          Mostrando <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> até <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredFees.length)}</span> de <span className="font-medium">{filteredFees.length}</span> resultados
+                        </p>
+                      </div>
+                      <div>
+                        <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                          >
+                            <span className="sr-only">Anterior</span>
+                            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                          <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:outline-offset-0">
+                            {currentPage} / {totalPages}
+                          </span>
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                          >
+                            <span className="sr-only">Próximo</span>
+                            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                        </nav>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </>
               ) : (
                 <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
                   <DollarSign size={64} className="mx-auto text-gray-400 mb-4" />

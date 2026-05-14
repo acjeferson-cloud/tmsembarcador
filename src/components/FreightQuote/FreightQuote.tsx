@@ -131,9 +131,9 @@ const FreightQuote: React.FC = () => {
         const cities = await getCitiesByState(establishment.estado);
         setOriginCities(cities);
 
-        const cityData = cities.find((c: BrazilianCity) => c.name === establishment!.cidade);
+        const cityData = cities.find((c: BrazilianCity) => c.name.toLowerCase() === establishment!.cidade?.toLowerCase());
         if (cityData) {
-          setOriginCity(cityData.ibgeCode);
+          setOriginCity(cityData.id || cityData.ibgeCode);
           setFormData(prev => ({
             ...prev,
             originCityId: cityData.ibgeCode,

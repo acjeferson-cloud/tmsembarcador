@@ -1122,8 +1122,11 @@ export const processFreightRateCitiesFile = (file: File): Promise<FreightRateCit
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
-        // Ler aba Cidades
-        const cidadesSheet = workbook.Sheets['Cidades'];
+        // Ler aba Cidades ou a primeira aba (útil para arquivos CSV)
+        let cidadesSheet = workbook.Sheets['Cidades'];
+        if (!cidadesSheet && workbook.SheetNames.length > 0) {
+          cidadesSheet = workbook.Sheets[workbook.SheetNames[0]];
+        }
         const cidades = cidadesSheet ? XLSX.utils.sheet_to_json(cidadesSheet) as FreightRateCityTemplate[] : [];
 
         resolve(cidades);

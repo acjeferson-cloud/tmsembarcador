@@ -144,6 +144,41 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   const [showRateForm, setShowRateForm] = useState(false);
   const [editingRateId, setEditingRateId] = useState<string | null>(null);
   const [rateSearchTerm, setRateSearchTerm] = useState('');
+  const [rateSearchCityIds, setRateSearchCityIds] = useState<string[] | null>(null);
+  const [isSearchingCities, setIsSearchingCities] = useState(false);
+  
+  // Efeito para buscar cidades em background quando o termo de busca muda
+  useEffect(() => {
+    if (!rateSearchTerm || rateSearchTerm.length < 3) {
+      setRateSearchCityIds(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingCities(true);
+      try {
+        const { data, error } = await supabase
+          .from('freight_rate_cities')
+          .select('freight_rate_id, cities!inner(nome)')
+          .eq('freight_rate_table_id', table?.id || '')
+          .ilike('cities.nome', `%${rateSearchTerm}%`);
+
+        if (!error && data) {
+          const matchingRateIds = data.map(d => d.freight_rate_id);
+          setRateSearchCityIds(matchingRateIds);
+        } else {
+          setRateSearchCityIds([]);
+        }
+      } catch (err) {
+        console.error('Erro na busca de cidades:', err);
+      } finally {
+        setIsSearchingCities(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [rateSearchTerm, table?.id]);
+
   
   // Paginação das tarifas
   const ITEMS_PER_PAGE = 10;
@@ -511,10 +546,13 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
   const filteredTarifas = tarifas.filter(rate => {
     if (!rateSearchTerm) return true;
     const searchLower = rateSearchTerm.toLowerCase();
+    
+    // Verifica se a tarifa bate por código, descrição, prazo, ou se o ID dela está na lista de cidades encontradas
     return (
       rate.codigo?.toLowerCase().includes(searchLower) ||
       rate.descricao?.toLowerCase().includes(searchLower) ||
-      rate.prazo_entrega?.toString().includes(searchLower)
+      rate.prazo_entrega?.toString().includes(searchLower) ||
+      (rateSearchCityIds !== null && rateSearchCityIds.includes(rate.id))
     );
   }).sort((a, b) => {
     const codeA = a.codigo || '';
@@ -757,11 +795,16 @@ export const FreightRateTableForm: React.FC<FreightRateTableFormProps> = ({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Buscar tarifa por código, descrição ou prazo..."
+                placeholder="Buscar tarifa por código, descrição, prazo ou nome da cidade..."
                 value={rateSearchTerm}
                 onChange={(e) => setRateSearchTerm(e.target.value)}
                 className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
               />
+              {isSearchingCities && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                </div>
+              )}
             </div>
 
             {!readOnly && (
