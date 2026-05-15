@@ -146,37 +146,37 @@ const PublicTracking: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 pt-8 pb-24 relative">
       {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('/veio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg')`
-          }}
-        ></div>
-        <div className="absolute inset-0 bg-white dark:bg-gray-800/85 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-gray-100 dark:bg-slate-900">
+        <img
+          src="/Tamanho_pequenoveio-de-drone-camiao-no-porto-de-embarque-para-transporte-de-carga-e-logistica-empresarial.jpg"
+          alt="Background"
+          className="absolute inset-0 w-full h-full object-cover opacity-20 dark:opacity-5"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50/40 via-blue-50/30 to-gray-100/40 dark:from-blue-900/20 dark:to-slate-900/30"></div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-blue-600 p-3 rounded-full">
-              <Package className="w-8 h-8 text-white" />
+      <div className="max-w-4xl w-full relative z-10">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 md:p-10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-blue-600 p-3 rounded-full">
+                <Package className="w-8 h-8 text-white" />
+              </div>
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Rastreamento de Pedido
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Acompanhe seu pedido em tempo real
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Rastreamento de Pedido
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Acompanhe seu pedido em tempo real
-          </p>
-        </div>
 
-        {/* Search Box */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          {/* Search Box */}
+          <div className="mb-8">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             Código de Rastreamento
           </label>
           <div className="flex gap-3">
@@ -241,7 +241,7 @@ const PublicTracking: React.FC = () => {
         {trackingInfo && (
           <div className="space-y-6 animate-fadeIn">
             {/* Status Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-gray-100 dark:border-gray-700">
+            <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Status Atual</h2>
                 <div className="flex items-center gap-3">
@@ -336,7 +336,7 @@ const PublicTracking: React.FC = () => {
 
             {/* Seção Expansível - Itens do Pedido */}
             {showDetails && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-100 dark:border-gray-700 overflow-hidden animate-fadeIn">
+              <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-fadeIn">
                 {/* Header com Botão Fechar */}
                 <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
                   <div className="flex items-center justify-between">
@@ -417,7 +417,7 @@ const PublicTracking: React.FC = () => {
 
             {/* Timeline Integrada Padrão */}
             {trackingInfo.raw_tracking_data && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-gray-100 dark:border-gray-700 overflow-hidden animate-fadeIn">
+              <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 overflow-hidden animate-fadeIn">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Histórico de Rastreamento</h2>
                 <div className="pl-2">
                   <UnifiedTrackingTimeline 
@@ -437,6 +437,15 @@ const PublicTracking: React.FC = () => {
             )}
           </div>
         )}
+        </div>
+      </div>
+
+      {/* Footer - Powered By */}
+      <div className="absolute bottom-6 left-0 w-full text-center flex flex-col items-center justify-center space-y-1 z-10">
+        <span className="text-xs font-semibold text-gray-700 dark:text-gray-400">Powered by</span>
+        <a href="https://www.logaxis.com.br" target="_blank" rel="noopener noreferrer" className="inline-block" title="Visitar site da Log Axis">
+          <img src="/logo-logaxis.png" alt="Log Axis" className="h-8 mx-auto hover:scale-105 transition-transform duration-200" />
+        </a>
       </div>
     </div>
   );
