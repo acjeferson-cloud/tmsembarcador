@@ -52,7 +52,7 @@ export const pickupPdfService = {
     const cnpj = formatCnpjCpf(est.cnpj) || 'CNPJ NÃO INFORMADO';
     const endereco = est.endereco ? `${est.endereco}, ${est.bairro || ''} - ${est.cidade || ''}/${est.estado || ''}` : 'ENDEREÇO NÃO INFORMADO';
 
-    let logoBase64 = est.metadata?.logo_light_base64 || est.logo_light_base64 || est.logo_light_url || est.metadata?.logo_dark_base64 || est.logo_url;
+    let logoBase64 = est.metadata?.logo_light_base64 || est.metadata?.logo_light_url || est.logo_light_base64 || est.logo_url || est.metadata?.logo_url || est.metadata?.logo_dark_base64 || est.metadata?.logo_dark_url;
     console.log("[PDF_LOGO] Passo 1: Logo inicial extraído de currentEstablishment:", logoBase64 ? "SIM (URL/Base64)" : "NÃO", est);
 
     const estId = String(est.id || est.establishment_id);
@@ -82,7 +82,7 @@ export const pickupPdfService = {
            if (error) console.error("[PDF_LOGO] Erro na busca DBest:", error);
            if (!error && dbEst) {
                console.log("[PDF_LOGO] Banco retornou dbEst:", dbEst);
-               logoBase64 = dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_dark_base64 || dbEst.metadata?.logo_light_url || dbEst.metadata?.logo_url || dbEst.logo_url;
+               logoBase64 = dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_light_url || dbEst.logo_light_base64 || dbEst.logo_url || dbEst.metadata?.logo_url || dbEst.metadata?.logo_dark_base64 || dbEst.metadata?.logo_dark_url;
                console.log("[PDF_LOGO] Logo base64 gerado pelo dbEst:", logoBase64 ? "SIM" : "NÃO");
            } else {
                console.log("[PDF_LOGO] dbEst retornado vazio ou nulo!");
@@ -148,8 +148,8 @@ export const pickupPdfService = {
       if (logoBase64) {
         try {
           console.log("[PDF_LOGO] Passo 4: Tentando adicionar imagem ao jsPDF...");
-          // force optional "PNG" param if we want, but letting jsPDF detect it
-          pdf.addImage(logoBase64, margin, margin, 40, 15);
+          // Explicitly define 'PNG' format to prevent transparent backgrounds from rendering as black
+          pdf.addImage(logoBase64, 'PNG', margin, margin, 40, 15);
           currentX = margin + 45;
           console.log("[PDF_LOGO] Passo 4 concluído: Imagem adicionada sem erros no jsPDF!");
         } catch (_err) {

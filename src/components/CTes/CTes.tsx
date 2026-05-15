@@ -364,10 +364,15 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
       // Filter by número ou chave
       if (filters.numeroOuChave) {
-        result = result.filter(cte =>
-          cte.numero.includes(filters.numeroOuChave) ||
-          cte.chaveAcesso.includes(filters.numeroOuChave)
-        );
+        const terms = filters.numeroOuChave.split(';').map((t: string) => t.trim()).filter(Boolean);
+        if (terms.length > 0) {
+          result = result.filter(cte =>
+            terms.some((term: string) => 
+              cte.numero.includes(term) ||
+              cte.chaveAcesso.includes(term)
+            )
+          );
+        }
       }
 
       setFilteredCTes(result);
@@ -506,6 +511,7 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               let sapCount = 0;
               let sapErrorCount = 0;
               let errorCount = 0;
+              let lastSapError = '';
               setToast({ message: 'Iniciando processamento em lote...', type: 'info' });
               
               let sapConfig = null;
@@ -579,12 +585,14 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                           await (supabase as any).from('ctes').update({ status: fullCTe.status }).eq('id', cteId);
                           sapErrorCount++;
                           successCount--;
+                          lastSapError = integrationResult.error || 'Erro desconhecido do SAP';
                         }
-                      } catch (sapErr) {
+                      } catch (sapErr: any) {
                         // ROLLBACK
                         await (supabase as any).from('ctes').update({ status: fullCTe.status }).eq('id', cteId);
                         sapErrorCount++;
                         successCount--;
+                        lastSapError = sapErr.message || String(sapErr);
                       }
                   }
 
@@ -599,8 +607,12 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
               if (errorCount === 0 && sapErrorCount === 0) {
                 setToast({ message: `${successCount} CT-e(s) aprovado(s) e integrado(s) com sucesso!`, type: 'success' });
               } else {
+                let errorMsg = `Aprovação: ${successCount} sucesso(s), ${errorCount} erro(s). SAP: ${sapCount} integrado(s), ${sapErrorCount} falha(s).`;
+                if (sapErrorCount > 0 && lastSapError) {
+                    errorMsg += ` Detalhe: ${lastSapError}`;
+                }
                 setToast({ 
-                  message: `Aprovação: ${successCount} sucesso(s), ${errorCount} erro(s). SAP: ${sapCount} integrado(s), ${sapErrorCount} falha(s).`, 
+                  message: errorMsg, 
                   type: 'warning' 
                 });
               }

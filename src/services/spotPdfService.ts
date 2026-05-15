@@ -28,7 +28,7 @@ export const spotPdfService = {
     const cnpj = formatCNPJ(est.cnpj) || 'CNPJ N\u00C3O INFORMADO';
     const endereco = est.endereco ? `${est.endereco}, ${est.bairro || ''} - ${est.cidade || ''}/${est.estado || ''}` : 'ENDERE\u00C7O N\u00C3O INFORMADO';
 
-    let logoBase64 = est.metadata?.logo_light_base64 || est.logo_light_base64 || est.logo_light_url || est.metadata?.logo_dark_base64 || est.logo_url;
+    let logoBase64 = est.metadata?.logo_light_base64 || est.metadata?.logo_light_url || est.logo_light_base64 || est.logo_url || est.metadata?.logo_url || est.metadata?.logo_dark_base64 || est.metadata?.logo_dark_url;
 
     const estId = String(est.id || est.establishment_id);
     if (!logoBase64 && estId && estId !== 'undefined' && estId !== 'null') {
@@ -54,7 +54,7 @@ export const spotPdfService = {
            const { data: dbEst, error } = await query.maybeSingle();
               
            if (!error && dbEst) {
-               logoBase64 = dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_dark_base64 || dbEst.metadata?.logo_light_url || dbEst.metadata?.logo_url || dbEst.logo_url;
+               logoBase64 = dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_light_url || dbEst.logo_light_base64 || dbEst.logo_url || dbEst.metadata?.logo_url || dbEst.metadata?.logo_dark_base64 || dbEst.metadata?.logo_dark_url;
            }
        } catch (_e) { }
     }
@@ -143,7 +143,7 @@ export const spotPdfService = {
 
         if (logoBase64) {
           try {
-            pdf.addImage(logoBase64, margin, startY, 40, 15);
+            pdf.addImage(logoBase64, 'PNG', margin, startY, 40, 15);
             currentX = margin + 45;
           } catch (e) { }
         }

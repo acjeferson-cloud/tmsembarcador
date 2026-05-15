@@ -177,9 +177,12 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
       
       // Filter by número da fatura
       if (filters.numeroFatura) {
-        result = result.filter(bill => 
-          bill.numero.toLowerCase().includes(filters.numeroFatura.toLowerCase())
-        );
+        const terms = filters.numeroFatura.split(';').map(t => t.trim().toLowerCase()).filter(Boolean);
+        if (terms.length > 0) {
+          result = result.filter(bill => 
+            terms.some(term => bill.numero.toLowerCase().includes(term))
+          );
+        }
       }
       
       setFilteredBills(result);

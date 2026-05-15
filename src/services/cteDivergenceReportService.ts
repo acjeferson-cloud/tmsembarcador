@@ -79,7 +79,7 @@ export const cteDivergenceReportService = {
                  cnpj = dbEst.cnpj || '';
                  endereco = dbEst.endereco ? `${dbEst.endereco}, ${dbEst.bairro || ''} - ${dbEst.cidade || ''}/${dbEst.estado || ''}` : '';
                  
-                 logoBase64 = dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_dark_base64 || dbEst.metadata?.logo_light_url || dbEst.logo_light_base64 || dbEst.logo_url || dbEst.metadata?.logo_url;
+                 logoBase64 = dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_light_url || dbEst.logo_light_base64 || dbEst.logo_url || dbEst.metadata?.logo_url || dbEst.metadata?.logo_dark_base64 || dbEst.metadata?.logo_dark_url;
                  console.log("[PDF_LOGO] Logo resgatado DB:", logoBase64 ? logoBase64.substring(0, 50) + "..." : "NULO NO BANCO");
              }
          } catch(e) { console.log("[PDF_LOGO] Erro no fallback DB:", e); }
@@ -127,8 +127,8 @@ export const cteDivergenceReportService = {
             if (!logoBase64.startsWith('http') && !logoBase64.startsWith('data:')) {
               logoBase64 = `data:image/png;base64,${logoBase64}`;
             }
-            // Removed strict PDF format constraint
-            doc.addImage(logoBase64, margin, margin, 40, 15);
+            // Pass 'PNG' explicitly to prevent transparent backgrounds from rendering as black
+            doc.addImage(logoBase64, 'PNG', margin, margin, 40, 15);
             currentX = margin + 45;
             console.log("[PDF_LOGO] M\u00E9todo doc.addImage finalizado sem crashes");
           } catch(e) {

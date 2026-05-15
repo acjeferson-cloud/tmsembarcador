@@ -162,9 +162,11 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
   // Filtered Data
   const filteredData = data.filter(item => {
     // Busca rápida por transportadora ou código
-    const matchesSearch = searchTerm === '' || 
-      item.carrier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.code?.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchTerms = searchTerm.split(';').map(t => t.trim().toLowerCase()).filter(Boolean);
+    const matchesSearch = searchTerms.length === 0 || searchTerms.some(term => 
+      item.carrier_name?.toLowerCase().includes(term) ||
+      item.code?.toLowerCase().includes(term)
+    );
     
     // Status
     const matchesStatus = filters.status === '' || item.status === filters.status;

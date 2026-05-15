@@ -80,9 +80,12 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
 
       // Filter by número da coleta
       if (filters.numeroColeta) {
-        result = result.filter(pickup =>
-          pickup.numeroColeta.includes(filters.numeroColeta)
-        );
+        const terms = filters.numeroColeta.split(';').map(t => t.trim()).filter(Boolean);
+        if (terms.length > 0) {
+          result = result.filter(pickup =>
+            terms.some(term => pickup.numeroColeta.includes(term))
+          );
+        }
       }
 
       // Filter by data de criação

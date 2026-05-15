@@ -377,7 +377,7 @@ export const establishmentsService = {
         };
       }
 
-      if (establishment.logo_light_base64 || establishment.logo_dark_base64 || establishment.logo_nps_base64) {
+      if (establishment.logo_light_base64 !== undefined || establishment.logo_dark_base64 !== undefined || establishment.logo_nps_base64 !== undefined) {
         const uploadLogo = async (base64: string, type: 'light' | 'dark' | 'nps') => {
           if (!base64 || !base64.startsWith('data:image/')) return;
           const result = await logoStorageService.uploadLogoFromBase64(id, base64, type);

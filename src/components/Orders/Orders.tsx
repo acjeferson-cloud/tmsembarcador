@@ -254,9 +254,12 @@ export const Orders: React.FC<{ initialId?: string }> = ({ initialId }) => {
       
       // Filter by número do pedido
       if (filters.numeroPedido) {
-        result = result.filter(order => 
-          order.numero.toLowerCase().includes(filters.numeroPedido.toLowerCase())
-        );
+        const terms = filters.numeroPedido.split(';').map(t => t.trim().toLowerCase()).filter(Boolean);
+        if (terms.length > 0) {
+          result = result.filter(order => 
+            terms.some(term => order.numero.toLowerCase().includes(term))
+          );
+        }
       }
       
       setFilteredOrders(result);

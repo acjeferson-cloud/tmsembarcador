@@ -310,10 +310,15 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
       
       // Filter by número ou chave
       if (filters.numeroOuChave) {
-        result = result.filter(invoice => 
-          invoice.numero.includes(filters.numeroOuChave) || 
-          invoice.chaveAcesso.includes(filters.numeroOuChave)
-        );
+        const terms = filters.numeroOuChave.split(';').map((t: string) => t.trim()).filter(Boolean);
+        if (terms.length > 0) {
+          result = result.filter(invoice => 
+            terms.some((term: string) => 
+              invoice.numero.includes(term) || 
+              invoice.chaveAcesso.includes(term)
+            )
+          );
+        }
       }
       
       setFilteredInvoices(result);

@@ -58,7 +58,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
           ctx.drawImage(img, 0, 0, width, height);
 
-          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          const exportMimeType = (file.type === 'image/png' || file.type === 'image/svg+xml') ? 'image/png' : 'image/jpeg';
+          const compressedBase64 = canvas.toDataURL(exportMimeType, quality);
           resolve(compressedBase64);
         };
         img.onerror = () => reject(new Error('Erro ao carregar imagem'));
