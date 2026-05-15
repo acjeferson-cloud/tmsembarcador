@@ -271,11 +271,20 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       const ibgeCode = city.city_ibge_code || '';
       
       if (isExactMatch) {
-        // Allow match if term is exactly the city name, OR if term has the city name followed by space/hyphen (e.g. "Parau RN" or "Parau-RN")
-        return normalizedCityName === term || 
-               ibgeCode === term || 
-               term.startsWith(normalizedCityName + ' ') || 
-               term.startsWith(normalizedCityName + '-');
+        if (normalizedCityName === term || ibgeCode === term) return true;
+        
+        const state = (city.city_state || '').toLowerCase();
+        if (state) {
+          const possibleMatches = [
+            `${normalizedCityName} ${state}`,
+            `${normalizedCityName}-${state}`,
+            `${normalizedCityName}/${state}`,
+            `${normalizedCityName} - ${state}`,
+            `${normalizedCityName} / ${state}`
+          ];
+          if (possibleMatches.includes(term)) return true;
+        }
+        return false;
       }
       return normalizedCityName.includes(term) || ibgeCode.includes(term);
     });
@@ -300,10 +309,20 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       const ibgeCode = city.city_ibge_code || '';
       
       if (isExactMatch) {
-        return normalizedCityName === term || 
-               ibgeCode === term || 
-               term.startsWith(normalizedCityName + ' ') || 
-               term.startsWith(normalizedCityName + '-');
+        if (normalizedCityName === term || ibgeCode === term) return true;
+        
+        const state = (city.city_state || '').toLowerCase();
+        if (state) {
+          const possibleMatches = [
+            `${normalizedCityName} ${state}`,
+            `${normalizedCityName}-${state}`,
+            `${normalizedCityName}/${state}`,
+            `${normalizedCityName} - ${state}`,
+            `${normalizedCityName} / ${state}`
+          ];
+          if (possibleMatches.includes(term)) return true;
+        }
+        return false;
       }
       return normalizedCityName.includes(term) || ibgeCode.includes(term);
     });
