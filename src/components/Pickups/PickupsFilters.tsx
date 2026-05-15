@@ -126,7 +126,7 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
               value={localFilters.numeroColeta}
               onChange={handleQuickSearch}
               onKeyPress={handleQuickSearchKeyPress}
-              placeholder={t('pickups.filters.searchPlaceholder')}
+              placeholder={`${t('pickups.filters.searchPlaceholder')} (separe por ; para vários)`}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
