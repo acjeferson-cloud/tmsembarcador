@@ -83,7 +83,7 @@ export const Pickups: React.FC<{ initialId?: string }> = ({ initialId }) => {
         const terms = filters.numeroColeta.split(';').map(t => t.trim()).filter(Boolean);
         if (terms.length > 0) {
           result = result.filter(pickup =>
-            terms.some(term => pickup.numeroColeta?.includes(term))
+            terms.some(term => String(pickup.numeroColeta).includes(term))
           );
         }
       }

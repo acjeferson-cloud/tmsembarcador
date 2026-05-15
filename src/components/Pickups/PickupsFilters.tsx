@@ -102,6 +102,12 @@ export const PickupsFilters: React.FC<PickupsFiltersProps> = ({ onFilterChange, 
       ...prev,
       numeroColeta: value
     }));
+    
+    // Apply filter immediately for quick search
+    onFilterChange({
+      ...localFilters,
+      numeroColeta: value
+    });
   };
 
   // Apply quick search on Enter
