@@ -290,15 +290,61 @@ export default function GoogleMap({
     });
 
     const defaultCenter = { lat: -23.5505, lng: -46.6333 };
-    const center = latitude && longitude ? { lat: latitude, lng: longitude } : defaultCenter;
+    const initialCenter = latitude && longitude ? { lat: latitude, lng: longitude } : defaultCenter;
+    
+    // States for OSM mode
+    const [osmCenter, setOsmCenter] = useState<{lat: number; lng: number}>(initialCenter);
+    const [osmPosition, setOsmPosition] = useState<any>(latitude && longitude ? { lat: latitude, lng: longitude } : null);
+
+    const handleOsmSearch = async (addrToSearch = searchAddress) => {
+      if (!addrToSearch.trim()) return;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addrToSearch)}&limit=1`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lng = parseFloat(data[0].lon);
+          setOsmCenter({lat, lng});
+          setOsmPosition({lat, lng});
+          if (onLocationSelect) {
+            onLocationSelect({
+              lat,
+              lng,
+              address: data[0].display_name
+            });
+          }
+        }
+      } catch (err) {
+        console.error("OSM Geocoding error:", err);
+      }
+    };
+
+    // Auto search when address prop changes and no coordinates exist
+    useEffect(() => {
+      if (address && !latitude && !longitude) {
+        setSearchAddress(address);
+        const timer = setTimeout(() => {
+          handleOsmSearch(address);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }, [address]);
+
+    const MapUpdater = ({ center }: { center: {lat: number; lng: number} }) => {
+      const mapEvent = useMapEvents({});
+      useEffect(() => {
+        if (center) {
+          mapEvent.setView([center.lat, center.lng], 16);
+        }
+      }, [center, mapEvent]);
+      return null;
+    };
 
     const LocationMarker = () => {
-      const [position, setPosition] = useState<any>(latitude && longitude ? { lat: latitude, lng: longitude } : null);
-      
-      const mapEvent = useMapEvents({
+      useMapEvents({
         click(e: any) {
           if (!interactive) return;
-          setPosition(e.latlng);
+          setOsmPosition(e.latlng);
           if (onLocationSelect) {
             onLocationSelect({
               lat: e.latlng.lat,
@@ -309,15 +355,15 @@ export default function GoogleMap({
         },
       });
 
-      return position === null ? null : (
+      return osmPosition === null ? null : (
         <Marker 
-          position={position}
+          position={osmPosition}
           draggable={interactive}
           eventHandlers={{
             dragend(e: any) {
               const marker = e.target;
               const pos = marker.getLatLng();
-              setPosition(pos);
+              setOsmPosition(pos);
               if (onLocationSelect) {
                 onLocationSelect({
                   lat: pos.lat,
@@ -333,10 +379,10 @@ export default function GoogleMap({
 
     return (
       <div className="w-full flex flex-col gap-2 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800">
-        <div className="bg-yellow-50 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-800 px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-400 text-sm">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-blue-800 dark:text-blue-400 text-sm">
             <Info size={16} />
-            <span>Usando modo de compatibilidade (OpenStreetMap). Google Maps não ativado.</span>
+            <span>Modo de Compatibilidade Ativo (OpenStreetMap)</span>
           </div>
         </div>
 
@@ -347,13 +393,13 @@ export default function GoogleMap({
                 type="text"
                 value={searchAddress}
                 onChange={(e) => setSearchAddress(e.target.value)}
-                placeholder="Busca de endereço indisponível no modo de compatibilidade"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none bg-gray-100 cursor-not-allowed"
-                disabled
+                placeholder="Digite um endereço para buscar no mapa..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && handleOsmSearch()}
               />
               <button
-                disabled
-                className="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed flex items-center gap-2"
+                onClick={() => handleOsmSearch()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Search className="h-4 w-4" />
                 Buscar
@@ -363,11 +409,15 @@ export default function GoogleMap({
               onClick={() => {
                 if (navigator.geolocation) {
                   navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    setOsmCenter({ lat, lng });
+                    setOsmPosition({ lat, lng });
                     if (onLocationSelect) {
                       onLocationSelect({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        address: `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)} (Localização Atual)`
+                        lat,
+                        lng,
+                        address: `${lat.toFixed(4)}, ${lng.toFixed(4)} (Localização Atual)`
                       });
                     }
                   });
@@ -384,7 +434,7 @@ export default function GoogleMap({
         
         <div className="w-full rounded-lg border border-gray-300 overflow-hidden" style={{ height }}>
           <MapContainer 
-            center={[center.lat, center.lng]} 
+            center={[osmCenter.lat, osmCenter.lng]} 
             zoom={zoom} 
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={interactive}
@@ -393,6 +443,7 @@ export default function GoogleMap({
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
+            <MapUpdater center={osmCenter} />
             <LocationMarker />
           </MapContainer>
         </div>
