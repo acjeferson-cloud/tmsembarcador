@@ -168,7 +168,28 @@ class EnvironmentsService {
             senha_hash: dummyHash,
             nome: 'Jeferson Costa',
             tipo: 'admin',
-            ativo: true
+            perfil: 'Administrador',
+            ativo: true,
+            has_license: true,
+            permissoes: {
+              ctes: { criar: true, editar: true, excluir: true, validar: true, visualizar: true },
+              coletas: { criar: true, editar: true, agendar: true, excluir: true, visualizar: true },
+              pedidos: { criar: true, editar: true, aprovar: true, excluir: true, visualizar: true },
+              usuarios: { criar: true, editar: true, excluir: true, visualizar: true, gerenciar_permissoes: true },
+              cadastros: { paises: true, cidades: true, estados: true, feriados: true, ocorrencias: true, motivos_rejeicao: true },
+              dashboard: { exportar: true, visualizar: true },
+              parceiros: { criar: true, editar: true, excluir: true, visualizar: true },
+              relatorios: { gerar: true, exportar: true, visualizar: true },
+              rastreamento: { acompanhar: true, visualizar: true },
+              configuracoes: { editar: true, api_keys: true, integracao: true, visualizar: true },
+              notas_fiscais: { criar: true, editar: true, excluir: true, exportar: true, importar: true, visualizar: true },
+              tabelas_frete: { criar: true, editar: true, excluir: true, visualizar: true },
+              torre_controle: { gerenciar: true, visualizar: true },
+              centro_inovacao: { criar: true, editar: true, aprovar: true, visualizar: true },
+              transportadoras: { criar: true, editar: true, excluir: true, visualizar: true },
+              estabelecimentos: { criar: true, editar: true, excluir: true, visualizar: true },
+              logistica_reversa: { criar: true, editar: true, excluir: true, visualizar: true }
+            }
           })
           .select()
           .single();
