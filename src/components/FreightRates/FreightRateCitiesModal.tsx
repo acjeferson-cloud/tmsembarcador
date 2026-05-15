@@ -233,6 +233,7 @@ export const FreightRateCitiesModal: React.FC<FreightRateCitiesModalProps> = ({
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[^\w\s-]/g, '') // remove special chars except spaces and hyphens
+      .replace(/[-]/g, ' ') // treat hyphens as spaces for more robust matching
       .replace(/\s+/g, ' ') // normalize multiple spaces
       .trim();
   };
