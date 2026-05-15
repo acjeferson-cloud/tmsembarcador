@@ -314,8 +314,8 @@ export const Invoices: React.FC<InvoicesProps> = ({ initialId }) => {
         if (terms.length > 0) {
           result = result.filter(invoice => 
             terms.some((term: string) => 
-              invoice.numero.includes(term) || 
-              invoice.chaveAcesso.includes(term)
+              invoice.numero?.includes(term) || 
+              invoice.chaveAcesso?.includes(term)
             )
           );
         }

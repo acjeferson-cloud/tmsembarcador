@@ -180,7 +180,7 @@ export const Bills: React.FC<{ initialId?: string }> = ({ initialId }) => {
         const terms = filters.numeroFatura.split(';').map(t => t.trim().toLowerCase()).filter(Boolean);
         if (terms.length > 0) {
           result = result.filter(bill => 
-            terms.some(term => bill.numero.toLowerCase().includes(term))
+            terms.some(term => bill.numero?.toLowerCase()?.includes(term))
           );
         }
       }

@@ -368,8 +368,8 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
         if (terms.length > 0) {
           result = result.filter(cte =>
             terms.some((term: string) => 
-              cte.numero.includes(term) ||
-              cte.chaveAcesso.includes(term)
+              cte.numero?.includes(term) ||
+              cte.chaveAcesso?.includes(term)
             )
           );
         }
