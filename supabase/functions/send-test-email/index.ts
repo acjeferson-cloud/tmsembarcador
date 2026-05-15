@@ -22,15 +22,50 @@ serve(async (req) => {
       throw new Error('Payload invites "email" and "smtp_config" objects.');
     }
 
+    // Determine auth config
+    let authConfig: any = {
+      user: smtp_config.auth.user,
+      pass: smtp_config.auth.pass,
+    };
+
+    if (smtp_config.auth_type === 'OAuth2') {
+      const { clientId, clientSecret, refreshToken, tokenUrl: customTokenUrl } = smtp_config.auth;
+      const tokenUrl = customTokenUrl || 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+      const params = new URLSearchParams();
+      params.append('client_id', clientId);
+      params.append('client_secret', clientSecret);
+      params.append('refresh_token', refreshToken);
+      params.append('grant_type', 'refresh_token');
+      params.append('scope', 'https://outlook.office.com/SMTP.Send offline_access');
+
+      try {
+        const tokenResponse = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+          throw new Error(`Falha OAuth2 SMTP: ${tokenData.error_description || tokenData.error}`);
+        }
+        
+        // Nodemailer OAuth2 config
+        authConfig = {
+          type: 'OAuth2',
+          user: smtp_config.auth.user,
+          accessToken: tokenData.access_token
+        };
+      } catch (err: any) {
+        throw new Error(`Falha ao obter Access Token para SMTP: ${err.message}`);
+      }
+    }
+
     // Configure Nodemailer transporter based on the configuration from the client
     const transporter = nodemailer.createTransport({
       host: smtp_config.host,
       port: smtp_config.port,
       secure: smtp_config.secure,
-      auth: {
-        user: smtp_config.auth.user,
-        pass: smtp_config.auth.pass,
-      },
+      auth: authConfig,
     });
 
     const sendFrom = email?.from?.name 

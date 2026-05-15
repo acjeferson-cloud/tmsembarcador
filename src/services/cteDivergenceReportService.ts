@@ -35,6 +35,7 @@ export interface DivergenceReportData {
 export const cteDivergenceReportService = {
   async generatePDF(data: DivergenceReportData, context?: { establishmentId?: string; establishmentName?: string; establishmentCnpj?: string; user?: any; logoBase64?: string }): Promise<Blob> {
     try {
+      const { jsPDF } = await import('jspdf');
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',

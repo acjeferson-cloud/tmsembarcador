@@ -17,6 +17,7 @@ export interface EmailOutgoingConfig {
   oauth2_client_id?: string;
   oauth2_client_secret?: string;
   oauth2_refresh_token?: string;
+  oauth2_token_url?: string;
   reply_to_email?: string;
   test_email_sent?: boolean;
   last_test_date?: string;
@@ -40,6 +41,7 @@ export interface EmailOutgoingConfigInput {
   oauth2_client_id?: string;
   oauth2_client_secret?: string;
   oauth2_refresh_token?: string;
+  oauth2_token_url?: string;
   reply_to_email?: string;
   test_email_sent?: boolean;
   last_test_date?: string;
@@ -205,7 +207,8 @@ const emailOutgoingConfigService = {
         `
       };
 
-      const useSecure = config.smtp_secure;
+      // In Nodemailer, 'secure: true' means direct TLS (port 465). For port 587, it must be false (STARTTLS).
+      const useSecure = config.smtp_port === 465;
 
 
 
@@ -216,9 +219,14 @@ const emailOutgoingConfigService = {
           host: config.smtp_host,
           port: config.smtp_port,
           secure: useSecure,
+          auth_type: config.auth_type,
           auth: {
             user: config.smtp_user,
-            pass: config.smtp_password
+            pass: config.smtp_password,
+            clientId: config.oauth2_client_id,
+            clientSecret: config.oauth2_client_secret,
+            refreshToken: config.oauth2_refresh_token,
+            tokenUrl: config.oauth2_token_url || ''
           }
         }
       };

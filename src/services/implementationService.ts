@@ -201,7 +201,10 @@ export const implementationService = {
     companyDb: string;
   }): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      let proxyUrl = import.meta.env.VITE_ERP_PROXY_URL || 'https://tms-erp-proxy-303812479794.us-east1.run.app';
+      
+      // Limpar trailing slash
+      proxyUrl = proxyUrl.replace(/\/$/, '');
       
       // Se não houver proxy configurado, falha graciosamente avisando
       if (!proxyUrl) {
@@ -229,7 +232,7 @@ export const implementationService = {
 
     } catch (error: any) {
 
-      return { success: false, error: 'Falha grave de comunicação com o Cloud Run Proxy. Verifique a URL ou conectividade.' };
+      return { success: false, error: `Falha grave de comunicação com o Cloud Run Proxy. Verifique a URL ou conectividade. Detalhes: ${error.message}` };
     }
   },
 

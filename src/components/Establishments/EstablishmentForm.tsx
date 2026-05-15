@@ -326,9 +326,8 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
     setConnectionStatus({});
     
     // Validate required fields
-    if (!formData.email_config.email || !formData.email_config.username || 
-        !formData.email_config.password || !formData.email_config.host || 
-        !formData.email_config.port) {
+    const { email_config } = formData;
+    if (!email_config.email || !email_config.username || !email_config.host || !email_config.port) {
       setConnectionStatus({
         success: false,
         message: 'Preencha todos os campos obrigatórios da configuração de e-mail'
@@ -336,9 +335,32 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
       setTestingConnection(false);
       return;
     }
+
+    if (email_config.authType !== 'OAuth2' && !email_config.password) {
+      setConnectionStatus({
+        success: false,
+        message: 'A senha é obrigatória para o tipo de autenticação LOGIN'
+      });
+      setTestingConnection(false);
+      return;
+    }
+    
+    if (email_config.authType === 'OAuth2') {
+      const emailConfigAny = email_config as Record<string, any>;
+      if (!emailConfigAny.oauth2ClientId || !emailConfigAny.oauth2ClientSecret || !emailConfigAny.oauth2RefreshToken) {
+        setConnectionStatus({
+          success: false,
+          message: 'Client ID, Client Secret e Refresh Token são obrigatórios para OAuth 2.0'
+        });
+        setTestingConnection(false);
+        return;
+      }
+    }
     
     try {
       // Call Edge Function to test the incoming connection
+      const emailConfigAny = formData.email_config as Record<string, any>;
+      
       const { data, error } = await supabase.functions.invoke('test-incoming-email', {
         body: {
           host: formData.email_config.host,
@@ -348,7 +370,11 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
           authType: formData.email_config.authType,
           email: formData.email_config.email,
           username: formData.email_config.username,
-          password: formData.email_config.password
+          password: formData.email_config.password,
+          clientId: emailConfigAny.oauth2ClientId,
+          clientSecret: emailConfigAny.oauth2ClientSecret,
+          refreshToken: emailConfigAny.oauth2RefreshToken,
+          tokenUrl: emailConfigAny.oauth2TokenUrl
         }
       });
 
@@ -1071,6 +1097,24 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({ onBack, on
                         placeholder="Digite o Refresh Token"
                       />
                     </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      URL do Endpoint de Token (Opcional)
+                    </label>
+                    <div className="relative">
+                      <Server className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="1.125rem" />
+                      <input
+                        type="url"
+                        name="oauth2TokenUrl"
+                        value={(formData.email_config as Record<string, string>).oauth2TokenUrl || ''}
+                        onChange={handleEmailConfigChange}
+                        className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="ex: https://login.microsoftonline.com/SEU-TENANT-ID/oauth2/v2.0/token"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Para Microsoft Single-Tenant, substitua 'common' pelo seu Tenant ID. Deixe em branco para o padrão.</p>
                   </div>
 
                   <div className="md:col-span-2 p-4 bg-blue-50 rounded-lg">

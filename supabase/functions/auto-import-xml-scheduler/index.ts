@@ -134,11 +134,45 @@ serve(async (req) => {
       }
 
       try {
+        let accessToken = '';
+        if (config.authType === 'OAuth2') {
+          await flushLogs('running', `Autenticando via OAuth 2.0 na Microsoft...`);
+          const tokenUrl = config.oauth2TokenUrl || 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+          const params = new URLSearchParams();
+          params.append('client_id', config.oauth2ClientId || '');
+          params.append('client_secret', config.oauth2ClientSecret || '');
+          params.append('refresh_token', config.oauth2RefreshToken || '');
+          params.append('grant_type', 'refresh_token');
+          params.append('scope', 'https://outlook.office.com/IMAP.AccessAsUser.All offline_access');
+          
+          try {
+            const tokenResponse = await fetch(tokenUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: params.toString()
+            });
+            const tokenData = await tokenResponse.json();
+            if (!tokenResponse.ok) {
+               throw new Error(`Falha OAuth2: ${tokenData.error_description || tokenData.error}`);
+            }
+            accessToken = tokenData.access_token;
+          } catch (err: any) {
+             throw new Error(`Falha ao obter Access Token: ${err.message}`);
+          }
+        }
+
+        const authConfig: any = { user: config.email };
+        if (config.authType === 'OAuth2') {
+          authConfig.accessToken = accessToken;
+        } else {
+          authConfig.pass = String(config.password || '');
+        }
+
         const mailClient = new ImapFlow({
           host: config.host,
           port: parseInt(config.port, 10) || 993,
           secure: config.useSSL !== false,
-          auth: { user: config.email, pass: String(config.password || '') },
+          auth: authConfig,
           logger: false,
           verifyOnly: false
         });

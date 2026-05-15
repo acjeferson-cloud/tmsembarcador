@@ -477,7 +477,7 @@ export const CTesTable = React.memo<CTesTableProps>(({
                     </button>
 
                     {/* More actions button */}
-                    <div className="relative">
+                    <div className="relative action-menu-container">
                       <button
                         onClick={() => toggleActionMenu(cte.id)}
                         disabled={isLoading}
@@ -493,7 +493,16 @@ export const CTesTable = React.memo<CTesTableProps>(({
                       
                       {/* Dropdown menu */}
                       {openActionMenu === cte.id && (
-                        <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                        <>
+                          {/* Invisible overlay for click-outside */}
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenActionMenu(null);
+                            }}
+                          />
+                          <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
                           <div className="py-1">
                             {/* Recalculate - Not for approved */}
                             {cte.status?.toLowerCase() !== 'aprovado' && cte.status?.toLowerCase() !== 'auditado e aprovado' && (
@@ -602,7 +611,8 @@ export const CTesTable = React.memo<CTesTableProps>(({
 
 
                           </div>
-                        </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>

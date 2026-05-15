@@ -159,7 +159,7 @@ export const pickupRequestService = {
         totals
       };
 
-      const pdfBase64 = this.createRomaneioPDF(romaneioData);
+      const pdfBase64 = await this.createRomaneioPDF(romaneioData);
 
       return { success: true, pdfBase64, romaneioData };
     } catch (error) {
@@ -168,7 +168,8 @@ export const pickupRequestService = {
     }
   },
 
-  createRomaneioPDF(data: RomaneioData): string {
+  async createRomaneioPDF(data: RomaneioData): Promise<string> {
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     let yPos = 20;

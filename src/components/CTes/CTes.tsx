@@ -575,10 +575,16 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                             `CT-e ${fullCTe.number} aprovado e integrado ao SAP (DocEntry: ${integrationResult.sap_doc_entry})`
                           );
                         } else {
+                          // ROLLBACK
+                          await (supabase as any).from('ctes').update({ status: fullCTe.status }).eq('id', cteId);
                           sapErrorCount++;
+                          successCount--;
                         }
                       } catch (sapErr) {
+                        // ROLLBACK
+                        await (supabase as any).from('ctes').update({ status: fullCTe.status }).eq('id', cteId);
                         sapErrorCount++;
+                        successCount--;
                       }
                   }
 
@@ -990,16 +996,27 @@ export const CTes: React.FC<{ initialId?: string }> = ({ initialId }) => {
                     type: 'success'
                   });
                 } else {
+                  // ROLLBACK
+                  await (supabase as any).from('ctes').update({ status: fullCTe.status }).eq('id', cteId);
                   setToast({
-                    message: `Aprovado no TMS, mas falhou no SAP: ${integrationResult.error}`,
-                    type: 'warning'
+                    message: `Aprovação Cancelada. Falha no SAP: ${integrationResult.error}`,
+                    type: 'error'
                   });
                 }
               } catch (sapErr: any) {
-                setToast({
-                  message: `Aprovado no TMS. Note: ${sapErr.message}`,
-                  type: 'info'
-                });
+                if (sapErr.message && sapErr.message.includes('não configurado')) {
+                  setToast({
+                    message: `Aprovado no TMS. Note: ${sapErr.message}`,
+                    type: 'info'
+                  });
+                } else {
+                  // ROLLBACK
+                  await (supabase as any).from('ctes').update({ status: fullCTe.status }).eq('id', cteId);
+                  setToast({
+                    message: `Aprovação Cancelada. Erro ao tentar integrar com SAP: ${sapErr.message}`,
+                    type: 'error'
+                  });
+                }
               }
 
               refreshData();

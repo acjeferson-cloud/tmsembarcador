@@ -31,7 +31,13 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
     smtp_password: '',
     from_email: '',
     from_name: '',
-    ativo: false
+    ativo: false,
+    auth_type: 'LOGIN',
+    oauth2_client_id: '',
+    oauth2_client_secret: '',
+    oauth2_refresh_token: '',
+    oauth2_token_url: '',
+    reply_to_email: ''
   });
 
   useEffect(() => {
@@ -54,7 +60,13 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
           smtp_password: data.smtp_password,
           from_email: data.from_email,
           from_name: data.from_name,
-          ativo: data.ativo
+          ativo: data.ativo,
+          auth_type: data.auth_type || 'LOGIN',
+          oauth2_client_id: data.oauth2_client_id || '',
+          oauth2_client_secret: data.oauth2_client_secret || '',
+          oauth2_refresh_token: data.oauth2_refresh_token || '',
+          oauth2_token_url: data.oauth2_token_url || '',
+          reply_to_email: data.reply_to_email || ''
         });
         setIsEditing(false);
       } else {
@@ -70,10 +82,22 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
   const handleSave = async () => {
     // A validação original estava verificando from_email/from_name, 
     // mas o formulário (e o tipo final service) usa sender_email/sender_name
-    if (!formData.smtp_host || !formData.smtp_user || !formData.smtp_password ||
+    if (!formData.smtp_host || !formData.smtp_user || 
         !formData.from_email || !formData.from_name) {
       setToast({ message: t('establishments.form.emailOutgoing.messages.fillRequired'), type: 'error' });
       return;
+    }
+
+    if (formData.auth_type !== 'OAuth2' && !formData.smtp_password) {
+      setToast({ message: t('establishments.form.emailOutgoing.messages.fillRequired'), type: 'error' });
+      return;
+    }
+
+    if (formData.auth_type === 'OAuth2') {
+      if (!formData.oauth2_client_id || !formData.oauth2_client_secret || !formData.oauth2_refresh_token) {
+        setToast({ message: 'Client ID, Client Secret e Refresh Token são obrigatórios para OAuth 2.0', type: 'error' });
+        return;
+      }
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.from_email)) {
@@ -460,6 +484,22 @@ export const EmailOutgoingConfigTab: React.FC<EmailOutgoingConfigProps> = ({ est
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder={t('establishments.form.emailOutgoing.refreshTokenPlaceholder')}
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    URL do Endpoint de Token (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.oauth2_token_url || ''}
+                    onChange={(e) => setFormData({ ...formData, oauth2_token_url: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://login.microsoftonline.com/TENANT_ID/oauth2/v2.0/token"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Se você recebe o erro AADSTS50194, cole aqui a URL de token contendo o seu Tenant ID (ID do Diretório). Se vazio, usa o endpoint padrão /common.
+                  </p>
                 </div>
 
                 <div className="md:col-span-2 p-4 bg-blue-50 rounded-lg">

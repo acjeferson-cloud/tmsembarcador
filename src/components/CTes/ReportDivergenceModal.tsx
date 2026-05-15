@@ -105,181 +105,184 @@ export const ReportDivergenceModal: React.FC<ReportDivergenceModalProps> = ({
         setReportId(currentReportId);
       }
 
-      const reader = new FileReader();
-      reader.readAsDataURL(pdfBlob);
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
+      const base64data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(pdfBlob);
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+        reader.onerror = reject;
+      });
 
-        const emailSubject = `Relatório de Divergência - CT-e ${cteData.cteNumber}`;
-          // --- BULLETPROOF DB FETCH FOR LOGO ---
-          console.log('[EMAIL DB FETCH] Iniciando busca do logotipo para envio. Establishment ID/CNPJ:', establishmentId, establishmentCnpj);
-          console.log('[EMAIL DB FETCH] Logo base64 do frontend recebido:', logoBase64 ? logoBase64.substring(0, 30) + '...' : 'Nenhum');
-          console.log('[EMAIL DB FETCH] Logo URL do frontend recebida:', logoUrl || 'Nenhum');
+      const emailSubject = `Relatório de Divergência - CT-e ${cteData.cteNumber}`;
+      // --- BULLETPROOF DB FETCH FOR LOGO ---
+      console.log('[EMAIL DB FETCH] Iniciando busca do logotipo para envio. Establishment ID/CNPJ:', establishmentId, establishmentCnpj);
+      console.log('[EMAIL DB FETCH] Logo base64 do frontend recebido:', logoBase64 ? logoBase64.substring(0, 30) + '...' : 'Nenhum');
+      console.log('[EMAIL DB FETCH] Logo URL do frontend recebida:', logoUrl || 'Nenhum');
+      
+      let definitiveLogoUrl = '';
+      let logoAttachment: any = null;
+      
+      try {
+          let query = (supabase as any).from('establishments').select('metadata');
           
-          let definitiveLogoUrl = '';
-          let logoAttachment: any = null;
+          const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(establishmentId);
           
-          try {
-              let query = (supabase as any).from('establishments').select('metadata');
+          if (isUuid) {
+              console.log('[EMAIL DB FETCH] ID é formatado como UUID. Buscando na coluna id.');
+              query = query.eq('id', establishmentId);
+          } else {
+              console.log('[EMAIL DB FETCH] ID não é UUID (provavelmente CNPJ). Buscando na coluna cnpj.');
+              const cleanCnpj = establishmentCnpj ? String(establishmentCnpj).replace(/\D/g, '') : String(establishmentId).replace(/\D/g, '');
+              query = query.eq('cnpj', cleanCnpj);
+          }
+          
+          const { data: dbEst, error: dbErr } = await query.maybeSingle();
+          
+          if (dbErr) {
+             console.error('[EMAIL DB FETCH] Erro na consulta do DB:', dbErr);
+          }
+          
+          if (dbEst) {
+              console.log('[EMAIL DB FETCH] Estabelecimento retornado. Verificando dados:', JSON.stringify(dbEst));
               
-              const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(establishmentId);
+              const rawVal = dbEst.metadata?.logo_nps_url || dbEst.metadata?.logo_light_url || dbEst.metadata?.logo_url || '';
+              console.log('[EMAIL DB FETCH] Melhor URL/Path de logotipo encontrado bruto:', rawVal || 'Nenhum');
               
-              if (isUuid) {
-                  console.log('[EMAIL DB FETCH] ID é formatado como UUID. Buscando na coluna id.');
-                  query = query.eq('id', establishmentId);
-              } else {
-                  console.log('[EMAIL DB FETCH] ID não é UUID (provavelmente CNPJ). Buscando na coluna cnpj.');
-                  const cleanCnpj = establishmentCnpj ? String(establishmentCnpj).replace(/\D/g, '') : String(establishmentId).replace(/\D/g, '');
-                  query = query.eq('cnpj', cleanCnpj);
-              }
-              
-              const { data: dbEst, error: dbErr } = await query.maybeSingle();
-              
-              if (dbErr) {
-                 console.error('[EMAIL DB FETCH] Erro na consulta do DB:', dbErr);
-              }
-              
-              if (dbEst) {
-                  console.log('[EMAIL DB FETCH] Estabelecimento retornado. Verificando dados:', JSON.stringify(dbEst));
-                  
-                  const rawVal = dbEst.metadata?.logo_nps_url || dbEst.metadata?.logo_light_url || dbEst.metadata?.logo_url || '';
-                  console.log('[EMAIL DB FETCH] Melhor URL/Path de logotipo encontrado bruto:', rawVal || 'Nenhum');
-                  
-                  if (rawVal) {
-                      if (rawVal.startsWith('http')) {
-                          console.log('[EMAIL DB FETCH] RESOLVIDO: O banco retornou um HTTP absoluto valido.', rawVal);
-                          definitiveLogoUrl = rawVal;
-                      } else if (!rawVal.startsWith('data:')) {
-                         const baseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-                         let cleanPath = rawVal;
-                         if (cleanPath.startsWith('/public/logos/')) cleanPath = cleanPath.substring('/public/logos/'.length);
-                         else if (cleanPath.startsWith('logos/')) cleanPath = cleanPath.substring('logos/'.length);
-                         
-                         definitiveLogoUrl = `${baseUrl}/storage/v1/object/public/logos/${cleanPath}`;
-                         console.log('[EMAIL DB FETCH] RESOLVIDO: O banco retornou URL relativa. Montada URL absoluta com base do VITE:', definitiveLogoUrl);
-                      }
-                  } else {
-                      console.log('[EMAIL DB FETCH] Nenhuma URL encontrada no banco. Buscando Base64 do banco...');
-                      // Fallback to base64 if url is completely absent
-                      const b64 = dbEst.metadata?.logo_nps_base64 || dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_base64 || '';
-                      if (b64 && b64.length > 100) {
-                         console.log('[EMAIL DB FETCH] RESOLVIDO: Base64 retornado pelo banco. Configurando como Content-ID (cid).');
-                         let rawB64 = b64.includes('base64,') ? b64.split('base64,')[1] : b64;
-                         logoAttachment = {
-                            filename: 'logo.png',
-                            content: rawB64,
-                            encoding: 'base64',
-                            cid: 'logo_empresa',
-                            contentDisposition: 'inline'
-                         };
-                      } else {
-                         console.log('[EMAIL DB FETCH] Base64 TAMBÉM VAZIO NO BANCO.');
-                      }
+              if (rawVal) {
+                  if (rawVal.startsWith('http')) {
+                      console.log('[EMAIL DB FETCH] RESOLVIDO: O banco retornou um HTTP absoluto valido.', rawVal);
+                      definitiveLogoUrl = rawVal;
+                  } else if (!rawVal.startsWith('data:')) {
+                     const baseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+                     let cleanPath = rawVal;
+                     if (cleanPath.startsWith('/public/logos/')) cleanPath = cleanPath.substring('/public/logos/'.length);
+                     else if (cleanPath.startsWith('logos/')) cleanPath = cleanPath.substring('logos/'.length);
+                     
+                     definitiveLogoUrl = `${baseUrl}/storage/v1/object/public/logos/${cleanPath}`;
+                     console.log('[EMAIL DB FETCH] RESOLVIDO: O banco retornou URL relativa. Montada URL absoluta com base do VITE:', definitiveLogoUrl);
                   }
               } else {
-                  console.warn('[EMAIL DB FETCH] Nenhum estabelecimento encontrado no DB com esse Filtro!');
+                  console.log('[EMAIL DB FETCH] Nenhuma URL encontrada no banco. Buscando Base64 do banco...');
+                  // Fallback to base64 if url is completely absent
+                  const b64 = dbEst.metadata?.logo_nps_base64 || dbEst.metadata?.logo_light_base64 || dbEst.metadata?.logo_base64 || '';
+                  if (b64 && b64.length > 100) {
+                     console.log('[EMAIL DB FETCH] RESOLVIDO: Base64 retornado pelo banco. Configurando como Content-ID (cid).');
+                     let rawB64 = b64.includes('base64,') ? b64.split('base64,')[1] : b64;
+                     logoAttachment = {
+                        filename: 'logo.png',
+                        content: rawB64,
+                        encoding: 'base64',
+                        cid: 'logo_empresa',
+                        contentDisposition: 'inline'
+                     };
+                  } else {
+                     console.log('[EMAIL DB FETCH] Base64 TAMBÉM VAZIO NO BANCO.');
+                  }
               }
-          } catch(e) {
-              console.error('[EMAIL DB FETCH] Failed to fetch auth logo:', e);
+          } else {
+              console.warn('[EMAIL DB FETCH] Nenhum estabelecimento encontrado no DB com esse Filtro!');
           }
+      } catch(e) {
+          console.error('[EMAIL DB FETCH] Failed to fetch auth logo:', e);
+      }
 
-          // Ultimate fallback if DB yielded nothing but screen passed a base64
-          if (!definitiveLogoUrl && !logoAttachment && logoBase64 && logoBase64.length > 100) {
-              console.log('[EMAIL DB FETCH] ULTIMO RECURSO: DB não tinha o arquivo, injetando o Base64 passado pela Interface (CID fallback).');
-              let rawB64 = logoBase64.includes('base64,') ? logoBase64.split('base64,')[1] : logoBase64;
-              logoAttachment = {
-                 filename: 'logo.png',
-                 content: rawB64,
-                 encoding: 'base64',
-                 cid: 'logo_empresa',
-                 contentDisposition: 'inline'
-              };
-          }
-          
-          console.log('[EMAIL RESULT] definitiveLogoUrl:', definitiveLogoUrl);
-          console.log('[EMAIL RESULT] logoAttachment exists?', !!logoAttachment);
-          // --- END BULLETPROOF DB FETCH ---
-
-          let logoHtml = '';
-          
-          if (definitiveLogoUrl) {
-            logoHtml = `<div style="text-align: center; margin-bottom: 30px;">
-                 <img src="${definitiveLogoUrl}" alt="Logo" style="max-width: 200px; max-height: 80px; object-fit: contain;" />
-               </div>`;
-          } else if (logoAttachment) {
-             logoHtml = `<div style="text-align: center; margin-bottom: 30px;">
-                 <img src="cid:logo_empresa" alt="Logo" style="max-width: 200px; max-height: 80px; object-fit: contain;" />
-               </div>`;
-          }
-
-          const emailBody = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
-              ${logoHtml}
-              <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #2563eb;">Relatório de Divergência de CT-e</h2>
-              </div>
-              
-              <p>Prezado transportador <strong>${cteData.carrierName}</strong>,</p>
-              <p>Segue em anexo o relatório detalhado de divergência identificada no CT-e <strong>${cteData.cteNumber}</strong>.</p>
-    
-              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                <h3 style="color: #1e293b; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px;">Resumo da Análise</h3>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                  <li style="margin-bottom: 10px; display: flex; align-items: center;">
-                    <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #22c55e; margin-right: 10px;"></span>
-                    <span style="color: #334155;"><strong>Taxas corretas:</strong> ${correctCount}</span>
-                  </li>
-                  <li style="display: flex; align-items: center;">
-                    <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #ef4444; margin-right: 10px;"></span>
-                    <span style="color: #334155;"><strong>Taxas divergentes:</strong> ${divergentCount}</span>
-                  </li>
-                </ul>
-              </div>
-    
-              <p>Por favor, revisar os valores divergentes e tomar as providências necessárias.</p>
-    
-              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
-              
-              <p style="color: #64748b; font-size: 14px; margin-bottom: 5px;">Atenciosamente,</p>
-              <p style="color: #334155; font-weight: bold; margin-top: 0;">${establishmentName}</p>
-            </div>
-          `;
-
-          const emailPayload: any = {
-            estabelecimentoId: establishmentId,
-            to: cteData.carrierEmail,
-            subject: emailSubject,
-            html: emailBody,
-            attachments: [
-              {
-                filename: `CTe_${cteData.cteNumber}_Divergencia.pdf`,
-                content: base64data.split(',')[1],
-                encoding: 'base64'
-              }
-            ]
+      // Ultimate fallback if DB yielded nothing but screen passed a base64
+      if (!definitiveLogoUrl && !logoAttachment && logoBase64 && logoBase64.length > 100) {
+          console.log('[EMAIL DB FETCH] ULTIMO RECURSO: DB não tinha o arquivo, injetando o Base64 passado pela Interface (CID fallback).');
+          let rawB64 = logoBase64.includes('base64,') ? logoBase64.split('base64,')[1] : logoBase64;
+          logoAttachment = {
+             filename: 'logo.png',
+             content: rawB64,
+             encoding: 'base64',
+             cid: 'logo_empresa',
+             contentDisposition: 'inline'
           };
+      }
+      
+      console.log('[EMAIL RESULT] definitiveLogoUrl:', definitiveLogoUrl);
+      console.log('[EMAIL RESULT] logoAttachment exists?', !!logoAttachment);
+      // --- END BULLETPROOF DB FETCH ---
 
-          if (logoAttachment) {
-             emailPayload.attachments.push(logoAttachment);
+      let logoHtml = '';
+      
+      if (definitiveLogoUrl) {
+        logoHtml = `<div style="text-align: center; margin-bottom: 30px;">
+             <img src="${definitiveLogoUrl}" alt="Logo" style="max-width: 200px; max-height: 80px; object-fit: contain;" />
+           </div>`;
+      } else if (logoAttachment) {
+         logoHtml = `<div style="text-align: center; margin-bottom: 30px;">
+             <img src="cid:logo_empresa" alt="Logo" style="max-width: 200px; max-height: 80px; object-fit: contain;" />
+           </div>`;
+      }
+
+      const emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+          ${logoHtml}
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #2563eb;">Relatório de Divergência de CT-e</h2>
+          </div>
+          
+          <p>Prezado transportador <strong>${cteData.carrierName}</strong>,</p>
+          <p>Segue em anexo o relatório detalhado de divergência identificada no CT-e <strong>${cteData.cteNumber}</strong>.</p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h3 style="color: #1e293b; margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px;">Resumo da Análise</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="margin-bottom: 10px; display: flex; align-items: center;">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #22c55e; margin-right: 10px;"></span>
+                <span style="color: #334155;"><strong>Taxas corretas:</strong> ${correctCount}</span>
+              </li>
+              <li style="display: flex; align-items: center;">
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #ef4444; margin-right: 10px;"></span>
+                <span style="color: #334155;"><strong>Taxas divergentes:</strong> ${divergentCount}</span>
+              </li>
+            </ul>
+          </div>
+
+          <p>Por favor, revisar os valores divergentes e tomar as providências necessárias.</p>
+
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+          
+          <p style="color: #64748b; font-size: 14px; margin-bottom: 5px;">Atenciosamente,</p>
+          <p style="color: #334155; font-weight: bold; margin-top: 0;">${establishmentName}</p>
+        </div>
+      `;
+
+      const emailPayload: any = {
+        estabelecimentoId: establishmentId,
+        to: cteData.carrierEmail,
+        subject: emailSubject,
+        html: emailBody,
+        attachments: [
+          {
+            filename: `CTe_${cteData.cteNumber}_Divergencia.pdf`,
+            content: base64data.split(',')[1],
+            encoding: 'base64'
           }
-
-          const { data, error } = await supabase.functions.invoke('enviar-email-nps', { body: emailPayload });
-
-        if (error) {
-          throw new Error(error.message || 'Falha ao invocar função de envio de email');
-        }
-
-        if (!data?.success) {
-          throw new Error(data?.error || data?.message || 'Falha na resposta do envio de email');
-        }
-
-        await cteDivergenceReportService.markAsSentByEmail(currentReportId, cteData.carrierEmail);
-
-        setMessage({
-          type: 'success',
-          text: `Email enviado com sucesso para ${cteData.carrierEmail}!`
-        });
+        ]
       };
+
+      if (logoAttachment) {
+         emailPayload.attachments.push(logoAttachment);
+      }
+
+      const { data, error } = await supabase.functions.invoke('enviar-email-nps', { body: emailPayload });
+
+      if (error) {
+        throw new Error(error.message || 'Falha ao invocar função de envio de email');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || data?.message || 'Falha na resposta do envio de email');
+      }
+
+      await cteDivergenceReportService.markAsSentByEmail(currentReportId, cteData.carrierEmail);
+
+      setMessage({
+        type: 'success',
+        text: `Email enviado com sucesso para ${cteData.carrierEmail}!`
+      });
     } catch (error) {
 // null
       setMessage({

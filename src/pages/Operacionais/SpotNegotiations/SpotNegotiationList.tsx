@@ -600,7 +600,15 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                             </button>
 
                             {openActionMenu === item.id && (
-                              <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenActionMenu(null);
+                                  }}
+                                />
+                                <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
                                 <div className="py-1">
                                   <button
                                     onClick={() => handleAction(item.id!, 'edit')}
@@ -619,7 +627,8 @@ export const SpotNegotiationList: React.FC<{ onNew: () => void; onEdit?: (id: st
                                     <span>Cancelar</span>
                                   </button>
                                 </div>
-                              </div>
+                                </div>
+                              </>
                             )}
                           </div>
                        </div>
